@@ -2,7 +2,8 @@
   "name": "kowalski",
   "version": "1.0.0",
   "scripts": {
-    "prepare": "husky"
+    "prepare": "husky",
+    "server": "pnpm --filter kowalski-server"
   },
   "keywords": [],
   "author": "Kamaal Farah",

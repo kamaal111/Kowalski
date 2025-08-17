@@ -1,18 +1,28 @@
 import { serve } from '@hono/node-server';
-import { Hono } from 'hono';
+import { showRoutes } from 'hono/dev';
+import { requestId } from 'hono/request-id';
+import { compress } from 'hono/compress';
+import { secureHeaders } from 'hono/secure-headers';
 
-const app = new Hono();
+import env from './api/env.js';
+import { openAPIRouterFactory, withOpenAPIDocumentation } from './api/open-api.js';
+import loggingMiddleware from './middleware/logging.js';
+import { injectRequestContext } from './api/contexts.js';
 
-app.get('/', c => {
-  return c.text('Hello Hono!');
-});
-
-serve(
-  {
-    fetch: app.fetch,
-    port: 3000,
-  },
-  info => {
-    console.log(`Server is running on http://localhost:${info.port}`);
-  },
+const app = withOpenAPIDocumentation(
+  openAPIRouterFactory()
+    .use(requestId())
+    .use(compress())
+    .use(secureHeaders())
+    .use(loggingMiddleware)
+    .use(injectRequestContext())
+    .get('/', c => c.text('Hello Hono!')),
 );
+
+const { PORT, DEBUG } = env;
+
+if (DEBUG) {
+  showRoutes(app, { verbose: false });
+}
+
+serve({ fetch: app.fetch, port: PORT }, info => console.log(`Server is running on :${info.port}`));

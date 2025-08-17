@@ -4,22 +4,38 @@ NODE_VERSION := "24"
 NVM := "nvm"
 PN := "pnpm"
 
+# List available commands
+default:
+    just --list --unsorted
+
+dev-server:
+    #!/usr/bin/env zsh
+
+    export DEBUG="true"
+
+    {{ PN }} run server dev
+
+# Prepare project to work with
 prepare: install-modules
 
+# Bootstrap project
 bootstrap: install-nvm install-node enable-corepack prepare
 
+[private]
 install-modules:
     #!/usr/bin/env zsh
 
     . ~/.zshrc || true
     echo "Y" | {{ PN }} i
 
+[private]
 enable-corepack:
     #!/usr/bin/env zsh
 
     . ~/.zshrc || true
     corepack enable
 
+[private]
 install-nvm:
     #!/usr/bin/env zsh
 
@@ -37,6 +53,7 @@ install-nvm:
         echo "NVM installed. Please restart your terminal or run 'source ~/.zshrc' to use nvm"
     fi
 
+[private]
 install-node:
     #!/usr/bin/env zsh
 
