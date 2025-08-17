@@ -1,0 +1,33 @@
+{
+  "name": "kowalski",
+  "version": "1.0.0",
+  "scripts": {
+    "prepare": "husky"
+  },
+  "keywords": [],
+  "author": "Kamaal Farah",
+  "license": "ISC",
+  "packageManager": "pnpm@10.12.4",
+  "devDependencies": {
+    "@eslint/compat": "^1.3.2",
+    "@eslint/js": "^9.33.0",
+    "@kamaalio/prettier-config": "^0.1.2",
+    "eslint": "^9.33.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^16.3.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.5",
+    "prettier": "^3.6.2",
+    "typescript-eslint": "^8.39.1"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "lint-staged": {
+    "**/*.{js,ts,tsx}": [
+      "eslint --fix"
+    ],
+    "**/*": "prettier --write --ignore-unknown"
+  },
+  "prettier": "@kamaalio/prettier-config"
+}
