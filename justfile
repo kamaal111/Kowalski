@@ -8,12 +8,25 @@ PN := "pnpm"
 default:
     just --list --unsorted
 
+# Run dev server
 dev-server:
     #!/usr/bin/env zsh
 
     export DEBUG="true"
 
     {{ PN }} run server dev
+
+# Start services
+start-services:
+    docker compose up -d
+
+# Stop services
+stop-services:
+    docker compose down
+
+# Tail database logs
+tail-db:
+    docker compose logs -f db
 
 # Prepare project to work with
 prepare: install-modules
