@@ -3,11 +3,16 @@ import { showRoutes } from 'hono/dev';
 import { requestId } from 'hono/request-id';
 import { compress } from 'hono/compress';
 import { secureHeaders } from 'hono/secure-headers';
+import { drizzle } from 'drizzle-orm/node-postgres';
 
 import env from './api/env.js';
 import { openAPIRouterFactory, withOpenAPIDocumentation } from './api/open-api.js';
 import loggingMiddleware from './middleware/logging.js';
 import { injectRequestContext } from './api/contexts.js';
+import * as schema from './db/schema.js';
+
+const { PORT, DEBUG, DATABASE_URL } = env;
+const db = drizzle(DATABASE_URL, { schema });
 
 const app = withOpenAPIDocumentation(
   openAPIRouterFactory()
@@ -15,11 +20,9 @@ const app = withOpenAPIDocumentation(
     .use(compress())
     .use(secureHeaders())
     .use(loggingMiddleware)
-    .use(injectRequestContext())
+    .use(injectRequestContext({ db }))
     .get('/', c => c.text('Hello Hono!')),
 );
-
-const { PORT, DEBUG } = env;
 
 if (DEBUG) {
   showRoutes(app, { verbose: false });

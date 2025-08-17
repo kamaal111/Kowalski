@@ -1,8 +1,12 @@
+set export
+
 NVM_VERSION := "v0.40.3"
 NODE_VERSION := "24"
 
 NVM := "nvm"
 PN := "pnpm"
+
+DATABASE_URL := "postgresql://kowalski_user:kowalski_password@localhost:5432/kowalski"
 
 # List available commands
 default:
@@ -15,6 +19,12 @@ dev-server:
     export DEBUG="true"
 
     {{ PN }} run server dev
+
+pull-schema:
+    just server/pull-schema {{ DATABASE_URL }}
+
+push-schema:
+    just server/push-schema {{ DATABASE_URL }}
 
 # Start services
 start-services:

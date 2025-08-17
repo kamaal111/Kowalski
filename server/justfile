@@ -1,0 +1,13 @@
+PN := "pnpm"
+PNX := PN + " exec"
+
+pull-schema database_url:
+    #!/usr/bin/env zsh
+
+    export DATABASE_URL={{ database_url }}
+    {{ PNX }} drizzle-kit pull
+
+push-schema database_url:
+    export DATABASE_URL={{ database_url }}
+
+    {{ PNX }} drizzle-kit push

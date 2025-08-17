@@ -1,5 +1,5 @@
 services:
-  db:
+  kowalski_db:
     image: postgres:17-alpine
     container_name: kowalski-db
     restart: unless-stopped
