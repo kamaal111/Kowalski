@@ -1,13 +1,61 @@
+set dotenv-load
+
 PN := "pnpm"
+PNR := PN + " run"
 PNX := PN + " exec"
 
-pull-schema database_url:
+AUTH_CONFIG := "src/auth/better-auth.ts"
+AUTH_SCHEMA := "src/db/schema.ts"
+
+# List available commands
+default:
+    just --list --unsorted
+
+# Start development server
+dev-server: prepare migrate
     #!/usr/bin/env zsh
 
-    export DATABASE_URL={{ database_url }}
+    export DEBUG="true"
+
+    {{ PNR }} dev
+
+# Run TypeScript type checking
+typecheck: prepare
+    {{ PNR }} typecheck
+
+# Generate authentication database tables
+make-auth-tables: prepare
+    npx @better-auth/cli generate --config {{ AUTH_CONFIG }} --output {{ AUTH_SCHEMA }} --yes
+
+# Run tests
+test: prepare
+    {{ PNR }} test
+
+# Generate migrations
+make-migrations: prepare
+    {{ PNX }} drizzle-kit generate
+
+# Run database migrations
+migrate: prepare
+    {{ PNX }} drizzle-kit migrate
+
+# Pull database schema from remote
+pull-schema: prepare
     {{ PNX }} drizzle-kit pull
 
-push-schema database_url:
-    export DATABASE_URL={{ database_url }}
-
+# Push database schema to remote
+push-schema: prepare
     {{ PNX }} drizzle-kit push
+
+# Bootstrap the server project
+bootstrap: prepare
+
+# Prepare server environment
+prepare: install-modules
+
+[private]
+install-modules:
+    #!/usr/bin/env zsh
+
+    . ~/.zshrc || true
+    echo "Y" | {{ PN }} i

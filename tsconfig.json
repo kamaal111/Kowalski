@@ -1,0 +1,17 @@
+{
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "./server"
+    }
+  ],
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "NodeNext",
+    "strict": true,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "moduleResolution": "node16"
+  }
+}

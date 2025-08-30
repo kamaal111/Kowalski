@@ -1,19 +1,24 @@
 import type { Context, Next } from 'hono';
 import type { RequestIdVariables } from 'hono/request-id';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type * as schema from '../db/schema.js';
 
-export type DatabaseType = NodePgDatabase<typeof schema>;
+import type { Auth } from '../auth/better-auth.js';
+import type { Database } from '../db/index.js';
 
-export type HonoVariables = RequestIdVariables & {
-  db: DatabaseType;
-};
+interface InjectedContext {
+  db: Database;
+  auth: Auth;
+}
 
-export type HonoEnvironment = { Variables: HonoVariables };
+export type HonoVariables = RequestIdVariables & InjectedContext;
 
-export function injectRequestContext({ db }: { db: DatabaseType }) {
+export interface HonoEnvironment {
+  Variables: HonoVariables;
+}
+
+export function injectRequestContext({ db, auth }: InjectedContext) {
   return async (c: Context<HonoEnvironment>, next: Next) => {
     c.set('db', db);
+    c.set('auth', auth);
     await next();
   };
 }

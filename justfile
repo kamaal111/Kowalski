@@ -5,8 +5,7 @@ NODE_VERSION := "24"
 
 NVM := "nvm"
 PN := "pnpm"
-
-DATABASE_URL := "postgresql://kowalski_user:kowalski_password@localhost:5432/kowalski"
+PNR := PN + " run"
 
 # List available commands
 default:
@@ -14,17 +13,23 @@ default:
 
 # Run dev server
 dev-server:
-    #!/usr/bin/env zsh
+    just server/dev-server
 
-    export DEBUG="true"
+# Run database migrations
+migrate:
+    just server/migrate
 
-    {{ PN }} run server dev
+# Generate migrations
+make-migrations:
+    just server/make-migrations
 
+# Pull database schema
 pull-schema:
-    just server/pull-schema {{ DATABASE_URL }}
+    just server/pull-schema
 
+# Push database schema
 push-schema:
-    just server/push-schema {{ DATABASE_URL }}
+    just server/push-schema
 
 # Start services
 start-services:
@@ -38,11 +43,29 @@ stop-services:
 tail-db:
     docker compose logs -f db
 
+# Generate auth tables
+make-auth-tables:
+    just server/make-auth-tables
+
+# Lint the project
+lint:
+    {{ PNR }} lint
+
+# Type check
+typecheck:
+    just server/typecheck
+
+# Run tests
+test:
+    just server/test
+
 # Prepare project to work with
 prepare: install-modules
+    just server/prepare
 
 # Bootstrap project
 bootstrap: install-nvm install-node enable-corepack prepare
+    just server/bootstrap
 
 [private]
 install-modules:
