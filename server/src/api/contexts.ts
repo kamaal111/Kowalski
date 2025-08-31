@@ -1,4 +1,4 @@
-import type { Context, Next } from 'hono';
+import type { Context, Input, Next } from 'hono';
 import type { RequestIdVariables } from 'hono/request-id';
 
 import type { Auth } from '../auth/better-auth.js';
@@ -15,8 +15,14 @@ export interface HonoEnvironment {
   Variables: HonoVariables;
 }
 
+export type HonoContext<P extends string = string, I extends Input = Record<string, unknown>> = Context<
+  HonoEnvironment,
+  P,
+  I
+>;
+
 export function injectRequestContext({ db, auth }: InjectedContext) {
-  return async (c: Context<HonoEnvironment>, next: Next) => {
+  return async (c: HonoContext, next: Next) => {
     c.set('db', db);
     c.set('auth', auth);
     await next();
