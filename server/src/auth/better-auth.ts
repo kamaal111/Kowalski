@@ -8,6 +8,6 @@ export type Auth = typeof auth;
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: 'pg' }),
-  emailAndPassword: { enabled: true },
+  emailAndPassword: { enabled: true, requireEmailVerification: false },
   plugins: [bearer()],
 });
