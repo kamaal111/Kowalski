@@ -1,11 +1,15 @@
+set export
 set dotenv-load
 
 PN := "pnpm"
 PNR := PN + " run"
 PNX := PN + " exec"
+TSX := PNX + " tsx"
 
 AUTH_CONFIG := "src/auth/better-auth.ts"
 AUTH_SCHEMA := "src/db/schema.ts"
+
+PORT := "8080"
 
 # List available commands
 default:
@@ -46,6 +50,49 @@ pull-schema: prepare
 # Push database schema to remote
 push-schema: prepare
     {{ PNX }} drizzle-kit push
+
+# Download OpenAPI spec
+download-spec output_schema_filepath: prepare
+    #!/usr/bin/env zsh
+
+    SERVER_URL="http://localhost:{{ PORT }}"
+
+    echo "🚀 Auto-downloading OpenAPI spec to {{ output_schema_filepath }}..."
+
+    # Check if server is already running
+    if curl -s --fail --connect-timeout 2 "$SERVER_URL/spec.json" > /dev/null 2>&1
+    then
+        echo "✅ Server is already running"
+        {{ TSX }} scripts/download-openapi-spec.ts "{{ output_schema_filepath }}" "$SERVER_URL"
+    else
+        echo "🔄 Server not running, starting development server..."
+        echo "   This will start the server in the background and download the spec"
+
+        just dev-server &
+
+        echo "⏳ Waiting for server to start..."
+        for i in {1..30}; do
+            if curl -s --fail --connect-timeout 2 "$SERVER_URL/spec.json" > /dev/null 2>&1
+            then
+                echo "✅ Server is ready!"
+                break
+            fi
+            if [ $i -eq 30 ]
+            then
+                echo "❌ Server failed to start within 30 seconds"
+                kill $(lsof -t -i:{{ PORT }}) || true
+                exit 1
+            fi
+            echo "   Attempt $i/30..."
+            sleep 1
+        done
+
+        npx tsx scripts/download-openapi-spec.ts "{{ output_schema_filepath }}" "$SERVER_URL"
+
+        echo "🛑 Stopping development server..."
+        kill $(lsof -t -i:{{ PORT }}) || true
+        echo "✅ Done! OpenAPI spec saved to {{ output_schema_filepath }}"
+    fi
 
 # Bootstrap the server project
 bootstrap: prepare

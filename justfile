@@ -7,6 +7,8 @@ NVM := "nvm"
 PN := "pnpm"
 PNR := PN + " run"
 
+OUTPUT_SCHEMA_FILEPATH := "openapi-spec.json"
+
 # List available commands
 default:
     just --list --unsorted
@@ -47,6 +49,10 @@ tail-db:
 make-auth-tables:
     just server/make-auth-tables
 
+# Download OpenAPI specification (requires running server)
+download-spec:
+    just server/download-spec ../{{ OUTPUT_SCHEMA_FILEPATH }}
+
 # Lint the project
 lint:
     {{ PNR }} lint
@@ -58,6 +64,9 @@ typecheck:
 # Run tests
 test:
     just server/test
+
+# Run quality checks
+quality: lint typecheck
 
 # Prepare project to work with
 prepare: install-modules
