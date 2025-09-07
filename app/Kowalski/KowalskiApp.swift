@@ -6,12 +6,11 @@
 //
 
 import SwiftUI
+import KowalskiApp
 
 @main
 struct KowalskiApp: App {
     var body: some Scene {
-        WindowGroup {
-            ContentView()
-        }
+        KowalskiScene()
     }
 }

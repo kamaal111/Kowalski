@@ -6,8 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		2CF8E15E2E6DF0E800DC771A /* KowalskiApp in Frameworks */ = {isa = PBXBuildFile; productRef = 2CF8E15D2E6DF0E800DC771A /* KowalskiApp */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		2C7DA2F22E649C8E00C2454F /* Kowalski.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Kowalski.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		2CF8E15B2E6DF01600DC771A /* KowalskiApp */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = KowalskiApp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -23,6 +28,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2CF8E15E2E6DF0E800DC771A /* KowalskiApp in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -32,6 +38,8 @@
 		2C7DA2E92E649C8E00C2454F = {
 			isa = PBXGroup;
 			children = (
+				2CF8E15B2E6DF01600DC771A /* KowalskiApp */,
+				2CF8E15C2E6DF0E800DC771A /* Frameworks */,
 				2C7DA2F42E649C8E00C2454F /* Kowalski */,
 				2C7DA2F32E649C8E00C2454F /* Products */,
 			);
@@ -43,6 +51,13 @@
 				2C7DA2F22E649C8E00C2454F /* Kowalski.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		2CF8E15C2E6DF0E800DC771A /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -65,6 +80,7 @@
 			);
 			name = Kowalski;
 			packageProductDependencies = (
+				2CF8E15D2E6DF0E800DC771A /* KowalskiApp */,
 			);
 			productName = Kowalski;
 			productReference = 2C7DA2F22E649C8E00C2454F /* Kowalski.app */;
@@ -341,6 +357,13 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		2CF8E15D2E6DF0E800DC771A /* KowalskiApp */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = KowalskiApp;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 2C7DA2EA2E649C8E00C2454F /* Project object */;
 }

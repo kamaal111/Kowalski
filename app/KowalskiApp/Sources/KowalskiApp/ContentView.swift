@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  Kowalski
+//  KowalskiApp
 //
 //  Created by Kamaal M Farah on 8/31/25.
 //
