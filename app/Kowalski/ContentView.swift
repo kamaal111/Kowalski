@@ -24,7 +24,7 @@ struct ContentView: View {
     }
 
     private func handlePress() async {
-        var req = URLRequest(url: URL(string: "http://localhost:8080/api/auth/sign-up/email")!)
+        var req = URLRequest(url: URL(string: "http://localhost:8080/api/auth/sign-in/email")!)
         req.httpMethod = "POST"
         req.addValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = try! JSONEncoder().encode(EmailSignup(name: "John Doe", email: "john@apple.com", password: "password20"))

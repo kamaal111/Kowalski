@@ -1,8 +1,5 @@
 import type { HonoContext } from '../api/contexts.js';
-
-export type BodyType = (typeof BODY_TYPES)[keyof typeof BODY_TYPES];
-
-export const BODY_TYPES = { JSON: 'json' } as const;
+import { BODY_TYPES, type BodyType } from '../constants/request.js';
 
 const BODY_TO_STRING_TRANSFORMERS: Record<BodyType, (rawBody: unknown) => string> = {
   [BODY_TYPES.JSON]: rawBody => JSON.stringify(rawBody),

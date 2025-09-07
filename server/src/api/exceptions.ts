@@ -7,8 +7,12 @@ import { STATUS_CODES, type StatusCode } from '../constants/http.js';
 export class APIException extends HTTPException {
   readonly c: HonoContext;
 
-  constructor(c: HonoContext, statusCode: StatusCode, options: { message: string }) {
-    super(statusCode, { message: options.message });
+  constructor(c: HonoContext, statusCode: StatusCode, options: { message: string; code?: string; headers?: Headers }) {
+    const response = new Response(JSON.stringify({ message: options.message, code: options.code }), {
+      status: statusCode,
+      headers: options.headers ?? { 'Content-Type': 'application/json' },
+    });
+    super(statusCode, { res: response });
     this.c = c;
   }
 }

@@ -1,6 +1,9 @@
 import { createRoute } from '@hono/zod-openapi';
 import * as z from 'zod';
-import { AuthResponseSchema, ErrorResponseSchema } from '../schemas/responses.js';
+import { ErrorResponseSchema, AuthResponseSchema } from '../schemas/responses.js';
+import { MIME_TYPES } from '../../constants/request.js';
+import { OPENAPI_TAG } from '../constants.js';
+import { STATUS_CODES } from '../../constants/http.js';
 
 const EmailPasswordSignUpSchema = z.object({
   email: z.email().min(1).openapi({ description: 'User email address' }),
@@ -12,41 +15,33 @@ const EmailPasswordSignUpSchema = z.object({
 const signUpRoute = createRoute({
   method: 'post',
   path: '/sign-up/email',
-  tags: ['Authentication'],
+  tags: [OPENAPI_TAG],
   summary: 'Sign up with email and password',
   description: 'Create a new user account with email and password',
   request: {
     body: {
       content: {
-        'application/json': {
-          schema: EmailPasswordSignUpSchema,
-        },
+        [MIME_TYPES.APPLICATION_JSON]: { schema: EmailPasswordSignUpSchema },
       },
     },
   },
   responses: {
-    201: {
+    [STATUS_CODES.CREATED]: {
       description: 'Account created successfully',
       content: {
-        'application/json': {
-          schema: AuthResponseSchema,
-        },
+        [MIME_TYPES.APPLICATION_JSON]: { schema: AuthResponseSchema },
       },
     },
-    400: {
+    [STATUS_CODES.BAD_REQUEST]: {
       description: 'Invalid request or email already exists',
       content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
+        [MIME_TYPES.APPLICATION_JSON]: { schema: ErrorResponseSchema },
       },
     },
-    409: {
+    [STATUS_CODES.CONFLICT]: {
       description: 'Email already registered',
       content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
+        [MIME_TYPES.APPLICATION_JSON]: { schema: ErrorResponseSchema },
       },
     },
   },
