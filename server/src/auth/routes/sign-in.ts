@@ -22,7 +22,7 @@ const EmailPasswordSignInSchema = z
       example: 'https://app.example.com/dashboard',
     }),
   })
-  .openapi({
+  .openapi('EmailPasswordSignIn', {
     title: 'Email Password Sign In Request',
     description: 'Request payload for signing in with email and password credentials',
     example: {

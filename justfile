@@ -7,7 +7,7 @@ NVM := "nvm"
 PN := "pnpm"
 PNR := PN + " run"
 
-OUTPUT_SCHEMA_FILEPATH := "openapi-spec.json"
+OUTPUT_SCHEMA_FILEPATH := "openapi.yaml"
 
 # List available commands
 default:
@@ -16,6 +16,10 @@ default:
 # Run dev server
 dev-server:
     just server/dev-server
+
+# Run server
+run-server:
+    just server/run-server
 
 # Run database migrations
 migrate:
@@ -52,10 +56,19 @@ make-auth-tables:
 # Download OpenAPI specification (requires running server)
 download-spec:
     just server/download-spec ../{{ OUTPUT_SCHEMA_FILEPATH }}
+    just format
 
 # Lint the project
 lint:
     {{ PNR }} lint
+
+# Format code with Prettier
+format:
+    {{ PNR }} format
+
+# Check code formatting with Prettier
+format-check:
+    {{ PNR }} format:check
 
 # Type check
 typecheck:
@@ -66,7 +79,7 @@ test:
     just server/test
 
 # Run quality checks
-quality: lint typecheck
+quality: lint format-check typecheck
 
 # Prepare project to work with
 prepare: install-modules

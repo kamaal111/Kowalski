@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 
 import * as z from 'zod';
 import { asserts } from '@kamaalio/kamaal';
+import yaml from 'js-yaml';
 
 const OpenAPIInfoSchema = z.object({
   title: z.string(),
@@ -9,17 +10,20 @@ const OpenAPIInfoSchema = z.object({
   description: z.string().optional(),
 });
 
-const OpenAPISpecSchema = z.object({
-  openapi: z.string(),
-  info: OpenAPIInfoSchema,
-  paths: z.record(z.string(), z.record(z.string(), z.unknown())),
-});
+const OpenAPISpecSchema = z
+  .object({
+    openapi: z.string(),
+    info: OpenAPIInfoSchema,
+    paths: z.record(z.string(), z.record(z.string(), z.unknown())),
+    components: z.object({ schemas: z.record(z.string(), z.object().loose()) }).loose(),
+  })
+  .loose();
 
 const ArgsSchema = z.tuple([
   z
     .string()
     .nonempty()
-    .refine(path => path.endsWith('.json'), 'Output file must have .json extension'),
+    .refine(path => path.endsWith('.yaml'), 'Output file must have .yaml extension'),
   z.url(),
 ]);
 
@@ -49,7 +53,7 @@ async function downloadOpenAPISpec(serverUrl: string, outputFile: string): Promi
 
   const rawData: unknown = await response.json();
   const spec = await OpenAPISpecSchema.parseAsync(rawData);
-  const formattedSpec = JSON.stringify(spec, null, 2);
+  const formattedSpec = yaml.dump(spec, { indent: 2 });
   await fs.writeFile(outputFile, formattedSpec, 'utf8');
 
   console.log(`✅ OpenAPI spec successfully downloaded to: ${outputFile}`);

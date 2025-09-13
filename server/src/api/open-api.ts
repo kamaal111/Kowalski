@@ -24,6 +24,6 @@ export function withOpenAPIDocumentation<
   BasePath extends string = '/',
 >(app: Hono<E, S, BasePath>) {
   return (app as OpenAPIHono<E, S, BasePath>)
-    .doc('/spec.json', { openapi: '3.0.0', info: { version: '1.0.0', title: 'Kowalski API' } })
+    .doc('/spec.json', { openapi: '3.1.0', info: { version: '1.0.0', title: 'Kowalski API' } })
     .get('/doc', swaggerUI({ url: '/spec.json' }));
 }

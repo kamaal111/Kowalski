@@ -5,12 +5,35 @@ import { MIME_TYPES } from '../../constants/request.js';
 import { OPENAPI_TAG } from '../constants.js';
 import { STATUS_CODES } from '../../constants/http.js';
 
-const EmailPasswordSignUpSchema = z.object({
-  email: z.email().min(1).openapi({ description: 'User email address' }),
-  password: z.string().min(8).max(128).openapi({ description: 'User password (minimum 8 characters)' }),
-  name: z.string().openapi({ description: 'User display name' }),
-  callbackURL: z.url().optional().openapi({ description: 'URL to redirect to after sign up' }),
-});
+const EmailPasswordSignUpSchema = z
+  .object({
+    email: z.email().min(1).openapi({
+      description: 'User email address',
+      example: 'john.doe@example.com',
+    }),
+    password: z.string().min(8).max(128).openapi({
+      description: 'User password (minimum 8 characters)',
+      example: 'SecurePassword123!',
+    }),
+    name: z.string().openapi({
+      description: 'User display name',
+      example: 'John Doe',
+    }),
+    callbackURL: z.url().optional().openapi({
+      description: 'URL to redirect to after sign up',
+      example: 'https://example.com/dashboard',
+    }),
+  })
+  .openapi('EmailPasswordSignUp', {
+    title: 'Email Password Sign Up',
+    description: 'Request body for signing up with email and password',
+    example: {
+      email: 'john.doe@example.com',
+      password: 'SecurePassword123!',
+      name: 'John Doe',
+      callbackURL: 'https://example.com/dashboard',
+    },
+  });
 
 const signUpRoute = createRoute({
   method: 'post',

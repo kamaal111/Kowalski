@@ -1,0 +1,179 @@
+openapi: 3.1.0
+info:
+  title: Kowalski API
+  version: 1.0.0
+paths:
+  /api/auth/sign-up/email:
+    post:
+      tags:
+        - Authentication
+      summary: Sign up with email and password
+      description: Create a new user account with email and password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailPasswordSignUp'
+      responses:
+        '201':
+          description: Account created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid request or email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/auth/sign-in/email:
+    post:
+      tags:
+        - Authentication
+      summary: Sign in with email and password
+      description: Authenticate a user with email and password credentials
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailPasswordSignIn'
+      responses:
+        '200':
+          description: Sign in successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid credentials or request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/auth/sign-out:
+    post:
+      tags:
+        - Authentication
+      summary: Sign out
+      description: Sign out the current user and invalidate the session
+      responses:
+        '200':
+          description: Sign out successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignOutResponse'
+components:
+  schemas:
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 1
+          description: Authentication token for the signed-in user
+          example: f21wcpz7Aokmlh2MB632MZpTgfruPc62
+      required:
+        - token
+      title: Authentication Response
+      description: Successful authentication response containing authentication token
+      example:
+        token: f21wcpz7Aokmlh2MB632MZpTgfruPc62
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message
+        code:
+          type: string
+          description: Error code
+      required:
+        - message
+      title: Error Response
+      description: Error response containing error message and optional error code
+    EmailPasswordSignUp:
+      type: object
+      properties:
+        email:
+          type: string
+          minLength: 1
+          format: email
+          description: User email address
+          example: john.doe@example.com
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+          description: User password (minimum 8 characters)
+          example: SecurePassword123!
+        name:
+          type: string
+          description: User display name
+          example: John Doe
+        callbackURL:
+          type: string
+          format: uri
+          description: URL to redirect to after sign up
+          example: https://example.com/dashboard
+      required:
+        - email
+        - password
+        - name
+      title: Email Password Sign Up
+      description: Request body for signing up with email and password
+      example:
+        email: john.doe@example.com
+        password: SecurePassword123!
+        name: John Doe
+        callbackURL: https://example.com/dashboard
+    EmailPasswordSignIn:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: user@example.com
+        password:
+          type: string
+          minLength: 6
+          description: User password (minimum 6 characters)
+          example: securePassword123
+        callbackURL:
+          type: string
+          format: uri
+          description: >-
+            Optional URL to redirect to after successful sign in. If not
+            provided, the default redirect will be used.
+          example: https://app.example.com/dashboard
+      required:
+        - email
+        - password
+      title: Email Password Sign In Request
+      description: Request payload for signing in with email and password credentials
+      example:
+        email: user@example.com
+        password: securePassword123
+        callbackURL: https://app.example.com/dashboard
+    SignOutResponse:
+      type: object
+      properties: {}
+      additionalProperties:
+        nullable: true
+      title: Sign Out Response
+      description: Successful signout response
+  parameters: {}

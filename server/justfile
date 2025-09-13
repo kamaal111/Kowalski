@@ -23,6 +23,14 @@ dev-server: prepare migrate
 
     {{ PNR }} dev
 
+# Run server
+run-server: prepare compile
+    {{ PNR }} start
+
+# Compile server
+compile:
+    {{ PNR }} compile
+
 # Run TypeScript type checking
 typecheck: prepare
     {{ PNR }} typecheck
@@ -68,7 +76,7 @@ download-spec output_schema_filepath: prepare
         echo "🔄 Server not running, starting development server..."
         echo "   This will start the server in the background and download the spec"
 
-        just dev-server &
+        just run-server &
 
         echo "⏳ Waiting for server to start..."
         for i in {1..30}; do
