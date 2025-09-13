@@ -15,7 +15,6 @@ export const AuthResponseSchema = z
 
 export const SignOutResponseSchema = z
   .object({})
-  .loose()
   .openapi('SignOutResponse', { title: 'Sign Out Response', description: 'Successful signout response' });
 
 export const ErrorResponseSchema = z

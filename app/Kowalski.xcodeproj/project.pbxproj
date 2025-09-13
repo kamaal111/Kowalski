@@ -11,6 +11,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		2C4F700D2E75AC97008BDF91 /* KowalskiClient */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = KowalskiClient; sourceTree = "<group>"; };
 		2C7DA2F22E649C8E00C2454F /* Kowalski.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Kowalski.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2CF8E15B2E6DF01600DC771A /* KowalskiApp */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = KowalskiApp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -39,6 +40,7 @@
 			isa = PBXGroup;
 			children = (
 				2CF8E15B2E6DF01600DC771A /* KowalskiApp */,
+				2C4F700D2E75AC97008BDF91 /* KowalskiClient */,
 				2CF8E15C2E6DF0E800DC771A /* Frameworks */,
 				2C7DA2F42E649C8E00C2454F /* Kowalski */,
 				2C7DA2F32E649C8E00C2454F /* Products */,
@@ -94,7 +96,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1640;
-				LastUpgradeCheck = 1640;
+				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					2C7DA2F12E649C8E00C2454F = {
 						CreatedOnToolsVersion = 16.4;
@@ -175,6 +177,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = DXUKH9VF73;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -198,6 +201,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -237,6 +241,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = DXUKH9VF73;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -253,6 +258,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
@@ -265,9 +271,13 @@
 				CODE_SIGN_ENTITLEMENTS = Kowalski/Kowalski.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = DXUKH9VF73;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -304,9 +314,13 @@
 				CODE_SIGN_ENTITLEMENTS = Kowalski/Kowalski.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = DXUKH9VF73;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;

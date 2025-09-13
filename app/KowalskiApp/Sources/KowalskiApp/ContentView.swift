@@ -6,12 +6,15 @@
 //
 
 import SwiftUI
+import KowalskiClient
 
 struct EmailSignup: Codable {
     let name: String
     let email: String
     let password: String
 }
+
+let client = KowalskiClient()
 
 struct ContentView: View {
     var body: some View {
@@ -24,13 +27,7 @@ struct ContentView: View {
     }
 
     private func handlePress() async {
-        var req = URLRequest(url: URL(string: "http://localhost:8080/api/auth/sign-in/email")!)
-        req.httpMethod = "POST"
-        req.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        req.httpBody = try! JSONEncoder().encode(EmailSignup(name: "John Doe", email: "john@apple.com", password: "password20"))
-        let (data, response) = try! await URLSession.shared.data(for: req)
-        print("response", response)
-        print("data", String(data: data, encoding: .utf8)!)
+        try! await client.auth.signIn(email: "john@apple.com", password: "password20")
     }
 }
 

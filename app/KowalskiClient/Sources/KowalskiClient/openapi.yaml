@@ -172,8 +172,8 @@ components:
     SignOutResponse:
       type: object
       properties: {}
-      additionalProperties:
-        nullable: true
       title: Sign Out Response
       description: Successful signout response
   parameters: {}
+servers:
+  - url: http://127.0.0.1:8080

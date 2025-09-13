@@ -7,7 +7,7 @@ NVM := "nvm"
 PN := "pnpm"
 PNR := PN + " run"
 
-OUTPUT_SCHEMA_FILEPATH := "openapi.yaml"
+OUTPUT_SCHEMA_FILEPATH := "app/KowalskiClient/Sources/KowalskiClient/openapi.yaml"
 
 # List available commands
 default:
@@ -56,7 +56,6 @@ make-auth-tables:
 # Download OpenAPI specification (requires running server)
 download-spec:
     just server/download-spec ../{{ OUTPUT_SCHEMA_FILEPATH }}
-    just format
 
 # Lint the project
 lint:

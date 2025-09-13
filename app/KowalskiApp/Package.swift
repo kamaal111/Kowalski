@@ -1,4 +1,4 @@
-// swift-tools-version: 6.1
+// swift-tools-version: 6.2
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -9,7 +9,15 @@ let package = Package(
     products: [
         .library(name: "KowalskiApp", targets: ["KowalskiApp"]),
     ],
+    dependencies: [
+        .package(path: "../KowalskiClient"),
+    ],
     targets: [
-        .target(name: "KowalskiApp"),
+        .target(
+            name: "KowalskiApp",
+            dependencies: [
+                "KowalskiClient",
+            ]
+        ),
     ]
 )
