@@ -14,7 +14,7 @@ default:
     just --list --unsorted
 
 # Run dev server
-dev-server:
+dev-server: start-services
     just server/dev-server
 
 # Run server

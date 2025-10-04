@@ -17,7 +17,7 @@ public struct KowalskiClient: Sendable {
     public init(url: URL) {
         let client = Client(serverURL: url, transport: URLSessionTransport())
         self.client = client
-        self.auth = KowalskiAuthClient(client: client)
+        self.auth = KowalskiAuthClientImpl(client: client)
     }
 
     public init() {

@@ -5,25 +5,52 @@
 //  Created by Kamaal M Farah on 9/13/25.
 //
 
-public struct KowalskiAuthClient: Sendable {
+import OpenAPIRuntime
+
+public protocol KowalskiAuthClient: Sendable {
+    func signIn(
+        email: String,
+        password: String
+    ) async throws -> Result<KowalskiAuthSignInResponse, KowalskiAuthSignInErrors>
+}
+
+public enum KowalskiAuthSignInErrors: Error {
+    case unknown(statusCode: Int, payload: OpenAPIRuntime.UndocumentedPayload)
+    case unauthorized
+    case badRequest
+}
+
+public struct KowalskiAuthSignInResponse: Sendable, Hashable {
+    public let token: String
+    public let authToken: String
+    public let expiry: Int
+}
+
+struct KowalskiAuthClientImpl: KowalskiAuthClient {
     private let client: Client
 
     init(client: Client) {
         self.client = client
     }
 
-    public func signIn(email: String, password: String) async throws {
+    func signIn(
+        email: String,
+        password: String
+    ) async throws -> Result<KowalskiAuthSignInResponse, KowalskiAuthSignInErrors> {
         let response = try await client.postApiAuthSignInEmail(body: .json(.init(email: email, password: password)))
-        print("response", response)
         switch response {
         case let .undocumented(statusCode, payload):
-            break
-        case let .unauthorized(payload):
-            break
-        case let .badRequest(payload):
-            break
+            return .failure(.unknown(statusCode: statusCode, payload: payload))
+        case .unauthorized:
+            return .failure(.unauthorized)
+        case .badRequest:
+            return .failure(.badRequest)
         case let .ok(payload):
-            break
+            return .success(KowalskiAuthSignInResponse(
+                token: try payload.body.json.token,
+                authToken: payload.headers.setAuthToken,
+                expiry: Int(payload.headers.setAuthTokenExpiry)!
+            ))
         }
     }
 }

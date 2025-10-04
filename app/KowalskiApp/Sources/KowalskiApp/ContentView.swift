@@ -27,7 +27,8 @@ struct ContentView: View {
     }
 
     private func handlePress() async {
-        try! await client.auth.signIn(email: "john@apple.com", password: "password20")
+        let result = try! await client.auth.signIn(email: "john@apple.com", password: "password20")
+        print(result)
     }
 }
 
