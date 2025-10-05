@@ -11,12 +11,14 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../KowalskiClient"),
+        .package(path: "../KowalskiUtils"),
     ],
     targets: [
         .target(
             name: "KowalskiApp",
             dependencies: [
                 "KowalskiClient",
+                "KowalskiUtils",
             ]
         ),
     ]

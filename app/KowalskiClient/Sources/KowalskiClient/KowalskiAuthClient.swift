@@ -20,8 +20,7 @@ public enum KowalskiAuthSignInErrors: Error {
     case badRequest
 }
 
-public struct KowalskiAuthSignInResponse: Sendable, Hashable {
-    public let token: String
+public struct KowalskiAuthSignInResponse: Sendable, Hashable, Codable {
     public let authToken: String
     public let expiry: Int
 }
@@ -47,7 +46,6 @@ struct KowalskiAuthClientImpl: KowalskiAuthClient {
             return .failure(.badRequest)
         case let .ok(payload):
             return .success(KowalskiAuthSignInResponse(
-                token: try payload.body.json.token,
                 authToken: payload.headers.setAuthToken,
                 expiry: Int(payload.headers.setAuthTokenExpiry)!
             ))

@@ -6,15 +6,17 @@
 //
 
 import SwiftUI
+import KowalskiUtils
 import KowalskiClient
 
-struct EmailSignup: Codable {
-    let name: String
+let client = KowalskiClient()
+
+struct Credentials: Codable {
     let email: String
     let password: String
+    let authToken: String
+    let expiry: Int
 }
-
-let client = KowalskiClient()
 
 struct ContentView: View {
     var body: some View {
@@ -27,8 +29,24 @@ struct ContentView: View {
     }
 
     private func handlePress() async {
-        let result = try! await client.auth.signIn(email: "john@apple.com", password: "password20")
-        print(result)
+        let key = "\(Bundle.main.bundleIdentifier!).credentials"
+        if let credentials = try! Keychain.get(forKey: key).get() {
+            print(String(data: credentials, encoding: .utf8)!)
+        } else {
+            let email = "john@apple.com"
+            let password = "password20"
+            let response = try! await client.auth.signIn(email: email, password: password).get()
+            let jsonEncoder = JSONEncoder()
+            let credentials = Credentials(
+                email: email,
+                password: password,
+                authToken: response.authToken,
+                expiry: response.expiry
+            )
+            let data = try! jsonEncoder.encode(credentials)
+            let result = Keychain.set(data, forKey: key)
+            print(result)
+        }
     }
 }
 
