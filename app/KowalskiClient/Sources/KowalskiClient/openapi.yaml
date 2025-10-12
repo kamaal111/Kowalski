@@ -91,6 +91,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SignOutResponse'
+  /api/auth/session:
+    get:
+      tags:
+        - Authentication
+      summary: Get session
+      description: Get the current user session information
+      parameters:
+        - schema:
+            type: string
+            description: Bearer token for authentication
+            example: Bearer f21wcpz7Aokmlh2MB632MZpTgfruPc62
+          required: true
+          description: Bearer token for authentication
+          name: authorization
+          in: header
+      responses:
+        '200':
+          description: Session retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 components:
   schemas:
     AuthResponse:
@@ -189,6 +217,72 @@ components:
       properties: {}
       title: Sign Out Response
       description: Successful signout response
+    SessionResponse:
+      type: object
+      properties:
+        session:
+          type: object
+          properties:
+            expires_at:
+              type: string
+              format: date-time
+              description: Session expiration timestamp
+              example: '2025-10-12T12:08:28.382Z'
+            created_at:
+              type: string
+              format: date-time
+              description: Session creation timestamp
+              example: '2025-10-05T12:08:28.382Z'
+            updated_at:
+              type: string
+              format: date-time
+              description: Session last update timestamp
+              example: '2025-10-05T12:08:28.382Z'
+          required:
+            - expires_at
+            - created_at
+            - updated_at
+        user:
+          type: object
+          properties:
+            name:
+              type: string
+              description: User full name
+              example: John Doe
+            email:
+              type: string
+              format: email
+              description: User email address
+              example: john@apple.com
+            email_verified:
+              type: boolean
+              description: Whether the user email has been verified
+              example: false
+            created_at:
+              type: string
+              format: date-time
+              description: User account creation timestamp
+              example: '2025-10-05T12:08:28.374Z'
+          required:
+            - name
+            - email
+            - email_verified
+            - created_at
+      required:
+        - session
+        - user
+      title: Session Response
+      description: Session response containing session and user information
+      example:
+        session:
+          expires_at: '2025-10-12T12:08:28.382Z'
+          created_at: '2025-10-05T12:08:28.382Z'
+          updated_at: '2025-10-05T12:08:28.382Z'
+        user:
+          name: John Doe
+          email: john@apple.com
+          email_verified: false
+          created_at: '2025-10-05T12:08:28.374Z'
   parameters: {}
 servers:
   - url: http://127.0.0.1:8080

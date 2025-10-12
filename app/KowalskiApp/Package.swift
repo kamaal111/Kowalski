@@ -5,20 +5,18 @@ import PackageDescription
 
 let package = Package(
     name: "KowalskiApp",
-    platforms: [.macOS(.v11), .iOS(.v14)],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(name: "KowalskiApp", targets: ["KowalskiApp"]),
     ],
     dependencies: [
-        .package(path: "../KowalskiClient"),
-        .package(path: "../KowalskiUtils"),
+        .package(path: "../KowalskiFeatures"),
     ],
     targets: [
         .target(
             name: "KowalskiApp",
             dependencies: [
-                "KowalskiClient",
-                "KowalskiUtils",
+                .product(name: "KowalskiAuth", package: "KowalskiFeatures")
             ]
         ),
     ]

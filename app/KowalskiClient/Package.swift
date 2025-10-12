@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "KowalskiClient",
-    platforms: [.macOS(.v10_15)],
+    platforms: [.macOS(.v13)],
     products: [
         .library(name: "KowalskiClient", targets: ["KowalskiClient"]),
     ],
@@ -13,6 +13,8 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-openapi-urlsession", .upToNextMajor(from: "1.1.0")),
         .package(url: "https://github.com/apple/swift-openapi-runtime", .upToNextMajor(from: "1.8.2")),
         .package(url: "https://github.com/apple/swift-openapi-generator", .upToNextMajor(from: "1.10.2")),
+        .package(url: "https://github.com/apple/swift-http-types.git", .upToNextMajor(from: "1.4.0")),
+        .package(url: "https://github.com/Kamaalio/KamaalSwift", .upToNextMajor(from: "3.3.1")),
     ],
     targets: [
         .target(
@@ -20,6 +22,8 @@ let package = Package(
             dependencies: [
                 .product(name: "OpenAPIURLSession", package: "swift-openapi-urlsession"),
                 .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
+                .product(name: "HTTPTypes", package: "swift-http-types"),
+                .product(name: "KamaalUtils", package: "KamaalSwift"),
             ],
             plugins: [
                 .plugin(name: "OpenAPIGenerator", package: "swift-openapi-generator"),

@@ -1,0 +1,39 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Continue" : {
+
+    },
+    "Don't have an account yet?" : {
+
+    },
+    "Email" : {
+
+    },
+    "Failed to log in." : {
+
+    },
+    "Invalid credentials provided." : {
+
+    },
+    "Not an valid email" : {
+
+    },
+    "Password" : {
+
+    },
+    "Password must be atleast 8 characters" : {
+
+    },
+    "Sign In" : {
+
+    },
+    "Sign Up" : {
+
+    },
+    "SignUp" : {
+
+    }
+  },
+  "version" : "1.1"
+}

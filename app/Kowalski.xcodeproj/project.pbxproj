@@ -13,7 +13,9 @@
 /* Begin PBXFileReference section */
 		2C4F700D2E75AC97008BDF91 /* KowalskiClient */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = KowalskiClient; sourceTree = "<group>"; };
 		2C7DA2F22E649C8E00C2454F /* Kowalski.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Kowalski.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		2CC2B4302E928D77001508FD /* KowalskiUtils */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = KowalskiUtils; sourceTree = "<group>"; };
+		2CC2B4312E92A668001508FD /* KowalskiFeatures */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = KowalskiFeatures; sourceTree = "<group>"; };
+		2CC2B4322E92AFA9001508FD /* KowalskiDesignSystem */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = KowalskiDesignSystem; sourceTree = "<group>"; };
+		2CC2B4332E92B075001508FD /* swift-validator */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "swift-validator"; sourceTree = "<group>"; };
 		2CF8E15B2E6DF01600DC771A /* KowalskiApp */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = KowalskiApp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -42,7 +44,9 @@
 			children = (
 				2CF8E15B2E6DF01600DC771A /* KowalskiApp */,
 				2C4F700D2E75AC97008BDF91 /* KowalskiClient */,
-				2CC2B4302E928D77001508FD /* KowalskiUtils */,
+				2CC2B4322E92AFA9001508FD /* KowalskiDesignSystem */,
+				2CC2B4312E92A668001508FD /* KowalskiFeatures */,
+				2CC2B4332E92B075001508FD /* swift-validator */,
 				2CF8E15C2E6DF0E800DC771A /* Frameworks */,
 				2C7DA2F42E649C8E00C2454F /* Kowalski */,
 				2C7DA2F32E649C8E00C2454F /* Products */,

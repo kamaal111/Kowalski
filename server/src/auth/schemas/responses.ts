@@ -26,3 +26,58 @@ export const ErrorResponseSchema = z
     title: 'Error Response',
     description: 'Error response containing error message and optional error code',
   });
+
+export type SessionResponse = z.infer<typeof SessionResponseSchema>;
+
+export const SessionResponseSchema = z
+  .object({
+    session: z.object({
+      expires_at: z.iso.datetime({ offset: true }).openapi({
+        description: 'Session expiration timestamp',
+        example: '2025-10-12T12:08:28.382Z',
+      }),
+      created_at: z.iso.datetime({ offset: true }).openapi({
+        description: 'Session creation timestamp',
+        example: '2025-10-05T12:08:28.382Z',
+      }),
+      updated_at: z.iso.datetime({ offset: true }).openapi({
+        description: 'Session last update timestamp',
+        example: '2025-10-05T12:08:28.382Z',
+      }),
+    }),
+    user: z.object({
+      name: z.string().openapi({
+        description: 'User full name',
+        example: 'John Doe',
+      }),
+      email: z.email().openapi({
+        description: 'User email address',
+        example: 'john@apple.com',
+      }),
+      email_verified: z.boolean().openapi({
+        description: 'Whether the user email has been verified',
+        example: false,
+      }),
+      created_at: z.iso.datetime({ offset: true }).openapi({
+        description: 'User account creation timestamp',
+        example: '2025-10-05T12:08:28.374Z',
+      }),
+    }),
+  })
+  .openapi('SessionResponse', {
+    title: 'Session Response',
+    description: 'Session response containing session and user information',
+    example: {
+      session: {
+        expires_at: '2025-10-12T12:08:28.382Z',
+        created_at: '2025-10-05T12:08:28.382Z',
+        updated_at: '2025-10-05T12:08:28.382Z',
+      },
+      user: {
+        name: 'John Doe',
+        email: 'john@apple.com',
+        email_verified: false,
+        created_at: '2025-10-05T12:08:28.374Z',
+      },
+    },
+  });

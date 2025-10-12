@@ -4,16 +4,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "KowalskiUtils",
+    name: "swift-validator",
+    platforms: [.macOS(.v10_13), .iOS(.v12)],
     products: [
-        .library(
-            name: "KowalskiUtils",
-            targets: ["KowalskiUtils"]
-        ),
+        .library(name: "SwiftValidator", targets: ["SwiftValidator"]),
     ],
     targets: [
-        .target(
-            name: "KowalskiUtils"
-        ),
+        .target(name: "SwiftValidator"),
     ]
 )

@@ -1,6 +1,24 @@
 {
-  "originHash" : "e57bf82263e358a17fdba51ebd63f1ddab62f771846504006771355c5a5377f4",
+  "originHash" : "31be69db2c9d30fd2382dcfc5c2dded13ef86604badd2a766fc90f66a997b164",
   "pins" : [
+    {
+      "identity" : "confettiswiftui",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/simibac/ConfettiSwiftUI.git",
+      "state" : {
+        "revision" : "79666d42b882bf7921b1941fa7c636d681d77980",
+        "version" : "2.0.3"
+      }
+    },
+    {
+      "identity" : "kamaalswift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Kamaalio/KamaalSwift",
+      "state" : {
+        "revision" : "ca65aee2ef3cc703a50de7aaef7d69713733f566",
+        "version" : "3.4.0"
+      }
+    },
     {
       "identity" : "openapikit",
       "kind" : "remoteSourceControl",

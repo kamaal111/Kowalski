@@ -6,13 +6,17 @@
 //
 
 import SwiftUI
+import KowalskiAuth
 
 public struct KowalskiScene: Scene {
+    @State private var auth = KowalskiAuth()
+
     public init() { }
 
     public var body: some Scene {
         WindowGroup {
             ContentView()
+                .kowalskiAuth(auth)
         }
     }
 }
