@@ -9,11 +9,14 @@ import Foundation
 
 struct Credentials: Codable {
     let email: String
-    let password: String
     let authToken: String
-    let expiry: Int
+    let expiryDate: Date
 
     var isExpired: Bool {
-        Int(Date.now.timeIntervalSince1970) > expiry
+        Date.now >= expiryDate
+    }
+
+    func setExpiryDate(_ date: Date) -> Credentials {
+        Credentials(email: email, authToken: authToken, expiryDate: date)
     }
 }

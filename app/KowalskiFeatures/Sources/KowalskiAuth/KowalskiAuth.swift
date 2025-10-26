@@ -14,7 +14,7 @@ import KowalskiClient
 @Observable
 public final class KowalskiAuth {
     private(set) var initiallyValidatingToken: Bool
-    private(set) var session: LoggedInSession?
+    private(set) var session: UserSession?
 
     private let client = KowalskiClient()
     private let logger = KamaalLogger(from: KowalskiAuth.self, failOnError: true)
@@ -69,7 +69,7 @@ public final class KowalskiAuth {
     @discardableResult
     private func loadSession() async -> Result<Void, KowalskiAuthSessionErrors> {
         let result = await client.auth.session()
-            .map { LoggedInSession(name: $0.name, expiresAt: $0.expiresAt) }
+            .map { UserSession(name: $0.name, expiresAt: $0.expiresAt) }
             .mapError { error -> KowalskiAuthSessionErrors in
                 switch error {
                 case .unknown:
@@ -78,7 +78,7 @@ public final class KowalskiAuth {
                 case .unauthorized: return .unauthorized(context: error)
                 }
             }
-        let session: LoggedInSession
+        let session: UserSession
         switch result {
         case let .failure(failure): return .failure(failure)
         case let .success(success): session = success
@@ -90,7 +90,7 @@ public final class KowalskiAuth {
     }
 
     @MainActor
-    private func setSession(_ session: LoggedInSession) {
+    private func setSession(_ session: UserSession) {
         self.session = session
     }
 }

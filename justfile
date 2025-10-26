@@ -21,6 +21,10 @@ dev-server: start-services
 run-server:
     just server/run-server
 
+# Compile server
+compile-server:
+    just server/compile
+
 # Run database migrations
 migrate:
     just server/migrate

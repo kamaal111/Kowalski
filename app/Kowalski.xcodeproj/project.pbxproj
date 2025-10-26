@@ -15,13 +15,25 @@
 		2C7DA2F22E649C8E00C2454F /* Kowalski.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Kowalski.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2CC2B4312E92A668001508FD /* KowalskiFeatures */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = KowalskiFeatures; sourceTree = "<group>"; };
 		2CC2B4322E92AFA9001508FD /* KowalskiDesignSystem */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = KowalskiDesignSystem; sourceTree = "<group>"; };
-		2CC2B4332E92B075001508FD /* swift-validator */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "swift-validator"; sourceTree = "<group>"; };
 		2CF8E15B2E6DF01600DC771A /* KowalskiApp */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = KowalskiApp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		2CFA35FB2EAD305800E7CD0C /* Exceptions for "Kowalski" folder in "Kowalski" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 2C7DA2F12E649C8E00C2454F /* Kowalski */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		2C7DA2F42E649C8E00C2454F /* Kowalski */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				2CFA35FB2EAD305800E7CD0C /* Exceptions for "Kowalski" folder in "Kowalski" target */,
+			);
 			path = Kowalski;
 			sourceTree = "<group>";
 		};
@@ -46,7 +58,6 @@
 				2C4F700D2E75AC97008BDF91 /* KowalskiClient */,
 				2CC2B4322E92AFA9001508FD /* KowalskiDesignSystem */,
 				2CC2B4312E92A668001508FD /* KowalskiFeatures */,
-				2CC2B4332E92B075001508FD /* swift-validator */,
 				2CF8E15C2E6DF0E800DC771A /* Frameworks */,
 				2C7DA2F42E649C8E00C2454F /* Kowalski */,
 				2C7DA2F32E649C8E00C2454F /* Products */,
@@ -285,6 +296,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Kowalski/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -328,6 +340,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Kowalski/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

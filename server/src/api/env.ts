@@ -6,8 +6,10 @@ const EnvSchema = z.object({
   DATABASE_URL: z.string(),
 
   // Auth
-  BETTER_AUTH_SECRET: z.string().min(1),
+  BETTER_AUTH_SECRET: z.string().nonempty(),
   BETTER_AUTH_URL: z.url(),
+  BETTER_AUTH_SESSION_UPDATE_AGE_DAYS: z.coerce.number().gte(1).optional().default(1),
+  BETTER_AUTH_SESSION_EXPIRY_DAYS: z.coerce.number().gte(1).optional().default(30),
 });
 
 const env = EnvSchema.parse(process.env);

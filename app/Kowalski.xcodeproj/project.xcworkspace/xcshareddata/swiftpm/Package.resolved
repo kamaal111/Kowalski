@@ -1,5 +1,5 @@
 {
-  "originHash" : "31be69db2c9d30fd2382dcfc5c2dded13ef86604badd2a766fc90f66a997b164",
+  "originHash" : "a90ebc5fae27da717bfc4c5e76720f212f3510690c3c32c0f938037f49fd1b11",
   "pins" : [
     {
       "identity" : "confettiswiftui",
@@ -98,6 +98,15 @@
       "state" : {
         "revision" : "6fac6f7c428d5feea2639b5f5c8b06ddfb79434b",
         "version" : "1.1.0"
+      }
+    },
+    {
+      "identity" : "swift-validator",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/kamaal111/swift-validator",
+      "state" : {
+        "revision" : "4dfa30ec562b9542e4fef272430163abe1dedd8a",
+        "version" : "0.0.1"
       }
     },
     {

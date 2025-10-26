@@ -11,7 +11,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/Kamaalio/KamaalSwift", .upToNextMajor(from: "3.3.1")),
-        .package(path: "../swift-validator"),
+        .package(url: "https://github.com/kamaal111/swift-validator", .upToNextMinor(from: "0.0.1")),
     ],
     targets: [
         .target(

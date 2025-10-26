@@ -4,7 +4,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { swaggerUI } from '@hono/swagger-ui';
 
 import type { HonoContext, HonoEnvironment } from './contexts.js';
-import { InvalidPayload } from './exceptions.js';
+import { InvalidValidation } from './exceptions.js';
 
 export type OpenAPIRouter = OpenAPIHono<HonoEnvironment>;
 
@@ -12,7 +12,7 @@ export function openAPIRouterFactory() {
   return new OpenAPIHono<HonoEnvironment>({
     defaultHook: (result, c) => {
       if (!result.success) {
-        throw new InvalidPayload(c as HonoContext, result.error);
+        throw new InvalidValidation(c as HonoContext, result.error);
       }
     },
   });

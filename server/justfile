@@ -7,7 +7,7 @@ PNX := PN + " exec"
 TSX := PNX + " tsx"
 
 AUTH_CONFIG := "src/auth/better-auth.ts"
-AUTH_SCHEMA := "src/db/schema.ts"
+AUTH_SCHEMA := "src/db/schema/better-auth.ts"
 
 PORT := "8080"
 
@@ -44,7 +44,7 @@ test: prepare
     {{ PNR }} test
 
 # Generate migrations
-make-migrations: prepare
+make-migrations: prepare compile
     {{ PNX }} drizzle-kit generate
 
 # Run database migrations

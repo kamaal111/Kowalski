@@ -1,21 +1,17 @@
 import { createRoute } from '@hono/zod-openapi';
-import * as z from 'zod';
 
 import { ErrorResponseSchema, SessionResponseSchema } from '../schemas/responses.js';
+import { OPENAPI_TAG } from '../constants.js';
+import { AuthenticationHeaders } from '../schemas/headers.js';
 
 const sessionRoute = createRoute({
   method: 'get',
   path: '/session',
-  tags: ['Authentication'],
+  tags: [OPENAPI_TAG],
   summary: 'Get session',
   description: 'Get the current user session information',
   request: {
-    headers: z.object({
-      authorization: z.string().openapi({
-        description: 'Bearer token for authentication',
-        example: 'Bearer f21wcpz7Aokmlh2MB632MZpTgfruPc62',
-      }),
-    }),
+    headers: AuthenticationHeaders,
   },
   responses: {
     200: {

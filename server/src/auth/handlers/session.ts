@@ -1,15 +1,12 @@
 import type { HonoContext } from '../../api/contexts.js';
-import { APIException } from '../../api/exceptions.js';
 import { STATUS_CODES } from '../../constants/http.js';
+import { SessionNotFound } from '../exceptions.js';
 import type { SessionResponse } from '../schemas/responses.js';
 
 async function sessionHandler(c: HonoContext) {
   const sessionResponse = await c.get('auth').api.getSession({ headers: c.req.raw.headers });
   if (!sessionResponse) {
-    throw new APIException(c, STATUS_CODES.NOT_FOUND, {
-      message: 'Session not found',
-      code: 'SESSION_NOT_FOUND',
-    });
+    throw new SessionNotFound(c);
   }
 
   const response: SessionResponse = {

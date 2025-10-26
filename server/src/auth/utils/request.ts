@@ -1,9 +1,8 @@
 import z from 'zod';
 
-import type { HonoContext } from '../api/contexts.js';
-import { makeNewRequest } from '../utils/request.js';
-import { BetterAuthException } from './exceptions.js';
-import type { BODY_TYPES } from '../constants/request.js';
+import type { HonoContext } from '../../api/contexts.js';
+import { makeNewRequest } from '../../utils/request.js';
+import { BetterAuthException } from '../exceptions.js';
 
 const BetterAuthExceptionSchema = z.object({
   code: z.string(),
@@ -12,9 +11,9 @@ const BetterAuthExceptionSchema = z.object({
 
 export async function handleAuthRequest<Schema extends z.ZodType>(
   c: HonoContext,
-  options: { bodyType?: typeof BODY_TYPES.JSON; responseSchema: Schema },
+  options: { responseSchema: Schema },
 ): Promise<{ jsonResponse: z.infer<Schema>; response: Response }> {
-  const request = await makeNewRequest(c, options);
+  const request = await makeNewRequest(c);
   const response = await c.get('auth').handler(request);
   const jsonResponse: unknown = await response.json();
   const exceptionResult = await BetterAuthExceptionSchema.safeParseAsync(jsonResponse);

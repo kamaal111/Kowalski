@@ -33,10 +33,12 @@ public enum KowalskiAuthSessionErrors: Error {
 
 public struct KowalskiAuthSessionResponse: Hashable, Codable {
     public let name: String
+    public let email: String
     public let expiresAt: Date
 
-    public init(name: String, expiresAt: Date) {
+    public init(name: String, email: String, expiresAt: Date) {
         self.name = name
+        self.email = email
         self.expiresAt = expiresAt
     }
 }
@@ -46,11 +48,13 @@ struct KowalskiAuthClientImpl: KowalskiAuthClient {
 
     private let client: Client
     private let jsonEncoder: JSONEncoder
+    private let credentialsGetter: CredentialsGetter
 
     init(client: Client, credentialsKeychainKey: String) {
         self.client = client
         self.credentialsKeychainKey = credentialsKeychainKey
         self.jsonEncoder = JSONEncoder()
+        self.credentialsGetter = CredentialsGetter(keychainKey: credentialsKeychainKey)
     }
 
     func signIn(
@@ -76,16 +80,14 @@ struct KowalskiAuthClientImpl: KowalskiAuthClient {
             payload = ok
         }
 
-        let credentials = Credentials(
-            email: email,
-            password: password,
-            authToken: payload.headers.setAuthToken,
-            expiry: Int(payload.headers.setAuthTokenExpiry)!
-        )
+        let expiryTime = Date.now.timeIntervalSince1970 + TimeInterval(Int(payload.headers.setAuthTokenExpiry)!)
+        let expiryDate = Date(timeIntervalSince1970: expiryTime)
+        let credentials = Credentials(email: email, authToken: payload.headers.setAuthToken, expiryDate: expiryDate)
         let credentialsData: Data
         do {
             credentialsData = try jsonEncoder.encode(credentials)
         } catch {
+            assertionFailure("Valid case, should not fail here!")
             return .failure(.unknown(statusCode: 500, payload: nil))
         }
         Keychain.set(credentialsData, forKey: credentialsKeychainKey)
@@ -94,6 +96,11 @@ struct KowalskiAuthClientImpl: KowalskiAuthClient {
     }
 
     func session() async -> Result<KowalskiAuthSessionResponse, KowalskiAuthSessionErrors> {
+        guard let credentials = credentialsGetter.get() else {
+            assertionFailure("Should have credentials if calling session")
+            return .failure(.unauthorized)
+        }
+
         let response: Operations.GetApiAuthSession.Output
         do {
             response = try await client.getApiAuthSession()
@@ -118,7 +125,21 @@ struct KowalskiAuthClientImpl: KowalskiAuthClient {
             return .failure(.unknown(statusCode: 500, payload: nil))
         }
 
-        let session = KowalskiAuthSessionResponse(name: jsonPayload.user.name, expiresAt: jsonPayload.session.expiresAt)
+        let session = KowalskiAuthSessionResponse(
+            name: jsonPayload.user.name,
+            email: jsonPayload.user.email,
+            expiresAt: jsonPayload.session.expiresAt
+        )
+        let newCredentials = credentials.setExpiryDate(session.expiresAt)
+        let newCredentialsData: Data
+        do {
+            newCredentialsData = try jsonEncoder.encode(newCredentials)
+        } catch {
+            assertionFailure("Valid case, should not fail here!")
+            return .failure(.unknown(statusCode: 500, payload: nil))
+        }
+
+        Keychain.set(newCredentialsData, forKey: credentialsKeychainKey)
 
         return .success(session)
     }

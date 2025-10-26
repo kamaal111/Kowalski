@@ -1,5 +1,5 @@
 import type { HonoContext } from '../api/contexts.js';
-import { APIException } from '../api/exceptions.js';
+import { APIException, NotFound } from '../api/exceptions.js';
 import { STATUS_CODES, type StatusCode } from '../constants/http.js';
 
 const CODE_TO_STATUS: Record<string, StatusCode> = {
@@ -10,5 +10,11 @@ const CODE_TO_STATUS: Record<string, StatusCode> = {
 export class BetterAuthException extends APIException {
   constructor(c: HonoContext, { code, message, headers }: { code: string; message: string; headers: Headers }) {
     super(c, CODE_TO_STATUS[code] ?? STATUS_CODES.INTERNAL_SERVER_ERROR, { message, code, headers });
+  }
+}
+
+export class SessionNotFound extends NotFound {
+  constructor(c: HonoContext) {
+    super(c, { message: 'Session not found' });
   }
 }
