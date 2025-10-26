@@ -14,14 +14,26 @@ public struct KowalskiClient: Sendable {
 
     private let credentialsGetter: CredentialsGetter
 
-    public init(url: URL) {
+    private init(url: URL) {
         let credentialsKeychainKey = "\(ModuleConfig.identifier).credentials"
+        let credentialsGetter = CredentialsGetter(keychainKey: credentialsKeychainKey)
         let middlewares: [any ClientMiddleware] = [
-            AuthenticationMiddleware(keychainKey: credentialsKeychainKey)
+            AuthenticationMiddleware(keychainKey: credentialsKeychainKey, credentialsGetter: credentialsGetter)
         ]
-        let client = Client(serverURL: url, transport: URLSessionTransport(), middlewares: middlewares)
-        self.auth = KowalskiAuthClientImpl(client: client, credentialsKeychainKey: credentialsKeychainKey)
-        self.credentialsGetter = CredentialsGetter(keychainKey: credentialsKeychainKey)
+        let dateTranscoder = ISO8601DateTranscoder(options: [.withInternetDateTime, .withFractionalSeconds])
+        let configuration = Configuration(dateTranscoder: dateTranscoder)
+        let client = Client(
+            serverURL: url,
+            configuration: configuration,
+            transport: URLSessionTransport(),
+            middlewares: middlewares
+        )
+        self.auth = KowalskiAuthClientImpl(
+            client: client,
+            credentialsKeychainKey: credentialsKeychainKey,
+            credentialsGetter: credentialsGetter
+        )
+        self.credentialsGetter = credentialsGetter
     }
 
     public init() {

@@ -48,13 +48,7 @@ struct SignInFormContent: View {
             .focused($focusedTextfield, equals: .password)
             .onSubmit(handleSubmit)
             VStack {
-                Button(action: handleSubmit) {
-                    Text("Continue")
-                        .bold()
-                        .foregroundStyle(formIsValid ? Color.accentColor : Color.secondary)
-                }
-                .buttonStyle(.plain)
-                .disabled(!formIsValid)
+                SubmitButton(disabled: !formIsValid, action: handleSubmit)
             }
             .padding(.vertical, .small)
             Button(action: onSignUpPress) {
@@ -71,7 +65,7 @@ struct SignInFormContent: View {
         }
     }
 
-    private var loginPayload: SignInPayload {
+    private var signInPayload: SignInPayload {
         SignInPayload(email: email, password: password)
     }
 
@@ -83,7 +77,7 @@ struct SignInFormContent: View {
     private func handleSubmit() {
         guard formIsValid else { return }
 
-        onSignIn(loginPayload)
+        onSignIn(signInPayload)
     }
 }
 

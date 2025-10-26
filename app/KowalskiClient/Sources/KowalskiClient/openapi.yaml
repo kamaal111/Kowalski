@@ -17,6 +17,21 @@ paths:
       responses:
         '201':
           description: Account created successfully
+          headers:
+            set-auth-token:
+              schema:
+                type: string
+                description: Authentication token set in response header
+                example: f21wcpz7Aokmlh2MB632MZpTgfruPc62
+              required: true
+              description: Authentication token set in response header
+            set-auth-token-expiry:
+              schema:
+                type: string
+                description: Token expiry time in seconds (as a string representing digits)
+                example: '604800'
+              required: true
+              description: Token expiry time in seconds (as a string representing digits)
           content:
             application/json:
               schema:
@@ -165,7 +180,8 @@ components:
           example: SecurePassword123!
         name:
           type: string
-          description: User display name
+          minLength: 3
+          description: User display name (minimum 2 words, each with at least one letter)
           example: John Doe
         callbackURL:
           type: string

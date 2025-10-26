@@ -14,10 +14,6 @@ extension View {
     }
 }
 
-extension EnvironmentValues {
-    @Entry public var toast: Binding<Toast?> = .constant(nil)
-}
-
 private struct ToastModifier: ViewModifier {
     @State private var workItem: DispatchWorkItem?
 
@@ -37,7 +33,6 @@ private struct ToastModifier: ViewModifier {
                 }.animation(.spring, value: toast)
             )
             .onChange(of: toast, showToast)
-            .environment(\.toast, $toast)
     }
 
     @ViewBuilder

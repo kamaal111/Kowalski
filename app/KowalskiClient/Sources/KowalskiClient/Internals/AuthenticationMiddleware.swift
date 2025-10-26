@@ -15,9 +15,9 @@ struct AuthenticationMiddleware {
 
     private let credentialsGetter: CredentialsGetter
 
-    init(keychainKey: String) {
+    init(keychainKey: String, credentialsGetter: CredentialsGetter) {
         self.keychainKey = keychainKey
-        self.credentialsGetter = CredentialsGetter(keychainKey: keychainKey)
+        self.credentialsGetter = credentialsGetter
     }
 }
 

@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Confirm Password" : {
+
+    },
     "Continue" : {
 
     },
@@ -13,7 +16,16 @@
     "Failed to log in." : {
 
     },
+    "Failed to sign up." : {
+
+    },
     "Invalid credentials provided." : {
+
+    },
+    "Name" : {
+
+    },
+    "Name should contain at least 2 words" : {
 
     },
     "Not an valid email" : {
@@ -25,13 +37,16 @@
     "Password must be atleast 8 characters" : {
 
     },
+    "Password must be the same as the password above" : {
+
+    },
     "Sign In" : {
 
     },
     "Sign Up" : {
 
     },
-    "SignUp" : {
+    "User already exists" : {
 
     }
   },

@@ -4,10 +4,11 @@ import { ErrorResponseSchema, AuthResponseSchema } from '../schemas/responses.js
 import { MIME_TYPES } from '../../constants/request.js';
 import { OPENAPI_TAG } from '../constants.js';
 import { STATUS_CODES } from '../../constants/http.js';
+import { TokenHeaders } from '../schemas/headers.js';
 
 const EmailPasswordSignUpSchema = z
   .object({
-    email: z.email().min(1).openapi({
+    email: z.email().nonempty().openapi({
       description: 'User email address',
       example: 'john.doe@example.com',
     }),
@@ -15,10 +16,23 @@ const EmailPasswordSignUpSchema = z
       description: 'User password (minimum 8 characters)',
       example: 'SecurePassword123!',
     }),
-    name: z.string().openapi({
-      description: 'User display name',
-      example: 'John Doe',
-    }),
+    name: z
+      .string()
+      .trim()
+      .min(3)
+      .refine(val => val === val.trim(), {
+        message: 'Name must not have leading or trailing spaces',
+      })
+      .refine(val => /^[^\s]+(\s[^\s]+)+$/.test(val), {
+        message: 'Name must contain at least 2 words separated by single spaces',
+      })
+      .refine(val => val.split(/\s+/).every(word => /[a-zA-Z]/.test(word)), {
+        message: 'Each word must contain at least one letter',
+      })
+      .openapi({
+        description: 'User display name (minimum 2 words, each with at least one letter)',
+        example: 'John Doe',
+      }),
     callbackURL: z.url().optional().openapi({
       description: 'URL to redirect to after sign up',
       example: 'https://example.com/dashboard',
@@ -54,6 +68,7 @@ const signUpRoute = createRoute({
       content: {
         [MIME_TYPES.APPLICATION_JSON]: { schema: AuthResponseSchema },
       },
+      headers: TokenHeaders,
     },
     [STATUS_CODES.BAD_REQUEST]: {
       description: 'Invalid request or email already exists',

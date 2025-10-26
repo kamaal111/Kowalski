@@ -13,6 +13,7 @@ public enum KowalskiTextFieldValidationRules {
     case minimumLength(length: Int, message: String?)
     case isSameAs(value: String, message: String?)
     case email(message: String?)
+    case wordCound(count: Int, message: String)
 }
 
 public struct KowalskiTextFieldErrorResult: Equatable {
@@ -75,6 +76,8 @@ public struct KowalskiTextField: View {
                 StringIsTheSameValue(value: value, message: message)
             case let .email(message):
                 StringIsEmail(message: message)
+            case let .wordCound(count: count, message: message):
+                StringValidateWordCount(wordCount: count, message: message)
             }
         })
     }

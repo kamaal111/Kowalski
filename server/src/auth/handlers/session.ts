@@ -1,5 +1,6 @@
 import type { HonoContext } from '../../api/contexts.js';
 import { STATUS_CODES } from '../../constants/http.js';
+import { toISO8601String } from '../../utils/strings.js';
 import { SessionNotFound } from '../exceptions.js';
 import type { SessionResponse } from '../schemas/responses.js';
 
@@ -11,15 +12,15 @@ async function sessionHandler(c: HonoContext) {
 
   const response: SessionResponse = {
     session: {
-      expires_at: sessionResponse.session.expiresAt.toISOString(),
-      created_at: sessionResponse.session.createdAt.toISOString(),
-      updated_at: sessionResponse.session.updatedAt.toISOString(),
+      expires_at: toISO8601String(sessionResponse.session.expiresAt),
+      created_at: toISO8601String(sessionResponse.session.createdAt),
+      updated_at: toISO8601String(sessionResponse.session.updatedAt),
     },
     user: {
       name: sessionResponse.user.name,
       email: sessionResponse.user.email,
       email_verified: sessionResponse.user.emailVerified,
-      created_at: sessionResponse.user.createdAt.toISOString(),
+      created_at: toISO8601String(sessionResponse.user.createdAt),
     },
   };
 

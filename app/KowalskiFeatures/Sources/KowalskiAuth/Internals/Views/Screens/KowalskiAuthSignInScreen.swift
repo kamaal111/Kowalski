@@ -14,14 +14,17 @@ struct KowalskiAuthSignInScreen: View {
 
     @State private var signUpScreenIsShown = false
     @State private var toast: Toast?
+    @State private var signingIn = false
 
     var body: some View {
         KFormBox(localizedTitle: "Sign In", bundle: .module, minSize: ModuleConfig.screenMinSize, content: {
             SignInFormContent(onSignIn: handleSignIn, onSignUpPress: handleSignUpPress)
+                .disabled(signingIn)
         })
         .navigationDestination(isPresented: $signUpScreenIsShown) {
-            KowalskiAuthSignUpScreen()
+            KowalskiAuthSignUpScreen(toast: $toast)
                 .toastView(toast: $toast)
+                .environment(auth)
         }
         .toolbar {
             ToolbarItem(placement: .automatic) {
@@ -40,13 +43,15 @@ struct KowalskiAuthSignInScreen: View {
     }
 
     private func handleSignIn(_ payload: SignInPayload) {
+        signingIn = true
         Task {
-            let result = await auth.signIn(email: payload.email, password: payload.password)
+            let result = await auth.signIn(payload)
             switch result {
             case let .failure(failure):
                 toast = .error(message: failure.errorDescription ?? failure.localizedDescription)
             case .success: break
             }
+            signingIn = false
         }
     }
 }

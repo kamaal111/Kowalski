@@ -1,8 +1,10 @@
 import z from 'zod';
 
 import type { HonoContext } from '../../api/contexts.js';
-import { makeNewRequest } from '../../utils/request.js';
+import { getValueFromSetCookie, makeNewRequest } from '../../utils/request.js';
 import { BetterAuthException } from '../exceptions.js';
+import { APIException } from '../../api/exceptions.js';
+import { STATUS_CODES } from '../../constants/http.js';
 
 const BetterAuthExceptionSchema = z.object({
   code: z.string(),
@@ -28,4 +30,27 @@ export async function handleAuthRequest<Schema extends z.ZodType>(
   const validatedResponse = await options.responseSchema.parseAsync(jsonResponse);
 
   return { jsonResponse: validatedResponse, response };
+}
+
+export function headersWithAuthExpiry(c: HonoContext, response: Response): Headers {
+  const maxAgeValue = getValueFromSetCookie(response.headers, 'Max-Age');
+  if (!maxAgeValue) {
+    throw new APIException(c, STATUS_CODES.INTERNAL_SERVER_ERROR, {
+      message: 'Failed to retrieve authentication token expiry',
+      code: 'MISSING_TOKEN_EXPIRY',
+    });
+  }
+
+  const maxAgeNumber = Number(maxAgeValue);
+  if (Number.isNaN(maxAgeNumber)) {
+    throw new APIException(c, STATUS_CODES.INTERNAL_SERVER_ERROR, {
+      message: 'Invalid authentication token expiry format',
+      code: 'INVALID_TOKEN_EXPIRY',
+    });
+  }
+
+  const headers = new Headers(response.headers);
+  headers.set('set-auth-token-expiry', maxAgeNumber.toString());
+
+  return headers;
 }
