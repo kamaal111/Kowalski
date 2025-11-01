@@ -18,7 +18,8 @@ public struct KowalskiClient: Sendable {
         let credentialsKeychainKey = "\(ModuleConfig.identifier).credentials"
         let credentialsGetter = CredentialsGetter(keychainKey: credentialsKeychainKey)
         let middlewares: [any ClientMiddleware] = [
-            AuthenticationMiddleware(keychainKey: credentialsKeychainKey, credentialsGetter: credentialsGetter)
+            AuthenticationMiddleware(keychainKey: credentialsKeychainKey, credentialsGetter: credentialsGetter),
+            RequiredHeadersMiddleware()
         ]
         let dateTranscoder = ISO8601DateTranscoder(options: [.withInternetDateTime, .withFractionalSeconds])
         let configuration = Configuration(dateTranscoder: dateTranscoder)

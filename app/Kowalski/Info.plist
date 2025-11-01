@@ -9,7 +9,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>io.kamaal.kowalski</string>
+				<string>kowalski</string>
 			</array>
 		</dict>
 	</array>

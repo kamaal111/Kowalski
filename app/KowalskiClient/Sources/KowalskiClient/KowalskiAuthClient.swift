@@ -161,6 +161,7 @@ struct KowalskiAuthClientImpl: KowalskiAuthClient {
         let payload: Operations.GetApiAuthSession.Output.Ok
         switch response {
         case .notFound:
+            Keychain.delete(forKey: credentialsKeychainKey)
             return .failure(.unauthorized)
         case let .undocumented(statusCode, payload):
             return .failure(.unknown(statusCode: statusCode, payload: payload, context: nil))

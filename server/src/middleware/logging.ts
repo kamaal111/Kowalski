@@ -3,14 +3,26 @@ import { logger as honoLoggerMiddleware } from 'hono/logger';
 
 import type { HonoContext } from '../api/contexts.js';
 
+function logConstructor(c: HonoContext, str: string, ...rest: string[]) {
+  return [c.get('requestId'), str, rest.join('')].join(' ');
+}
+
+export function errorLogger(c: HonoContext, str: string, ...rest: string[]) {
+  console.error(logConstructor(c, str, ...rest));
+}
+
+export function logger(c: HonoContext, str: string, ...rest: string[]) {
+  console.log(logConstructor(c, str, ...rest));
+}
+
 function loggingMiddleware(c: HonoContext, next: Next) {
   return honoLoggerMiddleware((str: string, ...rest: string[]) => {
-    console.log(c.get('requestId'), str, rest.join(''));
+    logger(c, str, ...rest);
   })(c, next);
 }
 
 export function makeUncaughtErrorLog(c: HonoContext, err: unknown) {
-  console.error(`${c.req.method} ${c.req.path} Uncaught exception; request-id: ${c.get('requestId')}; ${String(err)}`);
+  errorLogger(c, `${c.req.method} ${c.req.path} Uncaught exception; ${String(err)}`);
 }
 
 export default loggingMiddleware;

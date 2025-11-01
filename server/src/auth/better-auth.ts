@@ -12,6 +12,7 @@ const { BETTER_AUTH_SESSION_UPDATE_AGE_DAYS, BETTER_AUTH_SESSION_EXPIRY_DAYS } =
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: 'pg' }),
   emailAndPassword: { enabled: true, requireEmailVerification: false },
+  trustedOrigins: ['kowalski://'],
   session: {
     expiresIn: 60 * 60 * 24 * BETTER_AUTH_SESSION_EXPIRY_DAYS,
     updateAge: 60 * 60 * 24 * BETTER_AUTH_SESSION_UPDATE_AGE_DAYS,

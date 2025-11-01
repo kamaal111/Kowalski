@@ -5,6 +5,7 @@ import { getValueFromSetCookie, makeNewRequest } from '../../utils/request.js';
 import { BetterAuthException } from '../exceptions.js';
 import { APIException } from '../../api/exceptions.js';
 import { STATUS_CODES } from '../../constants/http.js';
+import { errorLogger } from '../../middleware/logging.js';
 
 const BetterAuthExceptionSchema = z.object({
   code: z.string(),
@@ -20,6 +21,8 @@ export async function handleAuthRequest<Schema extends z.ZodType>(
   const jsonResponse: unknown = await response.json();
   const exceptionResult = await BetterAuthExceptionSchema.safeParseAsync(jsonResponse);
   if (exceptionResult.success) {
+    errorLogger(c, `better-auth error -> ${JSON.stringify(exceptionResult.data)}`);
+
     throw new BetterAuthException(c, {
       code: exceptionResult.data.code,
       message: exceptionResult.data.message,
