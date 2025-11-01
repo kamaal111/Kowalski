@@ -3,7 +3,7 @@ info:
   title: Kowalski API
   version: 1.0.0
 paths:
-  /api/auth/sign-up/email:
+  /app-api/auth/sign-up/email:
     post:
       tags:
         - Authentication
@@ -48,7 +48,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /api/auth/sign-in/email:
+  /app-api/auth/sign-in/email:
     post:
       tags:
         - Authentication
@@ -93,7 +93,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /api/auth/sign-out:
+  /app-api/auth/sign-out:
     post:
       tags:
         - Authentication
@@ -106,7 +106,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SignOutResponse'
-  /api/auth/session:
+  /app-api/auth/session:
     get:
       tags:
         - Authentication

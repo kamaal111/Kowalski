@@ -10,7 +10,8 @@ import loggingMiddleware from './middleware/logging.js';
 import { injectRequestContext } from './api/contexts.js';
 
 import db from './db/index.js';
-import { auth, authApi } from './auth/index.js';
+import { auth } from './auth/index.js';
+import appApi from './app-api/index.js';
 
 const app = withOpenAPIDocumentation(
   openAPIRouterFactory()
@@ -19,7 +20,7 @@ const app = withOpenAPIDocumentation(
     .use(secureHeaders())
     .use(loggingMiddleware)
     .use(injectRequestContext({ db, auth }))
-    .route('/api/auth', authApi),
+    .route('/app-api', appApi),
 );
 
 const { PORT, DEBUG } = env;

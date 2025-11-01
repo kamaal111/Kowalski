@@ -71,16 +71,16 @@ struct KowalskiAuthClientImpl: KowalskiAuthClient {
     // MARK: Sign Up
 
     func signUp(name: String, email: String, password: String) async -> Result<Void, KowalskiAuthSignUpErrors> {
-        let response: Operations.PostApiAuthSignUpEmail.Output
+        let response: Operations.PostAppApiAuthSignUpEmail.Output
         do {
-            response = try await client.postApiAuthSignUpEmail(
+            response = try await client.postAppApiAuthSignUpEmail(
                 body: .json(.init(email: email, password: password, name: name))
             )
         } catch {
             return .failure(.unknown(statusCode: 503, payload: nil, context: error))
         }
 
-        let payload: Operations.PostApiAuthSignUpEmail.Output.Created
+        let payload: Operations.PostAppApiAuthSignUpEmail.Output.Created
         switch response {
         case .badRequest:
             return .failure(.badRequest)
@@ -111,14 +111,14 @@ struct KowalskiAuthClientImpl: KowalskiAuthClient {
         email: String,
         password: String
     ) async -> Result<Void, KowalskiAuthSignInErrors> {
-        let response: Operations.PostApiAuthSignInEmail.Output
+        let response: Operations.PostAppApiAuthSignInEmail.Output
         do {
-            response = try await client.postApiAuthSignInEmail(body: .json(.init(email: email, password: password)))
+            response = try await client.postAppApiAuthSignInEmail(body: .json(.init(email: email, password: password)))
         } catch {
             return .failure(.unknown(statusCode: 503, payload: nil, context: error))
         }
 
-        let payload: Operations.PostApiAuthSignInEmail.Output.Ok
+        let payload: Operations.PostAppApiAuthSignInEmail.Output.Ok
         switch response {
         case let .undocumented(statusCode, payload):
             return .failure(.unknown(statusCode: statusCode, payload: payload, context: nil))
@@ -151,14 +151,14 @@ struct KowalskiAuthClientImpl: KowalskiAuthClient {
             return .failure(.unauthorized)
         }
 
-        let response: Operations.GetApiAuthSession.Output
+        let response: Operations.GetAppApiAuthSession.Output
         do {
-            response = try await client.getApiAuthSession()
+            response = try await client.getAppApiAuthSession()
         } catch {
             return .failure(.unknown(statusCode: 503, payload: nil, context: error))
         }
 
-        let payload: Operations.GetApiAuthSession.Output.Ok
+        let payload: Operations.GetAppApiAuthSession.Output.Ok
         switch response {
         case .notFound:
             Keychain.delete(forKey: credentialsKeychainKey)
