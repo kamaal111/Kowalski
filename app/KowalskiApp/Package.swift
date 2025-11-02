@@ -16,7 +16,8 @@ let package = Package(
         .target(
             name: "KowalskiApp",
             dependencies: [
-                .product(name: "KowalskiAuth", package: "KowalskiFeatures")
+                .product(name: "KowalskiAuth", package: "KowalskiFeatures"),
+                .product(name: "KowalskiPortfolio", package: "KowalskiFeatures"),
             ]
         ),
     ]

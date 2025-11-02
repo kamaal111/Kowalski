@@ -9,6 +9,7 @@ let package = Package(
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(name: "KowalskiAuth", targets: ["KowalskiAuth"]),
+        .library(name: "KowalskiPortfolio", targets: ["KowalskiPortfolio"]),
     ],
     dependencies: [
         .package(url: "https://github.com/Kamaalio/KamaalSwift", .upToNextMajor(from: "3.3.1")),
@@ -22,6 +23,13 @@ let package = Package(
                 .product(name: "KamaalLogger", package: "KamaalSwift"),
                 .product(name: "KamaalUI", package: "KamaalSwift"),
                 "KowalskiClient",
+                "KowalskiDesignSystem",
+            ]
+        ),
+        .target(
+            name: "KowalskiPortfolio",
+            dependencies: [
+                "KowalskiAuth",
                 "KowalskiDesignSystem",
             ]
         ),

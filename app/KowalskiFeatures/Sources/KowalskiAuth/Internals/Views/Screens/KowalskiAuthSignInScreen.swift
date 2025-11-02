@@ -58,5 +58,5 @@ struct KowalskiAuthSignInScreen: View {
 
 #Preview {
     KowalskiAuthSignInScreen()
-        .preview()
+        .preview(withCredentials: false)
 }

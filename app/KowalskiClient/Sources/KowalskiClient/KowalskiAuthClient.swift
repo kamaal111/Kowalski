@@ -9,14 +9,36 @@ import Foundation
 import KamaalUtils
 import OpenAPIRuntime
 
-public protocol KowalskiAuthClient: Sendable {
-    var credentialsKeychainKey: String { get }
+// MARK: Protocol
 
+public protocol KowalskiAuthClient: Sendable {
     func signUp(name: String, email: String, password: String) async -> Result<Void, KowalskiAuthSignUpErrors>
 
     func signIn(email: String, password: String) async -> Result<Void, KowalskiAuthSignInErrors>
 
     func session() async -> Result<KowalskiAuthSessionResponse, KowalskiAuthSessionErrors>
+}
+
+// MARK: Factory
+
+struct KowalskiAuthClientFactory {
+    private init() { }
+
+    static func `default`(
+        client: Client,
+        credentialsKeychainKey: String,
+        credentialsGetter: CredentialsGetter
+    ) -> KowalskiAuthClient {
+        KowalskiAuthClientImpl(
+            client: client,
+            credentialsKeychainKey: credentialsKeychainKey,
+            credentialsGetter: credentialsGetter
+        )
+    }
+
+    static func preview() -> KowalskiAuthClient {
+        KowalskiAuthClientPreview()
+    }
 }
 
 // MARK: Errors
@@ -61,7 +83,7 @@ struct KowalskiAuthClientImpl: KowalskiAuthClient {
     private let jsonEncoder: JSONEncoder
     private let credentialsGetter: CredentialsGetter
 
-    init(client: Client, credentialsKeychainKey: String, credentialsGetter: CredentialsGetter) {
+    fileprivate init(client: Client, credentialsKeychainKey: String, credentialsGetter: CredentialsGetter) {
         self.client = client
         self.credentialsKeychainKey = credentialsKeychainKey
         self.jsonEncoder = JSONEncoder()
@@ -201,5 +223,27 @@ struct KowalskiAuthClientImpl: KowalskiAuthClient {
         let credentials = Credentials(email: email, authToken: token, expiryDate: expiryDate)
         let credentialsData = try jsonEncoder.encode(credentials)
         Keychain.set(credentialsData, forKey: credentialsKeychainKey)
+    }
+}
+
+// MARK: Preview
+
+struct KowalskiAuthClientPreview: KowalskiAuthClient {
+    fileprivate init() { }
+
+    func signUp(name: String, email: String, password: String) async -> Result<Void, KowalskiAuthSignUpErrors> {
+        .success(())
+    }
+
+    func signIn(email: String, password: String) async -> Result<Void, KowalskiAuthSignInErrors> {
+        .success(())
+    }
+
+    func session() async -> Result<KowalskiAuthSessionResponse, KowalskiAuthSessionErrors> {
+        .success(.init(
+            name: "Yami Sukehiro",
+            email: "yami@bulls.io",
+            expiresAt: Date(timeIntervalSince1970: 1762088596)
+        ))
     }
 }

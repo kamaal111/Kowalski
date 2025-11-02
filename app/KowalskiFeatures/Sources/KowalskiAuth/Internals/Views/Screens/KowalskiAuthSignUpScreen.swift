@@ -39,5 +39,5 @@ struct KowalskiAuthSignUpScreen: View {
 
 #Preview {
     KowalskiAuthSignUpScreen(toast: .constant(nil))
-        .preview()
+        .preview(withCredentials: false)
 }

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import KowalskiAuth
 
 extension View {
     func preview(withCredentials: Bool) -> some View {

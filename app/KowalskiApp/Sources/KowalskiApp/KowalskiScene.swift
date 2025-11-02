@@ -7,15 +7,16 @@
 
 import SwiftUI
 import KowalskiAuth
+import KowalskiPortfolio
 
 public struct KowalskiScene: Scene {
-    @State private var auth = KowalskiAuth()
+    @State private var auth = KowalskiAuth.default()
 
     public init() { }
 
     public var body: some Scene {
         WindowGroup {
-            ContentView()
+            KowalskiPortfolioScreen()
                 .kowalskiAuth(auth)
         }
     }

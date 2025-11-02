@@ -20,8 +20,7 @@ public final class KowalskiAuth {
     private let logger = KamaalLogger(from: KowalskiAuth.self, failOnError: true)
     private let jsonDecoder = JSONDecoder()
 
-    public init() {
-        let client = KowalskiClient()
+    private init(client: KowalskiClient) {
         self.client = client
         if client.hasValidCredentials {
             self.initiallyValidatingToken = true
@@ -32,6 +31,16 @@ public final class KowalskiAuth {
         } else {
             self.initiallyValidatingToken = false
         }
+    }
+
+    private init(client: KowalskiClient, withCredentials: Bool) {
+        self.client = client
+        self.initiallyValidatingToken = false
+        if withCredentials {
+            let oneDay: TimeInterval = 86400
+            self.session = UserSession(name: "Yami Sukehiro", expiresAt: Date.now.addingTimeInterval(oneDay))
+        }
+        Task { await loadSession() }
     }
 
     var isLoggedIn: Bool {
@@ -98,6 +107,20 @@ public final class KowalskiAuth {
                     return .generalFailure(context: error)
                 }
             }
+    }
+
+    // MARK: Factory
+
+    public static func `default`() -> KowalskiAuth {
+        let client = KowalskiClient.default()
+
+        return KowalskiAuth(client: client)
+    }
+
+    public static func preview(withCredentials: Bool) -> KowalskiAuth {
+        let client = KowalskiClient.preview(withCredentials: withCredentials)
+
+        return KowalskiAuth(client: client, withCredentials: withCredentials)
     }
 
     @discardableResult

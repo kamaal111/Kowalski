@@ -8,9 +8,9 @@ import env from './api/env.js';
 import { openAPIRouterFactory, withOpenAPIDocumentation } from './api/open-api.js';
 import loggingMiddleware from './middleware/logging.js';
 import { injectRequestContext } from './api/contexts.js';
+import { auth } from './auth/index.js';
 
 import db from './db/index.js';
-import { auth } from './auth/index.js';
 import appApi from './app-api/index.js';
 
 const app = withOpenAPIDocumentation(
