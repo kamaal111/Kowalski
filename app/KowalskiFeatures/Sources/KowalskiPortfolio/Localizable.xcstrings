@@ -1,7 +1,43 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Hello, World" : {
+    "" : {
+
+    },
+    "Add Entry" : {
+
+    },
+    "Amount" : {
+
+    },
+    "Amount should be numeric" : {
+
+    },
+    "Entry" : {
+
+    },
+    "Fix" : {
+
+    },
+    "Invalid purchase price" : {
+
+    },
+    "Kowalski" : {
+
+    },
+    "Purchase" : {
+
+    },
+    "Purchase price" : {
+
+    },
+    "Sell" : {
+
+    },
+    "Symbol can not be empty" : {
+
+    },
+    "Symbol or ISIN" : {
 
     }
   },

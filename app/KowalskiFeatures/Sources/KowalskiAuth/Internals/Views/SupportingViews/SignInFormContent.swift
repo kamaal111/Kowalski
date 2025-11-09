@@ -71,7 +71,7 @@ struct SignInFormContent: View {
 
     private var formIsValid: Bool {
         [emailError, passwordError]
-            .allSatisfy({ result in result?.valid == true })
+            .allSatisfy({ result in result?.isValid == true })
     }
 
     private func handleSubmit() {

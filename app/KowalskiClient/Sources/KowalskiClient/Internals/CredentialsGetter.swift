@@ -31,7 +31,7 @@ struct CredentialsGetterFactory {
             nil
         }
 
-        return CredentialsGetterPreview(crendentials: credentials)
+        return CredentialsGetterPreview(credentials: credentials)
     }
 }
 
@@ -56,8 +56,8 @@ struct CredentialsGetterImpl: CredentialsGetter {
 struct CredentialsGetterPreview: CredentialsGetter {
     let credentials: Credentials?
 
-    init(crendentials: Credentials?) {
-        self.credentials = crendentials
+    init(credentials: Credentials?) {
+        self.credentials = credentials
     }
 
     func get() -> Credentials? {

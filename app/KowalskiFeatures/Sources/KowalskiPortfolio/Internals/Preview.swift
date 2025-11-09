@@ -9,7 +9,7 @@ import SwiftUI
 import KowalskiAuth
 
 extension View {
-    func preview(withCredentials: Bool) -> some View {
+    func preview(withCredentials: Bool = true) -> some View {
         let auth = KowalskiAuth.preview(withCredentials: withCredentials)
 
         return self

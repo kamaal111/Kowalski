@@ -16,8 +16,10 @@ public struct KowalskiScene: Scene {
 
     public var body: some Scene {
         WindowGroup {
-            KowalskiPortfolioScreen()
-                .kowalskiAuth(auth)
+            NavigationStack {
+                KowalskiPortfolioScreen()
+            }
+            .kowalskiAuth(auth)
         }
     }
 }

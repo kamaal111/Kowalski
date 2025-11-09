@@ -32,7 +32,7 @@ struct SignUpFormContent: View {
                 bundle: .module,
                 variant: .text,
                 validations: [
-                    .wordCound(
+                    .wordCount(
                         count: 2,
                         message: NSLocalizedString("Name should contain at least 2 words", comment: ""),
                     )
@@ -93,7 +93,7 @@ struct SignUpFormContent: View {
 
     private var formIsValid: Bool {
         [nameError, emailError, passwordError, verifyPasswordError]
-            .allSatisfy({ result in result?.valid == true })
+            .allSatisfy({ result in result?.isValid == true })
     }
 
     private func handleSubmit() {

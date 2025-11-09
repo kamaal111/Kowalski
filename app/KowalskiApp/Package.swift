@@ -18,6 +18,9 @@ let package = Package(
             dependencies: [
                 .product(name: "KowalskiAuth", package: "KowalskiFeatures"),
                 .product(name: "KowalskiPortfolio", package: "KowalskiFeatures"),
+            ],
+            swiftSettings: [
+                .treatAllWarnings(as: .error),
             ]
         ),
     ]

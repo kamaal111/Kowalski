@@ -10,25 +10,27 @@ import KamaalUI
 import SwiftValidator
 
 public enum KowalskiTextFieldValidationRules {
-    case minimumLength(length: Int, message: String?)
-    case isSameAs(value: String, message: String?)
-    case email(message: String?)
-    case wordCound(count: Int, message: String)
+    case minimumLength(length: Int, message: String)
+    case isSameAs(value: String, message: String)
+    case email(message: String)
+    case wordCount(count: Int, message: String)
+    case notEmpty(message: String)
+    case numeric(locale: Locale, greaterThanOrEqualTo: Double, message: String)
 }
 
 public struct KowalskiTextFieldErrorResult: Equatable {
-    public let valid: Bool
+    public let isValid: Bool
     public let errorMessage: String?
 
-    public init(valid: Bool, errorMessage: String?) {
-        self.valid = valid
+    public init(isValid: Bool, errorMessage: String?) {
+        self.isValid = isValid
         self.errorMessage = errorMessage
     }
 }
 
 public enum KowalskiTextFieldVariant {
     case text
-    case decimals
+    case decimals(locale: Locale)
     case numbers
     case secure
     case email
@@ -44,6 +46,8 @@ public enum KowalskiTextFieldVariant {
     }
     #endif
 }
+
+extension KowalskiTextFieldVariant: Equatable { }
 
 public struct KowalskiTextField: View {
     @State private var showPassword = false
@@ -76,8 +80,16 @@ public struct KowalskiTextField: View {
                 StringIsTheSameValue(value: value, message: message)
             case let .email(message):
                 StringIsEmail(message: message)
-            case let .wordCound(count: count, message: message):
+            case let .wordCount(count: count, message: message):
                 StringValidateWordCount(wordCount: count, message: message)
+            case let .notEmpty(message):
+                StringIsNotEmpty(message: message)
+            case let .numeric(locale, greaterThanOrEqualTo, message):
+                StringIsNumeric(
+                    locale: locale,
+                    options: .init(comparison: .init(op: .greaterThanOrEqualTo, value: greaterThanOrEqualTo)),
+                    message: message
+                )
             }
         })
     }
@@ -175,7 +187,7 @@ public struct KowalskiTextField: View {
     private var showError: Bool {
         guard !validations.isEmpty else { return false }
 
-        return !isFocused && !text.isEmpty && errorResult?.valid != true
+        return !isFocused && !text.isEmpty && errorResult?.isValid != true
     }
 
     private func handleShowPassword() {
@@ -183,12 +195,40 @@ public struct KowalskiTextField: View {
     }
 
     private func handleValueChange(value: String) {
-        setErrorResult(value: value)
+        let filteredValue = filterInput(value: value)
+        if filteredValue != value {
+            text = filteredValue
+        }
+        setErrorResult(value: filteredValue)
+    }
+
+    private func filterInput(value: String) -> String {
+        switch variant {
+        case .numbers:
+            return value.filter(\.isNumber)
+        case let .decimals(locale):
+            let decimalSeparator = locale.decimalSeparator ?? "."
+            var hasDecimalSeparator = false
+            let filteredValue = value.filter { char in
+                if char.isNumber {
+                    return true
+                }
+                if String(char) == decimalSeparator && !hasDecimalSeparator {
+                    hasDecimalSeparator = true
+                    return true
+                }
+                return false
+            }
+
+            return String(filteredValue)
+        case .text, .secure, .email:
+            return value
+        }
     }
 
     private func setErrorResult(value: String) {
         let result = validator.result
-        errorResult = KowalskiTextFieldErrorResult(valid: result.valid, errorMessage: result.message)
+        errorResult = KowalskiTextFieldErrorResult(isValid: result.valid, errorMessage: result.message)
     }
 }
 
@@ -263,13 +303,13 @@ private struct FloatingFieldWrapper<Field: View>: View {
     VStack(spacing: 24) {
         KowalskiTextField(
             text: .constant("Yes"),
-            errorResult: .constant(KowalskiTextFieldErrorResult(valid: false, errorMessage: "Nooo")),
+            errorResult: .constant(KowalskiTextFieldErrorResult(isValid: false, errorMessage: "Nooo")),
             title: "Task",
             validations: []
         )
         KowalskiTextField(
             text: .constant(""),
-            errorResult: .constant(KowalskiTextFieldErrorResult(valid: false, errorMessage: "Nooo")),
+            errorResult: .constant(KowalskiTextFieldErrorResult(isValid: false, errorMessage: "Nooo")),
             title: "Task",
             validations: []
         )

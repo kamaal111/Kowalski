@@ -25,6 +25,9 @@ let package = Package(
                 .product(name: "HTTPTypes", package: "swift-http-types"),
                 .product(name: "KamaalUtils", package: "KamaalSwift"),
             ],
+            swiftSettings: [
+                .treatAllWarnings(as: .error),
+            ],
             plugins: [
                 .plugin(name: "OpenAPIGenerator", package: "swift-openapi-generator"),
             ]

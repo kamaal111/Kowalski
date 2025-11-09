@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import KamaalUI
 import KowalskiAuth
 import KowalskiDesignSystem
 
@@ -15,16 +16,27 @@ public struct KowalskiPortfolioScreen: View {
     public init() { }
 
     public var body: some View {
-        NavigationStack {
-            VStack {
-                Text("Hello, World!")
+        VStack() {
+            Text("Kowalski")
+                .font(.title)
+        }
+        .padding(.all, .medium)
+        .ktakeSizeEagerly(alignment: .topLeading)
+        .toolbar {
+            ToolbarItem(placement: .automatic) {
+                NavigationLink(destination: { KowalskiPortfolioEntryScreen() }) {
+                    Image(systemName: "plus")
+                }
             }
         }
         .frame(minSize: ModuleConfig.screenMinSize)
+        .navigationTitle("")
     }
 }
 
 #Preview {
-    KowalskiPortfolioScreen()
-        .preview(withCredentials: true)
+    NavigationStack {
+        KowalskiPortfolioScreen()
+    }
+    .preview()
 }

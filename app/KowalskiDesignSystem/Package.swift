@@ -11,7 +11,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/Kamaalio/KamaalSwift", .upToNextMajor(from: "3.3.1")),
-        .package(url: "https://github.com/kamaal111/swift-validator", .upToNextMinor(from: "0.0.2")),
+        .package(url: "https://github.com/kamaal111/swift-validator", .upToNextMinor(from: "0.0.5")),
     ],
     targets: [
         .target(
@@ -22,6 +22,9 @@ let package = Package(
             ],
             resources: [
                 .process("Resources/Assets.xcassets"),
+            ],
+            swiftSettings: [
+                .treatAllWarnings(as: .error),
             ]
         ),
     ]
