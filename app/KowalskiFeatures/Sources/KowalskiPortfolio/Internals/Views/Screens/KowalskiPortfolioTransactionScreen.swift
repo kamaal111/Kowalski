@@ -1,5 +1,5 @@
 //
-//  KowalskiPortfolioEntryScreen.swift
+//  KowalskiPortfolioTransactionScreen.swift
 //  KowalskiFeatures
 //
 //  Created by Kamaal M Farah on 11/2/25.
@@ -8,10 +8,15 @@
 import SwiftUI
 import ForexKit
 import KamaalUI
+import KamaalLogger
 import KamaalExtensions
 import KowalskiDesignSystem
 
-struct KowalskiPortfolioEntryScreen: View {
+private let logger = KamaalLogger(from: KowalskiPortfolioTransactionScreen.self, failOnError: true)
+
+struct KowalskiPortfolioTransactionScreen: View {
+    @Environment(KowalskiPortfolio.self) private var portfolio
+
     @FocusState private var focusedTextfield: EntryScreenFocusFields?
 
     @State private var symbolOrIsin = ""
@@ -84,8 +89,28 @@ struct KowalskiPortfolioEntryScreen: View {
                 .ktakeWidthEagerly(alignment: .leading)
             }
         }
-        .navigationTitle("Entry")
+        .navigationTitle("Add Transaction")
         .onAppear(perform: handleOnAppear)
+    }
+
+    private var formPayload: TransactionPayload? {
+        guard formIsValid else { return nil }
+
+        let amount = amount.nsString?.doubleValue
+        assert(amount != nil)
+
+        let purchasePriceValue = purchasePriceValue.nsString?.doubleValue
+        assert(purchasePriceValue != nil)
+
+        let money = Money(currency: purchasePriceCurrency, value: purchasePriceValue ?? 0)
+
+        return TransactionPayload(
+            symbolOrIsin: symbolOrIsin,
+            amount: amount ?? 1,
+            purchasePrice: money,
+            transactionType: transactionType,
+            transactionDate: transactionDate
+        )
     }
 
     private var textFieldErrors: [KowalskiTextFieldErrorResult] {
@@ -95,7 +120,7 @@ struct KowalskiPortfolioEntryScreen: View {
 
     private var purchasePriceDoubleValue: Double {
         guard let purchaseDoubleValue = purchasePriceValue.nsString?.doubleValue else {
-            assertionFailure("Expecting purchase value to be a valid double")
+            logger.error("Expecting purchase value to be a valid double")
             return 0
         }
         return purchaseDoubleValue
@@ -121,6 +146,14 @@ struct KowalskiPortfolioEntryScreen: View {
 
     private func handleSubmit() {
         guard formIsValid else { return }
+        guard let formPayload else {
+            logger.error("After that the form is valid, we should have had payload")
+            return
+        }
+
+        Task {
+            await portfolio.storeTransaction(formPayload)
+        }
     }
 
     private func handleOnAppear() {
@@ -147,21 +180,10 @@ private enum EntryScreenFocusFields {
     case amount
 }
 
-private enum TransactionType: CaseIterable {
-    case purchase
-    case sell
-
-    var label: String {
-        switch self {
-        case .purchase: NSLocalizedString("Purchase", bundle: .module, comment: "")
-        case .sell: NSLocalizedString("Sell", bundle: .module, comment: "")
-        }
-    }
-}
-
-#Preview("Entry") {
+#Preview("Transaction") {
     NavigationStack {
-        KowalskiPortfolioEntryScreen()
+        KowalskiPortfolioTransactionScreen()
     }
     .preview()
 }
+

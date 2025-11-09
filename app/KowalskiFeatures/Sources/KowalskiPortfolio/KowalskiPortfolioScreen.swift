@@ -11,8 +11,6 @@ import KowalskiAuth
 import KowalskiDesignSystem
 
 public struct KowalskiPortfolioScreen: View {
-    @Environment(KowalskiAuth.self) private var auth
-
     public init() { }
 
     public var body: some View {
@@ -24,7 +22,7 @@ public struct KowalskiPortfolioScreen: View {
         .ktakeSizeEagerly(alignment: .topLeading)
         .toolbar {
             ToolbarItem(placement: .automatic) {
-                NavigationLink(destination: { KowalskiPortfolioEntryScreen() }) {
+                NavigationLink(destination: { KowalskiPortfolioTransactionScreen() }) {
                     Image(systemName: "plus")
                 }
             }

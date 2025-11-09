@@ -35,6 +35,7 @@ let package = Package(
             name: "KowalskiPortfolio",
             dependencies: [
                 .product(name: "KamaalUI", package: "KamaalSwift"),
+                .product(name: "KamaalLogger", package: "KamaalSwift"),
                 .product(name: "KamaalExtensions", package: "KamaalSwift"),
                 "KowalskiAuth",
                 "KowalskiDesignSystem",

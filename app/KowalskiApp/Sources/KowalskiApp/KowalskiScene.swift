@@ -11,6 +11,7 @@ import KowalskiPortfolio
 
 public struct KowalskiScene: Scene {
     @State private var auth = KowalskiAuth.default()
+    @State private var portfolio = KowalskiPortfolio.default()
 
     public init() { }
 
@@ -20,6 +21,7 @@ public struct KowalskiScene: Scene {
                 KowalskiPortfolioScreen()
             }
             .kowalskiAuth(auth)
+            .kowalskiPortfolio(portfolio)
         }
     }
 }

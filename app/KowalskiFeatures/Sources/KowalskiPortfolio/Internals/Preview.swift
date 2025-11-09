@@ -11,8 +11,10 @@ import KowalskiAuth
 extension View {
     func preview(withCredentials: Bool = true) -> some View {
         let auth = KowalskiAuth.preview(withCredentials: withCredentials)
+        let portfolio = KowalskiPortfolio.preview()
 
         return self
             .kowalskiAuth(auth)
+            .kowalskiPortfolio(portfolio)
     }
 }
