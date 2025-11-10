@@ -23,6 +23,7 @@ let package = Package(
             dependencies: [
                 .product(name: "KamaalLogger", package: "KamaalSwift"),
                 .product(name: "KamaalUI", package: "KamaalSwift"),
+                .product(name: "KamaalUtils", package: "KamaalSwift"),
                 "ForexKit",
                 "KowalskiClient",
                 "KowalskiDesignSystem",
