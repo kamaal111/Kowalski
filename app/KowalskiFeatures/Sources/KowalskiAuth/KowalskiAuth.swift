@@ -19,6 +19,9 @@ public final class KowalskiAuth {
     private let client: KowalskiClient
     private let logger = KamaalLogger(from: KowalskiAuth.self, failOnError: true)
     private let jsonDecoder = JSONDecoder()
+    private let jsonEncoder = JSONEncoder()
+    private let sessionCacheKey = "com.kowalski.auth.cachedSession"
+    private let sessionCacheTimestampKey = "com.kowalski.auth.cachedSessionTimestamp"
 
     private init(client: KowalskiClient) {
         self.client = client
@@ -125,6 +128,13 @@ public final class KowalskiAuth {
 
     @discardableResult
     private func loadSession() async -> Result<Void, KowalskiAuthSessionErrors> {
+        // Check if we have a cached session from today
+        if let cachedSession = getCachedSessionIfLoadedToday() {
+            setSession(cachedSession)
+            return .success(())
+        }
+        
+        // Load from server
         let result = await client.auth.session()
             .map { UserSession(name: $0.name, expiresAt: $0.expiresAt) }
             .mapError { error -> KowalskiAuthSessionErrors in
@@ -142,6 +152,7 @@ public final class KowalskiAuth {
         }
 
         setSession(session)
+        cacheSession(session)
 
         return .success(())
     }
@@ -149,6 +160,33 @@ public final class KowalskiAuth {
     @MainActor
     private func setSession(_ session: UserSession) {
         self.session = session
+    }
+    
+    private func getCachedSessionIfLoadedToday() -> UserSession? {
+        guard let cachedSessionData = UserDefaults.standard.data(forKey: sessionCacheKey),
+              let cachedSession = try? jsonDecoder.decode(UserSession.self, from: cachedSessionData),
+              let cacheTimestamp = UserDefaults.standard.object(forKey: sessionCacheTimestampKey) as? Date else {
+            return nil
+        }
+        
+        // Check if the cached session was loaded today
+        let calendar = Calendar.current
+        let now = Date.now
+        if calendar.isDate(cacheTimestamp, inSameDayAs: now) {
+            return cachedSession
+        }
+        
+        return nil
+    }
+    
+    private func cacheSession(_ session: UserSession) {
+        guard let sessionData = try? jsonEncoder.encode(session) else {
+            logger.error(label: "Failed to encode session for caching")
+            return
+        }
+        
+        UserDefaults.standard.set(sessionData, forKey: sessionCacheKey)
+        UserDefaults.standard.set(Date.now, forKey: sessionCacheTimestampKey)
     }
 }
 
