@@ -119,8 +119,10 @@ Docker Compose creates `kowalski_db` container:
 - **Files**: PascalCase (e.g., `KowalskiAuth.swift`)
 - **Warnings as errors**: All Swift packages use `.treatAllWarnings(as: .error)` - zero tolerance
 - **Architecture**: SwiftUI + Observation framework (`@Observable`, `@MainActor`)
-- **Errors**: Custom enums with `errorDescription`, use `Result<T, E>` for async operations
+- **Errors**: Custom enums with `errorDescription`, use `Result<T, E>` when error details matter
+- **Error handling**: Prefer `do-catch` with logging over `try?` to avoid silently swallowing errors
 - **Async**: Use `async/await` with proper error handling
+- **Guard statements**: Each condition on its own line for readability (prefer separate guards over comma-separated conditions)
 - **Localization**: `.xcstrings` files, use `NSLocalizedString` with `.module` bundle
   - **IMPORTANT**: Never manually edit `.xcstrings` files. Xcode automatically updates them when it detects new `NSLocalizedString` calls in the code.
 

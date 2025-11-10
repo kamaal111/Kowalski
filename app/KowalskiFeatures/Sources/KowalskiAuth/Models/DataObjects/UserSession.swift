@@ -10,4 +10,8 @@ import Foundation
 public struct UserSession: Hashable, Codable {
     public let name: String
     public let expiresAt: Date
+
+    public var isExpired: Bool {
+        Date.now >= expiresAt
+    }
 }

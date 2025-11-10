@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import KamaalUtils
 import Observation
 import KamaalLogger
 import KowalskiClient
@@ -18,10 +19,9 @@ public final class KowalskiAuth {
 
     private let client: KowalskiClient
     private let logger = KamaalLogger(from: KowalskiAuth.self, failOnError: true)
-    private let jsonDecoder = JSONDecoder()
-    private let jsonEncoder = JSONEncoder()
-    private let sessionCacheKey = "com.kowalski.auth.cachedSession"
-    private let sessionCacheTimestampKey = "com.kowalski.auth.cachedSessionTimestamp"
+
+    @UserDefaultsObject(key: "\(ModuleConfig.identifier).cachedSession")
+    private static var cachedSession: CachedUserSession?
 
     private init(client: KowalskiClient) {
         self.client = client
@@ -58,19 +58,19 @@ public final class KowalskiAuth {
             email: payload.email,
             password: payload.password
         )
-            .mapError { error -> KowalskiAuthSignUpErrors in
-                switch error {
-                case .unknown:
-                    logger.error(label: "Failed to sign up", error: error)
-                    return .generalFailure(context: error)
-                case .badRequest:
-                    return .invalidCredentials(context: error)
-                case .conflict:
-                    return .userAlreadyExists(context: error)
-                }
+        .mapError { error -> KowalskiAuthSignUpErrors in
+            switch error {
+            case .unknown:
+                logger.error(label: "Failed to sign up", error: error)
+                return .generalFailure(context: error)
+            case .badRequest:
+                return .invalidCredentials(context: error)
+            case .conflict:
+                return .userAlreadyExists(context: error)
             }
+        }
         switch signUpResult {
-        case let .failure(failure): return .failure(failure)
+        case .failure(let failure): return .failure(failure)
         case .success: break
         }
 
@@ -98,7 +98,7 @@ public final class KowalskiAuth {
                 }
             }
         switch signInResult {
-        case let .failure(failure): return .failure(failure)
+        case .failure(let failure): return .failure(failure)
         case .success: break
         }
 
@@ -128,13 +128,11 @@ public final class KowalskiAuth {
 
     @discardableResult
     private func loadSession() async -> Result<Void, KowalskiAuthSessionErrors> {
-        // Check if we have a cached session from today
         if let cachedSession = getCachedSessionIfLoadedToday() {
             setSession(cachedSession)
             return .success(())
         }
-        
-        // Load from server
+
         let result = await client.auth.session()
             .map { UserSession(name: $0.name, expiresAt: $0.expiresAt) }
             .mapError { error -> KowalskiAuthSessionErrors in
@@ -147,8 +145,8 @@ public final class KowalskiAuth {
             }
         let session: UserSession
         switch result {
-        case let .failure(failure): return .failure(failure)
-        case let .success(success): session = success
+        case .failure(let failure): return .failure(failure)
+        case .success(let success): session = success
         }
 
         setSession(session)
@@ -161,32 +159,21 @@ public final class KowalskiAuth {
     private func setSession(_ session: UserSession) {
         self.session = session
     }
-    
+
     private func getCachedSessionIfLoadedToday() -> UserSession? {
-        guard let cachedSessionData = UserDefaults.standard.data(forKey: sessionCacheKey),
-              let cachedSession = try? jsonDecoder.decode(UserSession.self, from: cachedSessionData),
-              let cacheTimestamp = UserDefaults.standard.object(forKey: sessionCacheTimestampKey) as? Date else {
-            return nil
-        }
-        
-        // Check if the cached session was loaded today
+        guard let cachedSession = Self.cachedSession else { return nil }
+
         let calendar = Calendar.current
         let now = Date.now
-        if calendar.isDate(cacheTimestamp, inSameDayAs: now) {
-            return cachedSession
-        }
-        
-        return nil
+        let sessionHasBeenCachedToday = calendar.isDate(cachedSession.cachedAt, inSameDayAs: now)
+        guard sessionHasBeenCachedToday else { return nil }
+        guard !cachedSession.session.isExpired else { return nil }
+
+        return cachedSession.session
     }
-    
+
     private func cacheSession(_ session: UserSession) {
-        guard let sessionData = try? jsonEncoder.encode(session) else {
-            logger.error(label: "Failed to encode session for caching")
-            return
-        }
-        
-        UserDefaults.standard.set(sessionData, forKey: sessionCacheKey)
-        UserDefaults.standard.set(Date.now, forKey: sessionCacheTimestampKey)
+        Self.cachedSession = CachedUserSession(session: session, cachedAt: .now)
     }
 }
 
@@ -226,4 +213,9 @@ enum KowalskiAuthSignUpErrors: Error {
 private enum KowalskiAuthSessionErrors: Error {
     case serverUnavailable(context: Error?)
     case unauthorized(context: Error?)
+}
+
+private struct CachedUserSession: Codable {
+    let session: UserSession
+    let cachedAt: Date
 }
