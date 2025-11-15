@@ -1,8 +1,6 @@
-import { pgTable, text, unique, char, type PgCharBuilderInitial, timestamp, numeric } from 'drizzle-orm/pg-core';
+import { pgTable, text, unique, timestamp, numeric } from 'drizzle-orm/pg-core';
 
-function currency(name: string): PgCharBuilderInitial<string, [string, ...string[]], 3> {
-  return char(name, { length: 3 });
-}
+import currency from '../helpers/currency.js';
 
 export const stockTicker = pgTable(
   'stock_ticker',

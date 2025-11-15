@@ -13,8 +13,8 @@ enum TransactionType: CaseIterable {
 
     var label: String {
         switch self {
-        case .purchase: NSLocalizedString("Purchase", bundle: .module, comment: "")
-        case .sell: NSLocalizedString("Sell", bundle: .module, comment: "")
+        case .purchase: NSLocalizedString("Purchase", comment: "")
+        case .sell: NSLocalizedString("Sell", comment: "")
         }
     }
 }
