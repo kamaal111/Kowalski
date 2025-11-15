@@ -26,11 +26,11 @@ public struct KowalskiClient: Sendable {
 
     public static func `default`() -> KowalskiClient {
         let url = try! Servers.Server1.url()
-        let credentialsGetter = CredentialsGetterFactory.default(keychainKey: credentialsKeychainKey)
+        let credentialsGetter = CredentialsGetterFactory.default(keychainKey: ModuleConfig.credentialsKeychainKey)
         let client = makeClient(url: url, credentialsGetter: credentialsGetter)
         let auth = KowalskiAuthClientFactory.default(
             client: client,
-            credentialsKeychainKey: credentialsKeychainKey,
+            credentialsKeychainKey: ModuleConfig.credentialsKeychainKey,
             credentialsGetter: credentialsGetter
         )
 
@@ -44,20 +44,23 @@ public struct KowalskiClient: Sendable {
         return KowalskiClient(auth: auth, credentialsGetter: credentialsGetter)
     }
 
-    private static let credentialsKeychainKey = "\(ModuleConfig.identifier).credentials"
-
     private static func makeClient(url: URL, credentialsGetter: CredentialsGetter) -> Client {
         let middlewares: [any ClientMiddleware] = [
-            AuthenticationMiddleware(keychainKey: credentialsKeychainKey, credentialsGetter: credentialsGetter),
-            RequiredHeadersMiddleware()
+            AuthenticationMiddleware(
+                keychainKey: ModuleConfig.credentialsKeychainKey,
+                credentialsGetter: credentialsGetter
+            ),
+            RequiredHeadersMiddleware(),
+            LoggingMiddleware(bodyLoggingPolicy: .upTo(maxBytes: ModuleConfig.maxLogSize)),
         ]
         let dateTranscoder = ISO8601DateTranscoder(options: [.withInternetDateTime, .withFractionalSeconds])
         let configuration = Configuration(dateTranscoder: dateTranscoder)
+        let transport = URLSessionTransport()
 
         return Client(
             serverURL: url,
             configuration: configuration,
-            transport: URLSessionTransport(),
+            transport: transport,
             middlewares: middlewares
         )
     }
