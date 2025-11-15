@@ -7,11 +7,12 @@ import { AppAPIRouteNotFound } from './exceptions.js';
 import type { HonoContext } from '../api/contexts.js';
 import { makeUncaughtErrorLog } from '../middleware/logging.js';
 import { STATUS_CODES } from '../constants/http.js';
+import { ROUTE_NAME } from '../auth/constants.js';
 
 const appApi = openAPIRouterFactory();
 
 appApi
-  .route('/auth', authApi)
+  .route(ROUTE_NAME, authApi)
   .all('/*', c => {
     throw new AppAPIRouteNotFound(c);
   })

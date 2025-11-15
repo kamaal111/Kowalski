@@ -1,15 +1,15 @@
 import type { Context, Input, Next } from 'hono';
 import type { RequestIdVariables } from 'hono/request-id';
 
-import type { Auth } from '../auth/better-auth.js';
 import type { Database } from '../db/index.js';
+import type { Auth, SessionResponse } from '../auth/index.js';
 
 interface InjectedContext {
   db: Database;
   auth: Auth;
 }
 
-export type HonoVariables = RequestIdVariables & InjectedContext;
+export type HonoVariables = RequestIdVariables & InjectedContext & { session?: SessionResponse };
 
 export interface HonoEnvironment {
   Variables: HonoVariables;
