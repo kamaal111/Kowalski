@@ -3,7 +3,7 @@
   "type": "module",
   "scripts": {
     "compile": "tsc",
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsx watch --inspect src/index.ts",
     "download-spec": "tsx scripts/download-openapi-spec.ts",
     "start": "node dist/src/index.js",
     "test": "vitest --run",

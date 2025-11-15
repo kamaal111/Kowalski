@@ -1,0 +1,33 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Attach to Node.js Server",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "restart": true,
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMaps": true,
+      "outFiles": ["${workspaceFolder}/server/dist/**/*.js"],
+      "resolveSourceMapLocations": ["${workspaceFolder}/server/**", "!**/node_modules/**"]
+    },
+    {
+      "name": "Debug Server",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "${workspaceFolder}/server",
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMaps": true,
+      "outFiles": ["${workspaceFolder}/server/dist/**/*.js"],
+      "resolveSourceMapLocations": ["${workspaceFolder}/server/**", "!**/node_modules/**"],
+      "console": "integratedTerminal",
+      "envFile": "${workspaceFolder}/server/.env",
+      "env": {
+        "DEBUG": "true"
+      }
+    }
+  ]
+}

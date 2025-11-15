@@ -12,6 +12,7 @@ import { auth } from './auth/index.js';
 
 import db from './db/index.js';
 import appApi from './app-api/index.js';
+import { APP_API_BASE_PATH } from './constants/common.js';
 
 const app = withOpenAPIDocumentation(
   openAPIRouterFactory()
@@ -20,7 +21,7 @@ const app = withOpenAPIDocumentation(
     .use(secureHeaders())
     .use(loggingMiddleware)
     .use(injectRequestContext({ db, auth }))
-    .route('/app-api', appApi),
+    .route(APP_API_BASE_PATH, appApi),
 );
 
 const { PORT, DEBUG } = env;
