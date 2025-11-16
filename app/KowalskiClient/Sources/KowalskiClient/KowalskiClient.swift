@@ -11,11 +11,13 @@ import OpenAPIURLSession
 
 public struct KowalskiClient: Sendable {
     public let auth: KowalskiAuthClient
+    public let stocks: KowalskiStocksClient
 
     private let credentialsGetter: CredentialsGetter
 
-    private init(auth: KowalskiAuthClient, credentialsGetter: CredentialsGetter) {
+    private init(auth: KowalskiAuthClient, stocks: KowalskiStocksClient, credentialsGetter: CredentialsGetter) {
         self.auth = auth
+        self.stocks = stocks
         self.credentialsGetter = credentialsGetter
     }
 
@@ -33,15 +35,17 @@ public struct KowalskiClient: Sendable {
             credentialsKeychainKey: ModuleConfig.credentialsKeychainKey,
             credentialsGetter: credentialsGetter
         )
+        let stocks = KowalskiStocksClientFactory.deafault(client: client)
 
-        return KowalskiClient(auth: auth, credentialsGetter: credentialsGetter)
+        return KowalskiClient(auth: auth, stocks: stocks, credentialsGetter: credentialsGetter)
     }
 
     public static func preview(withCredentials: Bool) -> KowalskiClient {
         let credentialsGetter = CredentialsGetterFactory.preview(withCredentials: withCredentials)
         let auth = KowalskiAuthClientFactory.preview()
+        let stocks = KowalskiStocksClientFactory.preview()
 
-        return KowalskiClient(auth: auth, credentialsGetter: credentialsGetter)
+        return KowalskiClient(auth: auth, stocks: stocks, credentialsGetter: credentialsGetter)
     }
 
     private static func makeClient(url: URL, credentialsGetter: CredentialsGetter) -> Client {

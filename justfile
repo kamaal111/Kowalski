@@ -57,7 +57,7 @@ tail-db:
 make-auth-tables:
     just server/make-auth-tables
 
-# Download OpenAPI specification (requires running server)
+# Download OpenAPI specification
 download-spec:
     just server/download-spec ../{{ OUTPUT_SCHEMA_FILEPATH }}
 

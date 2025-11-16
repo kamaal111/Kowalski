@@ -8,7 +8,14 @@
 import Foundation
 import KowalskiUtils
 
-public struct UserSession: Hashable, Codable, Expirable {
-    public let name: String
-    public let expiresAt: Date
+package struct UserSession: Hashable, Codable, Expirable {
+    package let name: String
+    package let email: String
+    package let expiresAt: Date
+
+    package init(name: String, email: String, expiresAt: Date) {
+        self.name = name
+        self.email = email
+        self.expiresAt = expiresAt
+    }
 }

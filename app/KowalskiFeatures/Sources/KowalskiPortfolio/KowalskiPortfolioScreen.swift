@@ -7,7 +7,6 @@
 
 import SwiftUI
 import KamaalUI
-import KowalskiAuth
 import KowalskiDesignSystem
 
 public struct KowalskiPortfolioScreen: View {

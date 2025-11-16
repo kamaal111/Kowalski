@@ -53,7 +53,8 @@ async function downloadOpenAPISpec(serverUrl: string, outputFile: string): Promi
 
   const rawData: unknown = await response.json();
   const spec = await OpenAPISpecSchema.parseAsync(rawData);
-  const formattedSpec = yaml.dump(spec, { indent: 2 });
+  const transformedSpec = transformNullableToUnion(spec);
+  const formattedSpec = yaml.dump(transformedSpec, { indent: 2 });
   await fs.writeFile(outputFile, formattedSpec, 'utf8');
 
   console.log(`✅ OpenAPI spec successfully downloaded to: ${outputFile}`);
@@ -70,6 +71,27 @@ async function downloadOpenAPISpec(serverUrl: string, outputFile: string): Promi
   console.log(`🛣️  Found ${endpointCount} endpoints across ${pathValues.length} paths`);
 
   return spec;
+}
+
+function transformNullableToUnion(obj: unknown): unknown {
+  if (obj == null) return obj;
+  if (Array.isArray(obj)) return obj.map(transformNullableToUnion);
+  if (typeof obj !== 'object') return obj;
+  return transformDefiniteObjectNullableToUnion(obj);
+}
+
+function transformDefiniteObjectNullableToUnion(obj: object): object {
+  return Object.entries(obj).reduce<Record<string, unknown>>((acc, [key, value]) => {
+    const entryIsInvalidNullable =
+      key === 'type' && typeof value === 'string' && 'nullable' in obj && obj.nullable === true;
+    if (entryIsInvalidNullable) return { ...acc, type: [null, value] };
+
+    const keyIsNullable = key === 'nullable';
+    const shouldFilterOut = keyIsNullable;
+    if (shouldFilterOut) return acc;
+
+    return { ...acc, [key]: transformNullableToUnion(value) };
+  }, {});
 }
 
 try {

@@ -14,10 +14,12 @@ import KowalskiClient
 @MainActor
 @Observable
 public final class KowalskiAuth {
+    package private(set) var session: UserSession?
+
     private(set) var initiallyValidatingToken: Bool
-    private(set) var session: UserSession?
 
     private let client: KowalskiClient
+    private let mapper = KowalskiAuthMappers()
     private let logger = KamaalLogger(from: KowalskiAuth.self, failOnError: true)
 
     @UserDefaultsObject(key: "\(ModuleConfig.identifier).cachedSession")
@@ -41,12 +43,16 @@ public final class KowalskiAuth {
         self.initiallyValidatingToken = false
         if withCredentials {
             let oneDay: TimeInterval = 86400
-            self.session = UserSession(name: "Yami Sukehiro", expiresAt: Date.now.addingTimeInterval(oneDay))
+            self.session = UserSession(
+                name: "Yami Sukehiro",
+                email: "yami@bull.io",
+                expiresAt: Date.now.addingTimeInterval(oneDay)
+            )
         }
         Task { await loadSession() }
     }
 
-    var isLoggedIn: Bool {
+    package var isLoggedIn: Bool {
         session != nil
     }
 
@@ -134,7 +140,7 @@ public final class KowalskiAuth {
         }
 
         let result = await client.auth.session()
-            .map { UserSession(name: $0.name, expiresAt: $0.expiresAt) }
+            .map(mapper.mapSessionResponse)
             .mapError { error -> KowalskiAuthSessionErrors in
                 switch error {
                 case .unknown:

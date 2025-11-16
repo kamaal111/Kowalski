@@ -25,7 +25,7 @@ export function withOpenAPIDocumentation<
 >(app: Hono<E, S, BasePath>) {
   return (app as OpenAPIHono<E, S, BasePath>)
     .doc('/spec.json', {
-      openapi: '3.1.0',
+      openapi: '3.1.1',
       info: { version: '1.0.0', title: 'Kowalski API' },
       servers: [{ url: 'http://127.0.0.1:8080' }],
     })

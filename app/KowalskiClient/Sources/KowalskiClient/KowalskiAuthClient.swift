@@ -60,20 +60,6 @@ public enum KowalskiAuthSessionErrors: Error {
     case unauthorized
 }
 
-// MARK: Responses
-
-public struct KowalskiAuthSessionResponse: Hashable, Codable {
-    public let name: String
-    public let email: String
-    public let expiresAt: Date
-
-    public init(name: String, email: String, expiresAt: Date) {
-        self.name = name
-        self.email = email
-        self.expiresAt = expiresAt
-    }
-}
-
 // MARK: Implementation
 
 struct KowalskiAuthClientImpl: KowalskiAuthClient {
@@ -82,12 +68,14 @@ struct KowalskiAuthClientImpl: KowalskiAuthClient {
     private let client: Client
     private let jsonEncoder: JSONEncoder
     private let credentialsGetter: CredentialsGetter
+    private let mapper: KowalskiAuthMapper
 
     fileprivate init(client: Client, credentialsKeychainKey: String, credentialsGetter: CredentialsGetter) {
         self.client = client
         self.credentialsKeychainKey = credentialsKeychainKey
         self.jsonEncoder = JSONEncoder()
         self.credentialsGetter = credentialsGetter
+        self.mapper = KowalskiAuthMapper()
     }
 
     // MARK: Sign Up
@@ -198,11 +186,7 @@ struct KowalskiAuthClientImpl: KowalskiAuthClient {
             return .failure(.unknown(statusCode: 500, payload: nil, context: error))
         }
 
-        let session = KowalskiAuthSessionResponse(
-            name: jsonPayload.user.name,
-            email: jsonPayload.user.email,
-            expiresAt: jsonPayload.session.expiresAt
-        )
+        let session = mapper.mapSessionResponse(jsonPayload)
         let newCredentials = credentials.setExpiryDate(session.expiresAt)
         let newCredentialsData: Data
         do {
