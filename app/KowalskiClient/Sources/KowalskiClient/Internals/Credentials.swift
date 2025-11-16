@@ -6,15 +6,14 @@
 //
 
 import Foundation
+import KowalskiUtils
 
-struct Credentials: Codable {
+struct Credentials: Codable, Expirable {
     let email: String
     let authToken: String
     let expiryDate: Date
 
-    var isExpired: Bool {
-        Date.now >= expiryDate
-    }
+    var expiresAt: Date { expiryDate }
 
     func setExpiryDate(_ date: Date) -> Credentials {
         Credentials(email: email, authToken: authToken, expiryDate: date)

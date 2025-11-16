@@ -15,6 +15,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-openapi-generator", .upToNextMajor(from: "1.10.3")),
         .package(url: "https://github.com/apple/swift-http-types", .upToNextMajor(from: "1.5.1")),
         .package(url: "https://github.com/Kamaalio/KamaalSwift", .upToNextMajor(from: "3.3.1")),
+        .package(path: "../KowalskiUtils"),
     ],
     targets: [
         .target(
@@ -25,6 +26,7 @@ let package = Package(
                 .product(name: "HTTPTypes", package: "swift-http-types"),
                 .product(name: "KamaalUtils", package: "KamaalSwift"),
                 .product(name: "KamaalLogger", package: "KamaalSwift"),
+                "KowalskiUtils",
             ],
             swiftSettings: [
                 .treatAllWarnings(as: .error),

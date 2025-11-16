@@ -6,12 +6,9 @@
 //
 
 import Foundation
+import KowalskiUtils
 
-public struct UserSession: Hashable, Codable {
+public struct UserSession: Hashable, Codable, Expirable {
     public let name: String
     public let expiresAt: Date
-
-    public var isExpired: Bool {
-        Date.now >= expiresAt
-    }
 }

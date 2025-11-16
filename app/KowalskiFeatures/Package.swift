@@ -16,6 +16,7 @@ let package = Package(
         .package(url: "https://github.com/kamaal111/ForexKit", .upToNextMajor(from: "4.0.0")),
         .package(path: "../KowalskiClient"),
         .package(path: "../KowalskiDesignSystem"),
+        .package(path: "../KowalskiUtils"),
     ],
     targets: [
         .target(
@@ -27,6 +28,7 @@ let package = Package(
                 "ForexKit",
                 "KowalskiClient",
                 "KowalskiDesignSystem",
+                "KowalskiUtils",
             ],
             swiftSettings: [
                 .treatAllWarnings(as: .error),
