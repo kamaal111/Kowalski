@@ -17,16 +17,6 @@ export const SignOutResponseSchema = z
   .object({})
   .openapi('SignOutResponse', { title: 'Sign Out Response', description: 'Successful signout response' });
 
-export const ErrorResponseSchema = z
-  .object({
-    message: z.string().openapi({ description: 'Error message' }),
-    code: z.string().optional().openapi({ description: 'Error code' }),
-  })
-  .openapi('ErrorResponse', {
-    title: 'Error Response',
-    description: 'Error response containing error message and optional error code',
-  });
-
 export type SessionResponse = z.infer<typeof SessionResponseSchema>;
 
 export const SessionResponseSchema = z

@@ -1,11 +1,12 @@
 import { createRoute } from '@hono/zod-openapi';
 import * as z from 'zod';
 
-import { ErrorResponseSchema, AuthResponseSchema } from '../schemas/responses.js';
+import { AuthResponseSchema } from '../schemas/responses.js';
 import { STATUS_CODES } from '../../constants/http.js';
 import { OPENAPI_TAG } from '../constants.js';
 import { MIME_TYPES } from '../../constants/request.js';
 import { TokenHeaders } from '../schemas/headers.js';
+import { ErrorResponseSchema } from '../../schemas/errors.js';
 
 const EmailPasswordSignInSchema = z
   .object({

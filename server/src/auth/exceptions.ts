@@ -14,8 +14,4 @@ export class BetterAuthException extends APIException {
   }
 }
 
-export class SessionNotFound extends NotFound {
-  constructor(c: HonoContext) {
-    super(c, { message: 'Session not found' });
-  }
-}
+export class SessionNotFound extends NotFound {}

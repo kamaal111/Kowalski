@@ -12,9 +12,3 @@ export const STATUS_CODES = {
   LOCKED: 423,
   INTERNAL_SERVER_ERROR: 500,
 } as const;
-
-export type HttpMethod = GetRecordValues<typeof HTTP_METHODS>;
-
-export const HTTP_METHODS = {
-  POST: 'POST',
-} as const;

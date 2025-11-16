@@ -2,17 +2,18 @@ import { HTTPException } from 'hono/http-exception';
 
 import { InvalidValidation } from '../api/exceptions.js';
 import { openAPIRouterFactory } from '../api/open-api.js';
-import { authApi } from '../auth/index.js';
+import { AUTH_ROUTE_NAME, authApi } from '../auth/index.js';
 import { AppAPIRouteNotFound } from './exceptions.js';
 import type { HonoContext } from '../api/contexts.js';
 import { makeUncaughtErrorLog } from '../middleware/logging.js';
 import { STATUS_CODES } from '../constants/http.js';
-import { ROUTE_NAME } from '../auth/constants.js';
+import { STOCKS_ROUTE_NAME, stocksApi } from '../stocks/index.js';
 
 const appApi = openAPIRouterFactory();
 
 appApi
-  .route(ROUTE_NAME, authApi)
+  .route(AUTH_ROUTE_NAME, authApi)
+  .route(STOCKS_ROUTE_NAME, stocksApi)
   .all('/*', c => {
     throw new AppAPIRouteNotFound(c);
   })

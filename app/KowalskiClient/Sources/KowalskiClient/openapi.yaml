@@ -134,6 +134,44 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /app-api/stocks/search:
+    get:
+      summary: Search stocks
+      description: Search for stocks by symbol or company name
+      tags:
+        - Stocks
+      parameters:
+        - schema:
+            type: string
+            minLength: 1
+            description: Search query for stock symbols or company names
+            example: AAPL
+          required: true
+          description: Search query for stock symbols or company names
+          name: query
+          in: path
+        - schema:
+            type: string
+            description: Bearer token for authentication
+            example: Bearer f21wcpz7Aokmlh2MB632MZpTgfruPc62
+          required: true
+          description: Bearer token for authentication
+          name: authorization
+          in: header
+      responses:
+        '200':
+          description: Search stocks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 components:
   schemas:
     AuthResponse:

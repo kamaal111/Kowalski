@@ -1,27 +1,29 @@
 import { createRoute } from '@hono/zod-openapi';
+import * as z from 'zod';
 
-import { SessionResponseSchema } from '../schemas/responses.js';
 import { OPENAPI_TAG } from '../constants.js';
-import { requireLoggedInSessionMiddleware } from '../middleware.js';
 import { ErrorResponseSchema } from '../../schemas/errors.js';
 import { AuthenticationHeaders } from '../../schemas/headers.js';
+import { StocksSearchParamsSchema } from '../schemas/search.js';
 
-const sessionRoute = createRoute({
+const StocksSearchResponseSchema = z.object({});
+
+const searchRoute = createRoute({
   method: 'get',
-  path: '/session',
+  path: '/search',
+  summary: 'Search stocks',
+  description: 'Search for stocks by symbol or company name',
   tags: [OPENAPI_TAG],
-  summary: 'Get session',
-  middleware: [requireLoggedInSessionMiddleware],
-  description: 'Get the current user session information',
   request: {
     headers: AuthenticationHeaders,
+    params: StocksSearchParamsSchema,
   },
   responses: {
     200: {
-      description: 'Session retrieved successfully',
+      description: 'Search stocks',
       content: {
         'application/json': {
-          schema: SessionResponseSchema,
+          schema: StocksSearchResponseSchema,
         },
       },
     },
@@ -36,4 +38,4 @@ const sessionRoute = createRoute({
   },
 });
 
-export default sessionRoute;
+export default searchRoute;
