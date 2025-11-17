@@ -19,8 +19,7 @@ struct KowalskiPortfolioTransactionScreen: View {
 
     @FocusState private var focusedTextfield: EntryScreenFocusFields?
 
-    @State private var symbolOrIsin = ""
-    @State private var symbolOrIsinError: KowalskiTextFieldErrorResult?
+    @State private var selectedStock: Stock?
     @State private var amount = ""
     @State private var amountError: KowalskiTextFieldErrorResult?
     @State private var purchasePriceCurrency: Currencies = .USD
@@ -29,33 +28,31 @@ struct KowalskiPortfolioTransactionScreen: View {
     @State private var transactionDate: Date = .now
 
     var body: some View {
-        KFormBox(localizedTitle: "Add Entry", bundle: .module, minSize: ModuleConfig.screenMinSize) {
+        KFormBox(title: NSLocalizedString("Add Entry", comment: ""), minSize: ModuleConfig.screenMinSize) {
             VStack {
-                KowalskiTextField(
-                    text: $symbolOrIsin,
-                    errorResult: $symbolOrIsinError,
+                KowalskiSearchableDropdown(
+                    selectedItem: $selectedStock,
                     localizedTitle: "Symbol or ISIN",
-                    bundle: .module,
-                    variant: .text,
-                    validations: [
-                        .notEmpty(message: NSLocalizedString("Symbol can not be empty", bundle: .module, comment: "")),
-                    ]
+                    itemLabel: { stock in
+                        let exchange = stock.exchangeDispatch ?? stock.exchange
+                        return "\(stock.symbol) - \(stock.name) (\(exchange))"
+                    },
+                    onSearch: { query in
+                        await portfolio.searchStocks(query: query)
+                    }
                 )
-                .focused($focusedTextfield, equals: .symbolOrIsin)
-                .onSubmit(handleSubmit)
                 MoneyField(
                     currency: $purchasePriceCurrency,
                     value: $purchasePriceValue,
-                    title: NSLocalizedString("Purchase price", bundle: .module, comment: ""),
+                    title: NSLocalizedString("Purchase price", comment: ""),
                     currencies: Currencies.allCases,
-                    fixButtonTitle: NSLocalizedString("Fix", bundle: .module, comment: ""),
+                    fixButtonTitle: NSLocalizedString("Fix", comment: ""),
                     fixMessage: "Invalid value"
                 )
                 KowalskiTextField(
                     text: $amount,
                     errorResult: $amountError,
                     localizedTitle: "Amount",
-                    bundle: .module,
                     variant: .decimals(locale: ModuleConfig.defaultLocale),
                     validations: [
                         .numeric(
@@ -95,6 +92,7 @@ struct KowalskiPortfolioTransactionScreen: View {
 
     private var formPayload: TransactionPayload? {
         guard formIsValid else { return nil }
+        guard let stock = selectedStock else { return nil }
 
         let amount = amount.nsString?.doubleValue
         assert(amount != nil)
@@ -105,7 +103,7 @@ struct KowalskiPortfolioTransactionScreen: View {
         let money = Money(currency: purchasePriceCurrency, value: purchasePriceValue ?? 0)
 
         return TransactionPayload(
-            symbolOrIsin: symbolOrIsin,
+            stock: stock,
             amount: amount ?? 1,
             purchasePrice: money,
             transactionType: transactionType,
@@ -114,7 +112,7 @@ struct KowalskiPortfolioTransactionScreen: View {
     }
 
     private var textFieldErrors: [KowalskiTextFieldErrorResult] {
-        [symbolOrIsinError, amountError]
+        [amountError]
             .compactMap { $0 }
     }
 
@@ -127,6 +125,10 @@ struct KowalskiPortfolioTransactionScreen: View {
     }
 
     private var formValidity: Result<(), FormInvalidityErrors> {
+        if selectedStock == nil {
+            return .failure(.noStockSelected)
+        }
+
         let firstTextFieldErrorThatIsNotValid = textFieldErrors.find(by: \.isValid, is: false)
         if let firstTextFieldErrorThatIsNotValid {
             assert(firstTextFieldErrorThatIsNotValid.errorMessage != nil)
@@ -158,25 +160,26 @@ struct KowalskiPortfolioTransactionScreen: View {
 
     private func handleOnAppear() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            focusedTextfield = .symbolOrIsin
+            focusedTextfield = .amount
         }
     }
 }
 
 private enum FormInvalidityErrors: Error {
+    case noStockSelected
     case textField(message: String)
     case purchasePrice
 
     var errorDescription: String? {
         switch self {
-        case let .textField(message): message
-        case .purchasePrice: NSLocalizedString("Invalid purchase price", bundle: .module, comment: "")
+        case .noStockSelected: NSLocalizedString("Please select a stock", comment: "")
+        case .textField(let message): message
+        case .purchasePrice: NSLocalizedString("Invalid purchase price", comment: "")
         }
     }
 }
 
 private enum EntryScreenFocusFields {
-    case symbolOrIsin
     case amount
 }
 
@@ -186,4 +189,3 @@ private enum EntryScreenFocusFields {
     }
     .preview()
 }
-

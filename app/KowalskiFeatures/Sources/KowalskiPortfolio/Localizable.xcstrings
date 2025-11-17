@@ -25,6 +25,9 @@
     "Kowalski" : {
 
     },
+    "Please select a stock" : {
+
+    },
     "Purchase" : {
 
     },
@@ -32,9 +35,6 @@
 
     },
     "Sell" : {
-
-    },
-    "Symbol can not be empty" : {
 
     },
     "Symbol or ISIN" : {

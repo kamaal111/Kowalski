@@ -6,13 +6,13 @@
 //
 
 public struct KowalskiStocksSearchResponse: Codable, Sendable {
-    public let quoutes: [KowalskiStocksSearchQuoteItemResponse]
+    public let quotes: [KowalskiStocksSearchQuoteItemResponse]
 
     public init(quotes: [KowalskiStocksSearchQuoteItemResponse]) {
-        self.quoutes = quotes
+        self.quotes = quotes
     }
 
     public var count: Int {
-        quoutes.count
+        quotes.count
     }
 }

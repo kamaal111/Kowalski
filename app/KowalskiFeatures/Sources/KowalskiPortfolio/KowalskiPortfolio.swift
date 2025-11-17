@@ -6,21 +6,38 @@
 //
 
 import Observation
+import KowalskiClient
 
 @Observable
 public final class KowalskiPortfolio {
-    private init() { }
+    private let client: KowalskiClient
+    private let mapper = KowalskiPortfolioMappers()
+
+    private init(client: KowalskiClient) {
+        self.client = client
+    }
 
     @MainActor
-    func storeTransaction(_ payload: TransactionPayload) async { }
+    func storeTransaction(_ payload: TransactionPayload) async {}
+
+    @MainActor
+    func searchStocks(query: String) async -> Result<[Stock], Error> {
+        let result = await client.stocks.search(query: query)
+        return result.map(mapper.mapStocksSearchResponse)
+            .mapError { error in error as Error }
+    }
 
     // MARK: Factory
 
     public static func `default`() -> KowalskiPortfolio {
-        KowalskiPortfolio()
+        let client = KowalskiClient.default()
+
+        return KowalskiPortfolio(client: client)
     }
 
     public static func preview() -> KowalskiPortfolio {
-        KowalskiPortfolio()
+        let client = KowalskiClient.preview(withCredentials: true)
+
+        return KowalskiPortfolio(client: client)
     }
 }

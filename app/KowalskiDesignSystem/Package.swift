@@ -5,6 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "KowalskiDesignSystem",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(name: "KowalskiDesignSystem", targets: ["KowalskiDesignSystem"]),

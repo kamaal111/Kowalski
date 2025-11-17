@@ -36,18 +36,18 @@ public enum KowalskiTextFieldVariant {
     case email
 
     #if canImport(UIKit)
-    var keyboardType: UIKeyboardType {
-        switch self {
-        case .decimals: return .decimalPad
-        case .numbers: return .numberPad
-        case .text, .secure: return .default
-        case .email: return .emailAddress
+        var keyboardType: UIKeyboardType {
+            switch self {
+            case .decimals: return .decimalPad
+            case .numbers: return .numberPad
+            case .text, .secure: return .default
+            case .email: return .emailAddress
+            }
         }
-    }
     #endif
 }
 
-extension KowalskiTextFieldVariant: Equatable { }
+extension KowalskiTextFieldVariant: Equatable {}
 
 public struct KowalskiTextField: View {
     @State private var showPassword = false
@@ -74,17 +74,17 @@ public struct KowalskiTextField: View {
         self.variant = variant
         self.validations = validations.map({ validation -> any StringValidatableRule in
             switch validation {
-            case let .minimumLength(length, message):
+            case .minimumLength(let length, let message):
                 StringValidateMinimumLength(length: length, message: message)
-            case let .isSameAs(value, message):
+            case .isSameAs(let value, let message):
                 StringIsTheSameValue(value: value, message: message)
-            case let .email(message):
+            case .email(let message):
                 StringIsEmail(message: message)
-            case let .wordCount(count: count, message: message):
+            case .wordCount(count: let count, message: let message):
                 StringValidateWordCount(wordCount: count, message: message)
-            case let .notEmpty(message):
+            case .notEmpty(let message):
                 StringIsNotEmpty(message: message)
-            case let .numeric(locale, greaterThanOrEqualTo, message):
+            case .numeric(let locale, let greaterThanOrEqualTo, let message):
                 StringIsNumeric(
                     locale: locale,
                     options: .init(comparison: .init(op: .greaterThanOrEqualTo, value: greaterThanOrEqualTo)),
@@ -98,14 +98,20 @@ public struct KowalskiTextField: View {
         text: Binding<String>,
         errorResult: Binding<KowalskiTextFieldErrorResult?>,
         localizedTitle: LocalizedStringResource,
-        bundle: Bundle,
+        bundle: Bundle? = nil,
         variant: KowalskiTextFieldVariant = .text,
         validations: [KowalskiTextFieldValidationRules]
     ) {
+        let title =
+            if let bundle {
+                NSLocalizedString(localizedTitle.key, bundle: bundle, comment: "")
+            } else {
+                NSLocalizedString(localizedTitle.key, comment: "")
+            }
         self.init(
             text: text,
             errorResult: errorResult,
-            title: NSLocalizedString(localizedTitle.key, bundle: bundle, comment: ""),
+            title: title,
             variant: variant,
             validations: validations
         )
@@ -135,42 +141,45 @@ public struct KowalskiTextField: View {
     }
 
     public var body: some View {
-        FloatingFieldWrapper(text: text, title: title, error: textFieldError, field: {
-            if variant == .secure {
-                HStack {
-                    KJustStack {
-                        if showPassword {
-                            TextField(placeholderText, text: $text)
-                                .focused($isFocused)
-                        } else {
-                            SecureField(placeholderText, text: $text)
-                                .focused($isFocused)
+        FloatingFieldWrapper(
+            text: text, title: title, error: textFieldError,
+            field: {
+                if variant == .secure {
+                    HStack {
+                        KJustStack {
+                            if showPassword {
+                                TextField(placeholderText, text: $text)
+                                    .focused($isFocused)
+                            } else {
+                                SecureField(placeholderText, text: $text)
+                                    .focused($isFocused)
+                            }
                         }
+                        .ktakeWidthEagerly(alignment: .leading)
+                        Image(systemName: !showPassword ? "eye" : "eye.slash")
+                            .foregroundColor(showError ? Color.red : Color.accentColor)
+                            .onTapGesture { handleShowPassword() }
                     }
-                    .ktakeWidthEagerly(alignment: .leading)
-                    Image(systemName: !showPassword ? "eye" : "eye.slash")
-                        .foregroundColor(showError ? Color.red : Color.accentColor)
-                        .onTapGesture { handleShowPassword() }
+                } else {
+                    #if canImport(UIKit)
+                        TextField(placeholderText, text: $text)
+                            .focused($isFocused)
+                            .keyboardType(variant.keyboardType)
+                    #else
+                        TextField(placeholderText, text: $text)
+                            .focused($isFocused)
+                    #endif
                 }
-            } else {
-                #if canImport(UIKit)
-                TextField(placeholderText, text: $text)
-                    .focused($isFocused)
-                    .keyboardType(variant.keyboardType)
-                #else
-                TextField(placeholderText, text: $text)
-                    .focused($isFocused)
-                #endif
             }
-        })
+        )
         .onChange(of: text) { oldValue, newValue in handleValueChange(value: newValue) }
     }
 
     private var placeholderText: String {
         #if canImport(UIKit)
-        return ""
+            return ""
         #else
-        return title
+            return title
         #endif
     }
 
@@ -206,7 +215,7 @@ public struct KowalskiTextField: View {
         switch variant {
         case .numbers:
             return value.filter(\.isNumber)
-        case let .decimals(locale):
+        case .decimals(let locale):
             let decimalSeparator = locale.decimalSeparator ?? "."
             var hasDecimalSeparator = false
             let filteredValue = value.filter { char in
@@ -314,5 +323,5 @@ private struct FloatingFieldWrapper<Field: View>: View {
             validations: []
         )
     }
-        .padding(.all, .medium)
+    .padding(.all, .medium)
 }

@@ -8,7 +8,7 @@
 import Foundation
 
 struct TransactionPayload {
-    let symbolOrIsin: String
+    let stock: Stock
     let amount: Double
     let purchasePrice: Money
     let transactionType: TransactionType
