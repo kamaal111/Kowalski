@@ -12,7 +12,8 @@ import { auth } from './auth/index.js';
 
 import db from './db/index.js';
 import appApi from './app-api/index.js';
-import { APP_API_BASE_PATH } from './constants/common.js';
+import { APP_API_BASE_PATH, DAILY_API_BASE_PATH } from './constants/common.js';
+import dailyApi from './daily-api/index.js';
 
 const { PORT, DEBUG } = env;
 
@@ -23,7 +24,8 @@ const app = withOpenAPIDocumentation(
     .use(secureHeaders())
     .use(loggingMiddleware)
     .use(injectRequestContext({ db, auth }))
-    .route(APP_API_BASE_PATH, appApi),
+    .route(APP_API_BASE_PATH, appApi)
+    .route(DAILY_API_BASE_PATH, dailyApi),
 );
 
 if (DEBUG) {

@@ -100,6 +100,16 @@ Docker Compose creates `kowalski_db` container:
 
 ## Code Style
 
+### Quality Assurance
+
+**CRITICAL**: Always run `just quality` before marking any TypeScript/JavaScript changes as complete. This runs:
+
+- `pnpm run lint` (ESLint with strict rules)
+- `pnpm run format:check` (Prettier formatting)
+- `just server/typecheck` (TypeScript type checking)
+
+If any issues occur, fix them and re-run `just quality` until all checks pass. **Do not claim a task is done without passing quality checks.**
+
 ### TypeScript (server/)
 
 - **Strict mode**: `verbatimModuleSyntax` enabled, all ESLint rules enforced
@@ -113,6 +123,7 @@ Docker Compose creates `kowalski_db` container:
 - **Exports**: Default exports for routes/handlers
 - **Formatting**: Prettier with `@kamaalio/prettier-config`
 - **ESLint**: Recommended + TypeChecked + Strict + Stylistic configs
+- **Deprecated APIs**: Never use deprecated APIs (ESLint flags them with `@typescript-eslint/no-deprecated`). Use modern alternatives.
 
 ### Swift (app/)
 
