@@ -7,8 +7,12 @@ import signInHandler from '../handlers/sign-in.js';
 import signUpHandler from '../handlers/sign-up.js';
 import signOutHandler from '../handlers/sign-out.js';
 import sessionHandler from '../handlers/session.js';
+import { allowedModes } from '../../api/middleware.js';
+import { SERVER_MODES } from '../../api/env.js';
 
 const authApi = openAPIRouterFactory();
+
+authApi.use(allowedModes(SERVER_MODES.SERVER));
 
 authApi
   // POST: /sign-up/email

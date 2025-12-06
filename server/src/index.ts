@@ -14,6 +14,8 @@ import db from './db/index.js';
 import appApi from './app-api/index.js';
 import { APP_API_BASE_PATH } from './constants/common.js';
 
+const { PORT, DEBUG } = env;
+
 const app = withOpenAPIDocumentation(
   openAPIRouterFactory()
     .use(requestId())
@@ -24,7 +26,6 @@ const app = withOpenAPIDocumentation(
     .route(APP_API_BASE_PATH, appApi),
 );
 
-const { PORT, DEBUG } = env;
 if (DEBUG) {
   showRoutes(app, { verbose: false });
 }

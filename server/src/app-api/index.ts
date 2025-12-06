@@ -8,10 +8,13 @@ import type { HonoContext } from '../api/contexts.js';
 import { makeUncaughtErrorLog } from '../middleware/logging.js';
 import { STATUS_CODES } from '../constants/http.js';
 import { STOCKS_ROUTE_NAME, stocksApi } from '../stocks/index.js';
+import { SERVER_MODES } from '../api/env.js';
+import { allowedModes } from '../api/middleware.js';
 
 const appApi = openAPIRouterFactory();
 
 appApi
+  .use(allowedModes(SERVER_MODES.SERVER))
   .route(AUTH_ROUTE_NAME, authApi)
   .route(STOCKS_ROUTE_NAME, stocksApi)
   .all('/*', c => {

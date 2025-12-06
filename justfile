@@ -132,15 +132,15 @@ install-node:
     [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh"
     [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && . "/opt/homebrew/opt/nvm/nvm.sh"
     [ -s "/usr/local/opt/nvm/nvm.sh" ] && . "/usr/local/opt/nvm/nvm.sh"
-    
+
     if ! command -v {{ NVM }} &> /dev/null
     then
         echo "NVM not found. Please run 'just install-nvm' first."
         exit 1
     fi
-    
+
     echo "Checking for Node.js version {{ NODE_VERSION }}..."
-    
+
     if {{ NVM }} list | grep -q "v{{ NODE_VERSION }}"
     then
         echo "Node.js {{ NODE_VERSION }} is already installed"
@@ -154,6 +154,6 @@ install-node:
         {{ NVM }} alias default {{ NODE_VERSION }}
         echo "Node.js {{ NODE_VERSION }} installed and set as default"
     fi
-    
+
     echo "Current Node.js version: $(node --version)"
     echo "Current npm version: $(npm --version)"
