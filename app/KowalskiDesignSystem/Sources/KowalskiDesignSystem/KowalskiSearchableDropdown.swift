@@ -8,6 +8,8 @@
 import SwiftUI
 import KamaalUI
 
+private let DEBOUNCE_TIME_IN_MILLISECONDS: UInt64 = 1000
+
 public struct KowalskiSearchableDropdown<Item: Identifiable & Hashable>: View {
     @State private var searchText = ""
     @State private var searchResults: [Item] = []
@@ -25,19 +27,16 @@ public struct KowalskiSearchableDropdown<Item: Identifiable & Hashable>: View {
     private let title: String
     private let itemLabel: (Item) -> String
     private let onSearch: (String) async -> Result<[Item], Error>
-    private let debounceMilliseconds: UInt64
 
     public init(
         selectedItem: Binding<Item?>,
         title: String,
         itemLabel: @escaping (Item) -> String,
-        debounceMilliseconds: UInt64 = 300,
         onSearch: @escaping (String) async -> Result<[Item], Error>
     ) {
         self._selectedItem = selectedItem
         self.title = title
         self.itemLabel = itemLabel
-        self.debounceMilliseconds = debounceMilliseconds
         self.onSearch = onSearch
         self.textYOffset = Self.nextTextYOffsetValue(selectedItem.wrappedValue == nil)
         self.textScaleEffect = Self.nextTextScaleEffectValue(selectedItem.wrappedValue == nil)
@@ -48,7 +47,6 @@ public struct KowalskiSearchableDropdown<Item: Identifiable & Hashable>: View {
         localizedTitle: LocalizedStringResource,
         bundle: Bundle? = nil,
         itemLabel: @escaping (Item) -> String,
-        debounceMilliseconds: UInt64 = 300,
         onSearch: @escaping (String) async -> Result<[Item], Error>
     ) {
         let title = if let bundle {
@@ -60,7 +58,6 @@ public struct KowalskiSearchableDropdown<Item: Identifiable & Hashable>: View {
             selectedItem: selectedItem,
             title: title,
             itemLabel: itemLabel,
-            debounceMilliseconds: debounceMilliseconds,
             onSearch: onSearch
         )
     }
@@ -189,7 +186,7 @@ public struct KowalskiSearchableDropdown<Item: Identifiable & Hashable>: View {
 
         let task = Task {
             do {
-                try await Task.sleep(nanoseconds: debounceMilliseconds * 1_000_000)
+                try await Task.sleep(nanoseconds: DEBOUNCE_TIME_IN_MILLISECONDS * 1_000_000)
             } catch {
                 return
             }
