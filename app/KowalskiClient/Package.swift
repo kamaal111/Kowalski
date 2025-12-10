@@ -30,6 +30,8 @@ let package = Package(
             ],
             swiftSettings: [
                 .treatAllWarnings(as: .error),
+                .strictMemorySafety(),
+                .enableExperimentalFeature("StrictConcurrency"),
             ],
             plugins: [
                 .plugin(name: "OpenAPIGenerator", package: "swift-openapi-generator"),

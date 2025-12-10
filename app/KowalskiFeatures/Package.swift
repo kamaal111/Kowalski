@@ -32,6 +32,8 @@ let package = Package(
             ],
             swiftSettings: [
                 .treatAllWarnings(as: .error),
+                .strictMemorySafety(),
+                .enableExperimentalFeature("StrictConcurrency"),
             ]
         ),
         .target(
@@ -45,6 +47,8 @@ let package = Package(
             ],
             swiftSettings: [
                 .treatAllWarnings(as: .error),
+                .strictMemorySafety(),
+                .enableExperimentalFeature("StrictConcurrency"),
             ]
         ),
     ]

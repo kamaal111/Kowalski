@@ -14,6 +14,8 @@ let package = Package(
             name: "KowalskiUtils",
             swiftSettings: [
                 .treatAllWarnings(as: .error),
+                .strictMemorySafety(),
+                .enableExperimentalFeature("StrictConcurrency"),
             ]
         ),
     ]
