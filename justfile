@@ -17,6 +17,10 @@ default:
 dev-server: start-services
     just server/dev-server
 
+# Run dev daily server
+dev-daily: start-services
+    just server/dev-daily
+
 # Run server
 run-server:
     just server/run-server

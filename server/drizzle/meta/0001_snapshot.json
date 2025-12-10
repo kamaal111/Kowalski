@@ -1,6 +1,6 @@
 {
-  "id": "7335b1e1-8aae-42d2-85d8-58923b8a6d97",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "b2553905-36b5-4980-aeea-7fb06429d44a",
+  "prevId": "7335b1e1-8aae-42d2-85d8-58923b8a6d97",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -307,6 +307,60 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.exchange_rates": {
+      "name": "exchange_rates",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "base": {
+          "name": "base",
+          "type": "char(3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rates": {
+          "name": "rates",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "exchange_rates_base_date_unique": {
+          "name": "exchange_rates_base_date_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "base",
+            "date"
+          ]
+        },
+        "exchange_rate_entry": {
+          "name": "exchange_rate_entry",
+          "nullsNotDistinct": false,
+          "columns": [
+            "base",
+            "date"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

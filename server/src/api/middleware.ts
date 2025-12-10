@@ -8,7 +8,7 @@ const { MODE } = env;
 
 export function allowedModes(...modes: ServerMode[]) {
   return createMiddleware<{ Variables: HonoVariables }>(async (c, next) => {
-    if (modes.includes(MODE)) {
+    if (!modes.includes(MODE)) {
       throw new NotFound(c);
     }
 

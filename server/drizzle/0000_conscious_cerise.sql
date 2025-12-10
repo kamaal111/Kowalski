@@ -1,4 +1,3 @@
-CREATE TYPE "public"."transaction_types" AS ENUM('buy', 'sell');--> statement-breakpoint
 CREATE TABLE "account" (
 	"id" text PRIMARY KEY NOT NULL,
 	"account_id" text NOT NULL,
@@ -47,23 +46,6 @@ CREATE TABLE "verification" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "exchange_rate" (
-	"id" text PRIMARY KEY NOT NULL,
-	"currency" char(3) NOT NULL,
-	"rate" numeric(20, 10) NOT NULL,
-	"source_id" text NOT NULL,
-	CONSTRAINT "exchange_rate_currency_source_id_unique" UNIQUE("currency","source_id"),
-	CONSTRAINT "rate_entry" UNIQUE("currency","source_id")
-);
---> statement-breakpoint
-CREATE TABLE "exchange_rate_source" (
-	"id" text PRIMARY KEY NOT NULL,
-	"sourceDate" date NOT NULL,
-	"base_currency" char(3) NOT NULL,
-	CONSTRAINT "exchange_rate_source_sourceDate_base_currency_unique" UNIQUE("sourceDate","base_currency"),
-	CONSTRAINT "source_entry" UNIQUE("sourceDate","base_currency")
-);
---> statement-breakpoint
 CREATE TABLE "portfolio" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
@@ -107,7 +89,6 @@ CREATE TABLE "stock_ticker" (
 --> statement-breakpoint
 ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "exchange_rate" ADD CONSTRAINT "exchange_rate_source_id_exchange_rate_source_id_fk" FOREIGN KEY ("source_id") REFERENCES "public"."exchange_rate_source"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "portfolio" ADD CONSTRAINT "portfolio_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "portfolio_transaction" ADD CONSTRAINT "portfolio_transaction_ticker_id_stock_ticker_id_fk" FOREIGN KEY ("ticker_id") REFERENCES "public"."stock_ticker"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "portfolio_transaction" ADD CONSTRAINT "portfolio_transaction_portfolio_id_portfolio_id_fk" FOREIGN KEY ("portfolio_id") REFERENCES "public"."portfolio"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

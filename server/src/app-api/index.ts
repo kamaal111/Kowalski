@@ -1,6 +1,6 @@
 import { HTTPException } from 'hono/http-exception';
 
-import { InvalidValidation, NotFound } from '../api/exceptions.js';
+import { InvalidValidation } from '../api/exceptions.js';
 import { openAPIRouterFactory } from '../api/open-api.js';
 import { AUTH_ROUTE_NAME, authApi } from '../auth/index.js';
 import type { HonoContext } from '../api/contexts.js';
@@ -16,9 +16,6 @@ appApi
   .use(allowedModes(SERVER_MODES.SERVER))
   .route(AUTH_ROUTE_NAME, authApi)
   .route(STOCKS_ROUTE_NAME, stocksApi)
-  .all('/*', c => {
-    throw new NotFound(c);
-  })
   .onError((err, c) => {
     if (err instanceof InvalidValidation) {
       return c.json({ message: err.message, validations: err.validationError.issues }, err.status);

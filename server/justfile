@@ -9,7 +9,8 @@ TSX := PNX + " tsx"
 AUTH_CONFIG := "src/auth/better-auth.ts"
 AUTH_SCHEMA := "src/db/schema/better-auth.ts"
 
-PORT := "8080"
+SERVER_PORT := "8080"
+DAILY_PORT := "8081"
 
 # List available commands
 default:
@@ -20,11 +21,26 @@ dev-server: prepare migrate
     #!/usr/bin/env zsh
 
     export DEBUG="true"
+    export PORT="{{ SERVER_PORT }}"
+
+    {{ PNR }} dev
+
+# Start daily development server
+dev-daily: prepare migrate
+    #!/usr/bin/env zsh
+
+    export DEBUG="true"
+    export PORT="{{ DAILY_PORT }}"
+    export MODE="DAILY"
 
     {{ PNR }} dev
 
 # Run server
 run-server: prepare compile
+    #!/usr/bin/env zsh
+
+    export PORT="{{ SERVER_PORT }}"
+
     {{ PNR }} start
 
 # Compile server
@@ -44,7 +60,7 @@ test: prepare
     {{ PNR }} test
 
 # Generate migrations
-make-migrations: prepare compile
+make-migrations: clean prepare compile
     {{ PNX }} drizzle-kit generate
 
 # Run database migrations
@@ -63,7 +79,7 @@ push-schema: prepare
 download-spec output_schema_filepath: prepare
     #!/usr/bin/env zsh
 
-    SERVER_URL="http://localhost:{{ PORT }}"
+    SERVER_URL="http://localhost:{{ SERVER_PORT }}"
 
     echo "🚀 Auto-downloading OpenAPI spec to {{ output_schema_filepath }}..."
 
@@ -88,7 +104,7 @@ download-spec output_schema_filepath: prepare
             if [ $i -eq 30 ]
             then
                 echo "❌ Server failed to start within 30 seconds"
-                kill $(lsof -t -i:{{ PORT }}) || true
+                kill $(lsof -t -i:{{ SERVER_PORT }}) || true
                 exit 1
             fi
             echo "   Attempt $i/30..."
@@ -98,9 +114,13 @@ download-spec output_schema_filepath: prepare
         npx tsx scripts/download-openapi-spec.ts "{{ output_schema_filepath }}" "$SERVER_URL"
 
         echo "🛑 Stopping development server..."
-        kill $(lsof -t -i:{{ PORT }}) || true
+        kill $(lsof -t -i:{{ SERVER_PORT }}) || true
         echo "✅ Done! OpenAPI spec saved to {{ output_schema_filepath }}"
     fi
+
+# Clean project
+clean:
+    {{ PNR }} clean
 
 # Bootstrap the server project
 bootstrap: prepare
