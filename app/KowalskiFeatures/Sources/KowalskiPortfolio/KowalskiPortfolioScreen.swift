@@ -5,15 +5,15 @@
 //  Created by Kamaal M Farah on 11/1/25.
 //
 
-import SwiftUI
 import KamaalUI
 import KowalskiDesignSystem
+import SwiftUI
 
 public struct KowalskiPortfolioScreen: View {
-    public init() { }
+    public init() {}
 
     public var body: some View {
-        VStack() {
+        VStack {
             Text("Kowalski")
                 .font(.title)
         }

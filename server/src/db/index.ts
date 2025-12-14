@@ -6,10 +6,13 @@ import * as stocksSchema from './schema/stocks.js';
 import * as portfolioSchema from './schema/portfolio.js';
 import * as forexSchema from './schema/forex.js';
 
-const { DATABASE_URL } = env;
+const { DATABASE_URL, DEBUG } = env;
 
 export type Database = typeof db;
 
-const db = drizzle(DATABASE_URL, { schema: { ...schema, ...stocksSchema, ...portfolioSchema, ...forexSchema } });
+const db = drizzle(DATABASE_URL, {
+  schema: { ...schema, ...stocksSchema, ...portfolioSchema, ...forexSchema },
+  logger: DEBUG,
+});
 
 export default db;

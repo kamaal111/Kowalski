@@ -36,7 +36,7 @@ async function fetExchangeRates(urls: URL[]): Promise<ExchangeRateRecord | undef
       const response = await fetch(url);
       const content = await response.text();
       const parsedContent: unknown = await parseStringPromise(content);
-      const contentObject = await ForexECPResponseSchema.parseAsync(parsedContent);
+      const contentObject = ForexECPResponseSchema.parse(parsedContent);
       const exchangeRates: Record<string, ExchangeRateRecord> = {};
       for (const contentItem of contentObject['rdf:RDF']?.item ?? []) {
         const item = ForexItem.fromECBResponse(contentItem);

@@ -2,11 +2,19 @@ import z from 'zod';
 
 export const TokenHeaders = z.object({
   'set-auth-token': z.string().openapi({
-    description: 'Authentication token set in response header',
-    example: 'f21wcpz7Aokmlh2MB632MZpTgfruPc62',
+    description: 'JWT token for API authentication',
+    example: 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9...',
   }),
   'set-auth-token-expiry': z.string().openapi({
-    description: 'Token expiry time in seconds (as a string representing digits)',
+    description: 'JWT expiry time in seconds (as a string representing digits)',
     example: '604800',
+  }),
+  'set-session-token': z.string().openapi({
+    description: 'Session token for token refresh',
+    example: 'f21wcpz7Aokmlh2MB632MZpTgfruPc62',
+  }),
+  'set-session-update-age': z.string().openapi({
+    description: 'Session update age in seconds - session should be verified after this time',
+    example: '86400',
   }),
 });

@@ -2,6 +2,21 @@
 
 **Monorepo**: TypeScript/Node.js server + SwiftUI iOS/macOS app
 
+## ⚠️ CRITICAL: Server Management Rules
+
+**NEVER START THE SERVER DIRECTLY**
+
+- ❌ DO NOT use `node dist/src/index.js &` or any background process commands
+- ❌ DO NOT use `pnpm start &` or `tsx src/index.ts &` in background
+- ❌ DO NOT start the server with `&` or in any terminal that persists after the agent completes
+- ✅ ONLY use `just dev-server` if the user explicitly requests to start the server
+- ✅ For testing API changes, compile the code and let the user start the server manually
+- ✅ If OpenAPI spec needs downloading, ask the user to start the server first
+
+**Why**: Background server processes started by agents cannot be killed properly and require system restart to clean up.
+
+**If you need to verify compilation works**: Use `just compile-server` and let the user run the server.
+
 ## Technology Stack
 
 ### Backend (server/)
@@ -118,6 +133,7 @@ If any issues occur, fix them and re-run `just quality` until all checks pass. *
 - **Files**: kebab-case (e.g., `sign-in.ts`)
 - **Types/Schemas**: PascalCase, use `.openapi()` for Zod schemas
 - **Functions/vars**: camelCase
+- **Type Safety**: NEVER use type casting (`as Type`). Always validate/assert with Zod schemas using `.parse()` or `.safeParse()`
 - **Errors**: Custom exception classes extending `APIException` (see `server/src/auth/exceptions.ts`)
 - **Constants**: Centralize in `src/constants/` (HTTP codes, MIME types)
 - **Exports**: Default exports for routes/handlers

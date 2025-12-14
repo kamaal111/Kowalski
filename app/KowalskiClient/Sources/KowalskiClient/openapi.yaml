@@ -21,23 +21,47 @@ paths:
             set-auth-token:
               schema:
                 type: string
-                description: Authentication token set in response header
-                example: f21wcpz7Aokmlh2MB632MZpTgfruPc62
+                description: JWT token for API authentication
+                example: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9...
               required: true
-              description: Authentication token set in response header
+              description: JWT token for API authentication
             set-auth-token-expiry:
               schema:
                 type: string
-                description: Token expiry time in seconds (as a string representing digits)
+                description: JWT expiry time in seconds (as a string representing digits)
                 example: '604800'
               required: true
-              description: Token expiry time in seconds (as a string representing digits)
+              description: JWT expiry time in seconds (as a string representing digits)
+            set-session-token:
+              schema:
+                type: string
+                description: Session token for token refresh
+                example: f21wcpz7Aokmlh2MB632MZpTgfruPc62
+              required: true
+              description: Session token for token refresh
+            set-session-update-age:
+              schema:
+                type: string
+                description: >-
+                  Session update age in seconds - session should be verified
+                  after this time
+                example: '86400'
+              required: true
+              description: >-
+                Session update age in seconds - session should be verified after
+                this time
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
         '400':
           description: Invalid request or email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication failed or invalid credentials
           content:
             application/json:
               schema:
@@ -66,17 +90,35 @@ paths:
             set-auth-token:
               schema:
                 type: string
-                description: Authentication token set in response header
-                example: f21wcpz7Aokmlh2MB632MZpTgfruPc62
+                description: JWT token for API authentication
+                example: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9...
               required: true
-              description: Authentication token set in response header
+              description: JWT token for API authentication
             set-auth-token-expiry:
               schema:
                 type: string
-                description: Token expiry time in seconds (as a string representing digits)
+                description: JWT expiry time in seconds (as a string representing digits)
                 example: '604800'
               required: true
-              description: Token expiry time in seconds (as a string representing digits)
+              description: JWT expiry time in seconds (as a string representing digits)
+            set-session-token:
+              schema:
+                type: string
+                description: Session token for token refresh
+                example: f21wcpz7Aokmlh2MB632MZpTgfruPc62
+              required: true
+              description: Session token for token refresh
+            set-session-update-age:
+              schema:
+                type: string
+                description: >-
+                  Session update age in seconds - session should be verified
+                  after this time
+                example: '86400'
+              required: true
+              description: >-
+                Session update age in seconds - session should be verified after
+                this time
           content:
             application/json:
               schema:
@@ -111,13 +153,15 @@ paths:
       tags:
         - Authentication
       summary: Get session
-      description: Get the current user session information
+      description: >-
+        Get the current user session information. Can authenticate via either
+        Authorization header (JWT bearer token) or session cookie.
       parameters:
         - schema:
             type: string
             description: Bearer token for authentication
             example: Bearer f21wcpz7Aokmlh2MB632MZpTgfruPc62
-          required: true
+          required: false
           description: Bearer token for authentication
           name: authorization
           in: header
@@ -130,6 +174,62 @@ paths:
                 $ref: '#/components/schemas/SessionResponse'
         '404':
           description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /app-api/auth/token:
+    get:
+      tags:
+        - Authentication
+      summary: Get JWT token
+      description: >-
+        Get a new JWT token for the authenticated session. Use bearer token
+        authentication.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Token retrieved successfully
+          headers:
+            set-auth-token:
+              schema:
+                type: string
+                description: JWT token for API authentication
+                example: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9...
+              required: true
+              description: JWT token for API authentication
+            set-auth-token-expiry:
+              schema:
+                type: string
+                description: JWT expiry time in seconds (as a string representing digits)
+                example: '604800'
+              required: true
+              description: JWT expiry time in seconds (as a string representing digits)
+            set-session-token:
+              schema:
+                type: string
+                description: Session token for token refresh
+                example: f21wcpz7Aokmlh2MB632MZpTgfruPc62
+              required: true
+              description: Session token for token refresh
+            set-session-update-age:
+              schema:
+                type: string
+                description: >-
+                  Session update age in seconds - session should be verified
+                  after this time
+                example: '86400'
+              required: true
+              description: >-
+                Session update age in seconds - session should be verified after
+                this time
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: Not authenticated or session expired
           content:
             application/json:
               schema:
@@ -342,6 +442,15 @@ components:
           email: john@apple.com
           email_verified: false
           created_at: '2025-10-05T12:08:28.374Z'
+    TokenResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT token
+          example: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9...
+      required:
+        - token
     StocksSearchQuoteItem:
       type: object
       properties:
@@ -422,5 +531,10 @@ components:
             industry: Consumer Electronics
             exchange_dispatch: NASDAQ
   parameters: {}
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
 servers:
   - url: http://127.0.0.1:8080

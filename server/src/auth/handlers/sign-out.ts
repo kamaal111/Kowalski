@@ -7,8 +7,8 @@ import { handleAuthRequest } from '../utils/request.js';
 async function signOutHandler(c: HonoContext) {
   const status = STATUS_CODES.OK;
   const responseSchema = signOutRoute.responses[status].content[MIME_TYPES.APPLICATION_JSON].schema;
-  const { jsonResponse, response } = await handleAuthRequest(c, { responseSchema });
-  return c.json(jsonResponse, { status, headers: response.headers });
+  const { jsonResponse } = await handleAuthRequest(c, { responseSchema });
+  return c.json(jsonResponse, { status });
 }
 
 export default signOutHandler;

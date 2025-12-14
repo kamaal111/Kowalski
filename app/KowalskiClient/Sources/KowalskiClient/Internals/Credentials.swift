@@ -9,13 +9,35 @@ import Foundation
 import KowalskiUtils
 
 struct Credentials: Codable, Expirable {
-    let email: String
     let authToken: String
     let expiryDate: Date
+    let sessionToken: String
+    let sessionUpdateAge: TimeInterval
+    let lastSessionUpdate: Date
 
     var expiresAt: Date { expiryDate }
 
     func setExpiryDate(_ date: Date) -> Credentials {
-        Credentials(email: email, authToken: authToken, expiryDate: date)
+        Credentials(
+            authToken: authToken,
+            expiryDate: date,
+            sessionToken: sessionToken,
+            sessionUpdateAge: sessionUpdateAge,
+            lastSessionUpdate: lastSessionUpdate
+        )
+    }
+
+    func shouldUpdateSession() -> Bool {
+        Date.now.timeIntervalSince(lastSessionUpdate) >= sessionUpdateAge
+    }
+
+    func updatedSession() -> Credentials {
+        Credentials(
+            authToken: authToken,
+            expiryDate: expiryDate,
+            sessionToken: sessionToken,
+            sessionUpdateAge: sessionUpdateAge,
+            lastSessionUpdate: Date.now
+        )
     }
 }

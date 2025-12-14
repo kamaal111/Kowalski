@@ -12,9 +12,10 @@ const sessionRoute = createRoute({
   tags: [OPENAPI_TAG],
   summary: 'Get session',
   middleware: [requireLoggedInSessionMiddleware],
-  description: 'Get the current user session information',
+  description:
+    'Get the current user session information. Can authenticate via either Authorization header (JWT bearer token) or session cookie.',
   request: {
-    headers: AuthenticationHeaders,
+    headers: AuthenticationHeaders.partial(),
   },
   responses: {
     200: {

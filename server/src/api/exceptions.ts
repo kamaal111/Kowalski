@@ -17,6 +17,7 @@ export class APIException extends HTTPException {
         message: options.message,
         code: options.code,
         context: options.context,
+        request_id: c.get('requestId'),
       }),
       {
         status: statusCode,
@@ -52,6 +53,15 @@ export class NotFound extends APIException {
     super(c, STATUS_CODES.NOT_FOUND, {
       message: options?.message ?? 'Not found',
       code: 'NOT_FOUND',
+    });
+  }
+}
+
+export class Unauthorized extends APIException {
+  constructor(c: HonoContext, options?: { message?: string }) {
+    super(c, STATUS_CODES.UNAUTHORIZED, {
+      message: options?.message ?? 'Unauthorized',
+      code: 'UNAUTHORIZED',
     });
   }
 }

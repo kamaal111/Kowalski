@@ -6,8 +6,11 @@
 //
 
 import Foundation
+import KamaalLogger
 import KamaalUtils
 import OpenAPIRuntime
+
+private let logger = KamaalLogger(from: KowalskiAuthClientImpl.self, failOnError: true)
 
 // MARK: Protocol
 
@@ -17,12 +20,14 @@ public protocol KowalskiAuthClient: Sendable {
     func signIn(email: String, password: String) async -> Result<Void, KowalskiAuthSignInErrors>
 
     func session() async -> Result<KowalskiAuthSessionResponse, KowalskiAuthSessionErrors>
+
+    func refreshToken() async -> Result<Void, KowalskiAuthRefreshErrors>
 }
 
 // MARK: Factory
 
 struct KowalskiAuthClientFactory {
-    private init() { }
+    private init() {}
 
     static func `default`(
         client: Client,
@@ -60,6 +65,11 @@ public enum KowalskiAuthSessionErrors: Error {
     case unauthorized
 }
 
+public enum KowalskiAuthRefreshErrors: Error {
+    case unknown(statusCode: Int, payload: OpenAPIRuntime.UndocumentedPayload?, context: Error?)
+    case unauthorized
+}
+
 // MARK: Implementation
 
 struct KowalskiAuthClientImpl: KowalskiAuthClient {
@@ -92,21 +102,22 @@ struct KowalskiAuthClientImpl: KowalskiAuthClient {
 
         let payload: Operations.PostAppApiAuthSignUpEmail.Output.Created
         switch response {
-        case .badRequest:
+        case .badRequest, .unauthorized:
             return .failure(.badRequest)
         case .conflict:
             return .failure(.conflict)
-        case let .undocumented(statusCode: statusCode, payload):
+        case .undocumented(let statusCode, let payload):
             return .failure(.unknown(statusCode: statusCode, payload: payload, context: nil))
-        case let .created(created):
+        case .created(let created):
             payload = created
         }
 
         do {
-            try setInitialCredentials(
-                email: email,
+            try storeCredentials(
                 token: payload.headers.setAuthToken,
-                expiryTime: payload.headers.setAuthTokenExpiry
+                expiryTime: payload.headers.setAuthTokenExpiry,
+                sessionToken: payload.headers.setSessionToken,
+                sessionUpdateAge: payload.headers.setSessionUpdateAge
             )
         } catch {
             return .failure(.unknown(statusCode: 500, payload: nil, context: error))
@@ -130,21 +141,22 @@ struct KowalskiAuthClientImpl: KowalskiAuthClient {
 
         let payload: Operations.PostAppApiAuthSignInEmail.Output.Ok
         switch response {
-        case let .undocumented(statusCode, payload):
+        case .undocumented(let statusCode, let payload):
             return .failure(.unknown(statusCode: statusCode, payload: payload, context: nil))
         case .unauthorized:
             return .failure(.unauthorized)
         case .badRequest:
             return .failure(.badRequest)
-        case let .ok(ok):
+        case .ok(let ok):
             payload = ok
         }
 
         do {
-            try setInitialCredentials(
-                email: email,
+            try storeCredentials(
                 token: payload.headers.setAuthToken,
-                expiryTime: payload.headers.setAuthTokenExpiry
+                expiryTime: payload.headers.setAuthTokenExpiry,
+                sessionToken: payload.headers.setSessionToken,
+                sessionUpdateAge: payload.headers.setSessionUpdateAge
             )
         } catch {
             return .failure(.unknown(statusCode: 500, payload: nil, context: error))
@@ -173,9 +185,9 @@ struct KowalskiAuthClientImpl: KowalskiAuthClient {
         case .notFound:
             Keychain.delete(forKey: credentialsKeychainKey)
             return .failure(.unauthorized)
-        case let .undocumented(statusCode, payload):
+        case .undocumented(let statusCode, let payload):
             return .failure(.unknown(statusCode: statusCode, payload: payload, context: nil))
-        case let .ok(ok):
+        case .ok(let ok):
             payload = ok
         }
 
@@ -201,10 +213,63 @@ struct KowalskiAuthClientImpl: KowalskiAuthClient {
         return .success(session)
     }
 
-    private func setInitialCredentials(email:String, token: String, expiryTime expiryTimeString: String) throws {
+    // MARK: Refresh Token
+
+    func refreshToken() async -> Result<Void, KowalskiAuthRefreshErrors> {
+        let response: Operations.GetAppApiAuthToken.Output
+        do {
+            response = try await client.getAppApiAuthToken()
+        } catch {
+            return .failure(.unknown(statusCode: 503, payload: nil, context: error))
+        }
+
+        let payload: Operations.GetAppApiAuthToken.Output.Ok
+        switch response {
+        case .unauthorized:
+            Keychain.delete(forKey: credentialsKeychainKey)
+            return .failure(.unauthorized)
+        case .undocumented(let statusCode, let payload):
+            return .failure(.unknown(statusCode: statusCode, payload: payload, context: nil))
+        case .ok(let ok):
+            payload = ok
+        }
+
+        do {
+            try storeCredentials(
+                token: payload.headers.setAuthToken,
+                expiryTime: payload.headers.setAuthTokenExpiry,
+                sessionToken: payload.headers.setSessionToken,
+                sessionUpdateAge: payload.headers.setSessionUpdateAge
+            )
+        } catch {
+            return .failure(.unknown(statusCode: 500, payload: nil, context: error))
+        }
+
+        return .success(())
+    }
+
+    private func storeCredentials(
+        token: String,
+        expiryTime expiryTimeString: String,
+        sessionToken: String,
+        sessionUpdateAge sessionUpdateAgeString: String
+    ) throws {
         let expiryTime = Date.now.timeIntervalSince1970 + TimeInterval(Int(expiryTimeString)!)
         let expiryDate = Date(timeIntervalSince1970: expiryTime)
-        let credentials = Credentials(email: email, authToken: token, expiryDate: expiryDate)
+        let sessionUpdateAge = TimeInterval(Int(sessionUpdateAgeString)!)
+
+        logger.info("Storing JWT: \(String(token.prefix(7)))...")
+        logger.info("Session token: \(String(sessionToken.prefix(7)))... (length: \(sessionToken.count))")
+
+        assert(token.split(separator: ".").count == 3)
+
+        let credentials = Credentials(
+            authToken: token,
+            expiryDate: expiryDate,
+            sessionToken: sessionToken,
+            sessionUpdateAge: sessionUpdateAge,
+            lastSessionUpdate: .now
+        )
         let credentialsData = try jsonEncoder.encode(credentials)
         Keychain.set(credentialsData, forKey: credentialsKeychainKey)
     }
@@ -213,7 +278,7 @@ struct KowalskiAuthClientImpl: KowalskiAuthClient {
 // MARK: Preview
 
 struct KowalskiAuthClientPreview: KowalskiAuthClient {
-    fileprivate init() { }
+    fileprivate init() {}
 
     func signUp(name: String, email: String, password: String) async -> Result<Void, KowalskiAuthSignUpErrors> {
         .success(())
@@ -224,10 +289,15 @@ struct KowalskiAuthClientPreview: KowalskiAuthClient {
     }
 
     func session() async -> Result<KowalskiAuthSessionResponse, KowalskiAuthSessionErrors> {
-        .success(.init(
-            name: "Yami Sukehiro",
-            email: "yami@bulls.io",
-            expiresAt: Date(timeIntervalSince1970: 1762088596)
-        ))
+        .success(
+            .init(
+                name: "Yami Sukehiro",
+                email: "yami@bulls.io",
+                expiresAt: Date(timeIntervalSince1970: 1_762_088_596)
+            ))
+    }
+
+    func refreshToken() async -> Result<Void, KowalskiAuthRefreshErrors> {
+        .success(())
     }
 }

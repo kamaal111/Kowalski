@@ -13,7 +13,7 @@ protocol CredentialsGetter: Sendable {
 }
 
 struct CredentialsGetterFactory {
-    private init() { }
+    private init() {}
 
     static func `default`(keychainKey: String) -> CredentialsGetter {
         CredentialsGetterImpl(keychainKey: keychainKey)
@@ -21,15 +21,18 @@ struct CredentialsGetterFactory {
 
     static func preview(withCredentials: Bool) -> CredentialsGetter {
         let oneDay: TimeInterval = 86400
-        let credentials: Credentials? = if withCredentials {
-            Credentials(
-                email: "yami@bulls.io",
-                authToken: "GGGGGGGG",
-                expiryDate: Date.now.addingTimeInterval(oneDay)
-            )
-        } else {
-            nil
-        }
+        let credentials: Credentials? =
+            if withCredentials {
+                Credentials(
+                    authToken: "GGGGGGGG",
+                    expiryDate: Date.now.addingTimeInterval(oneDay),
+                    sessionToken: "session_token_preview",
+                    sessionUpdateAge: oneDay,
+                    lastSessionUpdate: .now
+                )
+            } else {
+                nil
+            }
 
         return CredentialsGetterPreview(credentials: credentials)
     }

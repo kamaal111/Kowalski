@@ -41,7 +41,7 @@ async function downloadOpenAPISpec(serverUrl: string, outputFile: string) {
 let outputFile: string;
 let serverUrl: string;
 try {
-  [outputFile, serverUrl] = await ArgsSchema.parseAsync(process.argv.slice(2));
+  [outputFile, serverUrl] = ArgsSchema.parse(process.argv.slice(2));
 } catch (error) {
   console.log('🐸🐸🐸 error', error);
   asserts.invariant(error instanceof z.ZodError);

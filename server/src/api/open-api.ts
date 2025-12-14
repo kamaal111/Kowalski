@@ -8,6 +8,7 @@ import yaml from 'js-yaml';
 import type { HonoContext, HonoEnvironment } from './contexts.js';
 import { InvalidValidation } from './exceptions.js';
 import { STATUS_CODES } from '../constants/http.js';
+import { errorLogger } from '../middleware/logging.js';
 
 export type OpenAPIRouter = OpenAPIHono<HonoEnvironment>;
 
@@ -17,6 +18,15 @@ const OPENAPI_INFO = {
   openapi: '3.1.1',
   info: { version: '1.0.0', title: 'Kowalski API' },
   servers: [{ url: 'http://127.0.0.1:8080' }],
+  components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
+    },
+  },
 };
 
 const OpenAPIInfoSchema = z.object({
@@ -25,20 +35,48 @@ const OpenAPIInfoSchema = z.object({
   description: z.string().optional(),
 });
 
+const OpenAPIComponentsSchema = z
+  .object({
+    schemas: z.record(z.string(), z.object().loose()).optional(),
+    securitySchemes: z.record(z.string(), z.unknown()).optional(),
+  })
+  .loose()
+  .transform(components => ({
+    ...components,
+    securitySchemes: components.securitySchemes ?? OPENAPI_INFO.components.securitySchemes,
+  }));
+
 const OpenAPISpecSchema = z
   .object({
     openapi: z.string(),
     info: OpenAPIInfoSchema,
     paths: z.record(z.string(), z.record(z.string(), z.unknown())),
-    components: z.object({ schemas: z.record(z.string(), z.object().loose()) }).loose(),
+    components: OpenAPIComponentsSchema,
   })
   .loose();
 
-export function openAPIRouterFactory() {
+export function openAPIRouterFactory(): OpenAPIHono<HonoEnvironment, BlankSchema, '/'> {
   return new OpenAPIHono<HonoEnvironment>({
     defaultHook: (result, c) => {
       if (!result.success) {
-        throw new InvalidValidation(c as HonoContext, result.error);
+        const ctx = c as HonoContext;
+        const method = ctx.req.method;
+        const path = ctx.req.path;
+        const requestId = ctx.get('requestId');
+
+        errorLogger(
+          ctx,
+          `[VALIDATION ERROR] ${method} ${path}`,
+          `Request ID: ${requestId}`,
+          `Validation failed with ${result.error.issues.length} issue(s):`,
+        );
+
+        result.error.issues.forEach((issue, index) => {
+          const pathStr = issue.path.length > 0 ? issue.path.join('.') : '<root>';
+          errorLogger(ctx, `  Issue ${index + 1}: [${issue.code}] at '${pathStr}' - ${issue.message}`);
+        });
+
+        throw new InvalidValidation(ctx, result.error);
       }
     },
   });
@@ -67,7 +105,7 @@ function withYamlSpec<E extends Env = Env, S extends Schema = BlankSchema, BaseP
     });
     const response = await app.request(requestInit);
     const rawData: unknown = await response.json();
-    const spec = await OpenAPISpecSchema.parseAsync(rawData);
+    const spec = OpenAPISpecSchema.parse(rawData);
     const transformedSpec = transformNullableToUnion(spec);
     const formattedSpec = yaml.dump(transformedSpec, { indent: 2 });
 

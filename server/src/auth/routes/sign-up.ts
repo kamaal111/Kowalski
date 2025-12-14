@@ -83,6 +83,12 @@ const signUpRoute = createRoute({
         [MIME_TYPES.APPLICATION_JSON]: { schema: ErrorResponseSchema },
       },
     },
+    [STATUS_CODES.UNAUTHORIZED]: {
+      description: 'Authentication failed or invalid credentials',
+      content: {
+        [MIME_TYPES.APPLICATION_JSON]: { schema: ErrorResponseSchema },
+      },
+    },
   },
 });
 

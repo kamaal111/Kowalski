@@ -29,12 +29,13 @@ public struct KowalskiClient: Sendable {
     public static func `default`() -> KowalskiClient {
         let url = try! Servers.Server1.url()
         let credentialsGetter = CredentialsGetterFactory.default(keychainKey: ModuleConfig.credentialsKeychainKey)
-        let client = makeClient(url: url, credentialsGetter: credentialsGetter)
         let auth = KowalskiAuthClientFactory.default(
-            client: client,
+            client: makeClientWithoutAuth(url: url),
             credentialsKeychainKey: ModuleConfig.credentialsKeychainKey,
             credentialsGetter: credentialsGetter
         )
+
+        let client = makeClient(url: url, credentialsGetter: credentialsGetter, authClient: auth)
         let stocks = KowalskiStocksClientFactory.deafault(client: client)
 
         return KowalskiClient(auth: auth, stocks: stocks, credentialsGetter: credentialsGetter)
@@ -48,12 +49,34 @@ public struct KowalskiClient: Sendable {
         return KowalskiClient(auth: auth, stocks: stocks, credentialsGetter: credentialsGetter)
     }
 
-    private static func makeClient(url: URL, credentialsGetter: CredentialsGetter) -> Client {
+    private static func makeClient(
+        url: URL,
+        credentialsGetter: CredentialsGetter,
+        authClient: KowalskiAuthClient
+    ) -> Client {
         let middlewares: [any ClientMiddleware] = [
             AuthenticationMiddleware(
                 keychainKey: ModuleConfig.credentialsKeychainKey,
-                credentialsGetter: credentialsGetter
+                credentialsGetter: credentialsGetter,
+                authClient: authClient
             ),
+            RequiredHeadersMiddleware(),
+            LoggingMiddleware(bodyLoggingPolicy: .upTo(maxBytes: ModuleConfig.maxLogSize)),
+        ]
+        let dateTranscoder = ISO8601DateTranscoder(options: [.withInternetDateTime, .withFractionalSeconds])
+        let configuration = Configuration(dateTranscoder: dateTranscoder)
+        let transport = URLSessionTransport()
+
+        return Client(
+            serverURL: url,
+            configuration: configuration,
+            transport: transport,
+            middlewares: middlewares
+        )
+    }
+
+    private static func makeClientWithoutAuth(url: URL) -> Client {
+        let middlewares: [any ClientMiddleware] = [
             RequiredHeadersMiddleware(),
             LoggingMiddleware(bodyLoggingPolicy: .upTo(maxBytes: ModuleConfig.maxLogSize)),
         ]
