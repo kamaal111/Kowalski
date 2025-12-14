@@ -2,17 +2,25 @@ import YahooFinance from 'yahoo-finance2';
 
 import type { HonoContext } from '../../api/contexts.js';
 import { STATUS_CODES } from '../../constants/http.js';
+import { withCache } from '../../middleware/cache.js';
 import type { StocksSearchQuery } from '../schemas/search.js';
 import { mapYahooFinanceSearchQuoteToEquitySearchResponse } from '../mappers/yahoo-finance.js';
+import { ONE_MINUTE_IN_MILLISECONDS } from '../../constants/common.js';
 
 const yahooFinance = new YahooFinance();
 
-async function searchHandler(c: HonoContext<string, { out: { query: StocksSearchQuery } }>) {
+async function searchHandlerImpl(c: HonoContext<string, { out: { query: StocksSearchQuery } }>) {
   const params = c.req.valid('query');
   const results = await yahooFinance.search(params.q);
   const response = mapYahooFinanceSearchQuoteToEquitySearchResponse(results);
 
   return c.json(response, STATUS_CODES.OK);
 }
+
+const searchHandler = withCache(searchHandlerImpl, {
+  keyPrefix: 'stocks:search',
+  maxSize: 1000,
+  defaultTTL: 30 * ONE_MINUTE_IN_MILLISECONDS,
+});
 
 export default searchHandler;
