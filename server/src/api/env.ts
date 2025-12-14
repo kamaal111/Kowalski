@@ -5,6 +5,7 @@ export type ServerMode = (typeof SERVER_MODES)[keyof typeof SERVER_MODES];
 export const SERVER_MODES = {
   SERVER: 'SERVER',
   DAILY: 'DAILY',
+  TEST: 'TEST',
 } as const;
 
 const EnvSchema = z.object({

@@ -11,7 +11,9 @@ async function tokenHandler(c: HonoContext) {
     throw new SessionNotFound(c);
   }
 
-  const { token, headers } = await parseTokenResponseAndCreateHeaders(response);
+  const authHeader = c.req.header('authorization');
+  const sessionToken = authHeader?.replace(/^Bearer\s+/i, '') ?? null;
+  const { token, headers } = await parseTokenResponseAndCreateHeaders(response, sessionToken);
 
   return c.json({ token }, { status: STATUS_CODES.OK, headers });
 }

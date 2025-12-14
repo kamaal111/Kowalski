@@ -17,6 +17,15 @@
 
 **If you need to verify compilation works**: Use `just compile-server` and let the user run the server.
 
+## Code Quality Rules
+
+**NEVER SUPPRESS LINT/TYPE ERRORS**
+
+- ❌ DO NOT use `eslint-disable` or `eslint-disable-next-line`
+- ❌ DO NOT use `@ts-expect-error` or `@ts-ignore`
+- ✅ ALWAYS fix the underlying problem (improve types, refactor code, use type guards)
+- ✅ If a type is truly unknown or complex, validate the value (e.g. using Zod) or use type guards instead of suppression or casting
+
 ## Technology Stack
 
 ### Backend (server/)
@@ -117,13 +126,20 @@ Docker Compose creates `kowalski_db` container:
 
 ### Quality Assurance
 
-**CRITICAL**: Always run `just quality` before marking any TypeScript/JavaScript changes as complete. This runs:
+**CRITICAL**: Always run `just ready` before marking any changes as complete.
+
+`just quality` runs:
 
 - `pnpm run lint` (ESLint with strict rules)
 - `pnpm run format:check` (Prettier formatting)
 - `just server/typecheck` (TypeScript type checking)
 
-If any issues occur, fix them and re-run `just quality` until all checks pass. **Do not claim a task is done without passing quality checks.**
+`just test` runs:
+
+- Server tests (vitest)
+- Swift client tests
+
+If any issues occur, fix them and re-run `just ready` until it passes. **Do not claim a task is done while `just ready` is failing.**
 
 ### TypeScript (server/)
 
@@ -186,7 +202,12 @@ If any issues occur, fix them and re-run `just quality` until all checks pass. *
 
 ## Testing Strategy
 
-**Current Status**: No tests written (vitest configured but unused)
+**Running Tests**: Use `just test` to run all tests (server + Swift client)
+
+**Current Test Coverage**:
+
+- Server: Unit tests for auth token refresh functionality (vitest)
+- Swift Client: Unit tests for RefreshTokenMiddleware
 
 **Constitution Requirements** (see `.specify/memory/constitution.md`):
 

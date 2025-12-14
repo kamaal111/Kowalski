@@ -106,6 +106,7 @@ function createHeadersWithJwt(jwt: string | undefined): Headers {
  */
 export async function parseTokenResponseAndCreateHeaders(
   response: Response,
+  sessionToken: string | null = null,
 ): Promise<{ token: string; headers: Headers }> {
   const jsonResponse: unknown = await response.json();
   const responseData = TokenResponseSchema.parse(jsonResponse);
@@ -114,5 +115,11 @@ export async function parseTokenResponseAndCreateHeaders(
   }
 
   const headers = createHeadersWithJwt(responseData.token);
+  if (sessionToken) {
+    headers.set('set-session-token', sessionToken);
+    const sessionUpdateAgeSeconds = ONE_DAY_IN_SECONDS * BETTER_AUTH_SESSION_UPDATE_AGE_DAYS;
+    headers.set('set-session-update-age', sessionUpdateAgeSeconds.toString());
+  }
+
   return { token: responseData.token, headers };
 }

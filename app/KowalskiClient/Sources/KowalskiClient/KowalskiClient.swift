@@ -30,7 +30,7 @@ public struct KowalskiClient: Sendable {
         let url = try! Servers.Server1.url()
         let credentialsGetter = CredentialsGetterFactory.default(keychainKey: ModuleConfig.credentialsKeychainKey)
         let auth = KowalskiAuthClientFactory.default(
-            client: makeClientWithoutAuth(url: url),
+            client: makeClientForAuth(url: url, credentialsGetter: credentialsGetter),
             credentialsKeychainKey: ModuleConfig.credentialsKeychainKey,
             credentialsGetter: credentialsGetter
         )
@@ -75,8 +75,9 @@ public struct KowalskiClient: Sendable {
         )
     }
 
-    private static func makeClientWithoutAuth(url: URL) -> Client {
+    private static func makeClientForAuth(url: URL, credentialsGetter: CredentialsGetter) -> Client {
         let middlewares: [any ClientMiddleware] = [
+            RefreshTokenMiddleware(credentialsGetter: credentialsGetter),
             RequiredHeadersMiddleware(),
             LoggingMiddleware(bodyLoggingPolicy: .upTo(maxBytes: ModuleConfig.maxLogSize)),
         ]

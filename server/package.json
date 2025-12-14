@@ -3,7 +3,7 @@
   "type": "module",
   "scripts": {
     "clean": "rm -rf node_modules dist",
-    "compile": "tsc",
+    "compile": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "dev": "tsx watch --inspect src/index.ts",
     "download-spec": "tsx scripts/download-openapi-spec.ts",
     "start": "node dist/src/index.js",
@@ -33,6 +33,7 @@
     "@types/pg": "8.15.6",
     "@types/xml2js": "^0.4.14",
     "drizzle-kit": "^0.31.6",
+    "tsc-alias": "^1.8.16",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "vitest": "^4.0.6"

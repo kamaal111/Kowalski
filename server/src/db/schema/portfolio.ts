@@ -5,7 +5,7 @@ import { user } from './better-auth.js';
 import currency from '../helpers/currency.js';
 import auditFields from '../helpers/audit-fields.js';
 
-const transactionTypesEnum = pgEnum('transaction_types', ['buy', 'sell']);
+export const transactionTypesEnum = pgEnum('transaction_types', ['buy', 'sell']);
 
 export const portfolio = pgTable('portfolio', {
   ...auditFields,

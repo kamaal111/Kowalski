@@ -10,7 +10,12 @@
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
     "outDir": "./dist",
-    "composite": true
+    "composite": true,
+    "baseUrl": ".",
+    "paths": {
+      "@test-vars": ["./src/tests/setup.ts"],
+      "@/*": ["./src/*"]
+    }
   },
   "exclude": ["node_modules", "dist"]
 }

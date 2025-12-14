@@ -25,6 +25,9 @@ dev-daily: start-services
 run-server:
     just server/run-server
 
+# Run all verification checks
+ready: quality download-spec test
+
 # Compile server
 compile-server:
     just server/compile
@@ -52,6 +55,10 @@ start-services:
 # Stop services
 stop-services:
     docker compose down
+
+# Stop services and remove volumes (clears database)
+clean-db:
+    docker compose down -v
 
 # Tail database logs
 tail-db:
@@ -81,9 +88,10 @@ format-check:
 typecheck:
     just server/typecheck
 
-# Run tests
+# Run tests (server + Swift client)
 test:
     just server/test
+    just app/test
 
 # Run quality checks
 quality: lint format-check typecheck

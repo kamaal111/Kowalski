@@ -1,3 +1,4 @@
+CREATE TYPE "public"."transaction_types" AS ENUM('buy', 'sell');--> statement-breakpoint
 CREATE TABLE "account" (
 	"id" text PRIMARY KEY NOT NULL,
 	"account_id" text NOT NULL,
@@ -12,6 +13,13 @@ CREATE TABLE "account" (
 	"password" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "jwks" (
+	"id" text PRIMARY KEY NOT NULL,
+	"public_key" text NOT NULL,
+	"private_key" text NOT NULL,
+	"created_at" timestamp NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "session" (
@@ -44,6 +52,15 @@ CREATE TABLE "verification" (
 	"expires_at" timestamp NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "exchange_rates" (
+	"id" text PRIMARY KEY NOT NULL,
+	"date" date NOT NULL,
+	"base" char(3) NOT NULL,
+	"rates" jsonb NOT NULL,
+	CONSTRAINT "exchange_rates_base_date_unique" UNIQUE("base","date"),
+	CONSTRAINT "exchange_rate_entry" UNIQUE("base","date")
 );
 --> statement-breakpoint
 CREATE TABLE "portfolio" (

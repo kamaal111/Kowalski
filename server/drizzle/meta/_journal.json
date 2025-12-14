@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1765120134127,
-      "tag": "0000_conscious_cerise",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1765397763855,
-      "tag": "0001_mysterious_zarek",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1765635278373,
-      "tag": "0002_silly_the_executioner",
+      "when": 1765733711205,
+      "tag": "0000_condemned_magdalene",
       "breakpoints": true
     }
   ]
