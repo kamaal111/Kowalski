@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "2E8C8D17-A539-4B77-BE5F-EA418AF84977",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:KowalskiClient",
+        "identifier" : "KowalskiClientTests",
+        "name" : "KowalskiClientTests"
+      }
+    }
+  ],
+  "version" : 1
+}

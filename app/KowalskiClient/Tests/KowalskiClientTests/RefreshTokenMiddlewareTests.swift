@@ -14,32 +14,23 @@ import Testing
 
 @Suite("RefreshTokenMiddleware Tests")
 struct RefreshTokenMiddlewareTests {
-    let mockSessionToken = "mock-session-token-12345"
-    let mockAuthToken = "mock-jwt-token-67890"
+    private let mockSessionToken = "mock-session-token-12345"
+    private let mockAuthToken = "mock-jwt-token-67890"
+    private let baseURL = URL(string: "http://localhost:8080")!
 
     // MARK: - Test Session Token Injection
 
-    @Test("Should add session token to Authorization header for token refresh endpoint")
-    func testAddsSessionTokenForRefreshEndpoint() async throws {
-        let credentials = Credentials(
-            authToken: mockAuthToken,
-            expiryDate: Date().addingTimeInterval(3600),
-            sessionToken: mockSessionToken,
-            sessionUpdateAge: 86400,
-            lastSessionUpdate: Date()
-        )
-
-        let getter = MockCredentialsGetter(credentials: credentials)
-        let middleware = RefreshTokenMiddleware(credentialsGetter: getter)
+    @Test
+    func `Should add session token to Authorization header for token refresh endpoint`() async throws {
+        let credentials = makeCredentials()
+        let middleware = makeMiddleware(with: credentials)
 
         var capturedRequest: HTTPRequest?
         let next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?) = { request, _, _ in
             capturedRequest = request
             return (HTTPResponse(status: .ok), nil)
         }
-
-        let request = HTTPRequest(method: .get, scheme: nil, authority: nil, path: "/app-api/auth/token")
-        let baseURL = URL(string: "http://localhost:8080")!
+        let request = makeRequest(path: "/app-api/auth/token")
 
         _ = try await middleware.intercept(
             request,
@@ -53,33 +44,23 @@ struct RefreshTokenMiddlewareTests {
         #expect(capturedRequest?.headerFields[.authorization] == "Bearer \(mockSessionToken)")
     }
 
-    @Test("Should not modify request for non-token-refresh endpoints")
-    func testDoesNotModifyOtherEndpoints() async throws {
-        let credentials = Credentials(
-            authToken: mockAuthToken,
-            expiryDate: Date().addingTimeInterval(3600),
-            sessionToken: mockSessionToken,
-            sessionUpdateAge: 86400,
-            lastSessionUpdate: Date()
-        )
-
-        let getter = MockCredentialsGetter(credentials: credentials)
-        let middleware = RefreshTokenMiddleware(credentialsGetter: getter)
+    @Test
+    func `Should not modify request for non-token-refresh endpoints`() async throws {
+        let credentials = makeCredentials()
+        let middleware = makeMiddleware(with: credentials)
 
         var capturedRequest: HTTPRequest?
         let next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?) = { request, _, _ in
             capturedRequest = request
             return (HTTPResponse(status: .ok), nil)
         }
-
-        let request = HTTPRequest(method: .get, scheme: nil, authority: nil, path: "/app-api/auth/session")
-        let baseURL = URL(string: "http://localhost:8080")!
+        let request = makeRequest(path: "/app-api/auth/session")
 
         _ = try await middleware.intercept(
             request,
             body: nil,
             baseURL: baseURL,
-            operationID: "get/app-api/auth/session",
+            operationID: Operations.GetAppApiAuthSession.id,
             next: next
         )
 
@@ -87,19 +68,17 @@ struct RefreshTokenMiddlewareTests {
         #expect(capturedRequest?.headerFields[.authorization] == nil)
     }
 
-    @Test("Should handle missing credentials gracefully")
-    func testHandlesMissingCredentials() async throws {
-        let getter = MockCredentialsGetter(credentials: nil)
-        let middleware = RefreshTokenMiddleware(credentialsGetter: getter)
+    @Test
+    func `Should handle missing credentials gracefully`() async throws {
+        let middleware = makeMiddleware(with: nil)
 
         var nextWasCalled = false
-        let next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?) = { request, _, _ in
+        let next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?) = { _, _, _ in
             nextWasCalled = true
             return (HTTPResponse(status: .ok), nil)
         }
 
-        let request = HTTPRequest(method: .get, scheme: nil, authority: nil, path: "/app-api/auth/token")
-        let baseURL = URL(string: "http://localhost:8080")!
+        let request = makeRequest(path: "/app-api/auth/token")
 
         _ = try await middleware.intercept(
             request,
@@ -112,28 +91,18 @@ struct RefreshTokenMiddlewareTests {
         #expect(nextWasCalled)
     }
 
-    @Test("Should use session token, not auth token")
-    func testUsesSessionTokenNotAuthToken() async throws {
+    @Test
+    func `Should use session token, not auth token`() async throws {
         let differentAuthToken = "different-jwt-token"
-        let credentials = Credentials(
-            authToken: differentAuthToken,
-            expiryDate: Date().addingTimeInterval(3600),
-            sessionToken: mockSessionToken,
-            sessionUpdateAge: 86400,
-            lastSessionUpdate: Date()
-        )
-
-        let getter = MockCredentialsGetter(credentials: credentials)
-        let middleware = RefreshTokenMiddleware(credentialsGetter: getter)
+        let credentials = makeCredentials(authToken: differentAuthToken)
+        let middleware = makeMiddleware(with: credentials)
 
         var capturedRequest: HTTPRequest?
         let next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?) = { request, _, _ in
             capturedRequest = request
             return (HTTPResponse(status: .ok), nil)
         }
-
-        let request = HTTPRequest(method: .get, scheme: nil, authority: nil, path: "/app-api/auth/token")
-        let baseURL = URL(string: "http://localhost:8080")!
+        let request = makeRequest(path: "/app-api/auth/token")
 
         _ = try await middleware.intercept(
             request,
@@ -146,16 +115,29 @@ struct RefreshTokenMiddlewareTests {
         #expect(capturedRequest != nil)
         let authHeader = capturedRequest?.headerFields[.authorization]
         #expect(authHeader == "Bearer \(mockSessionToken)")
-        #expect(authHeader != "Bearer \(differentAuthToken)")
     }
-}
 
-// MARK: - Mock Helpers
+    // MARK: - Helpers
 
-struct MockCredentialsGetter: CredentialsGetter {
-    let credentials: Credentials?
+    private func makeCredentials(
+        authToken: String? = nil,
+        sessionToken: String? = nil
+    ) -> Credentials {
+        Credentials(
+            authToken: authToken ?? mockAuthToken,
+            expiryDate: Date().addingTimeInterval(3600),
+            sessionToken: sessionToken ?? mockSessionToken,
+            sessionUpdateAge: 86400,
+            lastSessionUpdate: Date()
+        )
+    }
 
-    func get() -> Credentials? {
-        credentials
+    private func makeMiddleware(with credentials: Credentials?) -> RefreshTokenMiddleware {
+        let getter = MockCredentialsGetter(credentials: credentials)
+        return RefreshTokenMiddleware(credentialsGetter: getter)
+    }
+
+    private func makeRequest(path: String, method: HTTPRequest.Method = .get) -> HTTPRequest {
+        HTTPRequest(method: method, scheme: nil, authority: nil, path: path)
     }
 }
