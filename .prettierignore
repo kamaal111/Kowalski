@@ -4,3 +4,4 @@ pnpm-lock.yaml
 app
 postman
 server/drizzle
+**/.test-cache

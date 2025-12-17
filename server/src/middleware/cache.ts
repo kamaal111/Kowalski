@@ -1,12 +1,27 @@
 import type { Context } from 'hono';
+import { asserts } from '@kamaalio/kamaal';
 
 import { LRUCache } from '../utils/cache.js';
 import { ONE_MINUTE_IN_MILLISECONDS } from '../constants/common.js';
 import type { HonoContext } from '../api/contexts.js';
 import { logger } from './logging.js';
+import env, { SERVER_MODES } from '../api/env.js';
 
 const DEFAULT_TTL = 5 * ONE_MINUTE_IN_MILLISECONDS;
 const DEFAULT_MAX_SIZE = 1000;
+
+const cacheInstances: LRUCache[] = [];
+
+export function closeAllCaches(): void {
+  let cache = cacheInstances.pop();
+  while (cache != null) {
+    cache.close();
+    cache = cacheInstances.pop();
+  }
+
+  asserts.invariant(cache == null, 'Cache should be nullish');
+  asserts.invariant(cacheInstances.length === 0, 'Cache instances should be empty');
+}
 
 interface CacheConfig {
   keyPrefix: string;
@@ -19,7 +34,15 @@ export function withCache<THandler extends (c: HonoContext) => Promise<Response>
   handler: THandler,
   config: CacheConfig,
 ): THandler {
-  const cache = new LRUCache<string, unknown>(config.maxSize ?? DEFAULT_MAX_SIZE, config.defaultTTL ?? DEFAULT_TTL);
+  const cacheDir = env.MODE === SERVER_MODES.TEST ? './.test-cache' : '.';
+  const dbPath = `${cacheDir}/cache-${config.keyPrefix.replace(/[/:]/g, '-')}.db`;
+  const cache = new LRUCache<string, unknown>(
+    config.maxSize ?? DEFAULT_MAX_SIZE,
+    config.defaultTTL ?? DEFAULT_TTL,
+    dbPath,
+  );
+
+  cacheInstances.push(cache);
 
   return (async c => {
     const cacheKey = createCacheKey(c, config.keyPrefix);

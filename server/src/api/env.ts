@@ -24,4 +24,6 @@ const EnvSchema = z.object({
 
 const env = EnvSchema.parse(process.env);
 
+export const IS_TEST = env.MODE === SERVER_MODES.TEST;
+
 export default env;

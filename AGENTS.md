@@ -2,9 +2,19 @@
 
 **Monorepo**: TypeScript/Node.js server + SwiftUI iOS/macOS app
 
-## ⚠️ CRITICAL: Server Management Rules
+## ⚠️ CRITICAL: Agent Behavior Rules
 
-**NEVER START THE SERVER DIRECTLY**
+### NEVER PERFORM GIT OPERATIONS
+
+- ❌ DO NOT run any git commands (`git checkout`, `git reset`, `git stash`, `git revert`, etc.)
+- ❌ DO NOT attempt to undo changes using git
+- ❌ DO NOT manipulate git history or branches
+- ✅ If changes need to be undone, make the correcting edits directly
+- ✅ Let the user handle all git operations
+
+**Why**: Git operations can lose user work, create confusing states, and should always be under explicit user control.
+
+### NEVER START THE SERVER DIRECTLY
 
 - ❌ DO NOT use `node dist/src/index.js &` or any background process commands
 - ❌ DO NOT use `pnpm start &` or `tsx src/index.ts &` in background
@@ -16,6 +26,15 @@
 **Why**: Background server processes started by agents cannot be killed properly and require system restart to clean up.
 
 **If you need to verify compilation works**: Use `just compile-server` and let the user run the server.
+
+### ALWAYS RUN QUALITY CHECKS
+
+- ✅ ALWAYS run `just ready` before marking any changes as complete
+- ✅ `just ready` runs: quality checks (lint + format-check + typecheck), downloads OpenAPI spec, and runs tests
+- ✅ If `just ready` fails, fix the issues and re-run until it passes
+- ❌ DO NOT claim a task is done while `just ready` is failing
+
+**Why**: Ensures all code meets quality standards and passes tests before completion.
 
 ## Code Quality Rules
 
@@ -149,13 +168,22 @@ If any issues occur, fix them and re-run `just ready` until it passes. **Do not 
 - **Files**: kebab-case (e.g., `sign-in.ts`)
 - **Types/Schemas**: PascalCase, use `.openapi()` for Zod schemas
 - **Functions/vars**: camelCase
-- **Type Safety**: NEVER use type casting (`as Type`). Always validate/assert with Zod schemas using `.parse()` or `.safeParse()`
 - **Errors**: Custom exception classes extending `APIException` (see `server/src/auth/exceptions.ts`)
 - **Constants**: Centralize in `src/constants/` (HTTP codes, MIME types)
 - **Exports**: Default exports for routes/handlers
 - **Formatting**: Prettier with `@kamaalio/prettier-config`
 - **ESLint**: Recommended + TypeChecked + Strict + Stylistic configs
 - **Deprecated APIs**: Never use deprecated APIs (ESLint flags them with `@typescript-eslint/no-deprecated`). Use modern alternatives.
+
+#### ⚠️ Type Safety Rules (CRITICAL)
+
+- **NEVER use type casting** (`as Type`, `<Type>value`) - these bypass TypeScript's type system and are forbidden
+- **ALWAYS validate unknown data** with Zod schemas using `.parse()` or `.safeParse()`
+- **Database query results**: Define Zod schema and validate with `.parse()` (e.g., `const row = rowSchema.parse(db.query(...))`)
+- **External API responses**: Define Zod schema and validate before use
+- **User input**: Always validated via Zod schemas (already enforced by `@hono/zod-openapi`)
+- **Type assertions**: If TypeScript cannot infer a type, it means you need validation, not casting
+- **Exceptions**: None. Even for "known" data sources like SQLite, always use Zod validation to catch schema mismatches early
 
 ### Swift (app/)
 
@@ -204,9 +232,17 @@ If any issues occur, fix them and re-run `just ready` until it passes. **Do not 
 
 **Running Tests**: Use `just test` to run all tests (server + Swift client)
 
+**Critical Testing Rules**:
+
+- **ALWAYS write integration tests for new features/changes** - integration tests validate that multiple components work together correctly
+- **Prefer integration tests over unit tests** - test real scenarios with actual dependencies (database, cache, HTTP handlers)
+- **Write tests BEFORE claiming work is complete** - all code changes must include tests that verify the new behavior
+- **Avoid test duplication** - if an integration test already covers the scenario, don't add redundant tests
+- **Test end-to-end flows** - integration tests should exercise the full stack (HTTP request → middleware → handler → database → response)
+
 **Current Test Coverage**:
 
-- Server: Unit tests for auth token refresh functionality (vitest)
+- Server: Integration tests for auth, cache middleware, stocks API
 - Swift Client: Unit tests for RefreshTokenMiddleware
 
 **Constitution Requirements** (see `.specify/memory/constitution.md`):
@@ -215,7 +251,7 @@ If any issues occur, fix them and re-run `just ready` until it passes. **Do not 
 - > 80% coverage for business logic, 100% for critical paths (auth, data persistence)
 - Contract tests for API endpoints
 - Integration tests for DB operations, cross-service communication
-- Unit tests for business logic, utilities
+- Unit tests for business logic, utilities (prefer integration tests)
 
 ## Common Tasks
 

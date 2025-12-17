@@ -1,10 +1,9 @@
-import { serve } from '@hono/node-server';
 import { showRoutes } from 'hono/dev';
 import { requestId } from 'hono/request-id';
 import { compress } from 'hono/compress';
 import { secureHeaders } from 'hono/secure-headers';
 
-import env from './api/env.js';
+import env, { IS_TEST } from './api/env.js';
 import { openAPIRouterFactory, withOpenAPIDocumentation } from './api/open-api.js';
 import loggingMiddleware from './middleware/logging.js';
 import { injectRequestContext } from './api/contexts.js';
@@ -16,10 +15,11 @@ import { APP_API_BASE_PATH, DAILY_API_BASE_PATH } from './constants/common.js';
 import dailyApi from './daily-api/index.js';
 import { NotFound } from './api/exceptions.js';
 import type { Database } from './db/index.js';
+import { startServer } from './api/server.js';
 
-const { PORT, DEBUG } = env;
+const { DEBUG } = env;
 
-export const createApp = (dbOverride?: Database) => {
+export function createApp(dbOverride?: Database) {
   const database = dbOverride ?? db;
   const authentication = dbOverride ? createAuth(database) : auth;
 
@@ -35,7 +35,7 @@ export const createApp = (dbOverride?: Database) => {
   ).all('/*', c => {
     throw new NotFound(c);
   });
-};
+}
 
 const app = createApp();
 
@@ -43,8 +43,6 @@ if (DEBUG) {
   showRoutes(app, { verbose: false });
 }
 
-if (process.env.MODE !== 'TEST') {
-  serve({ fetch: app.fetch, port: PORT }, info => console.log(`Server is running on :${info.port}`));
+if (!IS_TEST) {
+  startServer(app);
 }
-
-export default app;
