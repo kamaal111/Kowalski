@@ -10,7 +10,7 @@
   },
   "keywords": [],
   "author": "Kamaal Farah",
-  "packageManager": "pnpm@10.26.0",
+  "packageManager": "pnpm@10.26.1",
   "devDependencies": {
     "@eslint/compat": "^2.0.0",
     "@eslint/js": "^9.39.1",

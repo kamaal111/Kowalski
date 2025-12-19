@@ -1,7 +1,12 @@
+SCHEME := "Kowalski"
+
+MACOS_DESTINATION := "platform=macOS"
+
 # List available commands
 default:
     just --list --unsorted
 
-# Run Swift tests for app packages
+# Run all tests for the Kowalski scheme on macOS
 test:
-    cd KowalskiClient && swift test
+    set -o pipefail && xcodebuild test -scheme {{ SCHEME }} \
+        -destination {{ MACOS_DESTINATION }} | xcpretty

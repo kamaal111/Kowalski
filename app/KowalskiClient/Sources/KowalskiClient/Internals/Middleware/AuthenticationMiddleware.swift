@@ -5,10 +5,10 @@
 //  Created by Kamaal M Farah on 10/11/25.
 //
 
-import Foundation
 import HTTPTypes
-import KamaalLogger
+import Foundation
 import KamaalUtils
+import KamaalLogger
 import OpenAPIRuntime
 
 private let logger = KamaalLogger(from: AuthenticationMiddleware.self, failOnError: true)
@@ -94,9 +94,7 @@ extension AuthenticationMiddleware: ClientMiddleware {
         logger.info("JWT expires at: \(credentials.expiryDate)")
         logger.info("Session last updated: \(credentials.lastSessionUpdate)")
 
-        var request = request
-        request.headerFields[.authorization] = "Bearer \(credentials.authToken)"
-
-        return try await next(request, body, baseURL)
+        let signedRequest = RequestSigner.sign(request, with: credentials)
+        return try await next(signedRequest, body, baseURL)
     }
 }

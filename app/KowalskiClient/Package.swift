@@ -26,6 +26,7 @@ let package = Package(
                 .product(name: "HTTPTypes", package: "swift-http-types"),
                 .product(name: "KamaalUtils", package: "KamaalSwift"),
                 .product(name: "KamaalLogger", package: "KamaalSwift"),
+                .product(name: "KamaalExtensions", package: "KamaalSwift"),
                 "KowalskiUtils",
             ],
             swiftSettings: [

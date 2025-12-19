@@ -14,6 +14,7 @@ public struct KowalskiClient: Sendable {
     public let stocks: KowalskiStocksClient
 
     private let credentialsGetter: CredentialsGetter
+    private static let credentialsKeychainKey = ModuleConfig.credentialsKeychainKey
 
     private init(auth: KowalskiAuthClient, stocks: KowalskiStocksClient, credentialsGetter: CredentialsGetter) {
         self.auth = auth
@@ -28,10 +29,10 @@ public struct KowalskiClient: Sendable {
 
     public static func `default`() -> KowalskiClient {
         let url = try! Servers.Server1.url()
-        let credentialsGetter = CredentialsGetterFactory.default(keychainKey: ModuleConfig.credentialsKeychainKey)
+        let credentialsGetter = CredentialsGetterFactory.default(keychainKey: credentialsKeychainKey)
         let auth = KowalskiAuthClientFactory.default(
             client: makeClientForAuth(url: url, credentialsGetter: credentialsGetter),
-            credentialsKeychainKey: ModuleConfig.credentialsKeychainKey,
+            credentialsKeychainKey: credentialsKeychainKey,
             credentialsGetter: credentialsGetter
         )
 
@@ -56,7 +57,7 @@ public struct KowalskiClient: Sendable {
     ) -> Client {
         let middlewares: [any ClientMiddleware] = [
             AuthenticationMiddleware(
-                keychainKey: ModuleConfig.credentialsKeychainKey,
+                keychainKey: credentialsKeychainKey,
                 credentialsGetter: credentialsGetter,
                 authClient: authClient
             ),
@@ -77,6 +78,7 @@ public struct KowalskiClient: Sendable {
 
     private static func makeClientForAuth(url: URL, credentialsGetter: CredentialsGetter) -> Client {
         let middlewares: [any ClientMiddleware] = [
+            RequestSigningMiddleware(keychainKey: credentialsKeychainKey, credentialsGetter: credentialsGetter),
             RefreshTokenMiddleware(credentialsGetter: credentialsGetter),
             RequiredHeadersMiddleware(),
             LoggingMiddleware(bodyLoggingPolicy: .upTo(maxBytes: ModuleConfig.maxLogSize)),
