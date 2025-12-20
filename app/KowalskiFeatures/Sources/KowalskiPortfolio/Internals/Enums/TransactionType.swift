@@ -10,11 +10,13 @@ import Foundation
 enum TransactionType: CaseIterable {
     case purchase
     case sell
+    case split
 
     var label: String {
         switch self {
         case .purchase: NSLocalizedString("Purchase", comment: "")
         case .sell: NSLocalizedString("Sell", comment: "")
+        case .split: NSLocalizedString("Split", comment: "")
         }
     }
 }

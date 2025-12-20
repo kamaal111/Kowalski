@@ -9,7 +9,7 @@ import { ErrorResponseSchema } from '../../schemas/errors.js';
 
 const EmailPasswordSignUpSchema = z
   .object({
-    email: z.email().nonempty().openapi({
+    email: z.email().openapi({
       description: 'User email address',
       example: 'john.doe@example.com',
     }),

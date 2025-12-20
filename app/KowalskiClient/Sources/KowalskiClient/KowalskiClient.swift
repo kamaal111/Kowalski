@@ -12,13 +12,20 @@ import OpenAPIURLSession
 public struct KowalskiClient: Sendable {
     public let auth: KowalskiAuthClient
     public let stocks: KowalskiStocksClient
+    public let portfolio: KowalskiPortfolioClient
 
     private let credentialsGetter: CredentialsGetter
     private static let credentialsKeychainKey = ModuleConfig.credentialsKeychainKey
 
-    private init(auth: KowalskiAuthClient, stocks: KowalskiStocksClient, credentialsGetter: CredentialsGetter) {
+    private init(
+        auth: KowalskiAuthClient,
+        stocks: KowalskiStocksClient,
+        portfolio: KowalskiPortfolioClient,
+        credentialsGetter: CredentialsGetter
+    ) {
         self.auth = auth
         self.stocks = stocks
+        self.portfolio = portfolio
         self.credentialsGetter = credentialsGetter
     }
 
@@ -38,16 +45,18 @@ public struct KowalskiClient: Sendable {
 
         let client = makeClient(url: url, credentialsGetter: credentialsGetter, authClient: auth)
         let stocks = KowalskiStocksClientFactory.deafault(client: client)
+        let portfolio = KowalskiPortfolioClientFactory.default(client: client)
 
-        return KowalskiClient(auth: auth, stocks: stocks, credentialsGetter: credentialsGetter)
+        return KowalskiClient(auth: auth, stocks: stocks, portfolio: portfolio, credentialsGetter: credentialsGetter)
     }
 
     public static func preview(withCredentials: Bool) -> KowalskiClient {
         let credentialsGetter = CredentialsGetterFactory.preview(withCredentials: withCredentials)
         let auth = KowalskiAuthClientFactory.preview()
         let stocks = KowalskiStocksClientFactory.preview()
+        let portfolio = KowalskiPortfolioClientFactory.preview()
 
-        return KowalskiClient(auth: auth, stocks: stocks, credentialsGetter: credentialsGetter)
+        return KowalskiClient(auth: auth, stocks: stocks, portfolio: portfolio, credentialsGetter: credentialsGetter)
     }
 
     private static func makeClient(

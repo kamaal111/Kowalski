@@ -23,7 +23,7 @@ const NullableString = z
   .transform(val => (val === '' ? null : val))
   .nullable();
 
-const StocksSearchQuoteItemResponseSchema = z
+export const StocksSearchQuoteItemResponseSchema = z
   .object({
     symbol: z.string().nonempty().openapi({
       description: 'Stock symbol',

@@ -18,7 +18,10 @@ public final class KowalskiPortfolio {
     }
 
     @MainActor
-    func storeTransaction(_ payload: TransactionPayload) async {}
+    func storeTransaction(_ payload: TransactionPayload) async {
+        let payload = mapper.mapTransactionPayloadToCreateEntryPayload(payload)
+        _ = await client.portfolio.createEntry(payload: payload)
+    }
 
     @MainActor
     func searchStocks(query: String) async -> Result<[Stock], Error> {

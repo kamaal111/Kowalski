@@ -1,11 +1,11 @@
 //
-//  KowalskiStocksSearchQuoteItemResponse.swift
+//  KowalskiClientStockItem.swift
 //  KowalskiClient
 //
 //  Created by Kamaal M Farah on 11/16/25.
 //
 
-public struct KowalskiStocksSearchQuoteItemResponse: Codable, Sendable {
+public struct KowalskiClientStockItem: Codable, Sendable {
     public let symbol: String
     public let exchange: String
     public let name: String

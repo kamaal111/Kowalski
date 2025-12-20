@@ -11,7 +11,7 @@ import { auth, createAuth } from './auth/index.js';
 
 import db from './db/index.js';
 import appApi from './app-api/index.js';
-import { APP_API_BASE_PATH, DAILY_API_BASE_PATH } from './constants/common.js';
+import { APP_API_BASE_PATH, DAILY_API_BASE_PATH, REQUEST_ID_HEADER_NAME } from './constants/common.js';
 import dailyApi from './daily-api/index.js';
 import { NotFound } from './api/exceptions.js';
 import type { Database } from './db/index.js';
@@ -25,7 +25,7 @@ export function createApp(dbOverride?: Database) {
 
   return withOpenAPIDocumentation(
     openAPIRouterFactory()
-      .use(requestId())
+      .use(requestId({ headerName: REQUEST_ID_HEADER_NAME }))
       .use(compress())
       .use(secureHeaders())
       .use(loggingMiddleware)

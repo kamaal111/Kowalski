@@ -1,0 +1,1 @@
+ALTER TYPE "public"."transaction_types" ADD VALUE 'split';

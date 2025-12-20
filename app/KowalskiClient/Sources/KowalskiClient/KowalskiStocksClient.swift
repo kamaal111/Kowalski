@@ -80,7 +80,7 @@ struct KowalskiStocksClientImpl: KowalskiStocksClient {
 struct KowalskiStocksClientPreview: KowalskiStocksClient {
     func search(query: String) async -> Result<KowalskiStocksSearchResponse, KowalskiStocksSearchErrors> {
         let quotes = [
-            KowalskiStocksSearchQuoteItemResponse(
+            KowalskiClientStockItem(
                 symbol: "AAPL",
                 exchange: "NMS",
                 name: "Apple Inc.",

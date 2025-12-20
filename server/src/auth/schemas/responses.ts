@@ -1,5 +1,7 @@
 import * as z from 'zod';
 
+import { ApiCommonDatetimeShape } from '@/schemas/common.js';
+
 export const AuthResponseSchema = z
   .object({
     token: z.string().nonempty().openapi({
@@ -22,15 +24,15 @@ export type SessionResponse = z.infer<typeof SessionResponseSchema>;
 export const SessionResponseSchema = z
   .object({
     session: z.object({
-      expires_at: z.iso.datetime({ offset: true }).openapi({
+      expires_at: ApiCommonDatetimeShape.openapi({
         description: 'Session expiration timestamp',
         example: '2025-10-12T12:08:28.382Z',
       }),
-      created_at: z.iso.datetime({ offset: true }).openapi({
+      created_at: ApiCommonDatetimeShape.openapi({
         description: 'Session creation timestamp',
         example: '2025-10-05T12:08:28.382Z',
       }),
-      updated_at: z.iso.datetime({ offset: true }).openapi({
+      updated_at: ApiCommonDatetimeShape.openapi({
         description: 'Session last update timestamp',
         example: '2025-10-05T12:08:28.382Z',
       }),
@@ -48,7 +50,7 @@ export const SessionResponseSchema = z
         description: 'Whether the user email has been verified',
         example: false,
       }),
-      created_at: z.iso.datetime({ offset: true }).openapi({
+      created_at: ApiCommonDatetimeShape.openapi({
         description: 'User account creation timestamp',
         example: '2025-10-05T12:08:28.374Z',
       }),

@@ -6,9 +6,9 @@
 //
 
 public struct KowalskiStocksSearchResponse: Codable, Sendable {
-    public let quotes: [KowalskiStocksSearchQuoteItemResponse]
+    public let quotes: [KowalskiClientStockItem]
 
-    public init(quotes: [KowalskiStocksSearchQuoteItemResponse]) {
+    public init(quotes: [KowalskiClientStockItem]) {
         self.quotes = quotes
     }
 

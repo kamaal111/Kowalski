@@ -7,7 +7,7 @@ import { z } from 'zod';
 
 import type { Database } from '../db/index.js';
 import { createAuth } from '../auth/index.js';
-import schema from '@/db/schema/index.js';
+import * as schema from '@/db/schema/index.js';
 
 const BASE_DATABASE_URL = process.env.DATABASE_URL;
 

@@ -9,6 +9,7 @@ import { STATUS_CODES } from '../constants/http.js';
 import { STOCKS_ROUTE_NAME, stocksApi } from '../stocks/index.js';
 import { SERVER_MODES } from '../api/env.js';
 import { allowedModes } from '../api/middleware.js';
+import { PORTFOLIO_ROUTE_NAME, portfolioApi } from '@/portfolio/index.js';
 
 const appApi = openAPIRouterFactory();
 
@@ -16,6 +17,7 @@ appApi
   .use(allowedModes(SERVER_MODES.SERVER))
   .route(AUTH_ROUTE_NAME, authApi)
   .route(STOCKS_ROUTE_NAME, stocksApi)
+  .route(PORTFOLIO_ROUTE_NAME, portfolioApi)
   .onError((err, c) => {
     const ctx = c as HonoContext;
     if (err instanceof InvalidValidation) {

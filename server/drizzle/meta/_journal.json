@@ -8,6 +8,13 @@
       "when": 1765733711205,
       "tag": "0000_condemned_magdalene",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1766237847439,
+      "tag": "0001_ambiguous_nightshade",
+      "breakpoints": true
     }
   ]
 }

@@ -4,8 +4,9 @@ import { stockTicker } from './stocks.js';
 import { user } from './better-auth.js';
 import currency from '../helpers/currency.js';
 import auditFields from '../helpers/audit-fields.js';
+import { TRANSACTION_TYPE_ARRAY } from '@/constants/common.js';
 
-export const transactionTypesEnum = pgEnum('transaction_types', ['buy', 'sell']);
+export const transactionTypesEnum = pgEnum('transaction_types', TRANSACTION_TYPE_ARRAY);
 
 export const portfolio = pgTable('portfolio', {
   ...auditFields,

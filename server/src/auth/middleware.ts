@@ -19,6 +19,11 @@ const BetterAuthJWTPayloadSchema = z
   .loose();
 
 export const requireLoggedInSessionMiddleware = createMiddleware<{ Variables: HonoVariables }>(async (c, next) => {
+  if (c.get('session') != null) {
+    await next();
+    return;
+  }
+
   const sessionResponse = await getUserSession(c);
 
   c.set('session', sessionResponse);
