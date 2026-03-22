@@ -14,6 +14,14 @@
 
 **Why**: Git operations can lose user work, create confusing states, and should always be under explicit user control.
 
+### ALWAYS USE PNPM FOR NODE WORK
+
+- ✅ Use `pnpm` for all Node.js dependency installation, upgrades, script execution, and package management tasks
+- ❌ Do not use `npm` commands in this repository
+- ❌ Do not use `yarn` commands in this repository
+
+**Why**: This project is standardized on pnpm workspaces and lockfiles. Mixing package managers can create inconsistent installs and confusing dependency state.
+
 ### NEVER START THE SERVER DIRECTLY
 
 - ❌ DO NOT use `node dist/src/index.js &` or any background process commands

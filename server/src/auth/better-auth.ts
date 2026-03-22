@@ -11,8 +11,6 @@ import env from '../api/env.js';
 
 import type { Database } from '../db/index.js';
 
-export type Auth = ReturnType<typeof betterAuth>;
-
 const { BETTER_AUTH_SESSION_UPDATE_AGE_DAYS, BETTER_AUTH_SESSION_EXPIRY_DAYS, JWT_EXPIRY_DAYS, BETTER_AUTH_URL } = env;
 const EXPIRES_IN = ONE_DAY_IN_SECONDS * BETTER_AUTH_SESSION_EXPIRY_DAYS;
 const UPDATE_AGE = ONE_DAY_IN_SECONDS * BETTER_AUTH_SESSION_UPDATE_AGE_DAYS;
@@ -37,7 +35,9 @@ export const createAuth = (database: Database) =>
         },
       }),
     ],
-  }) as Auth;
+  });
+
+export type Auth = ReturnType<typeof createAuth>;
 
 export const auth = createAuth(db);
 

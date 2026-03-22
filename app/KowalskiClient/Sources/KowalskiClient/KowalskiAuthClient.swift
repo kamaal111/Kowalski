@@ -91,8 +91,6 @@ struct KowalskiAuthClientImpl: KowalskiAuthClient {
     // MARK: Sign Up
 
     func signUp(name: String, email: String, password: String) async -> Result<Void, KowalskiAuthSignUpErrors> {
-        assert(
-            (try? Keychain.get(forKey: credentialsKeychainKey).get()) == nil, "There should not be a key chain entry")
         Keychain.delete(forKey: credentialsKeychainKey)
 
         let response: Operations.PostAppApiAuthSignUpEmail.Output

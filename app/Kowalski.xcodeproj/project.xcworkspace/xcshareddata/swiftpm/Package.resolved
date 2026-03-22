@@ -1,5 +1,5 @@
 {
-  "originHash" : "23590cae02c5352cf3f0bbbca7716e81fef10f4a87da96d47bd7db1f1a4079ce",
+  "originHash" : "68bd02807710d9933b44f835ebe33f10ce3aec7a25bea03304aee2042df2b0d5",
   "pins" : [
     {
       "identity" : "confettiswiftui",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Kamaalio/KamaalSwift",
       "state" : {
-        "revision" : "ca65aee2ef3cc703a50de7aaef7d69713733f566",
-        "version" : "3.4.0"
+        "revision" : "9f2a154b06c05021b490c4262f7d0937bb94dee3",
+        "version" : "3.5.0"
       }
     },
     {
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mattpolzin/OpenAPIKit",
       "state" : {
-        "revision" : "65d3bd28ad1f9497bfd4011fc2cac4acb49805b2",
-        "version" : "3.7.1"
+        "revision" : "343b2c1793058fcc53c1bd7e2907f8e3a4d640fb",
+        "version" : "3.9.0"
       }
     },
     {
@@ -87,8 +87,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-openapi-generator",
       "state" : {
-        "revision" : "d74223cc5595a8165181c4d9579243c932e5cd07",
-        "version" : "1.10.3"
+        "revision" : "9ed831359a7b45b6a611610847daca47c3850337",
+        "version" : "1.11.0"
       }
     },
     {
@@ -96,8 +96,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-openapi-runtime",
       "state" : {
-        "revision" : "7722cf8eac05c1f1b5b05895b04cfcc29576d9be",
-        "version" : "1.8.3"
+        "revision" : "f039fa6d6338aab5164f3d1be16281524c9a8f89",
+        "version" : "1.11.0"
       }
     },
     {

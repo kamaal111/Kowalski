@@ -11,7 +11,7 @@ let package = Package(
         .library(name: "KowalskiDesignSystem", targets: ["KowalskiDesignSystem"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/Kamaalio/KamaalSwift", .upToNextMajor(from: "3.3.1")),
+        .package(url: "https://github.com/Kamaalio/KamaalSwift", .upToNextMajor(from: "3.5.0")),
         .package(url: "https://github.com/kamaal111/swift-validator", .upToNextMinor(from: "0.0.5")),
     ],
     targets: [
