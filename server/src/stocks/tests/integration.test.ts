@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe } from 'vitest';
 
 import type { StocksSearchResponse } from '../schemas/search.js';
-import { app, sessionToken } from '@test-vars';
+import { integrationTest } from '@/tests/fixtures.js';
 
 describe('Stocks Integration Tests', () => {
-  it('should be able to search for stocks', async () => {
+  integrationTest('should be able to search for stocks', async ({ app, sessionToken, expect }) => {
     const res = await app.request('/app-api/stocks/search?q=AAPL', {
       headers: {
         Authorization: `Bearer ${sessionToken}`,
@@ -23,7 +23,7 @@ describe('Stocks Integration Tests', () => {
     );
   });
 
-  it('should return 404 without token', async () => {
+  integrationTest('should return 404 without token', async ({ app, expect }) => {
     const res = await app.request('/app-api/stocks/search?q=AAPL');
     expect(res.status).toBe(404);
   });

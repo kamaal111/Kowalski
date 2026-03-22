@@ -1,11 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe } from 'vitest';
 
-import { app, db } from '@test-vars';
 import { createTestUserAndSession } from '@/tests/utils.js';
 import type { SessionResponse } from '../schemas/responses.js';
+import { integrationTest } from '@/tests/fixtures.js';
 
 describe('Sign-up and Session Flow', () => {
-  it('should create user, get JWT, and retrieve session successfully', async () => {
+  integrationTest('should create user, get JWT, and retrieve session successfully', async ({ app, expect }) => {
     const email = `test_${Date.now()}@example.com`;
     const password = 'password123';
     const name = 'Test User';
@@ -68,7 +68,7 @@ describe('Sign-up and Session Flow', () => {
     expect(sessionData.session.expires_at).toBeDefined();
   });
 
-  it('should work with existing test utility', async () => {
+  integrationTest('should work with existing test utility', async ({ db, app, expect }) => {
     const { token } = await createTestUserAndSession(db);
 
     const sessionResponse = await app.request('/app-api/auth/session', {

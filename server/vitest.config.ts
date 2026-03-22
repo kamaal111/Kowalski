@@ -4,7 +4,6 @@ import path from 'path';
 export default defineConfig({
   resolve: {
     alias: {
-      '@test-vars': path.resolve(__dirname, './src/tests/setup.ts'),
       '@': path.resolve(__dirname, './src'),
     },
   },

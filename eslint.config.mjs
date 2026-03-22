@@ -14,17 +14,7 @@ export default defineConfig([
     extends: ['js/recommended'],
     rules: {
       '@typescript-eslint/no-deprecated': 'error',
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              group: ['**/setup.js', '**/setup.ts'],
-              message: 'Please use @test-vars instead.',
-            },
-          ],
-        },
-      ],
+      'no-empty-pattern': 'off',
     },
   },
   {

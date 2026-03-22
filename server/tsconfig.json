@@ -13,7 +13,6 @@
     "composite": true,
     "baseUrl": ".",
     "paths": {
-      "@test-vars": ["./src/tests/setup.ts"],
       "@/*": ["./src/*"]
     }
   },
