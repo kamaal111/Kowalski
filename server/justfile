@@ -11,6 +11,9 @@ AUTH_SCHEMA := "src/db/schema/better-auth.ts"
 
 SERVER_PORT := "8080"
 DAILY_PORT := "8081"
+DOCKER_IMAGE := "kowalski-server"
+DOCKER_CONTAINER := "kowalski-server"
+DOCKER_DATABASE_URL := "postgresql://kowalski_user:kowalski_password@host.docker.internal:5432/kowalski"
 
 # List available commands
 default:
@@ -42,6 +45,14 @@ run-server: prepare compile
     export PORT="{{ SERVER_PORT }}"
 
     {{ PNR }} start
+
+# Build server Docker image
+docker-build tag=DOCKER_IMAGE:
+    docker build -t {{ tag }} .
+
+# Run server Docker image
+docker-run tag=DOCKER_IMAGE host_port=SERVER_PORT:
+    docker run --rm --name {{ DOCKER_CONTAINER }} -p {{ host_port }}:{{ SERVER_PORT }} --add-host=host.docker.internal:host-gateway --env-file .env -e PORT={{ SERVER_PORT }} -e DATABASE_URL={{ DOCKER_DATABASE_URL }} {{ tag }}
 
 # Compile server
 compile:

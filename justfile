@@ -23,6 +23,14 @@ dev-daily: start-services
 run-server:
     just server/run-server
 
+# Build server Docker image
+docker-build-server:
+    just server/docker-build
+
+# Run server Docker image
+docker-run-server: start-services
+    just server/docker-run
+
 # Run all verification checks
 ready: quality download-spec test
 

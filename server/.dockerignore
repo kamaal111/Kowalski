@@ -1,0 +1,10 @@
+node_modules
+dist
+.env
+.env.production
+.test-cache
+cache*.db
+coverage
+pnpm-debug.log*
+README.md
+.DS_Store
