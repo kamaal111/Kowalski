@@ -1,0 +1,226 @@
+server/src/daily-api/index.ts
+  16e19a28f9464a79 3-6
+server/src/middleware/cache.ts
+  16e19a28f9464a79 4-8
+server/src/auth/utils/session.ts
+  16e19a28f9464a79 3
+server/src/auth/better-auth.ts
+  16e19a28f9464a79 7-10,12
+server/src/forex/utils/is-currency.ts
+  16e19a28f9464a79 1
+server/src/auth/routes/sign-in.ts
+  16e19a28f9464a79 4-9
+server/src/db/index.ts
+  16e19a28f9464a79 3-4
+server/src/db/schema/stocks.ts
+  16e19a28f9464a79 3
+server/src/forex/models/forex-item-exchange-rate.ts
+  16e19a28f9464a79 1-3
+.specify/templates/plan-template.md
+  16e19a28f9464a79 6,25
+.codex/prompts/speckit.taskstoissues.md
+  16e19a28f9464a79 1-30
+server/src/middleware/logging.ts
+  16e19a28f9464a79 4
+server/src/db/schema/portfolio.ts
+  16e19a28f9464a79 3-7
+server/src/auth/middleware.ts
+  16e19a28f9464a79 12-21
+server/src/api/exceptions.ts
+  16e19a28f9464a79 4-5
+server/src/auth/index.ts
+  16e19a28f9464a79 1-7
+server/src/utils/request.ts
+  16e19a28f9464a79 3
+server/src/portfolio/repositories/create-entry.ts
+  16e19a28f9464a79 3-5
+server/src/auth/handlers/sign-up.ts
+  16e19a28f9464a79 1-5
+server/src/api/server.ts
+  16e19a28f9464a79 5-6
+server/src/portfolio/tests/create-entry.integration.test.ts
+  16e19a28f9464a79 5-12
+server/src/stocks/tests/integration.test.ts
+  16e19a28f9464a79 3-4
+server/src/portfolio/schemas/payloads.ts
+  16e19a28f9464a79 3-5
+server/src/tests/integration.test.ts
+  16e19a28f9464a79 1
+server/package.json
+  16e19a28f9464a79 6
+server/src/index.ts
+  16e19a28f9464a79 6-10,12-18
+server/src/constants/http.ts
+  16e19a28f9464a79 1
+server/tsconfig.json
+  16e19a28f9464a79 5-6,17
+server/src/portfolio/routes/index.ts
+  16e19a28f9464a79 1-6
+server/src/forex/models/forex-item.ts
+  16e19a28f9464a79 1-2
+.codex/prompts/speckit.tasks.md
+  16e19a28f9464a79 1-209
+server/src/auth/routes/sign-out.ts
+  16e19a28f9464a79 3-4
+server/src/stocks/routes/search.ts
+  16e19a28f9464a79 3-6
+.codex/prompts/speckit.constitution.md
+  16e19a28f9464a79 1-84
+server/src/tests/utils.ts
+  16e19a28f9464a79 8-10
+server/src/forex/models/exchange-rate-record.ts
+  16e19a28f9464a79 3
+.specify/scripts/bash/check-prerequisites.sh
+  16e19a28f9464a79 82-84,91-103,157-166,168-174
+server/src/auth/schemas/responses.ts
+  16e19a28f9464a79 3
+server/src/utils/cache.ts
+  16e19a28f9464a79 7
+server/src/portfolio/handlers/create-entry.ts
+  16e19a28f9464a79 1-7
+server/src/auth/routes/token.ts
+  16e19a28f9464a79 4-8
+server/src/portfolio/exceptions.ts
+  16e19a28f9464a79 1-3
+server/src/portfolio/services/create-entry.ts
+  16e19a28f9464a79 3-4,12
+server/src/tests/fixtures.ts
+  16e19a28f9464a79 3-4
+server/src/utils/cache.test.ts
+  16e19a28f9464a79 3
+server/src/forex/index.ts
+  16e19a28f9464a79 1-2
+server/src/portfolio/routes/create-entry.ts
+  16e19a28f9464a79 3-10
+.codex/prompts/speckit.clarify.md
+  16e19a28f9464a79 1-181
+server/src/stocks/index.ts
+  16e19a28f9464a79 1-3
+.codex/prompts/speckit.specify.md
+  16e19a28f9464a79 1-306
+server/src/auth/handlers/sign-out.ts
+  16e19a28f9464a79 1-5
+server/src/stocks/handlers/search.ts
+  16e19a28f9464a79 3-8
+.specify/templates/constitution-template.md
+  16e19a28f9464a79 1-73
+server/src/auth/routes/session.ts
+  16e19a28f9464a79 3-7
+.specify/scripts/bash/create-new-feature.sh
+  16e19a28f9464a79 70-76,138-139,141-152,154,169,249,257-258,283-292,300,302-306,309-310,313-321,326
+server/src/api/open-api.ts
+  16e19a28f9464a79 8-11
+server/src/portfolio/index.ts
+  16e19a28f9464a79 1-2
+server/src/stocks/routes/index.ts
+  16e19a28f9464a79 1-6
+.codex/prompts/speckit.plan.md
+  16e19a28f9464a79 1-162
+server/src/auth/exceptions.ts
+  16e19a28f9464a79 1-3
+.codex/prompts/speckit.implement.md
+  16e19a28f9464a79 1-207
+server/src/api/contexts.ts
+  16e19a28f9464a79 4-5
+server/src/auth/handlers/token.ts
+  16e19a28f9464a79 1-5
+server/src/db/schema/index.ts
+  16e19a28f9464a79 1-4
+server/src/app-api/index.ts
+  16e19a28f9464a79 3-12
+.codex/prompts/speckit.analyze.md
+  16e19a28f9464a79 1-184
+server/src/api/middleware.ts
+  16e19a28f9464a79 3-5
+server/src/auth/utils/request.test.ts
+  16e19a28f9464a79 3-5
+.specify/scripts/bash/setup-plan.sh
+  16e19a28f9464a79 31-33,42-43,47,54-65
+server/src/auth/handlers/sign-in.ts
+  16e19a28f9464a79 1-5
+server/src/stocks/mappers/yahoo-finance.ts
+  16e19a28f9464a79 4
+server/src/forex/routes/index.ts
+  16e19a28f9464a79 1-2
+.codex/prompts/speckit.checklist.md
+  16e19a28f9464a79 1-295
+server/src/auth/routes/sign-up.ts
+  16e19a28f9464a79 3-8
+server/src/auth/utils/request.ts
+  16e19a28f9464a79 6-15
+server/src/auth/handlers/session.ts
+  16e19a28f9464a79 3-4
+server/src/portfolio/schemas/responses.ts
+  16e19a28f9464a79 3-4
+server/src/auth/routes/index.ts
+  16e19a28f9464a79 1,3-16
+.specify/scripts/bash/common.sh
+  16e19a28f9464a79 123,137-188,194-274
+server/src/auth/handlers/jwks.ts
+  16e19a28f9464a79 1
+.specify/scripts/bash/update-agent-context.sh
+  16e19a28f9464a79 33,38,56-58,75-78,80-87,121-122,365,368-377,487,515-525,532,618,621,624,627,630,633,636,639,642,645,648,651,653-654,657,660-663,665-666,668-690,694,700-718,720-726,728-754,757,759,761-762,781
+server/src/db/schema/forex.ts
+  16e19a28f9464a79 3
+server/src/forex/handlers/collect.ts
+  16e19a28f9464a79 5-10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.17",
+  "base_commit_sha": "0142a93ca33aa107d8b5be818fd99fac6e9de152",
+  "prompts": {
+    "151cc51bdf1f258e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d1680-e9c3-73a1-8683-d5c2f51740f3",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>",
+      "messages": [],
+      "total_additions": 84,
+      "total_deletions": 45,
+      "accepted_lines": 41,
+      "overriden_lines": 0
+    },
+    "16e19a28f9464a79": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d16c8-b7e6-7ff0-85f1-989eb100b45f",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>",
+      "messages": [],
+      "total_additions": 2388,
+      "total_deletions": 419,
+      "accepted_lines": 2379,
+      "overriden_lines": 0
+    },
+    "87586c67d5cebf68": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d1162-ac25-7bb2-9a79-c5866c324729",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>",
+      "messages": [],
+      "total_additions": 108,
+      "total_deletions": 60,
+      "accepted_lines": 27,
+      "overriden_lines": 0
+    },
+    "9f4a339a1bd8a48a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d161f-ae7b-7683-ac5f-fc920da250c9",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>",
+      "messages": [],
+      "total_additions": 1124,
+      "total_deletions": 456,
+      "accepted_lines": 817,
+      "overriden_lines": 3
+    }
+  }
+}
