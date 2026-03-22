@@ -4,12 +4,12 @@ import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { bearer, jwt } from 'better-auth/plugins';
 
-import { APP_API_BASE_PATH, ONE_DAY_IN_SECONDS } from '../constants/common.js';
-import { ROUTE_NAME } from './constants.js';
-import db from '../db/index.js';
-import env from '../api/env.js';
+import { APP_API_BASE_PATH, ONE_DAY_IN_SECONDS } from '../constants/common';
+import { ROUTE_NAME } from './constants';
+import db from '../db';
+import env from '../api/env';
 
-import type { Database } from '../db/index.js';
+import type { Database } from '../db';
 
 const { BETTER_AUTH_SESSION_UPDATE_AGE_DAYS, BETTER_AUTH_SESSION_EXPIRY_DAYS, JWT_EXPIRY_DAYS, BETTER_AUTH_URL } = env;
 const EXPIRES_IN = ONE_DAY_IN_SECONDS * BETTER_AUTH_SESSION_EXPIRY_DAYS;

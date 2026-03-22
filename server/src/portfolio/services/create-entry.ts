@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 
-import type { HonoContext } from '@/api/contexts.js';
-import type { CreateEntryPayload } from '../schemas/payloads.js';
+import type { HonoContext } from '@/api/contexts';
+import type { CreateEntryPayload } from '../schemas/payloads';
 import {
   createPortfolio,
   createPortfolioTransaction,
@@ -9,7 +9,7 @@ import {
   findDefaultPortfolioByUserId,
   findStockTickerById,
   updateStockTickerName,
-} from '../repositories/create-entry.js';
+} from '../repositories/create-entry';
 
 const DEFAULT_PORTFOLIO_NAME = 'Default Portfolio';
 

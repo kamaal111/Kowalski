@@ -1,8 +1,8 @@
-import type { HonoContext } from '../../api/contexts.js';
-import { STATUS_CODES } from '../../constants/http.js';
-import { makeNewRequest } from '../../utils/request.js';
-import { parseTokenResponseAndCreateHeaders } from '../utils/request.js';
-import { SessionNotFound } from '../exceptions.js';
+import type { HonoContext } from '../../api/contexts';
+import { STATUS_CODES } from '../../constants/http';
+import { makeNewRequest } from '../../utils/request';
+import { parseTokenResponseAndCreateHeaders } from '../utils/request';
+import { SessionNotFound } from '../exceptions';
 
 async function tokenHandler(c: HonoContext) {
   const request = await makeNewRequest(c);

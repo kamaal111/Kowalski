@@ -1,10 +1,10 @@
 import { createRoute } from '@hono/zod-openapi';
 
-import { SessionResponseSchema } from '../schemas/responses.js';
-import { OPENAPI_TAG } from '../constants.js';
-import { requireLoggedInSessionMiddleware } from '../middleware.js';
-import { ErrorResponseSchema } from '../../schemas/errors.js';
-import { AuthenticationHeaders } from '../../schemas/headers.js';
+import { SessionResponseSchema } from '../schemas/responses';
+import { OPENAPI_TAG } from '../constants';
+import { requireLoggedInSessionMiddleware } from '../middleware';
+import { ErrorResponseSchema } from '../../schemas/errors';
+import { AuthenticationHeaders } from '../../schemas/headers';
 
 const sessionRoute = createRoute({
   method: 'get',

@@ -1,6 +1,6 @@
 import { date, jsonb, pgTable, text, unique } from 'drizzle-orm/pg-core';
 
-import currency from '../helpers/currency.js';
+import currency from '../helpers/currency';
 
 export const exchangeRates = pgTable(
   'exchange_rates',

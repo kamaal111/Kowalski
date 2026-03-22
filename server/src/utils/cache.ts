@@ -4,7 +4,7 @@ import path from 'node:path';
 import Database from 'better-sqlite3';
 import { z } from 'zod';
 
-import { ONE_MINUTE_IN_MILLISECONDS } from '../constants/common.js';
+import { ONE_MINUTE_IN_MILLISECONDS } from '../constants/common';
 
 const DEFAULT_MAX_SIZE = 1000;
 const DEFAULT_TTL = 5 * ONE_MINUTE_IN_MILLISECONDS;

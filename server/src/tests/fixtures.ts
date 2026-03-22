@@ -1,7 +1,7 @@
 import { test } from 'vitest';
 
-import { createApp } from '@/index.js';
-import { createTestDatabase, createTestUserAndSession } from './utils.js';
+import { createApp } from '@';
+import { createTestDatabase, createTestUserAndSession } from './utils';
 
 export const integrationTest = test
   .extend('_fixturesSetup', async ({}, { onCleanup }) => {

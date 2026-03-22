@@ -1,6 +1,6 @@
-import type { Currency } from '../constants.js';
-import type { ForexItemExchangeRateECBResponse } from '../schemas/collect.js';
-import isCurrency from '../utils/is-currency.js';
+import type { Currency } from '../constants';
+import type { ForexItemExchangeRateECBResponse } from '../schemas/collect';
+import isCurrency from '../utils/is-currency';
 
 class ForexItemExchangeRate {
   readonly value: number;

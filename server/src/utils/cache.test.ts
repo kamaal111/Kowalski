@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { existsSync, rmSync } from 'fs';
-import { LRUCache } from './cache.js';
+import { LRUCache } from './cache';
 
 describe('LRUCache', () => {
   const testDbPath = './test-cache.db';

@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm';
 
-import type { HonoContext } from '@/api/contexts.js';
-import { portfolio, portfolioTransaction, stockTicker } from '@/db/schema/index.js';
-import { DefaultPortfolioCreateFailed, PortfolioEntryCreateFailed, StockTickerCreateFailed } from '../exceptions.js';
+import type { HonoContext } from '@/api/contexts';
+import { portfolio, portfolioTransaction, stockTicker } from '@/db/schema';
+import { DefaultPortfolioCreateFailed, PortfolioEntryCreateFailed, StockTickerCreateFailed } from '../exceptions';
 
 type PortfolioInsert = typeof portfolio.$inferInsert;
 type PortfolioSelect = typeof portfolio.$inferSelect;

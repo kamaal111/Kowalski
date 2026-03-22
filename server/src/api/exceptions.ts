@@ -1,8 +1,8 @@
 import { HTTPException } from 'hono/http-exception';
 import type * as z from 'zod';
 
-import type { HonoContext } from './contexts.js';
-import { STATUS_CODES, type StatusCode } from '../constants/http.js';
+import type { HonoContext } from './contexts';
+import { STATUS_CODES, type StatusCode } from '../constants/http';
 
 export class APIException extends HTTPException {
   readonly c: HonoContext;

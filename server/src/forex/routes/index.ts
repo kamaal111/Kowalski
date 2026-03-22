@@ -1,5 +1,5 @@
-import { openAPIRouterFactory } from '../../api/open-api.js';
-import collect from '../handlers/collect.js';
+import { openAPIRouterFactory } from '../../api/open-api';
+import collect from '../handlers/collect';
 
 const forexApi = openAPIRouterFactory();
 

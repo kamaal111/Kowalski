@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 
-import { parseTokenResponseAndCreateHeaders } from './request.js';
-import env from '../../api/env.js';
-import { ONE_DAY_IN_SECONDS } from '../../constants/common.js';
+import { parseTokenResponseAndCreateHeaders } from './request';
+import env from '../../api/env';
+import { ONE_DAY_IN_SECONDS } from '../../constants/common';
 
 describe('parseTokenResponseAndCreateHeaders', () => {
   const mockJwt = 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0IiwiZXhwIjoxNzY1NzI4NTAzfQ.signature';

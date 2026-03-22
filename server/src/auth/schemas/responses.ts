@@ -1,6 +1,6 @@
 import * as z from 'zod';
 
-import { ApiCommonDatetimeShape } from '@/schemas/common.js';
+import { ApiCommonDatetimeShape } from '@/schemas/common';
 
 export const AuthResponseSchema = z
   .object({

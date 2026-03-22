@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 
-import env from '../api/env.js';
-import * as schema from './schema/index.js';
+import env from '../api/env';
+import * as schema from './schema';
 
 const { DATABASE_URL, DEBUG } = env;
 

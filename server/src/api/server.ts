@@ -2,8 +2,8 @@ import { serve, type ServerType } from '@hono/node-server';
 import type { Env, Hono } from 'hono';
 import type { BlankEnv } from 'hono/types';
 
-import { closeAllCaches } from '@/middleware/cache.js';
-import env from './env.js';
+import { closeAllCaches } from '@/middleware/cache';
+import env from './env';
 
 const { PORT } = env;
 const SIGNALS_TO_TERMINATE_ON: NodeJS.Signals[] = ['SIGINT', 'SIGTERM'];

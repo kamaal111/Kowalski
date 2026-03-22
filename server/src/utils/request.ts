@@ -1,6 +1,6 @@
 import { cloneRawRequest } from 'hono/request';
 
-import type { HonoContext } from '../api/contexts.js';
+import type { HonoContext } from '../api/contexts';
 
 export function makeNewRequest(c: HonoContext): Promise<Request> {
   return cloneRawRequest(c.req);

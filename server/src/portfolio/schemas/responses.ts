@@ -1,7 +1,7 @@
 import * as z from 'zod';
 
-import { ApiCommonDatetimeShape } from '@/schemas/common.js';
-import { CreateEntryPayloadSchema } from './payloads.js';
+import { ApiCommonDatetimeShape } from '@/schemas/common';
+import { CreateEntryPayloadSchema } from './payloads';
 
 const AuditFieldsSchema = z.object({
   created_at: ApiCommonDatetimeShape.openapi({

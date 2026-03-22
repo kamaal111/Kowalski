@@ -1,10 +1,10 @@
-import type { HonoContext } from '@/api/contexts.js';
-import type { CreateEntryPayload } from '../schemas/payloads.js';
-import { STATUS_CODES } from '@/constants/http.js';
-import { toISO8601String } from '@/utils/strings.js';
-import { CreateEntryResponseSchema } from '../schemas/responses.js';
-import createPortfolioEntry from '../services/create-entry.js';
-import { getSessionWhereSessionIsRequired } from '@/auth/index.js';
+import type { HonoContext } from '@/api/contexts';
+import type { CreateEntryPayload } from '../schemas/payloads';
+import { STATUS_CODES } from '@/constants/http';
+import { toISO8601String } from '@/utils/strings';
+import { CreateEntryResponseSchema } from '../schemas/responses';
+import createPortfolioEntry from '../services/create-entry';
+import { getSessionWhereSessionIsRequired } from '@/auth';
 
 async function createEntry(c: HonoContext<string, { out: { json: CreateEntryPayload } }>) {
   const session = getSessionWhereSessionIsRequired(c);

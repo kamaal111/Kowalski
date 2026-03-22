@@ -1,7 +1,7 @@
 import { describe } from 'vitest';
 
-import type { StocksSearchResponse } from '../schemas/search.js';
-import { integrationTest } from '@/tests/fixtures.js';
+import type { StocksSearchResponse } from '../schemas/search';
+import { integrationTest } from '@/tests/fixtures';
 
 describe('Stocks Integration Tests', () => {
   integrationTest('should be able to search for stocks', async ({ app, sessionToken, expect }) => {

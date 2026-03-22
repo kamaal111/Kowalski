@@ -1,13 +1,13 @@
 import { createRoute } from '@hono/zod-openapi';
 
-import { OPENAPI_TAG } from '../constants.js';
-import { requireLoggedInSessionMiddleware } from '@/auth/middleware.js';
-import { AuthenticationHeaders } from '@/schemas/headers.js';
-import { ErrorResponseSchema } from '@/schemas/errors.js';
-import { STATUS_CODES } from '@/constants/http.js';
-import { MIME_TYPES } from '@/constants/request.js';
-import { CreateEntryPayloadSchema } from '../schemas/payloads.js';
-import { CreateEntryResponseSchema } from '../schemas/responses.js';
+import { OPENAPI_TAG } from '../constants';
+import { requireLoggedInSessionMiddleware } from '@/auth/middleware';
+import { AuthenticationHeaders } from '@/schemas/headers';
+import { ErrorResponseSchema } from '@/schemas/errors';
+import { STATUS_CODES } from '@/constants/http';
+import { MIME_TYPES } from '@/constants/request';
+import { CreateEntryPayloadSchema } from '../schemas/payloads';
+import { CreateEntryResponseSchema } from '../schemas/responses';
 
 const createEntryRoute = createRoute({
   method: 'post',

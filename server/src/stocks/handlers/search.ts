@@ -1,11 +1,11 @@
 import YahooFinance from 'yahoo-finance2';
 
-import type { HonoContext } from '../../api/contexts.js';
-import { STATUS_CODES } from '../../constants/http.js';
-import { withCache } from '../../middleware/cache.js';
-import type { StocksSearchQuery } from '../schemas/search.js';
-import { mapYahooFinanceSearchQuoteToEquitySearchResponse } from '../mappers/yahoo-finance.js';
-import { ONE_MINUTE_IN_MILLISECONDS } from '../../constants/common.js';
+import type { HonoContext } from '../../api/contexts';
+import { STATUS_CODES } from '../../constants/http';
+import { withCache } from '../../middleware/cache';
+import type { StocksSearchQuery } from '../schemas/search';
+import { mapYahooFinanceSearchQuoteToEquitySearchResponse } from '../mappers/yahoo-finance';
+import { ONE_MINUTE_IN_MILLISECONDS } from '../../constants/common';
 
 const yahooFinance = new YahooFinance();
 

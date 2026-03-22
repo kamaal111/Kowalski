@@ -5,10 +5,10 @@ import { swaggerUI } from '@hono/swagger-ui';
 import * as z from 'zod';
 import yaml from 'js-yaml';
 
-import type { HonoContext, HonoEnvironment } from './contexts.js';
-import { InvalidValidation } from './exceptions.js';
-import { STATUS_CODES } from '../constants/http.js';
-import { errorLogger } from '../middleware/logging.js';
+import type { HonoContext, HonoEnvironment } from './contexts';
+import { InvalidValidation } from './exceptions';
+import { STATUS_CODES } from '../constants/http';
+import { errorLogger } from '../middleware/logging';
 
 export type OpenAPIRouter = OpenAPIHono<HonoEnvironment>;
 

@@ -3,16 +3,16 @@ import path from 'node:path';
 import z from 'zod';
 import { decodeJwt, type JWTPayload } from 'jose';
 
-import type { HonoContext } from '../../api/contexts.js';
-import { getValueFromSetCookie, makeNewRequest } from '../../utils/request.js';
-import { BetterAuthException } from '../exceptions.js';
-import { APIException, Unauthorized } from '../../api/exceptions.js';
-import { STATUS_CODES } from '../../constants/http.js';
-import { errorLogger } from '../../middleware/logging.js';
-import env from '../../api/env.js';
-import { APP_API_BASE_PATH, ONE_DAY_IN_SECONDS } from '../../constants/common.js';
-import tokenRoute from '../routes/token.js';
-import { ROUTE_NAME } from '../constants.js';
+import type { HonoContext } from '../../api/contexts';
+import { getValueFromSetCookie, makeNewRequest } from '../../utils/request';
+import { BetterAuthException } from '../exceptions';
+import { APIException, Unauthorized } from '../../api/exceptions';
+import { STATUS_CODES } from '../../constants/http';
+import { errorLogger } from '../../middleware/logging';
+import env from '../../api/env';
+import { APP_API_BASE_PATH, ONE_DAY_IN_SECONDS } from '../../constants/common';
+import tokenRoute from '../routes/token';
+import { ROUTE_NAME } from '../constants';
 
 const { BETTER_AUTH_URL, BETTER_AUTH_SESSION_UPDATE_AGE_DAYS, JWT_EXPIRY_DAYS } = env;
 const TOKEN_URL = new URL(path.join(BETTER_AUTH_URL, APP_API_BASE_PATH, ROUTE_NAME, tokenRoute.path));

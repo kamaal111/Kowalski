@@ -1,9 +1,9 @@
-import { SERVER_MODES } from '../../api/env.js';
-import { allowedModes } from '../../api/middleware.js';
-import { openAPIRouterFactory } from '../../api/open-api.js';
-import { requireLoggedInSessionMiddleware } from '../../auth/middleware.js';
-import searchHandler from '../handlers/search.js';
-import searchRoute from './search.js';
+import { SERVER_MODES } from '../../api/env';
+import { allowedModes } from '../../api/middleware';
+import { openAPIRouterFactory } from '../../api/open-api';
+import { requireLoggedInSessionMiddleware } from '../../auth/middleware';
+import searchHandler from '../handlers/search';
+import searchRoute from './search';
 
 const stocksApi = openAPIRouterFactory();
 

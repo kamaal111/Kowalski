@@ -1,10 +1,10 @@
 import { date, index, numeric, pgEnum, pgTable, text, unique } from 'drizzle-orm/pg-core';
 
-import { stockTicker } from './stocks.js';
-import { user } from './better-auth.js';
-import currency from '../helpers/currency.js';
-import auditFields from '../helpers/audit-fields.js';
-import { TRANSACTION_TYPE_ARRAY } from '@/constants/common.js';
+import { stockTicker } from './stocks';
+import { user } from './better-auth';
+import currency from '../helpers/currency';
+import auditFields from '../helpers/audit-fields';
+import { TRANSACTION_TYPE_ARRAY } from '@/constants/common';
 
 export const transactionTypesEnum = pgEnum('transaction_types', TRANSACTION_TYPE_ARRAY);
 

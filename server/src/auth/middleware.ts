@@ -9,16 +9,16 @@ import {
 } from 'jose';
 import z from 'zod';
 
-import type { HonoContext, HonoVariables } from '../api/contexts.js';
-import { APIException } from '../api/exceptions.js';
-import { STATUS_CODES } from '../constants/http.js';
-import { toISO8601String } from '../utils/strings.js';
-import { SessionNotFound } from './exceptions.js';
-import type { SessionResponse } from './schemas/responses.js';
-import { JWKS_URL } from './better-auth.js';
-import { errorLogger, logger } from '../middleware/logging.js';
-import env, { IS_TEST } from '../api/env.js';
-import { jwks } from '../db/schema/better-auth.js';
+import type { HonoContext, HonoVariables } from '../api/contexts';
+import { APIException } from '../api/exceptions';
+import { STATUS_CODES } from '../constants/http';
+import { toISO8601String } from '../utils/strings';
+import { SessionNotFound } from './exceptions';
+import type { SessionResponse } from './schemas/responses';
+import { JWKS_URL } from './better-auth';
+import { errorLogger, logger } from '../middleware/logging';
+import env, { IS_TEST } from '../api/env';
+import { jwks } from '../db/schema/better-auth';
 
 const RemoteJWKS = createRemoteJWKSet(JWKS_URL);
 

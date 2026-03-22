@@ -3,19 +3,19 @@ import { requestId } from 'hono/request-id';
 import { compress } from 'hono/compress';
 import { secureHeaders } from 'hono/secure-headers';
 
-import env, { IS_TEST } from './api/env.js';
-import { openAPIRouterFactory, withOpenAPIDocumentation } from './api/open-api.js';
-import loggingMiddleware from './middleware/logging.js';
-import { injectRequestContext } from './api/contexts.js';
-import { auth, createAuth } from './auth/index.js';
+import env, { IS_TEST } from './api/env';
+import { openAPIRouterFactory, withOpenAPIDocumentation } from './api/open-api';
+import loggingMiddleware from './middleware/logging';
+import { injectRequestContext } from './api/contexts';
+import { auth, createAuth } from './auth';
 
-import db from './db/index.js';
-import appApi from './app-api/index.js';
-import { APP_API_BASE_PATH, DAILY_API_BASE_PATH, REQUEST_ID_HEADER_NAME } from './constants/common.js';
-import dailyApi from './daily-api/index.js';
-import { NotFound } from './api/exceptions.js';
-import type { Database } from './db/index.js';
-import { startServer } from './api/server.js';
+import db from './db';
+import appApi from './app-api';
+import { APP_API_BASE_PATH, DAILY_API_BASE_PATH, REQUEST_ID_HEADER_NAME } from './constants/common';
+import dailyApi from './daily-api';
+import { NotFound } from './api/exceptions';
+import type { Database } from './db';
+import { startServer } from './api/server';
 
 const { DEBUG } = env;
 

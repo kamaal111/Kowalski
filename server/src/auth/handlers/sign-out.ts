@@ -1,8 +1,8 @@
-import type { HonoContext } from '../../api/contexts.js';
-import { STATUS_CODES } from '../../constants/http.js';
-import { MIME_TYPES } from '../../constants/request.js';
-import signOutRoute from '../routes/sign-out.js';
-import { handleAuthRequest } from '../utils/request.js';
+import type { HonoContext } from '../../api/contexts';
+import { STATUS_CODES } from '../../constants/http';
+import { MIME_TYPES } from '../../constants/request';
+import signOutRoute from '../routes/sign-out';
+import { handleAuthRequest } from '../utils/request';
 
 async function signOutHandler(c: HonoContext) {
   const status = STATUS_CODES.OK;

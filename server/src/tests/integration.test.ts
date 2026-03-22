@@ -1,4 +1,4 @@
-import { integrationTest } from './fixtures.js';
+import { integrationTest } from './fixtures';
 
 integrationTest('should handle 404', async ({ app, expect }) => {
   const res = await app.request('/api/v1/unknown');

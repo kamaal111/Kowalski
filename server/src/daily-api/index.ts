@@ -1,9 +1,9 @@
 import { Hono } from 'hono';
 
-import type { HonoEnvironment } from '../api/contexts.js';
-import { allowedModes } from '../api/middleware.js';
-import { SERVER_MODES } from '../api/env.js';
-import { FOREX_ROUTE_NAME, forexApi } from '../forex/index.js';
+import type { HonoEnvironment } from '../api/contexts';
+import { allowedModes } from '../api/middleware';
+import { SERVER_MODES } from '../api/env';
+import { FOREX_ROUTE_NAME, forexApi } from '../forex';
 
 const dailyApi = new Hono<HonoEnvironment>();
 

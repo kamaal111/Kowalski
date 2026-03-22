@@ -1,7 +1,7 @@
 import type { SearchResult } from 'yahoo-finance2/modules/search';
 import { arrays, asserts } from '@kamaalio/kamaal';
 
-import type { StocksSearchQuoteItemResponse, StocksSearchResponse } from '../schemas/search.js';
+import type { StocksSearchQuoteItemResponse, StocksSearchResponse } from '../schemas/search';
 
 type YahooSearchType = SearchResult['quotes'][number];
 

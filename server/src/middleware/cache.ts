@@ -1,11 +1,11 @@
 import type { Context } from 'hono';
 import { asserts } from '@kamaalio/kamaal';
 
-import { LRUCache } from '../utils/cache.js';
-import { ONE_MINUTE_IN_MILLISECONDS } from '../constants/common.js';
-import type { HonoContext } from '../api/contexts.js';
-import { logger } from './logging.js';
-import env, { SERVER_MODES } from '../api/env.js';
+import { LRUCache } from '../utils/cache';
+import { ONE_MINUTE_IN_MILLISECONDS } from '../constants/common';
+import type { HonoContext } from '../api/contexts';
+import { logger } from './logging';
+import env, { SERVER_MODES } from '../api/env';
 
 const DEFAULT_TTL = 5 * ONE_MINUTE_IN_MILLISECONDS;
 const DEFAULT_MAX_SIZE = 1000;

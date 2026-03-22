@@ -1,8 +1,8 @@
 import z from 'zod';
 
-import { TRANSACTION_TYPE_ARRAY } from '@/constants/common.js';
-import { ApiCommonDatetimeShape } from '@/schemas/common.js';
-import { StocksSearchQuoteItemResponseSchema } from '@/stocks/index.js';
+import { TRANSACTION_TYPE_ARRAY } from '@/constants/common';
+import { ApiCommonDatetimeShape } from '@/schemas/common';
+import { StocksSearchQuoteItemResponseSchema } from '@/stocks';
 
 const MoneySchema = z
   .object({

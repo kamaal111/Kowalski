@@ -1,7 +1,7 @@
 import type { Next } from 'hono';
 import { logger as honoLoggerMiddleware } from 'hono/logger';
 
-import type { HonoContext } from '../api/contexts.js';
+import type { HonoContext } from '../api/contexts';
 
 function logConstructor(c: HonoContext, str: string, ...rest: string[]) {
   return [c.get('requestId'), str, rest.join('')].join(' ');

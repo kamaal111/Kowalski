@@ -1,7 +1,7 @@
 import { asserts } from '@kamaalio/kamaal';
 
-import type { HonoContext } from '../../api/contexts.js';
-import { STATUS_CODES } from '../../constants/http.js';
+import type { HonoContext } from '../../api/contexts';
+import { STATUS_CODES } from '../../constants/http';
 
 function sessionHandler(c: HonoContext) {
   const session = c.get('session');

@@ -1,11 +1,11 @@
 import { createRoute } from '@hono/zod-openapi';
 import { z } from 'zod';
 
-import { STATUS_CODES } from '../../constants/http.js';
-import { OPENAPI_TAG } from '../constants.js';
-import { MIME_TYPES } from '../../constants/request.js';
-import { TokenHeaders } from '../schemas/headers.js';
-import { ErrorResponseSchema } from '../../schemas/errors.js';
+import { STATUS_CODES } from '../../constants/http';
+import { OPENAPI_TAG } from '../constants';
+import { MIME_TYPES } from '../../constants/request';
+import { TokenHeaders } from '../schemas/headers';
+import { ErrorResponseSchema } from '../../schemas/errors';
 
 const TokenResponseSchema = z
   .object({

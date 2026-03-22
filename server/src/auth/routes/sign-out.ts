@@ -1,7 +1,7 @@
 import { createRoute } from '@hono/zod-openapi';
 
-import { SignOutResponseSchema } from '../schemas/responses.js';
-import { OPENAPI_TAG } from '../constants.js';
+import { SignOutResponseSchema } from '../schemas/responses';
+import { OPENAPI_TAG } from '../constants';
 
 const signOutRoute = createRoute({
   method: 'post',

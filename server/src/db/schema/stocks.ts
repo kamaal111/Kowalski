@@ -1,6 +1,6 @@
 import { pgTable, text, unique, timestamp, numeric } from 'drizzle-orm/pg-core';
 
-import currency from '../helpers/currency.js';
+import currency from '../helpers/currency';
 
 export const stockTicker = pgTable(
   'stock_ticker',

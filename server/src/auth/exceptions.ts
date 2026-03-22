@@ -1,6 +1,6 @@
-import type { HonoContext } from '../api/contexts.js';
-import { APIException, NotFound } from '../api/exceptions.js';
-import { STATUS_CODES, type StatusCode } from '../constants/http.js';
+import type { HonoContext } from '../api/contexts';
+import { APIException, NotFound } from '../api/exceptions';
+import { STATUS_CODES, type StatusCode } from '../constants/http';
 
 const CODE_TO_STATUS: Record<string, StatusCode> = {
   USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: STATUS_CODES.CONFLICT,

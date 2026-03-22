@@ -1,19 +1,19 @@
-import { openAPIRouterFactory } from '../../api/open-api.js';
+import { openAPIRouterFactory } from '../../api/open-api';
 
-import signUpRoute from './sign-up.js';
-import signInRoute from './sign-in.js';
-import signOutRoute from './sign-out.js';
-import sessionRoute from './session.js';
-import tokenRoute from './token.js';
-import signInHandler from '../handlers/sign-in.js';
-import signUpHandler from '../handlers/sign-up.js';
-import signOutHandler from '../handlers/sign-out.js';
-import sessionHandler from '../handlers/session.js';
-import tokenHandler from '../handlers/token.js';
-import jwksHandler from '../handlers/jwks.js';
-import { allowedModes } from '../../api/middleware.js';
-import { SERVER_MODES } from '../../api/env.js';
-import { JWKS_PATH } from '../better-auth.js';
+import signUpRoute from './sign-up';
+import signInRoute from './sign-in';
+import signOutRoute from './sign-out';
+import sessionRoute from './session';
+import tokenRoute from './token';
+import signInHandler from '../handlers/sign-in';
+import signUpHandler from '../handlers/sign-up';
+import signOutHandler from '../handlers/sign-out';
+import sessionHandler from '../handlers/session';
+import tokenHandler from '../handlers/token';
+import jwksHandler from '../handlers/jwks';
+import { allowedModes } from '../../api/middleware';
+import { SERVER_MODES } from '../../api/env';
+import { JWKS_PATH } from '../better-auth';
 
 const authApi = openAPIRouterFactory();
 

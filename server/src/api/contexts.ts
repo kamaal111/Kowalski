@@ -1,8 +1,8 @@
 import type { Context, Input, Next } from 'hono';
 import type { RequestIdVariables } from 'hono/request-id';
 
-import type { Database } from '../db/index.js';
-import type { Auth, SessionResponse } from '../auth/index.js';
+import type { Database } from '../db';
+import type { Auth, SessionResponse } from '../auth';
 
 interface InjectedContext {
   db: Database;

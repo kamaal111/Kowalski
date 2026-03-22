@@ -2,7 +2,8 @@
   "compilerOptions": {
     "noEmit": false,
     "target": "ESNext",
-    "module": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "strict": true,
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
@@ -13,6 +14,7 @@
     "composite": true,
     "baseUrl": ".",
     "paths": {
+      "@": ["./src/index.ts"],
       "@/*": ["./src/*"]
     }
   },

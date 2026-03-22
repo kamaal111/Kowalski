@@ -1,6 +1,6 @@
-import type { HonoContext } from '@/api/contexts.js';
-import { APIException } from '@/api/exceptions.js';
-import { STATUS_CODES, type StatusCode } from '@/constants/http.js';
+import type { HonoContext } from '@/api/contexts';
+import { APIException } from '@/api/exceptions';
+import { STATUS_CODES, type StatusCode } from '@/constants/http';
 
 const CODE_TO_STATUS = {
   DEFAULT_PORTFOLIO_CREATE_FAILED: STATUS_CODES.INTERNAL_SERVER_ERROR,

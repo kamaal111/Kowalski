@@ -1,9 +1,9 @@
 import { createRoute } from '@hono/zod-openapi';
 
-import { OPENAPI_TAG } from '../constants.js';
-import { ErrorResponseSchema } from '../../schemas/errors.js';
-import { AuthenticationHeaders } from '../../schemas/headers.js';
-import { StocksSearchQuerySchema, StocksSearchResponseSchema } from '../schemas/search.js';
+import { OPENAPI_TAG } from '../constants';
+import { ErrorResponseSchema } from '../../schemas/errors';
+import { AuthenticationHeaders } from '../../schemas/headers';
+import { StocksSearchQuerySchema, StocksSearchResponseSchema } from '../schemas/search';
 
 const searchRoute = createRoute({
   method: 'get',

@@ -5,9 +5,9 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { Pool, Client } from 'pg';
 import { z } from 'zod';
 
-import type { Database } from '../db/index.js';
-import { createAuth } from '../auth/index.js';
-import * as schema from '@/db/schema/index.js';
+import type { Database } from '../db';
+import { createAuth } from '../auth';
+import * as schema from '@/db/schema';
 
 const BASE_DATABASE_URL = process.env.DATABASE_URL;
 

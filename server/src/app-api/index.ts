@@ -1,15 +1,15 @@
 import { HTTPException } from 'hono/http-exception';
 
-import { InvalidValidation } from '../api/exceptions.js';
-import { openAPIRouterFactory } from '../api/open-api.js';
-import { AUTH_ROUTE_NAME, authApi } from '../auth/index.js';
-import type { HonoContext } from '../api/contexts.js';
-import { errorLogger, makeUncaughtErrorLog } from '../middleware/logging.js';
-import { STATUS_CODES } from '../constants/http.js';
-import { STOCKS_ROUTE_NAME, stocksApi } from '../stocks/index.js';
-import { SERVER_MODES } from '../api/env.js';
-import { allowedModes } from '../api/middleware.js';
-import { PORTFOLIO_ROUTE_NAME, portfolioApi } from '@/portfolio/index.js';
+import { InvalidValidation } from '../api/exceptions';
+import { openAPIRouterFactory } from '../api/open-api';
+import { AUTH_ROUTE_NAME, authApi } from '../auth';
+import type { HonoContext } from '../api/contexts';
+import { errorLogger, makeUncaughtErrorLog } from '../middleware/logging';
+import { STATUS_CODES } from '../constants/http';
+import { STOCKS_ROUTE_NAME, stocksApi } from '../stocks';
+import { SERVER_MODES } from '../api/env';
+import { allowedModes } from '../api/middleware';
+import { PORTFOLIO_ROUTE_NAME, portfolioApi } from '@/portfolio';
 
 const appApi = openAPIRouterFactory();
 
