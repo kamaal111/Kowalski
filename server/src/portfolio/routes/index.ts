@@ -10,7 +10,7 @@ const portfolioApi = openAPIRouterFactory();
 portfolioApi.use(allowedModes(SERVER_MODES.SERVER)).use(requireLoggedInSessionMiddleware);
 
 portfolioApi
-  // POST: /entry
+  // POST: /entries
   .openapi(createEntryRoute, createEntry);
 
 export default portfolioApi;

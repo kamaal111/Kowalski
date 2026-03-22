@@ -456,7 +456,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "portfolio_user_id_unique": {
+          "name": "portfolio_user_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -529,7 +537,29 @@
           "notNull": true
         }
       },
-      "indexes": {},
+      "indexes": {
+        "portfolio_transaction_portfolio_id_transaction_date_idx": {
+          "name": "portfolio_transaction_portfolio_id_transaction_date_idx",
+          "columns": [
+            {
+              "expression": "portfolio_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "transaction_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "portfolio_transaction_ticker_id_stock_ticker_id_fk": {
           "name": "portfolio_transaction_ticker_id_stock_ticker_id_fk",
@@ -706,7 +736,8 @@
       "schema": "public",
       "values": [
         "buy",
-        "sell"
+        "sell",
+        "split"
       ]
     }
   },

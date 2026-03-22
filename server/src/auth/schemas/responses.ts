@@ -38,6 +38,10 @@ export const SessionResponseSchema = z
       }),
     }),
     user: z.object({
+      id: z.string().openapi({
+        description: 'Unique identifier for the user',
+        example: '550e8400-e29b-41d4-a716-446655440000',
+      }),
       name: z.string().openapi({
         description: 'User full name',
         example: 'John Doe',
@@ -66,6 +70,7 @@ export const SessionResponseSchema = z
         updated_at: '2025-10-05T12:08:28.382Z',
       },
       user: {
+        id: '550e8400-e29b-41d4-a716-446655440000',
         name: 'John Doe',
         email: 'john@apple.com',
         email_verified: false,

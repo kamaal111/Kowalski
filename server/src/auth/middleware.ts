@@ -1,5 +1,12 @@
 import { createMiddleware } from 'hono/factory';
-import { jwtVerify, createRemoteJWKSet, type JWTPayload, type JWTVerifyResult, type ResolvedKey } from 'jose';
+import {
+  createLocalJWKSet,
+  createRemoteJWKSet,
+  jwtVerify,
+  type JWTPayload,
+  type JWTVerifyResult,
+  type ResolvedKey,
+} from 'jose';
 import z from 'zod';
 
 import type { HonoContext, HonoVariables } from '../api/contexts.js';
@@ -10,13 +17,15 @@ import { SessionNotFound } from './exceptions.js';
 import type { SessionResponse } from './schemas/responses.js';
 import { JWKS_URL } from './better-auth.js';
 import { errorLogger, logger } from '../middleware/logging.js';
-import env from '../api/env.js';
+import env, { IS_TEST } from '../api/env.js';
+import { jwks } from '../db/schema/better-auth.js';
 
-const JWKS = createRemoteJWKSet(JWKS_URL);
+const RemoteJWKS = createRemoteJWKSet(JWKS_URL);
 
 const BetterAuthJWTPayloadSchema = z
   .object({ sub: z.string(), email: z.email(), name: z.string(), emailVerified: z.boolean() })
   .loose();
+const PublicJWKSchema = z.object({ kty: z.string() }).catchall(z.unknown());
 
 export const requireLoggedInSessionMiddleware = createMiddleware<{ Variables: HonoVariables }>(async (c, next) => {
   if (c.get('session') != null) {
@@ -50,6 +59,7 @@ async function verifySession(c: HonoContext): Promise<SessionResponse> {
       updated_at: toISO8601String(sessionResponse.session.updatedAt),
     },
     user: {
+      id: sessionResponse.user.id,
       name: sessionResponse.user.name,
       email: sessionResponse.user.email,
       email_verified: sessionResponse.user.emailVerified,
@@ -69,8 +79,9 @@ async function verifyJwt(c: HonoContext): Promise<SessionResponse | null> {
 
   const token = authHeader.slice(7);
   let verificationResult: JWTVerifyResult<JWTPayload> & ResolvedKey;
+  const jwks = await getJwksForVerification(c);
   try {
-    verificationResult = await jwtVerify(token, JWKS, {
+    verificationResult = await jwtVerify(token, jwks, {
       issuer: env.BETTER_AUTH_URL,
       audience: env.BETTER_AUTH_URL,
     });
@@ -98,10 +109,20 @@ async function verifyJwt(c: HonoContext): Promise<SessionResponse | null> {
       updated_at: toISO8601String(new Date()),
     },
     user: {
+      id: jwtPayload.sub,
       name: jwtPayload.name,
       email: jwtPayload.email,
       email_verified: jwtPayload.emailVerified,
       created_at: toISO8601String(new Date((payload.iat ?? 0) * 1000)),
     },
   };
+}
+
+async function getJwksForVerification(c: HonoContext) {
+  if (!IS_TEST) return RemoteJWKS;
+
+  const keyRows = await c.get('db').select({ id: jwks.id, publicKey: jwks.publicKey }).from(jwks);
+  const keys = keyRows.map(keyRow => ({ ...PublicJWKSchema.parse(JSON.parse(keyRow.publicKey)), kid: keyRow.id }));
+
+  return createLocalJWKSet({ keys });
 }

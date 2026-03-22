@@ -1,30 +1,38 @@
 import type { HonoContext } from '@/api/contexts.js';
 import type { CreateEntryPayload } from '../schemas/payloads.js';
 import { STATUS_CODES } from '@/constants/http.js';
+import { toISO8601String } from '@/utils/strings.js';
+import { CreateEntryResponseSchema } from '../schemas/responses.js';
+import createPortfolioEntry from '../services/create-entry.js';
+import { getSessionWhereSessionIsRequired } from '@/auth/index.js';
 
-function createEntry(c: HonoContext<string, { out: { body: CreateEntryPayload } }>) {
-  const now = new Date().toISOString();
+async function createEntry(c: HonoContext<string, { out: { json: CreateEntryPayload } }>) {
+  const session = getSessionWhereSessionIsRequired(c);
 
-  return c.json(
-    {
-      id: '550e8400-e29b-41d4-a716-446655440000',
-      stock: {
-        symbol: 'AAPL',
-        exchange: 'NMS',
-        name: 'Apple Inc.',
-        sector: 'Technology',
-        industry: 'Consumer Electronics',
-        exchange_dispatch: 'NASDAQ',
-      },
-      amount: 10,
-      purchase_price: { currency: 'USD', value: 150.5 },
-      transaction_type: 'buy' as const,
-      transaction_date: now,
-      created_at: now,
-      updated_at: now,
+  const payload = c.req.valid('json');
+  const createdEntry = await createPortfolioEntry(c, session.user.id, payload);
+
+  const response = CreateEntryResponseSchema.parse({
+    id: createdEntry.id,
+    stock: payload.stock,
+    amount: Number(createdEntry.amount),
+    purchase_price: {
+      currency: createdEntry.purchasePriceCurrency,
+      value: Number(createdEntry.purchasePrice),
     },
-    STATUS_CODES.CREATED,
-  );
+    transaction_type: createdEntry.transactionType,
+    transaction_date: getTransactionDateForResponse(createdEntry.transactionDate),
+    created_at: toISO8601String(createdEntry.createdAt),
+    updated_at: toISO8601String(createdEntry.updatedAt),
+  });
+
+  return c.json(response, STATUS_CODES.CREATED);
+}
+
+function getTransactionDateForResponse(transactionDate: string) {
+  const [year, month, day] = transactionDate.split('-').map(Number);
+
+  return toISO8601String(new Date(Date.UTC(year, month - 1, day)));
 }
 
 export default createEntry;

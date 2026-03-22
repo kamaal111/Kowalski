@@ -1,5 +1,4 @@
 import { createRoute } from '@hono/zod-openapi';
-import z from 'zod';
 
 import { OPENAPI_TAG } from '../constants.js';
 import { requireLoggedInSessionMiddleware } from '@/auth/middleware.js';
@@ -7,52 +6,12 @@ import { AuthenticationHeaders } from '@/schemas/headers.js';
 import { ErrorResponseSchema } from '@/schemas/errors.js';
 import { STATUS_CODES } from '@/constants/http.js';
 import { MIME_TYPES } from '@/constants/request.js';
-import { ApiCommonDatetimeShape } from '@/schemas/common.js';
 import { CreateEntryPayloadSchema } from '../schemas/payloads.js';
-
-const AuditFieldsSchema = z.object({
-  created_at: ApiCommonDatetimeShape.openapi({
-    description: 'Timestamp when the entry was created',
-    example: '2025-12-20T12:00:00.000Z',
-  }),
-  updated_at: ApiCommonDatetimeShape.openapi({
-    description: 'Timestamp when the entry was last updated',
-    example: '2025-12-20T12:00:00.000Z',
-  }),
-});
-
-const CreateEntryResponseSchema = AuditFieldsSchema.extend({
-  id: z.string().nonempty().openapi({
-    description: 'Unique identifier for the portfolio entry',
-    example: '550e8400-e29b-41d4-a716-446655440000',
-  }),
-})
-  .extend(CreateEntryPayloadSchema.shape)
-  .openapi('CreateEntryResponse', {
-    title: 'Create Portfolio Entry Response',
-    description: 'Response containing the created portfolio entry with audit fields',
-    example: {
-      id: '550e8400-e29b-41d4-a716-446655440000',
-      stock: {
-        symbol: 'AAPL',
-        exchange: 'NMS',
-        name: 'Apple Inc.',
-        sector: 'Technology',
-        industry: 'Consumer Electronics',
-        exchange_dispatch: 'NASDAQ',
-      },
-      amount: 10,
-      purchase_price: { currency: 'USD', value: 150.5 },
-      transaction_type: 'buy',
-      transaction_date: '2025-12-20T10:30:00.000Z',
-      created_at: '2025-12-20T12:00:00.000Z',
-      updated_at: '2025-12-20T12:00:00.000Z',
-    },
-  });
+import { CreateEntryResponseSchema } from '../schemas/responses.js';
 
 const createEntryRoute = createRoute({
   method: 'post',
-  path: '/entry',
+  path: '/entries',
   tags: [OPENAPI_TAG],
   summary: 'Create portfolio entry',
   middleware: [requireLoggedInSessionMiddleware],
@@ -78,7 +37,15 @@ const createEntryRoute = createRoute({
       },
     },
     [STATUS_CODES.BAD_REQUEST]: {
-      description: 'Bad request',
+      description: 'Invalid portfolio entry payload',
+      content: {
+        [MIME_TYPES.APPLICATION_JSON]: {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    [STATUS_CODES.UNAUTHORIZED]: {
+      description: 'Authentication failed',
       content: {
         [MIME_TYPES.APPLICATION_JSON]: {
           schema: ErrorResponseSchema,
@@ -86,7 +53,15 @@ const createEntryRoute = createRoute({
       },
     },
     [STATUS_CODES.NOT_FOUND]: {
-      description: 'Portfolio entry not found',
+      description: 'Session not found',
+      content: {
+        [MIME_TYPES.APPLICATION_JSON]: {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    [STATUS_CODES.INTERNAL_SERVER_ERROR]: {
+      description: 'Portfolio entry persistence failed',
       content: {
         [MIME_TYPES.APPLICATION_JSON]: {
           schema: ErrorResponseSchema,

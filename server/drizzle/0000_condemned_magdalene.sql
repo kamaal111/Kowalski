@@ -1,4 +1,4 @@
-CREATE TYPE "public"."transaction_types" AS ENUM('buy', 'sell');--> statement-breakpoint
+CREATE TYPE "public"."transaction_types" AS ENUM('buy', 'sell', 'split');--> statement-breakpoint
 CREATE TABLE "account" (
 	"id" text PRIMARY KEY NOT NULL,
 	"account_id" text NOT NULL,
@@ -68,7 +68,8 @@ CREATE TABLE "portfolio" (
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
-	"user_id" text NOT NULL
+	"user_id" text NOT NULL,
+	CONSTRAINT "portfolio_user_id_unique" UNIQUE("user_id")
 );
 --> statement-breakpoint
 CREATE TABLE "portfolio_transaction" (
@@ -109,4 +110,5 @@ ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("
 ALTER TABLE "portfolio" ADD CONSTRAINT "portfolio_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "portfolio_transaction" ADD CONSTRAINT "portfolio_transaction_ticker_id_stock_ticker_id_fk" FOREIGN KEY ("ticker_id") REFERENCES "public"."stock_ticker"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "portfolio_transaction" ADD CONSTRAINT "portfolio_transaction_portfolio_id_portfolio_id_fk" FOREIGN KEY ("portfolio_id") REFERENCES "public"."portfolio"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "stock_info" ADD CONSTRAINT "stock_info_ticker_id_stock_ticker_id_fk" FOREIGN KEY ("ticker_id") REFERENCES "public"."stock_ticker"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "stock_info" ADD CONSTRAINT "stock_info_ticker_id_stock_ticker_id_fk" FOREIGN KEY ("ticker_id") REFERENCES "public"."stock_ticker"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "portfolio_transaction_portfolio_id_transaction_date_idx" ON "portfolio_transaction" USING btree ("portfolio_id","transaction_date");

@@ -28,6 +28,11 @@ public struct KowalskiPortfolioScreen: View {
         }
         .frame(minSize: ModuleConfig.screenMinSize)
         .navigationTitle("")
+        .onAppear(perform: handleOnAppear)
+    }
+
+    private func handleOnAppear() {
+        print("🐸🐸🐸 appearing in portfolio")
     }
 }
 

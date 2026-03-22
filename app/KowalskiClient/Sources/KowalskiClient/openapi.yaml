@@ -277,7 +277,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /app-api/portfolio/entry:
+  /app-api/portfolio/entries:
     post:
       tags:
         - Portfolio
@@ -308,13 +308,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/CreateEntryResponse'
         '400':
-          description: Bad request
+          description: Invalid portfolio entry payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication failed
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
-          description: Portfolio entry not found
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Portfolio entry persistence failed
           content:
             application/json:
               schema:
@@ -445,6 +457,10 @@ components:
         user:
           type: object
           properties:
+            id:
+              type: string
+              description: Unique identifier for the user
+              example: 550e8400-e29b-41d4-a716-446655440000
             name:
               type: string
               description: User full name
@@ -464,6 +480,7 @@ components:
               description: User account creation timestamp
               example: '2025-10-05T12:08:28.374Z'
           required:
+            - id
             - name
             - email
             - email_verified
@@ -479,6 +496,7 @@ components:
           created_at: '2025-10-05T12:08:28.382Z'
           updated_at: '2025-10-05T12:08:28.382Z'
         user:
+          id: 550e8400-e29b-41d4-a716-446655440000
           name: John Doe
           email: john@apple.com
           email_verified: false
@@ -574,19 +592,9 @@ components:
     CreateEntryResponse:
       type: object
       properties:
-        created_at:
-          type: string
-          format: date-time
-          description: Timestamp when the entry was created
-          example: '2025-12-20T12:00:00.000Z'
-        updated_at:
-          type: string
-          format: date-time
-          description: Timestamp when the entry was last updated
-          example: '2025-12-20T12:00:00.000Z'
         id:
           type: string
-          minLength: 1
+          format: uuid
           description: Unique identifier for the portfolio entry
           example: 550e8400-e29b-41d4-a716-446655440000
         stock:
@@ -612,15 +620,25 @@ components:
           format: date-time
           description: Date and time when the transaction occurred
           example: '2025-12-20T10:30:00.000Z'
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the entry was created
+          example: '2025-12-20T12:00:00.000Z'
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when the entry was last updated
+          example: '2025-12-20T12:00:00.000Z'
       required:
-        - created_at
-        - updated_at
         - id
         - stock
         - amount
         - purchase_price
         - transaction_type
         - transaction_date
+        - created_at
+        - updated_at
       title: Create Portfolio Entry Response
       description: Response containing the created portfolio entry with audit fields
       example:

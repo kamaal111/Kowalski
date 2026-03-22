@@ -1,131 +1,122 @@
-# Agent Guidelines for Kowalski
+# Repository Guidelines
 
-**Monorepo**: TypeScript/Node.js server + SwiftUI iOS/macOS app
+## Critical Development Rules
 
-## ⚠️ CRITICAL: Agent Behavior Rules
+- **ALWAYS verify your work with relevant commands before claiming completion**
+  - For linting changes: run `just lint`
+  - For formatting changes: run `just format` or `just format-check`
+  - For TypeScript type changes: run `just typecheck`
+  - For server compilation changes: run `just compile-server`
+  - For server or app behavior changes: run `just test`
+  - For Swift package changes: run `swift build` in the affected package directory
+  - **ALWAYS run `just ready` from the repository root as the final verification before finishing code changes**
+  - For docs-only changes, such as `AGENTS.md`, `README.md`, or other guidance files, do not run `just ready` unless the user explicitly asks for it
+- **NEVER claim code changes are done until `just ready` passes**
+  - `just ready` runs quality checks, downloads the OpenAPI spec, and runs server and Swift client tests
+  - If `just ready` fails, fix the issues and re-run it until it succeeds
+  - This is non-negotiable
+- **ALWAYS include proof of work in the final response**
+  - Tell the user exactly how you validated the work
+  - List the commands, builds, tests, or manual checks you ran
+  - If you did not run a validation step, say that explicitly instead of implying it passed
+  - For docs-only changes, say that no code validation was run and why
+- **ONLY use non-destructive git operations in the main worktree**
+  - Read-only git commands for inspection or debugging are allowed, such as `git status`, `git diff`, `git log`, `git show`, and `git blame`
+  - Do not run destructive or state-changing git commands in the current worktree, such as `git checkout`, `git reset`, `git stash`, `git revert`, or `git rebase`
+  - If changes need to be undone, prefer making the correcting edits directly
+  - If destructive git operations are genuinely required to complete the task, do that work in a separate worktree instead of the user's active worktree
+- **ALWAYS use `pnpm` for Node.js work**
+  - Use `pnpm` for dependency installation, upgrades, scripts, and workspace commands
+  - Do not use `npm` or `yarn` anywhere in this repository
+- **ALWAYS use root `just` commands when they exist**
+  - Prefer `just` over ad hoc command sequences for build, test, quality, database, and OpenAPI workflows
+  - Start command discovery by running `just`, which lists available recipes with their descriptive comments
+  - Use `just --list --unsorted` only if you specifically need the unsorted view
+- **NEVER start the server directly or as a background process**
+  - Do not use `node dist/src/index.js &`, `pnpm start &`, `tsx src/index.ts &`, or similar commands
+  - Do not leave background processes running after the agent finishes
+  - Only use `just dev-server` if the user explicitly asks you to start the server
+  - For API verification, use `just compile-server` and let the user run the server manually
+  - If OpenAPI spec download is needed, prefer asking the user to start the server first instead of relying on auto-start behavior
+- **NEVER suppress lint or type errors**
+  - Do not add `eslint-disable`, `eslint-disable-next-line`, `@ts-ignore`, or `@ts-expect-error`
+  - Fix the underlying issue with better types, refactors, validation, or type guards
+- **NEVER use TypeScript type assertions or casting**
+  - Do not use `as Type` or `<Type>value`
+  - If TypeScript cannot infer a type, validate the data instead of forcing the type
+- **ALWAYS validate unknown or external data**
+  - Use Zod `.parse()` or `.safeParse()` for database rows, request payloads, and external API responses
+  - Treat validation gaps as real bugs, not typing inconveniences
+- **ALWAYS write tests for behavior changes**
+  - Prefer integration tests over isolated unit tests when the behavior crosses handlers, middleware, database, auth, or HTTP boundaries
+  - Avoid redundant tests when an existing integration test already covers the scenario
+  - For detailed testing workflow and conventions, use `.agents/testing-best-practices/SKILL.md`
+- **NEVER manually edit `.xcstrings` files**
+  - Add or update `NSLocalizedString` calls in Swift code and let Xcode update the localization catalogs
 
-### NEVER PERFORM GIT OPERATIONS
+## Build, Test, and Development Commands
 
-- ❌ DO NOT run any git commands (`git checkout`, `git reset`, `git stash`, `git revert`, etc.)
-- ❌ DO NOT attempt to undo changes using git
-- ❌ DO NOT manipulate git history or branches
-- ✅ If changes need to be undone, make the correcting edits directly
-- ✅ Let the user handle all git operations
+**ALWAYS run commands from the repository root unless the command explicitly requires a package directory.**
 
-**Why**: Git operations can lose user work, create confusing states, and should always be under explicit user control.
+- Start by running `just` to discover the current command surface and read each recipe's descriptive comment
+- Prefer discovered `just` recipes over memorized command lists, since the available commands can change over time
+- Use repo-specific direct package commands only when there is no suitable root `just` recipe
+- For Swift package verification, run `swift build` in the affected package directory when needed
+- For OpenAPI work, confirm the current spec-related recipe names via `just` before running them
 
-### ALWAYS USE PNPM FOR NODE WORK
+## Coding Style & Naming Conventions
 
-- ✅ Use `pnpm` for all Node.js dependency installation, upgrades, script execution, and package management tasks
-- ❌ Do not use `npm` commands in this repository
-- ❌ Do not use `yarn` commands in this repository
+- **Language stack**
+  - Server: TypeScript, ESM modules, Node.js 24+, Hono, Drizzle, Zod
+  - App: Swift 6.2+, SwiftUI, Observation, Swift Package Manager, Xcode
+- **TypeScript**
+  - Use `.js` extensions in local imports
+  - Keep filenames in `kebab-case`
+  - Use `camelCase` for variables and functions
+  - Use `PascalCase` for schemas, types, and classes
+  - Prefer default exports for routes and handlers where the codebase already follows that pattern
+  - Never use deprecated APIs when ESLint or TypeScript flags a modern replacement
+  - Centralize reusable constants in `server/src/constants/`
+- **Type safety**
+  - Do not cast values to force them through the type system
+  - Validate unknown data at boundaries with Zod
+  - Use type guards or schema transforms instead of suppression comments
+- **Swift**
+  - Keep filenames in `PascalCase`
+  - Treat warnings as errors
+  - Use `@Observable` and `@MainActor` patterns consistently with the existing codebase
+  - Prefer `do-catch` with logging over `try?`
+  - Use `async/await` with explicit error handling
+  - Prefer one condition per `guard` line for readability
+- **Localization**
+  - Use `NSLocalizedString` with the correct `.module` bundle when localizing Swift packages
+  - Do not hardcode user-facing text if the surrounding module already localizes it
 
-**Why**: This project is standardized on pnpm workspaces and lockfiles. Mixing package managers can create inconsistent installs and confusing dependency state.
+## Testing Guidelines
 
-### NEVER START THE SERVER DIRECTLY
+- **Primary command:** `just test`
+  - Runs server tests and Swift client/app tests
+- **Final command:** `just ready`
+  - Required for code changes
+  - Not required for docs-only changes unless the user explicitly asks for it
+- **Preferred testing style**
+  - Favor integration tests for routes, middleware, auth flows, and database-backed behavior
+  - Exercise the full stack where practical: HTTP request, middleware, handler, persistence, and response
+  - Add contract coverage for API changes and regression coverage for bug fixes
+  - Avoid duplicate coverage when a broader integration test already proves the behavior
+- **Current testing surface**
+  - Server integration tests exist for auth, stocks, cache-related behavior, and API flows
+  - Swift client tests cover authentication and middleware behavior
+- **Constitution requirements**
+  - Follow `.specify/memory/constitution.md`
+  - Test-first development is expected for substantive feature work
+  - Critical paths such as auth and persistence require especially strong coverage
 
-- ❌ DO NOT use `node dist/src/index.js &` or any background process commands
-- ❌ DO NOT use `pnpm start &` or `tsx src/index.ts &` in background
-- ❌ DO NOT start the server with `&` or in any terminal that persists after the agent completes
-- ✅ ONLY use `just dev-server` if the user explicitly requests to start the server
-- ✅ For testing API changes, compile the code and let the user start the server manually
-- ✅ If OpenAPI spec needs downloading, ask the user to start the server first
+## Security & Configuration Tips
 
-**Why**: Background server processes started by agents cannot be killed properly and require system restart to clean up.
-
-**If you need to verify compilation works**: Use `just compile-server` and let the user run the server.
-
-### ALWAYS RUN QUALITY CHECKS
-
-- ✅ ALWAYS run `just ready` before marking any changes as complete
-- ✅ `just ready` runs: quality checks (lint + format-check + typecheck), downloads OpenAPI spec, and runs tests
-- ✅ If `just ready` fails, fix the issues and re-run until it passes
-- ❌ DO NOT claim a task is done while `just ready` is failing
-
-**Why**: Ensures all code meets quality standards and passes tests before completion.
-
-## Code Quality Rules
-
-**NEVER SUPPRESS LINT/TYPE ERRORS**
-
-- ❌ DO NOT use `eslint-disable` or `eslint-disable-next-line`
-- ❌ DO NOT use `@ts-expect-error` or `@ts-ignore`
-- ✅ ALWAYS fix the underlying problem (improve types, refactor code, use type guards)
-- ✅ If a type is truly unknown or complex, validate the value (e.g. using Zod) or use type guards instead of suppression or casting
-
-## Technology Stack
-
-### Backend (server/)
-
-- **Framework**: Hono (web framework)
-- **Runtime**: Node.js
-- **Database**: PostgreSQL (via Drizzle ORM)
-- **Auth**: Better Auth
-- **Validation**: Zod with OpenAPI support
-- **API Docs**: OpenAPI with Swagger UI
-- **Testing**: Vitest
-
-### Frontend (app/)
-
-- **Framework**: SwiftUI with Observation
-- **Platforms**: iOS 17+, macOS 14+
-- **API Client**: OpenAPI Generator (auto-generated from server spec)
-- **Dependencies**:
-  - KamaalSwift (utilities, UI, logger, extensions)
-  - ForexKit (currency/forex handling)
-  - SwiftValidator (validation)
-
-### Infrastructure
-
-- **Database**: PostgreSQL 17 (Docker container `kowalski-db`)
-- **Container**: Docker Compose for local development
-- **CI/CD**: Husky for git hooks, lint-staged for pre-commit
-
-## Build & Run Commands
-
-### Server (TypeScript)
-
-- **Bootstrap**: `just bootstrap` (installs NVM, Node 24, corepack, dependencies)
-- **Dev**: `just dev-server` (starts Docker + server with hot reload on port 8080)
-- **Run**: `just run-server` (compile + start production server)
-- **Compile**: `just compile-server` (TypeScript compilation to `dist/`)
-- **Test**: `just test` (vitest run mode). Single test: `cd server && pnpm test -- <filename>`
-- **Lint**: `just lint` (ESLint with recommended + strict + stylistic rules)
-- **Format**: `just format` (Prettier) or `just format-check`
-- **Typecheck**: `just typecheck` (TypeScript with `--noEmit`)
-- **Quality**: `just quality` (lint + format-check + typecheck)
-
-### Database (PostgreSQL)
-
-- **Start**: `just start-services` (Docker Compose up -d)
-- **Stop**: `just stop-services` (Docker Compose down)
-- **Logs**: `just tail-db` (follow database logs)
-- **Migrate**: `just migrate` (run pending migrations)
-- **Make Migrations**: `just make-migrations` (generate new migration)
-- **Pull Schema**: `just pull-schema` (pull from remote DB)
-- **Push Schema**: `just push-schema` (push to remote DB)
-- **Auth Tables**: `just make-auth-tables` (generate Better Auth schema)
-
-### iOS/macOS App (Swift)
-
-- **Build**: Open `app/Kowalski.xcodeproj` in Xcode (Cmd+B)
-  - For individual packages: `cd app/<PackageName> && swift build`
-  - **IMPORTANT**: Always verify package builds after modifications using `swift build`
-- **Run**: Xcode Run (Cmd+R) or iOS Simulator
-- **Test**: Xcode Test (Cmd+U) or `swift test` in package directories
-- **Swift version**: 6.2+, Platforms: macOS 14+, iOS 17+
-
-### API & OpenAPI
-
-- **Download Spec**: `just download-spec` (auto-starts server if needed, saves to `app/KowalskiClient/Sources/KowalskiClient/openapi.yaml`)
-- **API Docs**: http://localhost:8080/doc (Swagger UI, requires running server)
-- **OpenAPI Spec**: http://localhost:8080/spec.json (requires running server)
-
-## Environment Setup
-
-### Required Environment Variables (server/)
-
-Create `server/.env` from `server/.env.example`:
+- **Required server environment**
+  - Create `server/.env` from `server/.env.example`
+  - Required values:
 
 ```bash
 DATABASE_URL=postgresql://kowalski_user:kowalski_password@localhost:5432/kowalski
@@ -133,190 +124,72 @@ BETTER_AUTH_SECRET=<generate with: openssl rand -base64 32>
 BETTER_AUTH_URL=http://localhost:8080
 ```
 
-**Optional**:
+- **Optional server environment**
+  - `PORT` defaults to `8080`
+  - `DEBUG` defaults to `false`
+  - `BETTER_AUTH_SESSION_UPDATE_AGE_DAYS` defaults to `1`
+  - `BETTER_AUTH_SESSION_EXPIRY_DAYS` defaults to `30`
+- **Database service**
+  - PostgreSQL runs via Docker Compose
+  - Host: `localhost:5432`
+  - Database: `kowalski`
+  - User: `kowalski_user`
+  - Password: `kowalski_password`
+- **Prerequisites**
+  - Node.js `24+`
+  - pnpm `10+`
+  - Docker
+  - Xcode `15+`
+  - `just`
 
-- `PORT` (default: 8080)
-- `DEBUG` (default: false, set to "true" for verbose logging)
-- `BETTER_AUTH_SESSION_UPDATE_AGE_DAYS` (default: 1)
-- `BETTER_AUTH_SESSION_EXPIRY_DAYS` (default: 30)
+## API & OpenAPI Workflow
 
-### Database Connection
-
-Docker Compose creates `kowalski_db` container:
-
-- **Host**: localhost:5432
-- **Database**: kowalski
-- **User**: kowalski_user
-- **Password**: kowalski_password
-
-## Code Style
-
-### Quality Assurance
-
-**CRITICAL**: Always run `just ready` before marking any changes as complete.
-
-`just quality` runs:
-
-- `pnpm run lint` (ESLint with strict rules)
-- `pnpm run format:check` (Prettier formatting)
-- `just server/typecheck` (TypeScript type checking)
-
-`just test` runs:
-
-- Server tests (vitest)
-- Swift client tests
-
-If any issues occur, fix them and re-run `just ready` until it passes. **Do not claim a task is done while `just ready` is failing.**
-
-### TypeScript (server/)
-
-- **Strict mode**: `verbatimModuleSyntax` enabled, all ESLint rules enforced
-- **Imports**: Use `.js` extensions for local imports (`from './file.js'`)
-- **Module**: ESM only (`type: "module"`)
-- **Files**: kebab-case (e.g., `sign-in.ts`)
-- **Types/Schemas**: PascalCase, use `.openapi()` for Zod schemas
-- **Functions/vars**: camelCase
-- **Errors**: Custom exception classes extending `APIException` (see `server/src/auth/exceptions.ts`)
-- **Constants**: Centralize in `src/constants/` (HTTP codes, MIME types)
-- **Exports**: Default exports for routes/handlers
-- **Formatting**: Prettier with `@kamaalio/prettier-config`
-- **ESLint**: Recommended + TypeChecked + Strict + Stylistic configs
-- **Deprecated APIs**: Never use deprecated APIs (ESLint flags them with `@typescript-eslint/no-deprecated`). Use modern alternatives.
-
-#### ⚠️ Type Safety Rules (CRITICAL)
-
-- **NEVER use type casting** (`as Type`, `<Type>value`) - these bypass TypeScript's type system and are forbidden
-- **ALWAYS validate unknown data** with Zod schemas using `.parse()` or `.safeParse()`
-- **Database query results**: Define Zod schema and validate with `.parse()` (e.g., `const row = rowSchema.parse(db.query(...))`)
-- **External API responses**: Define Zod schema and validate before use
-- **User input**: Always validated via Zod schemas (already enforced by `@hono/zod-openapi`)
-- **Type assertions**: If TypeScript cannot infer a type, it means you need validation, not casting
-- **Exceptions**: None. Even for "known" data sources like SQLite, always use Zod validation to catch schema mismatches early
-
-### Swift (app/)
-
-- **Files**: PascalCase (e.g., `KowalskiAuth.swift`)
-- **Warnings as errors**: All Swift packages use `.treatAllWarnings(as: .error)` - zero tolerance
-- **Architecture**: SwiftUI + Observation framework (`@Observable`, `@MainActor`)
-- **Errors**: Custom enums with `errorDescription`, use `Result<T, E>` when error details matter
-- **Error handling**: Prefer `do-catch` with logging over `try?` to avoid silently swallowing errors
-- **Async**: Use `async/await` with proper error handling
-- **Guard statements**: Each condition on its own line for readability (prefer separate guards over comma-separated conditions)
-- **Localization**: `.xcstrings` files, use `NSLocalizedString` with `.module` bundle
-  - **IMPORTANT**: Never manually edit `.xcstrings` files. Xcode automatically updates them when it detects new `NSLocalizedString` calls in the code.
-
-## Package Managers
-
-- **TypeScript**: pnpm 10.22.0+ (managed via corepack), Node 24+ (via NVM)
-- **Swift**: Swift Package Manager (SPM)
-- **Workspace**: pnpm workspace (root + server/)
-
-## Git Workflow
-
-- **Pre-commit Hook**: Husky runs `lint-staged`
-  - Auto-fixes ESLint issues on `**/*.{js,ts,tsx}`
-  - Auto-formats all files with Prettier
-- **Branch Protection**: Constitution requires feature branches `###-feature-name`
-- **SpecKit Integration**: `.specify/` directory contains templates and scripts for feature development
+- **Documentation endpoints**
+  - Swagger UI: `http://localhost:8080/doc`
+  - JSON spec: `http://localhost:8080/spec.json`
+  - YAML spec: `http://localhost:8080/spec.yaml`
+- **OpenAPI-first server design**
+  - Define routes with `@hono/zod-openapi`
+  - Keep request and response schemas in Zod and attach OpenAPI metadata
+  - Regenerate the Swift client inputs after schema changes
+- **Spec workflow**
+  - Update server route schemas first
+  - Run `just download-spec` after API changes
+  - Rebuild the affected Swift package or client with `swift build`
+- **Agent-specific OpenAPI caution**
+  - `just download-spec` can auto-start the server if nothing is running
+  - Agents should not rely on that auto-start path unless the user explicitly asked for server startup
 
 ## Key Architectural Patterns
 
-### Server
+- **Server**
+  - OpenAPI-first route definitions
+  - Middleware order includes request IDs, compression, secure headers, logging, and context injection
+  - Database and auth clients are injected via middleware/context
+  - Errors are normalized through custom exceptions and centralized handlers
+- **App**
+  - Feature-first Swift packages
+  - Shared visual language lives in `KowalskiDesignSystem`
+  - API access flows through the generated `KowalskiClient`
+  - UI state uses the Observation framework rather than older observable object patterns
 
-- **OpenAPI-First**: All routes defined with `@hono/zod-openapi`
-- **Middleware Stack**: requestId → compress → secureHeaders → logging → context injection
-- **Context Injection**: Database and auth clients injected via middleware
-- **Error Handling**: Custom exceptions (InvalidValidation, APIException) with proper HTTP status codes
-- **Database**: Drizzle ORM with schema-first approach, migrations in `server/drizzle/`
+## Common Workflows
 
-### App
-
-- **Package-First**: Each feature is a standalone SPM package (KowalskiAuth, KowalskiPortfolio)
-- **Design System**: Centralized in KowalskiDesignSystem (colors, typography, components)
-- **API Client**: Auto-generated from OpenAPI spec using Swift OpenAPI Generator
-- **State Management**: Observation framework (`@Observable`) with `@MainActor` for UI updates
-
-## Testing Strategy
-
-**Running Tests**: Use `just test` to run all tests (server + Swift client)
-
-**Critical Testing Rules**:
-
-- **ALWAYS write integration tests for new features/changes** - integration tests validate that multiple components work together correctly
-- **Prefer integration tests over unit tests** - test real scenarios with actual dependencies (database, cache, HTTP handlers)
-- **Write tests BEFORE claiming work is complete** - all code changes must include tests that verify the new behavior
-- **Avoid test duplication** - if an integration test already covers the scenario, don't add redundant tests
-- **Test end-to-end flows** - integration tests should exercise the full stack (HTTP request → middleware → handler → database → response)
-
-**Current Test Coverage**:
-
-- Server: Integration tests for auth, cache middleware, stocks API
-- Swift Client: Unit tests for RefreshTokenMiddleware
-
-**Constitution Requirements** (see `.specify/memory/constitution.md`):
-
-- Test-first development (TDD) mandatory: write tests → fail → implement → pass
-- > 80% coverage for business logic, 100% for critical paths (auth, data persistence)
-- Contract tests for API endpoints
-- Integration tests for DB operations, cross-service communication
-- Unit tests for business logic, utilities (prefer integration tests)
-
-## Common Tasks
-
-### Adding a New API Endpoint
-
-1. Define route in `server/src/app-api/` or `server/src/auth/routes/`
-2. Create Zod schema with `.openapi()` for request/response
-3. Export via `openAPIRouterFactory()` with proper OpenAPI metadata
-4. Run `just download-spec` to update client OpenAPI spec
-5. Rebuild Swift client: `cd app/KowalskiClient && swift build`
-
-### Adding a New Database Table
-
-1. Create schema in `server/src/db/schema/` (import from `drizzle-orm/pg-core`)
-2. Export from `server/src/db/index.ts`
-3. Run `just compile-server` (required for drizzle-kit)
-4. Run `just make-migrations` to generate migration
-5. Run `just migrate` to apply migration
-
-### Adding a New Swift Feature
-
-1. Create feature package in `app/` (or add to `KowalskiFeatures`)
-2. Add `.treatAllWarnings(as: .error)` to `swiftSettings`
-3. Export product in `Package.swift`
-4. Import in dependent packages (e.g., `KowalskiApp`)
-5. Verify build: `cd app/<PackageName> && swift build`
-
-## Troubleshooting
-
-### Server won't start
-
-- Check `server/.env` exists and has `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`
-- Ensure database is running: `just start-services`
-- Check port 8080 not in use: `lsof -i:8080`
-
-### Swift package build fails
-
-- Run `swift build` in package directory to see detailed errors
-- Verify all warnings resolved (warnings = errors in this project)
-- Check dependencies in `Package.swift` are accessible
-
-### Database connection fails
-
-- Verify Docker container running: `docker ps | grep kowalski-db`
-- Check health: `docker compose ps`
-- View logs: `just tail-db`
-
-### Migration issues
-
-- Always compile first: `just compile-server`
-- Check `server/drizzle/` for migration files
-- Manually inspect migration SQL before applying
-
-## VSCode Configuration
-
-See `.vscode/settings.json`:
-
-- SpecKit prompts enabled (constitution, specify, plan, tasks, implement)
-- Auto-approve terminal commands in `.specify/scripts/`
-- Custom dictionary: "Kowalski"
+- **Adding a new API endpoint**
+  - Define the route under the appropriate server feature module
+  - Add Zod request and response schemas with OpenAPI metadata
+  - Wire the route into the feature router
+  - Run `just download-spec`
+  - Build the affected Swift client or package
+- **Adding a new database table**
+  - Create or update schema files in `server/src/db/schema/`
+  - Export the schema from `server/src/db/index.ts` if needed
+  - Run `just compile-server`
+  - Run `just make-migrations`
+  - Run `just migrate`
+- **Adding a new Swift feature**
+  - Add or update the relevant package under `app/`
+  - Keep warnings at zero
+  - Add the product or dependency wiring in `Package.swift` where required
+  - Run `swift build` in the affected package
+  - Run `just test` and `just ready`

@@ -1,7 +1,7 @@
 import { describe } from 'vitest';
 
 import { createTestUserAndSession } from '@/tests/utils.js';
-import type { SessionResponse } from '../schemas/responses.js';
+import { SessionResponseSchema } from '../schemas/responses.js';
 import { integrationTest } from '@/tests/fixtures.js';
 
 describe('Sign-up and Session Flow', () => {
@@ -56,7 +56,8 @@ describe('Sign-up and Session Flow', () => {
 
     expect(sessionResponse.status).toBe(200);
 
-    const sessionData = (await sessionResponse.json()) as SessionResponse;
+    const sessionData = SessionResponseSchema.parse(await sessionResponse.json());
+    expect(sessionData.user.id).toBeTruthy();
     expect(sessionData).toMatchObject({
       user: {
         name,

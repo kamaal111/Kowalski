@@ -35,6 +35,9 @@ struct KowalskiPortfolioClientFactory {
 public enum KowalskiPortfolioClientCreateEntryErrors: Error {
     case unknown(statusCode: Int, payload: OpenAPIRuntime.UndocumentedPayload?, context: Error?)
     case badRequest
+    case unauthorized
+    case notFound
+    case internalServerError
 }
 
 // MARK: Implementation
@@ -52,17 +55,23 @@ struct KowalskiPortfolioClientImpl: KowalskiPortfolioClient {
         payload: KowalskiPortfolioCreateEntryPayload
     ) async -> Result<KowalskiPortfolioClientCreateEntryResponse, KowalskiPortfolioClientCreateEntryErrors> {
         let apiPayload = mapper.mapCreateEntryPayloadToApi(payload)
-        let response: Operations.PostAppApiPortfolioEntry.Output
+        let response: Operations.PostAppApiPortfolioEntries.Output
         do {
-            response = try await client.postAppApiPortfolioEntry(.init(body: .json(apiPayload)))
+            response = try await client.postAppApiPortfolioEntries(.init(body: .json(apiPayload)))
         } catch {
             return .failure(.unknown(statusCode: 503, payload: nil, context: error))
         }
 
-        let createdResponse: Operations.PostAppApiPortfolioEntry.Output.Created
+        let createdResponse: Operations.PostAppApiPortfolioEntries.Output.Created
         switch response {
-        case .badRequest, .notFound:
+        case .badRequest:
             return .failure(.badRequest)
+        case .unauthorized:
+            return .failure(.unauthorized)
+        case .notFound:
+            return .failure(.notFound)
+        case .internalServerError:
+            return .failure(.internalServerError)
         case let .undocumented(statusCode, payload):
             return .failure(.unknown(statusCode: statusCode, payload: payload, context: nil))
         case let .created(created): createdResponse = created
