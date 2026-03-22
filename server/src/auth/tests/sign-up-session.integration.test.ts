@@ -1,84 +1,151 @@
-import { describe } from 'vitest';
+import { randomUUID } from 'crypto';
 
-import { createTestUserAndSession } from '@/tests/utils.js';
-import { SessionResponseSchema } from '../schemas/responses.js';
-import { integrationTest } from '@/tests/fixtures.js';
+import { z } from 'zod';
+import { describe, expect } from 'vitest';
 
-describe('Sign-up and Session Flow', () => {
-  integrationTest('should create user, get JWT, and retrieve session successfully', async ({ app, expect }) => {
-    const email = `test_${Date.now()}@example.com`;
-    const password = 'password123';
-    const name = 'Test User';
+import { AUTH_ROUTE_NAME } from '..';
+import env from '@/api/env';
+import { APP_API_BASE_PATH, ONE_DAY_IN_SECONDS } from '@/constants/common';
+import { integrationTest } from '@/tests/fixtures';
+import { createTestUserAndSession } from '@/tests/utils';
 
-    // Step 1: Sign up
-    const signUpResponse = await app.request('/app-api/auth/sign-up/email', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password, name }),
+const SIGN_UP_PATH = `${APP_API_BASE_PATH}${AUTH_ROUTE_NAME}/sign-up/email`;
+const SESSION_PATH = `${APP_API_BASE_PATH}${AUTH_ROUTE_NAME}/session`;
+
+const AuthResponseBodySchema = z.object({
+  token: z.string().min(1),
+});
+
+const SignUpTokenHeadersSchema = z.object({
+  'set-auth-token': z.string().min(1),
+  'set-auth-token-expiry': z.string().min(1),
+  'set-session-token': z.string().min(1),
+  'set-session-update-age': z.string().min(1),
+});
+
+const SessionPayloadSchema = z.object({
+  session: z.object({
+    expires_at: z.string().min(1),
+    created_at: z.string().min(1),
+    updated_at: z.string().min(1),
+  }),
+  user: z.object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+    email: z.email(),
+    email_verified: z.boolean(),
+    created_at: z.string().min(1),
+  }),
+});
+
+interface AppRequestClient {
+  request: (input: string, init?: RequestInit) => Response | Promise<Response>;
+}
+
+describe('Sign-up session integration', () => {
+  integrationTest('returns auth and session headers when a user signs up', async ({ app }) => {
+    const payload = createValidSignUpPayload();
+    const response = await sendSignUpRequest(app, payload);
+
+    const { headers } = await expectSuccessfulSignUpResponse(response);
+
+    expect(Number(headers['set-auth-token-expiry'])).toBeGreaterThan(0);
+    expect(Number(headers['set-session-update-age'])).toBe(
+      ONE_DAY_IN_SECONDS * env.BETTER_AUTH_SESSION_UPDATE_AGE_DAYS,
+    );
+  });
+
+  integrationTest('retrieves the current session with the session cookie issued at sign up', async ({ app }) => {
+    const payload = createValidSignUpPayload();
+    const signUpResponse = await sendSignUpRequest(app, payload);
+    const { headers } = await expectSuccessfulSignUpResponse(signUpResponse);
+
+    const sessionResponse = await sendSessionRequest(app, {
+      sessionToken: headers['set-session-token'],
     });
 
-    expect(signUpResponse.status).toBe(201);
+    const session = await expectSuccessfulSessionResponse(sessionResponse);
 
-    // Extract JWT and session token from headers
-    const authToken = signUpResponse.headers.get('set-auth-token');
-    const sessionToken = signUpResponse.headers.get('set-session-token');
-    const authTokenExpiry = signUpResponse.headers.get('set-auth-token-expiry');
-    const sessionUpdateAge = signUpResponse.headers.get('set-session-update-age');
-
-    expect(authToken).toBeTruthy();
-    expect(sessionToken).toBeTruthy();
-    expect(authTokenExpiry).toBeTruthy();
-    expect(sessionUpdateAge).toBeTruthy();
-
-    console.log('\nSign-up response headers:');
-    console.log(`JWT: ${authToken?.substring(0, 20)}...`);
-    console.log(`Session token: ${sessionToken}`);
-    console.log(`JWT expiry: ${authTokenExpiry} seconds`);
-    console.log(`Session update age: ${sessionUpdateAge} seconds`);
-
-    // Step 2: Get session using JWT (should work immediately after sign-up)
-    const sessionResponse = await app.request('/app-api/auth/session', {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-        Cookie: `better-auth.session_token=${sessionToken}`,
-      },
-    });
-
-    console.log(`\nSession request status: ${sessionResponse.status}`);
-
-    if (sessionResponse.status !== 200) {
-      const errorBody = await sessionResponse.text();
-      console.log(`Session error response: ${errorBody}`);
-    }
-
-    expect(sessionResponse.status).toBe(200);
-
-    const sessionData = SessionResponseSchema.parse(await sessionResponse.json());
-    expect(sessionData.user.id).toBeTruthy();
-    expect(sessionData).toMatchObject({
+    expect(session).toMatchObject({
       user: {
-        name,
-        email,
+        name: payload.name,
+        email: payload.email,
         email_verified: false,
       },
     });
-    expect(sessionData.session).toBeDefined();
-    expect(sessionData.session.expires_at).toBeDefined();
   });
 
-  integrationTest('should work with existing test utility', async ({ db, app, expect }) => {
+  integrationTest('retrieves the current session for a helper-created authorization token', async ({ app, db }) => {
     const { token } = await createTestUserAndSession(db);
+    const response = await sendSessionRequest(app, { authToken: token });
 
-    const sessionResponse = await app.request('/app-api/auth/session', {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const session = await expectSuccessfulSessionResponse(response);
 
-    expect(sessionResponse.status).toBe(200);
+    expect(session.user.id).toBeTruthy();
   });
 });
+
+function createValidSignUpPayload() {
+  return {
+    email: `test_${randomUUID()}@example.com`,
+    password: 'password123',
+    name: 'Test User',
+  };
+}
+
+async function sendSignUpRequest(app: AppRequestClient, payload: ReturnType<typeof createValidSignUpPayload>) {
+  return app.request(SIGN_UP_PATH, {
+    method: 'POST',
+    headers: new Headers({
+      'Content-Type': 'application/json',
+    }),
+    body: JSON.stringify(payload),
+  });
+}
+
+async function sendSessionRequest(
+  app: AppRequestClient,
+  options: {
+    authToken?: string;
+    sessionToken?: string;
+  },
+) {
+  return app.request(SESSION_PATH, {
+    method: 'GET',
+    headers: createSessionRequestHeaders(options),
+  });
+}
+
+function createSessionRequestHeaders(options: { authToken?: string; sessionToken?: string }) {
+  const headers = new Headers();
+
+  if (options.authToken != null) {
+    headers.set('Authorization', `Bearer ${options.authToken}`);
+  }
+
+  if (options.sessionToken != null) {
+    headers.set('Cookie', `better-auth.session_token=${options.sessionToken}`);
+  }
+
+  return headers;
+}
+
+async function expectSuccessfulSignUpResponse(response: Response) {
+  expect(response.status).toBe(201);
+
+  const body = AuthResponseBodySchema.parse(await response.json());
+  const headers = SignUpTokenHeadersSchema.parse({
+    'set-auth-token': response.headers.get('set-auth-token'),
+    'set-auth-token-expiry': response.headers.get('set-auth-token-expiry'),
+    'set-session-token': response.headers.get('set-session-token'),
+    'set-session-update-age': response.headers.get('set-session-update-age'),
+  });
+
+  return { body, headers };
+}
+
+async function expectSuccessfulSessionResponse(response: Response) {
+  expect(response.status).toBe(200);
+
+  return SessionPayloadSchema.parse(await response.json());
+}
