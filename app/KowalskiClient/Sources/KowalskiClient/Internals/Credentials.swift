@@ -15,7 +15,9 @@ struct Credentials: Codable, Expirable {
     let sessionUpdateAge: TimeInterval
     let lastSessionUpdate: Date
 
-    var expiresAt: Date { expiryDate }
+    var expiresAt: Date {
+        expiryDate
+    }
 
     func setExpiryDate(_ date: Date) -> Credentials {
         Credentials(
@@ -23,7 +25,7 @@ struct Credentials: Codable, Expirable {
             expiryDate: date,
             sessionToken: sessionToken,
             sessionUpdateAge: sessionUpdateAge,
-            lastSessionUpdate: lastSessionUpdate
+            lastSessionUpdate: lastSessionUpdate,
         )
     }
 
@@ -37,7 +39,7 @@ struct Credentials: Codable, Expirable {
             expiryDate: expiryDate,
             sessionToken: sessionToken,
             sessionUpdateAge: sessionUpdateAge,
-            lastSessionUpdate: Date.now
+            lastSessionUpdate: Date.now,
         )
     }
 }

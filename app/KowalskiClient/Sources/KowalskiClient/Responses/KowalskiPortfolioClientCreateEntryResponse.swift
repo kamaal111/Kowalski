@@ -25,7 +25,7 @@ public struct KowalskiPortfolioClientCreateEntryResponse: Codable, Sendable {
         amount: Double,
         purchasePrice: KowalskiClientMoney,
         transactionType: KowalskiClientPortfolioTransactionTypes,
-        transactionDate: Date
+        transactionDate: Date,
     ) {
         self.id = id
         self.createdAt = createdAt

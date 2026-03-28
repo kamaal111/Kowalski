@@ -114,6 +114,16 @@ Examples of final verification commands vary by project and may include commands
 - CI workflows that reveal required commands and environment expectations
 - Contributor docs and workspace instructions that add stricter rules
 
+## Language and Framework Specifics
+
+### Swift
+
+See [SWIFT.md](./SWIFT.md) for Swift Testing conventions used in this repository, including:
+
+- When to use backtick test function names (always) and why `@Test("description")` with camelCase is not used
+- `@Suite` grouping conventions
+- SwiftLint configuration for test directories
+
 ## Expected Output When Using This Skill
 
 When applying this skill during a task, finish by clearly stating:

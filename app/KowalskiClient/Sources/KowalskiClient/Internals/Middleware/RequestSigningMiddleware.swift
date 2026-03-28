@@ -5,10 +5,10 @@
 //  Created by Kamaal M Farah on 12/19/25.
 //
 
-import HTTPTypes
 import Foundation
-import KamaalUtils
+import HTTPTypes
 import KamaalLogger
+import KamaalUtils
 import OpenAPIRuntime
 
 private let logger = KamaalLogger(from: RequestSigningMiddleware.self, failOnError: true)
@@ -30,8 +30,8 @@ extension RequestSigningMiddleware: ClientMiddleware {
         _ request: HTTPRequest,
         body: HTTPBody?,
         baseURL: URL,
-        operationID: String,
-        next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)
+        operationID _: String,
+        next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?),
     ) async throws -> (HTTPResponse, HTTPBody?) {
         guard let credentials = credentialsGetter.get() else {
             return try await next(request, body, baseURL)

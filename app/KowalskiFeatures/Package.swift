@@ -34,7 +34,7 @@ let package = Package(
                 .treatAllWarnings(as: .error),
                 .strictMemorySafety(),
                 .enableExperimentalFeature("StrictConcurrency"),
-            ]
+            ],
         ),
         .target(
             name: "KowalskiPortfolio",
@@ -49,7 +49,7 @@ let package = Package(
                 .treatAllWarnings(as: .error),
                 .strictMemorySafety(),
                 .enableExperimentalFeature("StrictConcurrency"),
-            ]
+            ],
         ),
-    ]
+    ],
 )

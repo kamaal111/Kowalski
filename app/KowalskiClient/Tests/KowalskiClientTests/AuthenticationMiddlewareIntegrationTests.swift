@@ -7,23 +7,21 @@
 
 import Foundation
 import HTTPTypes
+@testable import KowalskiClient
 import OpenAPIRuntime
 import Testing
 
-@testable import KowalskiClient
-
 @Suite("AuthenticationMiddleware Integration Tests")
 struct AuthenticationMiddlewareIntegrationTests {
-
-    @Test("Should add both Authorization header and session token cookie to requests")
-    func shouldAddBothAuthAndCookie() async throws {
+    @Test
+    func `Should add both Authorization header and session token cookie to requests`() async throws {
         // Arrange
         let mockCredentials = Credentials(
             authToken: "test_jwt_token_12345",
-            expiryDate: Date().addingTimeInterval(86400 * 7),  // 7 days in future - won't trigger refresh
+            expiryDate: Date().addingTimeInterval(86400 * 7), // 7 days in future - won't trigger refresh
             sessionToken: "test_session_token_67890",
             sessionUpdateAge: 86400,
-            lastSessionUpdate: Date()
+            lastSessionUpdate: Date(),
         )
 
         let credentialsGetter = MockCredentialsGetter(credentials: mockCredentials)
@@ -32,15 +30,15 @@ struct AuthenticationMiddlewareIntegrationTests {
         let middleware = AuthenticationMiddleware(
             keychainKey: "test_key",
             credentialsGetter: credentialsGetter,
-            authClient: authClient
+            authClient: authClient,
         )
 
         let request = HTTPRequest(method: .get, scheme: "https", authority: "api.example.com", path: "/test")
         let body: HTTPBody? = nil
-        let baseURL = URL(string: "https://api.example.com")!
+        let baseURL = try #require(URL(string: "https://api.example.com"))
 
         var capturedRequest: HTTPRequest?
-        let next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?) = { req, body, url in
+        let next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?) = { req, _, _ in
             capturedRequest = req
             return (HTTPResponse(status: .ok), nil)
         }
@@ -51,7 +49,7 @@ struct AuthenticationMiddlewareIntegrationTests {
             body: body,
             baseURL: baseURL,
             operationID: "test",
-            next: next
+            next: next,
         )
 
         // Assert
@@ -64,18 +62,19 @@ struct AuthenticationMiddlewareIntegrationTests {
         #expect(cookieHeader != nil, "Cookie header should exist")
         #expect(
             cookieHeader?.contains("better-auth.session_token=test_session_token_67890") == true,
-            "Cookie should contain session token")
+            "Cookie should contain session token",
+        )
     }
 
-    @Test("Should append session cookie to existing cookies")
-    func shouldAppendToExistingCookies() async throws {
+    @Test
+    func `Should append session cookie to existing cookies`() async throws {
         // Arrange
         let mockCredentials = Credentials(
             authToken: "test_jwt",
-            expiryDate: Date().addingTimeInterval(86400 * 7),  // 7 days in future - won't trigger refresh
+            expiryDate: Date().addingTimeInterval(86400 * 7), // 7 days in future - won't trigger refresh
             sessionToken: "test_session",
             sessionUpdateAge: 86400,
-            lastSessionUpdate: Date()
+            lastSessionUpdate: Date(),
         )
 
         let credentialsGetter = MockCredentialsGetter(credentials: mockCredentials)
@@ -84,17 +83,17 @@ struct AuthenticationMiddlewareIntegrationTests {
         let middleware = AuthenticationMiddleware(
             keychainKey: "test_key",
             credentialsGetter: credentialsGetter,
-            authClient: authClient
+            authClient: authClient,
         )
 
         var request = HTTPRequest(method: .get, scheme: "https", authority: "api.example.com", path: "/test")
         request.headerFields[.cookie] = "existing_cookie=value"
 
         let body: HTTPBody? = nil
-        let baseURL = URL(string: "https://api.example.com")!
+        let baseURL = try #require(URL(string: "https://api.example.com"))
 
         var capturedRequest: HTTPRequest?
-        let next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?) = { req, body, url in
+        let next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?) = { req, _, _ in
             capturedRequest = req
             return (HTTPResponse(status: .ok), nil)
         }
@@ -105,7 +104,7 @@ struct AuthenticationMiddlewareIntegrationTests {
             body: body,
             baseURL: baseURL,
             operationID: "test",
-            next: next
+            next: next,
         )
 
         // Assert
@@ -113,17 +112,20 @@ struct AuthenticationMiddlewareIntegrationTests {
         #expect(cookieHeader != nil, "Cookie header should exist")
         #expect(
             cookieHeader?.contains("existing_cookie=value") == true,
-            "Existing cookie should be preserved")
+            "Existing cookie should be preserved",
+        )
         #expect(
             cookieHeader?.contains("better-auth.session_token=test_session") == true,
-            "Session token should be appended")
+            "Session token should be appended",
+        )
         #expect(
             cookieHeader?.contains("; ") == true,
-            "Cookies should be separated by semicolon and space")
+            "Cookies should be separated by semicolon and space",
+        )
     }
 
-    @Test("Should proceed without auth when credentials are missing")
-    func shouldProceedWithoutAuthWhenNoCredentials() async throws {
+    @Test
+    func `Should proceed without auth when credentials are missing`() async throws {
         // Arrange
         let credentialsGetter = MockCredentialsGetter(credentials: nil)
         let authClient = MockAuthClient()
@@ -131,15 +133,15 @@ struct AuthenticationMiddlewareIntegrationTests {
         let middleware = AuthenticationMiddleware(
             keychainKey: "test_key",
             credentialsGetter: credentialsGetter,
-            authClient: authClient
+            authClient: authClient,
         )
 
         let request = HTTPRequest(method: .get, scheme: "https", authority: "api.example.com", path: "/test")
         let body: HTTPBody? = nil
-        let baseURL = URL(string: "https://api.example.com")!
+        let baseURL = try #require(URL(string: "https://api.example.com"))
 
         var capturedRequest: HTTPRequest?
-        let next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?) = { req, body, url in
+        let next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?) = { req, _, _ in
             capturedRequest = req
             return (HTTPResponse(status: .ok), nil)
         }
@@ -150,28 +152,30 @@ struct AuthenticationMiddlewareIntegrationTests {
             body: body,
             baseURL: baseURL,
             operationID: "test",
-            next: next
+            next: next,
         )
 
         // Assert
         #expect(capturedRequest != nil, "Request should be captured")
         #expect(
             capturedRequest?.headerFields[.authorization] == nil,
-            "Should not add Authorization header without credentials")
+            "Should not add Authorization header without credentials",
+        )
         #expect(
             capturedRequest?.headerFields[.cookie] == nil,
-            "Should not add Cookie header without credentials")
+            "Should not add Cookie header without credentials",
+        )
     }
 }
 
 // MARK: - Mock Helpers
 
 private struct MockAuthClient: KowalskiAuthClient {
-    func signUp(name: String, email: String, password: String) async -> Result<Void, KowalskiAuthSignUpErrors> {
+    func signUp(name _: String, email _: String, password _: String) async -> Result<Void, KowalskiAuthSignUpErrors> {
         .failure(.unknown(statusCode: 500, payload: nil, context: nil))
     }
 
-    func signIn(email: String, password: String) async -> Result<Void, KowalskiAuthSignInErrors> {
+    func signIn(email _: String, password _: String) async -> Result<Void, KowalskiAuthSignInErrors> {
         .failure(.unknown(statusCode: 500, payload: nil, context: nil))
     }
 

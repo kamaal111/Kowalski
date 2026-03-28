@@ -52,6 +52,7 @@ run-server: prepare-server compile-server
     #!/usr/bin/env zsh
 
     export PORT="{{ SERVER_PORT }}"
+    export NODE_OPTIONS="--inspect"
 
     {{ PNR }} start
 
@@ -162,16 +163,43 @@ download-spec:
     fi
 
 # Lint the project
-lint:
+[parallel]
+lint: lint-server lint-app
+
+# Lint server
+lint-server:
     {{ PNR }} lint
 
-# Format code with Prettier
-format:
+# Lint app
+[working-directory("app")]
+lint-app:
+    swiftlint lint
+
+# Format code
+[parallel]
+format: format-server format-app
+
+# Format server code with Prettier
+format-server:
     {{ PNR }} format
 
-# Check code formatting with Prettier
-format-check:
+# Format app code with SwiftFormat
+[working-directory("app")]
+format-app:
+    swiftformat .
+
+# Check code formatting
+[parallel]
+format-check: format-check-server format-check-app
+
+# Check server code formatting with Prettier
+format-check-server:
     {{ PNR }} format:check
+
+# Check app code formatting with SwiftFormat
+[working-directory("app")]
+format-check-app:
+    swiftformat --lint .
 
 # Type check
 typecheck: typecheck-server

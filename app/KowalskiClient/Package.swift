@@ -7,7 +7,7 @@ let package = Package(
     name: "KowalskiClient",
     platforms: [.macOS(.v13)],
     products: [
-        .library(name: "KowalskiClient", targets: ["KowalskiClient"])
+        .library(name: "KowalskiClient", targets: ["KowalskiClient"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-openapi-urlsession", .upToNextMajor(from: "1.2.0")),
@@ -35,8 +35,8 @@ let package = Package(
                 .enableExperimentalFeature("StrictConcurrency"),
             ],
             plugins: [
-                .plugin(name: "OpenAPIGenerator", package: "swift-openapi-generator")
-            ]
+                .plugin(name: "OpenAPIGenerator", package: "swift-openapi-generator"),
+            ],
         ),
         .testTarget(
             name: "KowalskiClientTests",
@@ -49,7 +49,7 @@ let package = Package(
                 .treatAllWarnings(as: .error),
                 .strictMemorySafety(),
                 .enableExperimentalFeature("StrictConcurrency"),
-            ]
+            ],
         ),
-    ]
+    ],
 )

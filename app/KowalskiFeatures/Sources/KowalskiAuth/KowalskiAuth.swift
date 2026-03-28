@@ -6,10 +6,10 @@
 //
 
 import Foundation
-import KamaalUtils
-import Observation
 import KamaalLogger
+import KamaalUtils
 import KowalskiClient
+import Observation
 
 @MainActor
 @Observable
@@ -28,25 +28,25 @@ public final class KowalskiAuth {
     private init(client: KowalskiClient) {
         self.client = client
         if client.hasValidCredentials {
-            self.initiallyValidatingToken = true
+            initiallyValidatingToken = true
             Task {
                 await loadSession()
                 initiallyValidatingToken = false
             }
         } else {
-            self.initiallyValidatingToken = false
+            initiallyValidatingToken = false
         }
     }
 
     private init(client: KowalskiClient, withCredentials: Bool) {
         self.client = client
-        self.initiallyValidatingToken = false
+        initiallyValidatingToken = false
         if withCredentials {
             let oneDay: TimeInterval = 86400
-            self.session = UserSession(
+            session = UserSession(
                 name: "Yami Sukehiro",
                 email: "yami@bull.io",
-                expiresAt: Date.now.addingTimeInterval(oneDay)
+                expiresAt: Date.now.addingTimeInterval(oneDay),
             )
         }
         Task { await loadSession() }
@@ -62,7 +62,7 @@ public final class KowalskiAuth {
         let signUpResult = await client.auth.signUp(
             name: payload.name,
             email: payload.email,
-            password: payload.password
+            password: payload.password,
         )
         .mapError { error -> KowalskiAuthSignUpErrors in
             switch error {
@@ -76,7 +76,7 @@ public final class KowalskiAuth {
             }
         }
         switch signUpResult {
-        case .failure(let failure): return .failure(failure)
+        case let .failure(failure): return .failure(failure)
         case .success: break
         }
 
@@ -104,7 +104,7 @@ public final class KowalskiAuth {
                 }
             }
         switch signInResult {
-        case .failure(let failure): return .failure(failure)
+        case let .failure(failure): return .failure(failure)
         case .success: break
         }
 
@@ -151,8 +151,8 @@ public final class KowalskiAuth {
             }
         let session: UserSession
         switch result {
-        case .failure(let failure): return .failure(failure)
-        case .success(let success): session = success
+        case let .failure(failure): return .failure(failure)
+        case let .success(success): session = success
         }
 
         setSession(session)
@@ -192,9 +192,9 @@ enum KowalskiAuthSignInErrors: Error {
     var errorDescription: String? {
         switch self {
         case .invalidCredentials:
-            return NSLocalizedString("Invalid credentials provided.", bundle: .module, comment: "")
+            NSLocalizedString("Invalid credentials provided.", bundle: .module, comment: "")
         case .generalFailure:
-            return NSLocalizedString("Failed to log in.", bundle: .module, comment: "")
+            NSLocalizedString("Failed to log in.", bundle: .module, comment: "")
         }
     }
 }
@@ -207,11 +207,11 @@ enum KowalskiAuthSignUpErrors: Error {
     var errorDescription: String? {
         switch self {
         case .invalidCredentials:
-            return NSLocalizedString("Invalid credentials provided.", bundle: .module, comment: "")
+            NSLocalizedString("Invalid credentials provided.", bundle: .module, comment: "")
         case .userAlreadyExists:
-            return NSLocalizedString("User already exists", bundle: .module, comment: "")
+            NSLocalizedString("User already exists", bundle: .module, comment: "")
         case .generalFailure:
-            return NSLocalizedString("Failed to sign up.", bundle: .module, comment: "")
+            NSLocalizedString("Failed to sign up.", bundle: .module, comment: "")
         }
     }
 }

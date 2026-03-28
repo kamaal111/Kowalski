@@ -1,0 +1,39 @@
+included:
+  - KowalskiApp/Sources
+  - KowalskiClient/Sources
+  - KowalskiClient/Tests
+  - KowalskiDesignSystem/Sources
+  - KowalskiFeatures/Sources
+  - KowalskiUtils/Sources
+
+disabled_rules:
+  - multiple_closures_with_trailing_closure
+
+identifier_name:
+  excluded:
+    - ok
+    - id
+  validates_start_with_lowercase: false
+
+trailing_comma:
+  mandatory_comma: true
+
+type_name:
+  max_length:
+    warning: 50
+    error: 60
+
+custom_rules:
+  swift_testing_no_labeled_test:
+    name: "Swift Testing Labeled @Test"
+    regex: '@Test\s*\("'
+    message: 'Use backtick test names instead: @Test func `Description`() { }.'
+    severity: error
+
+opt_in_rules:
+  - empty_string
+  - first_where
+  - last_where
+  - sorted_first_last
+  - toggle_bool
+  - yoda_condition

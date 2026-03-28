@@ -10,6 +10,8 @@ import KowalskiDesignSystem
 import SwiftUI
 
 public struct KowalskiPortfolioScreen: View {
+    @State private var screenEnabled: KowalskiPortfolioNavigationLinks?
+
     public init() {}
 
     public var body: some View {
@@ -34,6 +36,11 @@ public struct KowalskiPortfolioScreen: View {
     private func handleOnAppear() {
         print("🐸🐸🐸 appearing in portfolio")
     }
+}
+
+/// 🐸🐸🐸 Continue with navigating back on succesfully adding the entry
+private enum KowalskiPortfolioNavigationLinks {
+    case addEntry
 }
 
 #Preview {

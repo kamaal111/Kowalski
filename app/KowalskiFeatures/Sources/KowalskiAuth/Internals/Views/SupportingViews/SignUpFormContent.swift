@@ -5,9 +5,9 @@
 //  Created by Kamaal M Farah on 10/26/25.
 //
 
-import SwiftUI
 import KamaalUI
 import KowalskiDesignSystem
+import SwiftUI
 
 struct SignUpFormContent: View {
     @FocusState private var focusedTextfield: SignUpFormContentFocusFields?
@@ -35,8 +35,8 @@ struct SignUpFormContent: View {
                     .wordCount(
                         count: 2,
                         message: NSLocalizedString("Name should contain at least 2 words", comment: ""),
-                    )
-                ]
+                    ),
+                ],
             )
             .focused($focusedTextfield, equals: .name)
             .onSubmit(handleSubmit)
@@ -46,7 +46,7 @@ struct SignUpFormContent: View {
                 localizedTitle: "Email",
                 bundle: .module,
                 variant: .email,
-                validations: [.email(message: NSLocalizedString("Not an valid email", comment: ""))]
+                validations: [.email(message: NSLocalizedString("Not an valid email", comment: ""))],
             )
             .focused($focusedTextfield, equals: .email)
             .onSubmit(handleSubmit)
@@ -59,9 +59,9 @@ struct SignUpFormContent: View {
                 validations: [
                     .minimumLength(
                         length: 8,
-                        message: NSLocalizedString("Password must be atleast 8 characters", comment: "")
-                    )
-                ]
+                        message: NSLocalizedString("Password must be atleast 8 characters", comment: ""),
+                    ),
+                ],
             )
             .focused($focusedTextfield, equals: .password)
             .onSubmit(handleSubmit)
@@ -74,9 +74,9 @@ struct SignUpFormContent: View {
                 validations: [
                     .isSameAs(
                         value: password,
-                        message: NSLocalizedString("Password must be the same as the password above", comment: "")
-                    )
-                ]
+                        message: NSLocalizedString("Password must be the same as the password above", comment: ""),
+                    ),
+                ],
             )
             .focused($focusedTextfield, equals: .verifyPassword)
             .onSubmit(handleSubmit)
@@ -93,7 +93,7 @@ struct SignUpFormContent: View {
 
     private var formIsValid: Bool {
         [nameError, emailError, passwordError, verifyPasswordError]
-            .allSatisfy({ result in result?.isValid == true })
+            .allSatisfy { result in result?.isValid == true }
     }
 
     private func handleSubmit() {

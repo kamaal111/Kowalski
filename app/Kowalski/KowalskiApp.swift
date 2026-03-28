@@ -5,8 +5,8 @@
 //  Created by Kamaal M Farah on 8/31/25.
 //
 
-import SwiftUI
 import KowalskiApp
+import SwiftUI
 
 @main
 struct KowalskiApp: App {

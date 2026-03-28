@@ -7,22 +7,21 @@
 
 import Foundation
 import HTTPTypes
+@testable import KowalskiClient
 import OpenAPIRuntime
 import Testing
 
-@testable import KowalskiClient
-
 @Suite("Auth Client Configuration Tests")
 struct AuthClientConfigurationTests {
-    @Test("Session request should include Authorization header")
-    func sessionRequestShouldIncludeAuthHeader() async throws {
+    @Test
+    func `Session request should include Authorization header`() async throws {
         // Arrange
         let credentials = Credentials(
             authToken: "new_jwt_token",
             expiryDate: Date().addingTimeInterval(86400),
             sessionToken: "new_session_token",
             sessionUpdateAge: 86400,
-            lastSessionUpdate: Date()
+            lastSessionUpdate: Date(),
         )
         let credentialsGetter = MockCredentialsGetter(credentials: credentials)
 
@@ -31,14 +30,14 @@ struct AuthClientConfigurationTests {
             RequestSigningMiddleware(keychainKey: "test_key", credentialsGetter: credentialsGetter),
             RefreshTokenMiddleware(credentialsGetter: credentialsGetter),
             RequiredHeadersMiddleware(),
-            LoggingMiddleware(bodyLoggingPolicy: .upTo(maxBytes: 1024)),
+            LoggingMiddleware(bodyLoggingPolicy: .upTo(maxBytes: 1024))
         ]
 
         let transport = MockTransport()
-        let client = Client(
-            serverURL: URL(string: "https://api.example.com")!,
+        let client = try Client(
+            serverURL: #require(URL(string: "https://api.example.com")),
             transport: transport,
-            middlewares: middlewares
+            middlewares: middlewares,
         )
 
         // Act
@@ -60,9 +59,9 @@ final class MockTransport: ClientTransport, @unchecked Sendable {
 
     func send(
         _ request: HTTPRequest,
-        body: HTTPBody?,
-        baseURL: URL,
-        operationID: String
+        body _: HTTPBody?,
+        baseURL _: URL,
+        operationID _: String,
     ) async throws -> (HTTPResponse, HTTPBody?) {
         capturedRequest = request
         return (HTTPResponse(status: .ok), nil)

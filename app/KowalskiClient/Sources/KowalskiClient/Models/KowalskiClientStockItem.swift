@@ -19,7 +19,7 @@ public struct KowalskiClientStockItem: Codable, Sendable {
         name: String,
         sector: String?,
         industry: String?,
-        exchangeDispatch: String?
+        exchangeDispatch: String?,
     ) {
         self.symbol = symbol
         self.exchange = exchange

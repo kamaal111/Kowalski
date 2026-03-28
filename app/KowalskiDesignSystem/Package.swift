@@ -28,7 +28,7 @@ let package = Package(
                 .treatAllWarnings(as: .error),
                 .strictMemorySafety(),
                 .enableExperimentalFeature("StrictConcurrency"),
-            ]
+            ],
         ),
-    ]
+    ],
 )

@@ -13,12 +13,12 @@ struct KowalskiPortfolioMappers {
     }
 
     func mapTransactionPayloadToCreateEntryPayload(
-        _ payload: TransactionPayload
+        _ payload: TransactionPayload,
     ) -> KowalskiPortfolioCreateEntryPayload {
         let stock = mapStockToKowalskiClientStockItem(payload.stock)
         let purchasePrice = KowalskiClientMoney(
             currency: payload.purchasePrice.currency.rawValue,
-            value: payload.purchasePrice.value
+            value: payload.purchasePrice.value,
         )
         let transactionType: KowalskiClientPortfolioTransactionTypes =
             switch payload.transactionType {
@@ -32,7 +32,7 @@ struct KowalskiPortfolioMappers {
             amount: payload.amount,
             purchasePrice: purchasePrice,
             transactionType: transactionType,
-            transactionDate: payload.transactionDate
+            transactionDate: payload.transactionDate,
         )
     }
 
@@ -43,7 +43,7 @@ struct KowalskiPortfolioMappers {
             name: stock.name,
             sector: stock.sector,
             industry: stock.industry,
-            exchangeDispatch: stock.exchangeDispatch
+            exchangeDispatch: stock.exchangeDispatch,
         )
     }
 
@@ -54,7 +54,7 @@ struct KowalskiPortfolioMappers {
             name: item.name,
             sector: item.sector,
             industry: item.industry,
-            exchangeDispatch: item.exchangeDispatch
+            exchangeDispatch: item.exchangeDispatch,
         )
     }
 }

@@ -7,9 +7,8 @@
 
 import SwiftUI
 
-extension View {
-    public func kowalskiPortfolio(_ portfolio: KowalskiPortfolio) -> some View {
-        self
-            .environment(portfolio)
+public extension View {
+    func kowalskiPortfolio(_ portfolio: KowalskiPortfolio) -> some View {
+        environment(portfolio)
     }
 }

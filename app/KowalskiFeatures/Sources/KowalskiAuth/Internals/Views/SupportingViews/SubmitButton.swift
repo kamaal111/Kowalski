@@ -25,5 +25,5 @@ struct SubmitButton: View {
 }
 
 #Preview {
-    SubmitButton(disabled: false, action: { })
+    SubmitButton(disabled: false, action: {})
 }

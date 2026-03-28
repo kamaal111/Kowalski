@@ -7,10 +7,10 @@
 
 import Foundation
 
-private let ONE_KILO_BYTE = 1000
+private let oneKiloByte = 1000
 
 enum ModuleConfig {
     static let identifier = "\(Bundle.main.bundleIdentifier!).KowalskiClient"
-    static let maxLogSize = ONE_KILO_BYTE
+    static let maxLogSize = oneKiloByte
     static let credentialsKeychainKey = "\(identifier).credentials"
 }

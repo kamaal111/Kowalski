@@ -11,7 +11,6 @@ extension View {
     func preview(withCredentials: Bool) -> some View {
         let auth = KowalskiAuth.preview(withCredentials: withCredentials)
 
-        return self
-            .kowalskiAuth(auth)
+        return kowalskiAuth(auth)
     }
 }

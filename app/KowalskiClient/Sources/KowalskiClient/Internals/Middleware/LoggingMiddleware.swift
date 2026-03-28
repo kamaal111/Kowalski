@@ -5,12 +5,12 @@
 //  Created by Kamaal M Farah on 11/15/25.
 //
 
-import HTTPTypes
 import Foundation
+import HTTPTypes
 import KamaalLogger
 import OpenAPIRuntime
 
-private let DEFAULT_PATH = "<nil>"
+private let defaultPath = "<nil>"
 
 private let logger = KamaalLogger(from: LoggingMiddleware.self, failOnError: true)
 
@@ -23,8 +23,8 @@ extension LoggingMiddleware: ClientMiddleware {
         _ request: HTTPRequest,
         body: HTTPBody?,
         baseURL: URL,
-        operationID: String,
-        next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)
+        operationID _: String,
+        next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?),
     ) async throws -> (HTTPResponse, HTTPBody?) {
         let (requestBodyToLog, requestBodyForNext) = await bodyLoggingPolicy.process(body)
         logBody(request: request, requestBody: requestBodyToLog)
@@ -43,16 +43,16 @@ extension LoggingMiddleware: ClientMiddleware {
     }
 
     private func logBody(request: HTTPRequest, requestBody: BodyLoggingPolicy.BodyLog) {
-        logger.debug("Request: \(request.method) \(request.path ?? DEFAULT_PATH) body: \(requestBody)")
+        logger.debug("Request: \(request.method) \(request.path ?? defaultPath) body: \(requestBody)")
     }
 
     private func logResponse(request: HTTPRequest, response: HTTPResponse, responseBody: BodyLoggingPolicy.BodyLog) {
         logger.debug(
-            "Response: \(request.method) \(request.path ?? DEFAULT_PATH) \(response.status) body: \(responseBody)"
+            "Response: \(request.method) \(request.path ?? defaultPath) \(response.status) body: \(responseBody)",
         )
     }
 
-    private func logFailure(request: HTTPRequest, failedWith error: any Error) {
+    private func logFailure(request _: HTTPRequest, failedWith error: any Error) {
         logger.warning("Request failed. Error: \(error.localizedDescription)")
     }
 }

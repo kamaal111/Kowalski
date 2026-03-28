@@ -9,11 +9,11 @@ struct KowalskiPortfolioMapper {
     let stocksMapper: KowalskiStocksMapper
 
     init() {
-        self.stocksMapper = KowalskiStocksMapper()
+        stocksMapper = KowalskiStocksMapper()
     }
 
     func mapCreateEntryPayloadToApi(
-        _ payload: KowalskiPortfolioCreateEntryPayload
+        _ payload: KowalskiPortfolioCreateEntryPayload,
     ) -> Components.Schemas.CreateEntryPayload {
         let stock = stocksMapper.mapStockItemToApi(payload.stock)
         let transactionType: Components.Schemas.CreateEntryPayload.TransactionTypePayload =
@@ -28,15 +28,15 @@ struct KowalskiPortfolioMapper {
             amount: payload.amount,
             purchasePrice: Components.Schemas.Money(
                 currency: payload.purchasePrice.currency,
-                value: payload.purchasePrice.value
+                value: payload.purchasePrice.value,
             ),
             transactionType: transactionType,
-            transactionDate: payload.transactionDate
+            transactionDate: payload.transactionDate,
         )
     }
 
     func mapCreateEntryApiResponseToClient(
-        _ response: Components.Schemas.CreateEntryResponse
+        _ response: Components.Schemas.CreateEntryResponse,
     ) -> KowalskiPortfolioClientCreateEntryResponse {
         let stock = stocksMapper.mapStockItemFromApiToResponse(response.stock)
         let transactionType: KowalskiClientPortfolioTransactionTypes =
@@ -54,10 +54,10 @@ struct KowalskiPortfolioMapper {
             amount: response.amount,
             purchasePrice: KowalskiClientMoney(
                 currency: response.purchasePrice.currency,
-                value: response.purchasePrice.value
+                value: response.purchasePrice.value,
             ),
             transactionType: transactionType,
-            transactionDate: response.transactionDate
+            transactionDate: response.transactionDate,
         )
     }
 }

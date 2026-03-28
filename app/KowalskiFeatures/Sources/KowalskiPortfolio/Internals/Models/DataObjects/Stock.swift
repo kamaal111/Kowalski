@@ -20,9 +20,9 @@ struct Stock: Hashable, Identifiable {
         name: String,
         sector: String?,
         industry: String?,
-        exchangeDispatch: String?
+        exchangeDispatch: String?,
     ) {
-        self.id = symbol
+        id = symbol
         self.symbol = symbol
         self.exchange = exchange
         self.name = name

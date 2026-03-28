@@ -5,8 +5,8 @@
 //  Created by Kamaal M Farah on 11/1/25.
 //
 
-import Observation
 import KowalskiClient
+import Observation
 
 @Observable
 public final class KowalskiPortfolio {

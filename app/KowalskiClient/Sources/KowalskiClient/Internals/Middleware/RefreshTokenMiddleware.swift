@@ -28,7 +28,7 @@ extension RefreshTokenMiddleware: ClientMiddleware {
         body: HTTPBody?,
         baseURL: URL,
         operationID: String,
-        next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)
+        next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?),
     ) async throws -> (HTTPResponse, HTTPBody?) {
         guard operationID == Operations.GetAppApiAuthToken.id else {
             return try await next(request, body, baseURL)

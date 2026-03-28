@@ -5,13 +5,12 @@
 //  Created by Kamaal M Farah on 10/11/25.
 //
 
-import SwiftUI
 import KamaalUI
+import SwiftUI
 
-extension View {
-    public func kowalskiAuth(_ auth: KowalskiAuth) -> some View {
-        self
-            .modifier(KowalskiAuthEnvironment(auth: auth))
+public extension View {
+    func kowalskiAuth(_ auth: KowalskiAuth) -> some View {
+        modifier(KowalskiAuthEnvironment(auth: auth))
     }
 }
 

@@ -5,8 +5,8 @@
 //  Created by Kamaal M Farah on 10/5/25.
 //
 
-import SwiftUI
 import KamaalUI
+import SwiftUI
 import SwiftValidator
 
 public enum KowalskiTextFieldValidationRules {
@@ -38,10 +38,10 @@ public enum KowalskiTextFieldVariant {
     #if canImport(UIKit)
         var keyboardType: UIKeyboardType {
             switch self {
-            case .decimals: return .decimalPad
-            case .numbers: return .numberPad
-            case .text, .secure: return .default
-            case .email: return .emailAddress
+            case .decimals: .decimalPad
+            case .numbers: .numberPad
+            case .text, .secure: .default
+            case .email: .emailAddress
             }
         }
     #endif
@@ -66,32 +66,32 @@ public struct KowalskiTextField: View {
         errorResult: Binding<KowalskiTextFieldErrorResult?>,
         title: String,
         variant: KowalskiTextFieldVariant = .text,
-        validations: [KowalskiTextFieldValidationRules]
+        validations: [KowalskiTextFieldValidationRules],
     ) {
-        self._text = text
-        self._errorResult = errorResult
+        _text = text
+        _errorResult = errorResult
         self.title = title
         self.variant = variant
-        self.validations = validations.map({ validation -> any StringValidatableRule in
+        self.validations = validations.map { validation -> any StringValidatableRule in
             switch validation {
-            case .minimumLength(let length, let message):
+            case let .minimumLength(length, message):
                 StringValidateMinimumLength(length: length, message: message)
-            case .isSameAs(let value, let message):
+            case let .isSameAs(value, message):
                 StringIsTheSameValue(value: value, message: message)
-            case .email(let message):
+            case let .email(message):
                 StringIsEmail(message: message)
-            case .wordCount(count: let count, message: let message):
+            case let .wordCount(count: count, message: message):
                 StringValidateWordCount(wordCount: count, message: message)
-            case .notEmpty(let message):
+            case let .notEmpty(message):
                 StringIsNotEmpty(message: message)
-            case .numeric(let locale, let greaterThanOrEqualTo, let message):
+            case let .numeric(locale, greaterThanOrEqualTo, message):
                 StringIsNumeric(
                     locale: locale,
                     options: .init(comparison: .init(op: .greaterThanOrEqualTo, value: greaterThanOrEqualTo)),
-                    message: message
+                    message: message,
                 )
             }
-        })
+        }
     }
 
     public init(
@@ -100,7 +100,7 @@ public struct KowalskiTextField: View {
         localizedTitle: LocalizedStringResource,
         bundle: Bundle? = nil,
         variant: KowalskiTextFieldVariant = .text,
-        validations: [KowalskiTextFieldValidationRules]
+        validations: [KowalskiTextFieldValidationRules],
     ) {
         let title =
             if let bundle {
@@ -113,7 +113,7 @@ public struct KowalskiTextField: View {
             errorResult: errorResult,
             title: title,
             variant: variant,
-            validations: validations
+            validations: validations,
         )
     }
 
@@ -123,7 +123,7 @@ public struct KowalskiTextField: View {
             errorResult: .constant(nil),
             title: title,
             variant: variant,
-            validations: []
+            validations: [],
         )
     }
 
@@ -131,12 +131,12 @@ public struct KowalskiTextField: View {
         text: Binding<String>,
         localizedTitle: LocalizedStringResource,
         bundle: Bundle,
-        variant: KowalskiTextFieldVariant = .text
+        variant: KowalskiTextFieldVariant = .text,
     ) {
         self.init(
             text: text,
             title: NSLocalizedString(localizedTitle.key, bundle: bundle, comment: ""),
-            variant: variant
+            variant: variant,
         )
     }
 
@@ -170,9 +170,9 @@ public struct KowalskiTextField: View {
                             .focused($isFocused)
                     #endif
                 }
-            }
+            },
         )
-        .onChange(of: text) { oldValue, newValue in handleValueChange(value: newValue) }
+        .onChange(of: text) { _, newValue in handleValueChange(value: newValue) }
     }
 
     private var placeholderText: String {
@@ -215,14 +215,14 @@ public struct KowalskiTextField: View {
         switch variant {
         case .numbers:
             return value.filter(\.isNumber)
-        case .decimals(let locale):
+        case let .decimals(locale):
             let decimalSeparator = locale.decimalSeparator ?? "."
             var hasDecimalSeparator = false
             let filteredValue = value.filter { char in
                 if char.isNumber {
                     return true
                 }
-                if String(char) == decimalSeparator && !hasDecimalSeparator {
+                if String(char) == decimalSeparator, !hasDecimalSeparator {
                     hasDecimalSeparator = true
                     return true
                 }
@@ -235,7 +235,7 @@ public struct KowalskiTextField: View {
         }
     }
 
-    private func setErrorResult(value: String) {
+    private func setErrorResult(value _: String) {
         let result = validator.result
         errorResult = KowalskiTextFieldErrorResult(isValid: result.valid, errorMessage: result.message)
     }
@@ -254,14 +254,14 @@ private struct FloatingFieldWrapper<Field: View>: View {
         text: String,
         title: String,
         error: (show: Bool, message: String?),
-        @ViewBuilder field: @escaping () -> Field
+        @ViewBuilder field: @escaping () -> Field,
     ) {
         self.text = text
         self.title = title
         self.error = error
         self.field = field
-        self.textYOffset = Self.nextTextYOffsetValue(text.isEmpty)
-        self.textScaleEffect = Self.nextTextScaleEffectValue(text.isEmpty)
+        textYOffset = Self.nextTextYOffsetValue(text.isEmpty)
+        textScaleEffect = Self.nextTextScaleEffectValue(text.isEmpty)
     }
 
     var body: some View {
@@ -294,7 +294,7 @@ private struct FloatingFieldWrapper<Field: View>: View {
         if text.isEmpty { 4 } else { 0 }
     }
 
-    private func handleOnTextIsEmptyChange(_ oldValue: Bool, _ newValue: Bool) {
+    private func handleOnTextIsEmptyChange(_: Bool, _ newValue: Bool) {
         textYOffset = Self.nextTextYOffsetValue(newValue)
         textScaleEffect = Self.nextTextScaleEffectValue(newValue)
     }
@@ -314,13 +314,13 @@ private struct FloatingFieldWrapper<Field: View>: View {
             text: .constant("Yes"),
             errorResult: .constant(KowalskiTextFieldErrorResult(isValid: false, errorMessage: "Nooo")),
             title: "Task",
-            validations: []
+            validations: [],
         )
         KowalskiTextField(
             text: .constant(""),
             errorResult: .constant(KowalskiTextFieldErrorResult(isValid: false, errorMessage: "Nooo")),
             title: "Task",
-            validations: []
+            validations: [],
         )
     }
     .padding(.all, .medium)

@@ -5,15 +5,15 @@
 //  Created by Kamaal M Farah on 11/1/25.
 //
 
-import HTTPTypes
 import Foundation
+import HTTPTypes
 import OpenAPIRuntime
 
 struct RequiredHeadersMiddleware {
     private let urlScheme: String?
 
     init() {
-        self.urlScheme = Self.getURLScheme()
+        urlScheme = Self.getURLScheme()
     }
 
     private static func getURLScheme() -> String? {
@@ -33,8 +33,8 @@ extension RequiredHeadersMiddleware: ClientMiddleware {
         _ request: HTTPRequest,
         body: HTTPBody?,
         baseURL: URL,
-        operationID: String,
-        next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)
+        operationID _: String,
+        next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?),
     ) async throws -> (HTTPResponse, HTTPBody?) {
         var request = request
         if let urlScheme {

@@ -28,7 +28,7 @@ struct CredentialsGetterFactory {
                     expiryDate: Date.now.addingTimeInterval(oneDay),
                     sessionToken: "session_token_preview",
                     sessionUpdateAge: oneDay,
-                    lastSessionUpdate: .now
+                    lastSessionUpdate: .now,
                 )
             } else {
                 nil
@@ -45,7 +45,7 @@ struct CredentialsGetterImpl: CredentialsGetter {
 
     init(keychainKey: String) {
         self.keychainKey = keychainKey
-        self.jsonDecoder = JSONDecoder()
+        jsonDecoder = JSONDecoder()
     }
 
     func get() -> Credentials? {
@@ -58,10 +58,6 @@ struct CredentialsGetterImpl: CredentialsGetter {
 
 struct CredentialsGetterPreview: CredentialsGetter {
     let credentials: Credentials?
-
-    init(credentials: Credentials?) {
-        self.credentials = credentials
-    }
 
     func get() -> Credentials? {
         credentials

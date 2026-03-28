@@ -5,10 +5,10 @@
 //  Created by Kamaal M Farah on 11/17/25.
 //
 
-import SwiftUI
 import KamaalUI
+import SwiftUI
 
-private let DEBOUNCE_TIME_IN_MILLISECONDS: UInt64 = 1000
+private let debounceTimeInMilliseconds: UInt64 = 1000
 
 public struct KowalskiSearchableDropdown<Item: Identifiable & Hashable>: View {
     @State private var searchText = ""
@@ -32,14 +32,14 @@ public struct KowalskiSearchableDropdown<Item: Identifiable & Hashable>: View {
         selectedItem: Binding<Item?>,
         title: String,
         itemLabel: @escaping (Item) -> String,
-        onSearch: @escaping (String) async -> Result<[Item], Error>
+        onSearch: @escaping (String) async -> Result<[Item], Error>,
     ) {
-        self._selectedItem = selectedItem
+        _selectedItem = selectedItem
         self.title = title
         self.itemLabel = itemLabel
         self.onSearch = onSearch
-        self.textYOffset = Self.nextTextYOffsetValue(selectedItem.wrappedValue == nil)
-        self.textScaleEffect = Self.nextTextScaleEffectValue(selectedItem.wrappedValue == nil)
+        textYOffset = Self.nextTextYOffsetValue(selectedItem.wrappedValue == nil)
+        textScaleEffect = Self.nextTextScaleEffectValue(selectedItem.wrappedValue == nil)
     }
 
     public init(
@@ -47,7 +47,7 @@ public struct KowalskiSearchableDropdown<Item: Identifiable & Hashable>: View {
         localizedTitle: LocalizedStringResource,
         bundle: Bundle? = nil,
         itemLabel: @escaping (Item) -> String,
-        onSearch: @escaping (String) async -> Result<[Item], Error>
+        onSearch: @escaping (String) async -> Result<[Item], Error>,
     ) {
         let title = if let bundle {
             NSLocalizedString(localizedTitle.key, bundle: bundle, comment: "")
@@ -58,7 +58,7 @@ public struct KowalskiSearchableDropdown<Item: Identifiable & Hashable>: View {
             selectedItem: selectedItem,
             title: title,
             itemLabel: itemLabel,
-            onSearch: onSearch
+            onSearch: onSearch,
         )
     }
 
@@ -84,7 +84,7 @@ public struct KowalskiSearchableDropdown<Item: Identifiable & Hashable>: View {
             .padding(.top, 12)
             .animation(.spring(response: 0.5), value: textYOffset)
 
-            if showDropdown && isFocused {
+            if showDropdown, isFocused {
                 VStack(alignment: .leading, spacing: 0) {
                     if isSearching {
                         HStack {
@@ -104,7 +104,7 @@ public struct KowalskiSearchableDropdown<Item: Identifiable & Hashable>: View {
                                 .foregroundColor(.secondary)
                         }
                         .padding(KowalskiSizes.small.rawValue)
-                    } else if searchResults.isEmpty && !searchText.isEmpty {
+                    } else if searchResults.isEmpty, !searchText.isEmpty {
                         HStack {
                             Image(systemName: "magnifyingglass")
                                 .foregroundColor(.secondary)
@@ -153,7 +153,7 @@ public struct KowalskiSearchableDropdown<Item: Identifiable & Hashable>: View {
     }
 
     private var textColor: Color {
-        if selectedItem == nil && searchText.isEmpty {
+        if selectedItem == nil, searchText.isEmpty {
             .secondary
         } else {
             .accentColor
@@ -161,7 +161,7 @@ public struct KowalskiSearchableDropdown<Item: Identifiable & Hashable>: View {
     }
 
     private var titleHorizontalPadding: CGFloat {
-        if selectedItem == nil && searchText.isEmpty { 4 } else { 0 }
+        if selectedItem == nil, searchText.isEmpty { 4 } else { 0 }
     }
 
     private var dropdownBackgroundColor: Color {
@@ -172,7 +172,7 @@ public struct KowalskiSearchableDropdown<Item: Identifiable & Hashable>: View {
         #endif
     }
 
-    private func handleSearchTextChange(_ oldValue: String, _ newValue: String) {
+    private func handleSearchTextChange(_: String, _ newValue: String) {
         guard !newValue.isEmpty else {
             searchResults = []
             showDropdown = false
@@ -186,7 +186,7 @@ public struct KowalskiSearchableDropdown<Item: Identifiable & Hashable>: View {
 
         let task = Task {
             do {
-                try await Task.sleep(nanoseconds: DEBOUNCE_TIME_IN_MILLISECONDS * 1_000_000)
+                try await Task.sleep(nanoseconds: debounceTimeInMilliseconds * 1_000_000)
             } catch {
                 return
             }
@@ -199,7 +199,7 @@ public struct KowalskiSearchableDropdown<Item: Identifiable & Hashable>: View {
         searchTask = task
     }
 
-    private func handleFocusChange(_ oldValue: Bool, _ newValue: Bool) {
+    private func handleFocusChange(_: Bool, _ newValue: Bool) {
         if !newValue {
             showDropdown = false
             if selectedItem == nil {
@@ -209,7 +209,7 @@ public struct KowalskiSearchableDropdown<Item: Identifiable & Hashable>: View {
         }
     }
 
-    private func handleSelectedItemChange(_ oldValue: Item?, _ newValue: Item?) {
+    private func handleSelectedItemChange(_: Item?, _ newValue: Item?) {
         let isEmpty = newValue == nil
         textYOffset = Self.nextTextYOffsetValue(isEmpty && searchText.isEmpty)
         textScaleEffect = Self.nextTextScaleEffectValue(isEmpty && searchText.isEmpty)
@@ -241,10 +241,10 @@ public struct KowalskiSearchableDropdown<Item: Identifiable & Hashable>: View {
         isSearching = false
 
         switch result {
-        case .success(let items):
+        case let .success(items):
             searchResults = items
             searchError = nil
-        case .failure(let error):
+        case let .failure(error):
             searchResults = []
             searchError = error.localizedDescription
         }
@@ -280,7 +280,7 @@ private struct PreviewItem: Identifiable, Hashable {
                     PreviewItem(id: "3", name: "MSFT - Microsoft Corporation"),
                 ].filter { $0.name.localizedCaseInsensitiveContains(query) }
                 return .success(items)
-            }
+            },
         )
         .padding(.all, .medium)
 

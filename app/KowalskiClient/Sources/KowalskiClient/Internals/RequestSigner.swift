@@ -5,8 +5,8 @@
 //  Created by Kamaal M Farah on 19/12/2024.
 //
 
-import HTTPTypes
 import Foundation
+import HTTPTypes
 import KamaalExtensions
 
 enum RequestSigner {

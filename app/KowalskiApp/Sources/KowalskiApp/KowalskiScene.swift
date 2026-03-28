@@ -5,10 +5,10 @@
 //  Created by Kamaal M Farah on 9/7/25.
 //
 
-import SwiftUI
 import KowalskiAuth
 import KowalskiClient
 import KowalskiPortfolio
+import SwiftUI
 
 public struct KowalskiScene: Scene {
     @State private var auth = KowalskiAuth.default()

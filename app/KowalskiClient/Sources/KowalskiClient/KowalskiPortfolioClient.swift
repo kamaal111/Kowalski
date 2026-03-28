@@ -12,14 +12,14 @@ import OpenAPIRuntime
 
 public protocol KowalskiPortfolioClient: Sendable {
     func createEntry(
-        payload: KowalskiPortfolioCreateEntryPayload
+        payload: KowalskiPortfolioCreateEntryPayload,
     ) async -> Result<KowalskiPortfolioClientCreateEntryResponse, KowalskiPortfolioClientCreateEntryErrors>
 }
 
 // MARK: Factory
 
 struct KowalskiPortfolioClientFactory {
-    private init() { }
+    private init() {}
 
     static func `default`(client: Client) -> KowalskiPortfolioClient {
         KowalskiPortfolioClientImpl(client: client)
@@ -48,11 +48,11 @@ struct KowalskiPortfolioClientImpl: KowalskiPortfolioClient {
 
     fileprivate init(client: Client) {
         self.client = client
-        self.mapper = KowalskiPortfolioMapper()
+        mapper = KowalskiPortfolioMapper()
     }
 
-    public func createEntry(
-        payload: KowalskiPortfolioCreateEntryPayload
+    func createEntry(
+        payload: KowalskiPortfolioCreateEntryPayload,
     ) async -> Result<KowalskiPortfolioClientCreateEntryResponse, KowalskiPortfolioClientCreateEntryErrors> {
         let apiPayload = mapper.mapCreateEntryPayloadToApi(payload)
         let response: Operations.PostAppApiPortfolioEntries.Output
@@ -89,9 +89,9 @@ struct KowalskiPortfolioClientImpl: KowalskiPortfolioClient {
 
 // MARK: Preview
 
-struct KowalskiPortfolioClientPreview : KowalskiPortfolioClient {
-    public func createEntry(
-        payload: KowalskiPortfolioCreateEntryPayload
+struct KowalskiPortfolioClientPreview: KowalskiPortfolioClient {
+    func createEntry(
+        payload _: KowalskiPortfolioCreateEntryPayload,
     ) async -> Result<KowalskiPortfolioClientCreateEntryResponse, KowalskiPortfolioClientCreateEntryErrors> {
         let stock = KowalskiClientStockItem(
             symbol: "AAPL",
@@ -99,7 +99,7 @@ struct KowalskiPortfolioClientPreview : KowalskiPortfolioClient {
             name: "Apple Inc.",
             sector: "Technology",
             industry: "Consumer Electronics",
-            exchangeDispatch: "NASDAQ"
+            exchangeDispatch: "NASDAQ",
         )
 
         return .success(
@@ -111,8 +111,8 @@ struct KowalskiPortfolioClientPreview : KowalskiPortfolioClient {
                 amount: 10,
                 purchasePrice: KowalskiClientMoney(currency: "USD", value: 150.5),
                 transactionType: .buy,
-                transactionDate: Date(timeIntervalSince1970: 1_766_246_840)
-            )
+                transactionDate: Date(timeIntervalSince1970: 1_766_246_840),
+            ),
         )
     }
 }

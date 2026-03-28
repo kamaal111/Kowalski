@@ -65,7 +65,7 @@ enum BodyLoggingPolicy: Equatable {
     private func processUpToKnownLength(
         _ body: HTTPBody,
         maxBytes: Int,
-        length: Int64
+        length: Int64,
     ) async -> (bodyToLog: BodyLog, bodyForNext: HTTPBody) {
         guard length <= maxBytes else { return (.tooManyBytesToLog(byteCount: length), body) }
         guard let bodyData = try? await Data(collecting: body, upTo: maxBytes) else { return (.none, body) }

@@ -18,7 +18,7 @@ public protocol KowalskiStocksClient: Sendable {
 struct KowalskiStocksClientFactory {
     private init() {}
 
-    static func `deafault`(client: Client) -> KowalskiStocksClient {
+    static func deafault(client: Client) -> KowalskiStocksClient {
         KowalskiStocksClientImpl(client: client)
     }
 
@@ -42,7 +42,7 @@ struct KowalskiStocksClientImpl: KowalskiStocksClient {
 
     init(client: Client) {
         self.client = client
-        self.mapper = KowalskiStocksMapper()
+        mapper = KowalskiStocksMapper()
     }
 
     // MARK: Search
@@ -59,9 +59,9 @@ struct KowalskiStocksClientImpl: KowalskiStocksClient {
         switch response {
         case .notFound, .badRequest:
             return .failure(.notFound)
-        case .undocumented(let statusCode, let payload):
+        case let .undocumented(statusCode, payload):
             return .failure(.unknown(statusCode: statusCode, payload: payload, context: nil))
-        case .ok(let ok):
+        case let .ok(ok):
             payload = ok
         }
         let jsonPayload: Components.Schemas.StocksSearchResponse
@@ -78,7 +78,7 @@ struct KowalskiStocksClientImpl: KowalskiStocksClient {
 // MARK: Preview
 
 struct KowalskiStocksClientPreview: KowalskiStocksClient {
-    func search(query: String) async -> Result<KowalskiStocksSearchResponse, KowalskiStocksSearchErrors> {
+    func search(query _: String) async -> Result<KowalskiStocksSearchResponse, KowalskiStocksSearchErrors> {
         let quotes = [
             KowalskiClientStockItem(
                 symbol: "AAPL",
@@ -86,8 +86,8 @@ struct KowalskiStocksClientPreview: KowalskiStocksClient {
                 name: "Apple Inc.",
                 sector: "Technology",
                 industry: "Consumer Electronics",
-                exchangeDispatch: "NASDAQ"
-            )
+                exchangeDispatch: "NASDAQ",
+            ),
         ]
         let response = KowalskiStocksSearchResponse(quotes: quotes)
 

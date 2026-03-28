@@ -5,10 +5,10 @@
 //  Created by Kamaal M Farah on 10/11/25.
 //
 
-import HTTPTypes
 import Foundation
-import KamaalUtils
+import HTTPTypes
 import KamaalLogger
+import KamaalUtils
 import OpenAPIRuntime
 
 private let logger = KamaalLogger(from: AuthenticationMiddleware.self, failOnError: true)
@@ -33,8 +33,8 @@ extension AuthenticationMiddleware: ClientMiddleware {
         _ request: HTTPRequest,
         body: HTTPBody?,
         baseURL: URL,
-        operationID: String,
-        next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)
+        operationID _: String,
+        next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?),
     ) async throws -> (HTTPResponse, HTTPBody?) {
         guard let credentials = credentialsGetter.get() else {
             logger.info("No credentials found, proceeding without auth")
@@ -58,7 +58,7 @@ extension AuthenticationMiddleware: ClientMiddleware {
         request: HTTPRequest,
         body: HTTPBody?,
         baseURL: URL,
-        next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)
+        next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?),
     ) async throws -> (HTTPResponse, HTTPBody?) {
         do {
             try await authClient.refreshToken().get()
@@ -78,7 +78,7 @@ extension AuthenticationMiddleware: ClientMiddleware {
             request: request,
             body: body,
             baseURL: baseURL,
-            next: next
+            next: next,
         )
     }
 
@@ -87,7 +87,7 @@ extension AuthenticationMiddleware: ClientMiddleware {
         request: HTTPRequest,
         body: HTTPBody?,
         baseURL: URL,
-        next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)
+        next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?),
     ) async throws -> (HTTPResponse, HTTPBody?) {
         let tokenPreview = credentials.authToken.prefix(8)
         logger.info("Adding JWT to request: \(tokenPreview)...")

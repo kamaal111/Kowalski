@@ -10,7 +10,7 @@ struct KowalskiAuthMapper {
         KowalskiAuthSessionResponse(
             name: response.user.name,
             email: response.user.email,
-            expiresAt: response.session.expiresAt
+            expiresAt: response.session.expiresAt,
         )
     }
 }

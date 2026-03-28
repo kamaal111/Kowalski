@@ -5,12 +5,12 @@
 //  Created by Kamaal M Farah on 11/2/25.
 //
 
-import SwiftUI
 import ForexKit
-import KamaalUI
-import KamaalLogger
 import KamaalExtensions
+import KamaalLogger
+import KamaalUI
 import KowalskiDesignSystem
+import SwiftUI
 
 private let logger = KamaalLogger(from: KowalskiPortfolioTransactionScreen.self, failOnError: true)
 
@@ -39,7 +39,7 @@ struct KowalskiPortfolioTransactionScreen: View {
                     },
                     onSearch: { query in
                         await portfolio.searchStocks(query: query)
-                    }
+                    },
                 )
                 MoneyField(
                     currency: $purchasePriceCurrency,
@@ -47,7 +47,7 @@ struct KowalskiPortfolioTransactionScreen: View {
                     title: NSLocalizedString("Purchase price", comment: ""),
                     currencies: Currencies.allCases,
                     fixButtonTitle: NSLocalizedString("Fix", comment: ""),
-                    fixMessage: "Invalid value"
+                    fixMessage: "Invalid value",
                 )
                 KowalskiTextField(
                     text: $amount,
@@ -58,9 +58,9 @@ struct KowalskiPortfolioTransactionScreen: View {
                         .numeric(
                             locale: ModuleConfig.defaultLocale,
                             greaterThanOrEqualTo: 0,
-                            message: NSLocalizedString("Amount should be numeric", comment: "")
-                        )
-                    ]
+                            message: NSLocalizedString("Amount should be numeric", comment: ""),
+                        ),
+                    ],
                 )
                 .focused($focusedTextfield, equals: .amount)
                 .onSubmit(handleSubmit)
@@ -75,7 +75,7 @@ struct KowalskiPortfolioTransactionScreen: View {
                         },
                         label: {
                             EmptyView()
-                        }
+                        },
                     )
                     .labelsHidden()
                     .pickerStyle(.menu)
@@ -107,13 +107,13 @@ struct KowalskiPortfolioTransactionScreen: View {
             amount: amount ?? 1,
             purchasePrice: money,
             transactionType: transactionType,
-            transactionDate: transactionDate
+            transactionDate: transactionDate,
         )
     }
 
     private var textFieldErrors: [KowalskiTextFieldErrorResult] {
         [amountError]
-            .compactMap { $0 }
+            .compactMap(\.self)
     }
 
     private var purchasePriceDoubleValue: Double {
@@ -124,7 +124,7 @@ struct KowalskiPortfolioTransactionScreen: View {
         return purchaseDoubleValue
     }
 
-    private var formValidity: Result<(), FormInvalidityErrors> {
+    private var formValidity: Result<Void, FormInvalidityErrors> {
         if selectedStock == nil {
             return .failure(.noStockSelected)
         }
@@ -173,7 +173,7 @@ private enum FormInvalidityErrors: Error {
     var errorDescription: String? {
         switch self {
         case .noStockSelected: NSLocalizedString("Please select a stock", comment: "")
-        case .textField(let message): message
+        case let .textField(message): message
         case .purchasePrice: NSLocalizedString("Invalid purchase price", comment: "")
         }
     }

@@ -24,29 +24,29 @@ public enum KowalskiSizes: CGFloat {
     /// Size of 32
     case extraLarge = 32
 
-    public static func +(lhs: CGFloat, rhs: KowalskiSizes) -> CGFloat {
+    public static func + (lhs: CGFloat, rhs: KowalskiSizes) -> CGFloat {
         lhs + rhs.rawValue
     }
 
-    public static func +(lhs: KowalskiSizes, rhs: CGFloat) -> CGFloat {
+    public static func + (lhs: KowalskiSizes, rhs: CGFloat) -> CGFloat {
         lhs.rawValue + rhs
     }
 }
 
-extension View {
+public extension View {
     /// Set padding to the view with set ``AppSizes``.
     /// - Parameters:
     ///   - edges: Which edge or edges to set the padding to.
     ///   - length: The length of padding to set the view edge to.
     /// - Returns: The view with updated padding.
-    public func padding(_ edges: Edge.Set = .all, _ length: KowalskiSizes) -> some View {
+    func padding(_ edges: Edge.Set = .all, _ length: KowalskiSizes) -> some View {
         padding(edges, length.rawValue)
     }
 
     /// Set corner radius to the view with set ``AppSizes``.
     /// - Parameter length: The length of corner radius to set on the view.
     /// - Returns: The view with updated corner radius.
-    public func cornerRadius(_ length: KowalskiSizes) -> some View {
+    func cornerRadius(_ length: KowalskiSizes) -> some View {
         cornerRadius(length.rawValue)
     }
 }

@@ -17,30 +17,23 @@ public struct KowalskiClient: Sendable {
     private let credentialsGetter: CredentialsGetter
     private static let credentialsKeychainKey = ModuleConfig.credentialsKeychainKey
 
-    private init(
-        auth: KowalskiAuthClient,
-        stocks: KowalskiStocksClient,
-        portfolio: KowalskiPortfolioClient,
-        credentialsGetter: CredentialsGetter
-    ) {
-        self.auth = auth
-        self.stocks = stocks
-        self.portfolio = portfolio
-        self.credentialsGetter = credentialsGetter
-    }
-
     public var hasValidCredentials: Bool {
         guard let credentials = credentialsGetter.get() else { return false }
         return !credentials.isExpired
     }
 
     public static func `default`() -> KowalskiClient {
-        let url = try! Servers.Server1.url()
+        let url: URL
+        do {
+            url = try Servers.Server1.url()
+        } catch {
+            preconditionFailure("Failed to construct server URL: \(error)")
+        }
         let credentialsGetter = CredentialsGetterFactory.default(keychainKey: credentialsKeychainKey)
         let auth = KowalskiAuthClientFactory.default(
             client: makeClientForAuth(url: url, credentialsGetter: credentialsGetter),
             credentialsKeychainKey: credentialsKeychainKey,
-            credentialsGetter: credentialsGetter
+            credentialsGetter: credentialsGetter,
         )
 
         let client = makeClient(url: url, credentialsGetter: credentialsGetter, authClient: auth)
@@ -62,13 +55,13 @@ public struct KowalskiClient: Sendable {
     private static func makeClient(
         url: URL,
         credentialsGetter: CredentialsGetter,
-        authClient: KowalskiAuthClient
+        authClient: KowalskiAuthClient,
     ) -> Client {
         let middlewares: [any ClientMiddleware] = [
             AuthenticationMiddleware(
                 keychainKey: credentialsKeychainKey,
                 credentialsGetter: credentialsGetter,
-                authClient: authClient
+                authClient: authClient,
             ),
             RequiredHeadersMiddleware(),
             LoggingMiddleware(bodyLoggingPolicy: .upTo(maxBytes: ModuleConfig.maxLogSize)),
@@ -81,7 +74,7 @@ public struct KowalskiClient: Sendable {
             serverURL: url,
             configuration: configuration,
             transport: transport,
-            middlewares: middlewares
+            middlewares: middlewares,
         )
     }
 
@@ -100,7 +93,7 @@ public struct KowalskiClient: Sendable {
             serverURL: url,
             configuration: configuration,
             transport: transport,
-            middlewares: middlewares
+            middlewares: middlewares,
         )
     }
 }

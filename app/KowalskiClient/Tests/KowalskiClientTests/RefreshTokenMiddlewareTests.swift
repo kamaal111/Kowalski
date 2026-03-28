@@ -7,12 +7,10 @@
 
 import Foundation
 import HTTPTypes
+@testable import KowalskiClient
 import OpenAPIRuntime
 import Testing
 
-@testable import KowalskiClient
-
-@Suite("RefreshTokenMiddleware Tests")
 struct RefreshTokenMiddlewareTests {
     private let mockSessionToken = "mock-session-token-12345"
     private let mockAuthToken = "mock-jwt-token-67890"
@@ -37,7 +35,7 @@ struct RefreshTokenMiddlewareTests {
             body: nil,
             baseURL: baseURL,
             operationID: Operations.GetAppApiAuthToken.id,
-            next: next
+            next: next,
         )
 
         #expect(capturedRequest != nil)
@@ -61,7 +59,7 @@ struct RefreshTokenMiddlewareTests {
             body: nil,
             baseURL: baseURL,
             operationID: Operations.GetAppApiAuthSession.id,
-            next: next
+            next: next,
         )
 
         #expect(capturedRequest != nil)
@@ -85,7 +83,7 @@ struct RefreshTokenMiddlewareTests {
             body: nil,
             baseURL: baseURL,
             operationID: Operations.GetAppApiAuthToken.id,
-            next: next
+            next: next,
         )
 
         #expect(nextWasCalled)
@@ -109,7 +107,7 @@ struct RefreshTokenMiddlewareTests {
             body: nil,
             baseURL: baseURL,
             operationID: Operations.GetAppApiAuthToken.id,
-            next: next
+            next: next,
         )
 
         #expect(capturedRequest != nil)
@@ -121,14 +119,14 @@ struct RefreshTokenMiddlewareTests {
 
     private func makeCredentials(
         authToken: String? = nil,
-        sessionToken: String? = nil
+        sessionToken: String? = nil,
     ) -> Credentials {
         Credentials(
             authToken: authToken ?? mockAuthToken,
             expiryDate: Date().addingTimeInterval(3600),
             sessionToken: sessionToken ?? mockSessionToken,
             sessionUpdateAge: 86400,
-            lastSessionUpdate: Date()
+            lastSessionUpdate: Date(),
         )
     }
 

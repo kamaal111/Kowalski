@@ -11,7 +11,7 @@ struct ToastView: View {
     var style: ToastStyle
     var message: String
     var width: CGFloat
-    var onCancelTapped: (() -> Void)
+    var onCancelTapped: () -> Void
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
@@ -31,9 +31,9 @@ struct ToastView: View {
         .background(Color.toastBackground)
         .cornerRadius(8)
         .overlay(
-          RoundedRectangle(cornerRadius: 8)
-            .stroke(style.color, lineWidth: 1)
-            .opacity(0.6)
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(style.color, lineWidth: 1)
+                .opacity(0.6),
         )
         .padding(.horizontal, 16)
     }
@@ -42,7 +42,7 @@ struct ToastView: View {
 #Preview {
     ZStack {
         Color.black
-        ToastView(style: .success, message: "Very nice, very well!", width: .infinity) { }
+        ToastView(style: .success, message: "Very nice, very well!", width: .infinity) {}
     }
     .padding(.all, .medium)
     .frame(width: 500, height: 200)

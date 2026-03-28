@@ -21,12 +21,12 @@ struct KowalskiStocksMapper {
             name: stockItem.name,
             sector: stockItem.sector,
             industry: stockItem.industry,
-            exchangeDispatch: stockItem.exchangeDispatch
+            exchangeDispatch: stockItem.exchangeDispatch,
         )
     }
 
     func mapStockItemFromApiToResponse(
-        _ stockItem: Components.Schemas.StocksSearchQuoteItem
+        _ stockItem: Components.Schemas.StocksSearchQuoteItem,
     ) -> KowalskiClientStockItem {
         KowalskiClientStockItem(
             symbol: stockItem.symbol,
@@ -34,7 +34,7 @@ struct KowalskiStocksMapper {
             name: stockItem.name,
             sector: stockItem.sector,
             industry: stockItem.industry,
-            exchangeDispatch: stockItem.exchangeDispatch
+            exchangeDispatch: stockItem.exchangeDispatch,
         )
     }
 }

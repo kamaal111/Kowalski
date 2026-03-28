@@ -5,9 +5,9 @@
 //  Created by Kamaal M Farah on 10/12/25.
 //
 
-import SwiftUI
 import KamaalUI
 import KowalskiDesignSystem
+import SwiftUI
 
 struct SignInFormContent: View {
     @FocusState private var focusedTextfield: SignInFormContentFocusFields?
@@ -28,7 +28,7 @@ struct SignInFormContent: View {
                 localizedTitle: "Email",
                 bundle: .module,
                 variant: .email,
-                validations: [.email(message: NSLocalizedString("Not an valid email", comment: ""))]
+                validations: [.email(message: NSLocalizedString("Not an valid email", comment: ""))],
             )
             .focused($focusedTextfield, equals: .email)
             .onSubmit(handleSubmit)
@@ -41,9 +41,9 @@ struct SignInFormContent: View {
                 validations: [
                     .minimumLength(
                         length: 8,
-                        message: NSLocalizedString("Password must be atleast 8 characters", comment: "")
-                    )
-                ]
+                        message: NSLocalizedString("Password must be atleast 8 characters", comment: ""),
+                    ),
+                ],
             )
             .focused($focusedTextfield, equals: .password)
             .onSubmit(handleSubmit)
@@ -71,7 +71,7 @@ struct SignInFormContent: View {
 
     private var formIsValid: Bool {
         [emailError, passwordError]
-            .allSatisfy({ result in result?.isValid == true })
+            .allSatisfy { result in result?.isValid == true }
     }
 
     private func handleSubmit() {
@@ -87,5 +87,5 @@ private enum SignInFormContentFocusFields {
 }
 
 #Preview {
-    SignInFormContent(onSignIn: { _ in }, onSignUpPress: { })
+    SignInFormContent(onSignIn: { _ in }, onSignUpPress: {})
 }

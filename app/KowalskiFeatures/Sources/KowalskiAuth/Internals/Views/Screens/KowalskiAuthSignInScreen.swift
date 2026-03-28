@@ -5,9 +5,9 @@
 //  Created by Kamaal M Farah on 10/5/25.
 //
 
-import SwiftUI
 import KamaalUI
 import KowalskiDesignSystem
+import SwiftUI
 
 struct KowalskiAuthSignInScreen: View {
     @Environment(KowalskiAuth.self) private var auth

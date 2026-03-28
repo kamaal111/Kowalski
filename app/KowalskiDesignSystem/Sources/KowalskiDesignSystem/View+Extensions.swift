@@ -7,9 +7,8 @@
 
 import SwiftUI
 
-extension View {
-    public func frame(minSize size: CGSize) -> some View {
-        self
-            .frame(minWidth: size.width, minHeight: size.height)
+public extension View {
+    func frame(minSize size: CGSize) -> some View {
+        frame(minWidth: size.width, minHeight: size.height)
     }
 }
