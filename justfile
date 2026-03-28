@@ -1,58 +1,99 @@
 set export
+set dotenv-load
 
 NVM_VERSION := "v0.40.3"
 
 PN := "pnpm"
 PNR := PN + " run"
+PNX := PN + " exec"
+TSX := PNX + " tsx"
+
+SERVER_PORT := "8080"
+DAILY_PORT := "8081"
+DOCKER_IMAGE := "kowalski-server"
+DOCKER_CONTAINER := "kowalski-server"
+DOCKER_DATABASE_URL := "postgresql://kowalski_user:kowalski_password@host.docker.internal:5432/kowalski"
+
+SCHEME := "Kowalski"
+MACOS_DESTINATION := "platform=macOS"
 
 OUTPUT_SCHEMA_FILEPATH := "app/KowalskiClient/Sources/KowalskiClient/openapi.yaml"
+AUTH_CONFIG := "src/auth/better-auth.ts"
+AUTH_SCHEMA := "src/db/schema/better-auth.ts"
 
 # List available commands
 default:
     just --list --unsorted
 
 # Run dev server
-dev-server: start-services
-    just server/dev-server
+[working-directory("server")]
+dev-server: prepare-server start-services migrate
+    #!/usr/bin/env zsh
+
+    export DEBUG="true"
+    export PORT="{{ SERVER_PORT }}"
+
+    {{ PNR }} dev
 
 # Run dev daily server
-dev-daily: start-services
-    just server/dev-daily
+[working-directory("server")]
+dev-daily: prepare-server start-services migrate
+    #!/usr/bin/env zsh
+
+    export DEBUG="true"
+    export PORT="{{ DAILY_PORT }}"
+    export MODE="DAILY"
+
+    {{ PNR }} dev
 
 # Run server
-run-server:
-    just server/run-server
+[working-directory("server")]
+run-server: prepare-server compile-server
+    #!/usr/bin/env zsh
+
+    export PORT="{{ SERVER_PORT }}"
+
+    {{ PNR }} start
 
 # Build server Docker image
-docker-build-server:
-    just server/docker-build
+[working-directory("server")]
+docker-build-server tag=DOCKER_IMAGE:
+    docker build -t {{ tag }} .
 
 # Run server Docker image
-docker-run-server: start-services
-    just server/docker-run
+[working-directory("server")]
+docker-run-server tag=DOCKER_IMAGE host_port=SERVER_PORT: start-services
+    docker run --rm --name {{ DOCKER_CONTAINER }} -p {{ host_port }}:{{ SERVER_PORT }} \
+        --add-host=host.docker.internal:host-gateway --env-file .env -e PORT={{ SERVER_PORT }} \
+        -e DATABASE_URL={{ DOCKER_DATABASE_URL }} {{ tag }}
 
 # Run all verification checks
-ready: quality download-spec test
+ready: download-spec _ready-tasks
 
 # Compile server
+[working-directory("server")]
 compile-server:
-    just server/compile
+    {{ PNR }} compile
 
 # Run database migrations
-migrate:
-    just server/migrate
+[working-directory("server")]
+migrate: prepare-server
+    {{ PNX }} drizzle-kit migrate
 
 # Generate migrations
-make-migrations:
-    just server/make-migrations
+[working-directory("server")]
+make-migrations: prepare-server
+    {{ PNX }} drizzle-kit generate
 
 # Pull database schema
-pull-schema:
-    just server/pull-schema
+[working-directory("server")]
+pull-schema: prepare-server
+    {{ PNX }} drizzle-kit pull
 
 # Push database schema
-push-schema:
-    just server/push-schema
+[working-directory("server")]
+push-schema: prepare-server
+    {{ PNX }} drizzle-kit push
 
 # Start services
 start-services:
@@ -71,12 +112,54 @@ tail-db:
     docker compose logs -f db
 
 # Generate auth tables
-make-auth-tables:
-    just server/make-auth-tables
+[working-directory("server")]
+make-auth-tables: prepare-server
+    npx @better-auth/cli generate --config {{ AUTH_CONFIG }} --output {{ AUTH_SCHEMA }} --yes
 
 # Download OpenAPI specification
+[working-directory("server")]
 download-spec:
-    just server/download-spec ../{{ OUTPUT_SCHEMA_FILEPATH }}
+    #!/usr/bin/env zsh
+
+    OUTPUT="../{{ OUTPUT_SCHEMA_FILEPATH }}"
+    SERVER_URL="http://localhost:{{ SERVER_PORT }}"
+
+    echo "🚀 Auto-downloading OpenAPI spec to $OUTPUT..."
+
+    # Check if server is already running
+    if curl -s --fail --connect-timeout 2 "$SERVER_URL/spec.json" > /dev/null 2>&1
+    then
+        echo "✅ Server is already running"
+        {{ TSX }} scripts/download-openapi-spec.ts "$OUTPUT" "$SERVER_URL"
+    else
+        echo "🔄 Server not running, starting development server..."
+        echo "   This will start the server in the background and download the spec"
+
+        just run-server &
+
+        echo "⏳ Waiting for server to start..."
+        for i in {1..30}; do
+            if curl -s --fail --connect-timeout 2 "$SERVER_URL/spec.json" > /dev/null 2>&1
+            then
+                echo "✅ Server is ready!"
+                break
+            fi
+            if [ $i -eq 30 ]
+            then
+                echo "❌ Server failed to start within 30 seconds"
+                kill $(lsof -t -i:{{ SERVER_PORT }}) || true
+                exit 1
+            fi
+            echo "   Attempt $i/30..."
+            sleep 1
+        done
+
+        npx tsx scripts/download-openapi-spec.ts "$OUTPUT" "$SERVER_URL"
+
+        echo "🛑 Stopping development server..."
+        kill $(lsof -t -i:{{ SERVER_PORT }}) || true
+        echo "✅ Done! OpenAPI spec saved to $OUTPUT"
+    fi
 
 # Lint the project
 lint:
@@ -91,27 +174,58 @@ format-check:
     {{ PNR }} format:check
 
 # Type check
-typecheck:
-    just server/typecheck
+typecheck: typecheck-server
 
-# Run tests (server + Swift client)
-test: start-services
-    just server/test
-    just app/test
+# Type check server
+[working-directory("server")]
+typecheck-server:
+    {{ PNR }} typecheck
+
+# Run tests
+[parallel]
+test: test-server test-app
+
+# Run app tests
+[working-directory("app")]
+test-app:
+    set -o pipefail && xcodebuild test -scheme {{ SCHEME }} \
+        -destination {{ MACOS_DESTINATION }} | xcpretty
+
+# Run server tests
+[working-directory("server")]
+test-server: prepare-server start-services
+    {{ PNR }} test
 
 # Run quality checks
+[parallel]
 quality: lint format-check typecheck
 
 # Prepare project to work with
-prepare: install-modules
-    just server/prepare
+prepare: install-modules prepare-server
+
+# Prepare server
+prepare-server: install-modules-server
 
 # Bootstrap project
-bootstrap: prepare
-    just server/bootstrap
+bootstrap: prepare bootstrap-server
+
+# Bootstrap server
+bootstrap-server: prepare-server
+
+[private]
+[parallel]
+_ready-tasks: quality test
 
 [private]
 install-modules:
+    #!/usr/bin/env zsh
+
+    . ~/.zshrc || true
+    echo "Y" | {{ PN }} i
+
+[private]
+[working-directory("server")]
+install-modules-server:
     #!/usr/bin/env zsh
 
     . ~/.zshrc || true
