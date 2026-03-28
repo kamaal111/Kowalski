@@ -1,0 +1,14 @@
+[
+  {
+    "label": "Attach to dev-server (port 9229)",
+    "adapter": "JavaScript",
+    "request": "attach",
+    "port": 9229
+  },
+  {
+    "label": "Attach to run-server (port 9229)",
+    "adapter": "JavaScript",
+    "request": "attach",
+    "port": 9229
+  }
+]
