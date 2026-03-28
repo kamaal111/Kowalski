@@ -7,16 +7,29 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2CA465D82F786DBE001B57C8 /* KowalskiUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 2CA465D72F786DBE001B57C8 /* KowalskiUtils */; };
 		2CF8E15E2E6DF0E800DC771A /* KowalskiApp in Frameworks */ = {isa = PBXBuildFile; productRef = 2CF8E15D2E6DF0E800DC771A /* KowalskiApp */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		2A1890E2F93D46A18173C090 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2C7DA2EA2E649C8E00C2454F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2C7DA2F12E649C8E00C2454F;
+			remoteInfo = Kowalski;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		2C4F700D2E75AC97008BDF91 /* KowalskiClient */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = KowalskiClient; sourceTree = "<group>"; };
 		2C7DA2F22E649C8E00C2454F /* Kowalski.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Kowalski.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		2CA465D92F786DDF001B57C8 /* Testing.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Testing.framework; path = Platforms/MacOSX.platform/Developer/Library/Frameworks/Testing.framework; sourceTree = DEVELOPER_DIR; };
 		2CC2B4312E92A668001508FD /* KowalskiFeatures */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = KowalskiFeatures; sourceTree = "<group>"; };
 		2CC2B4322E92AFA9001508FD /* KowalskiDesignSystem */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = KowalskiDesignSystem; sourceTree = "<group>"; };
 		2CF6CAD52ECA193900FC32D6 /* KowalskiUtils */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = KowalskiUtils; sourceTree = "<group>"; };
 		2CF8E15B2E6DF01600DC771A /* KowalskiApp */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = KowalskiApp; sourceTree = "<group>"; };
+		461E170E47D64127A0CEED21 /* KowalskiUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KowalskiUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -38,6 +51,11 @@
 			path = Kowalski;
 			sourceTree = "<group>";
 		};
+		2F13B3EBDF8B4FB59443E1EB /* KowalskiUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = KowalskiUITests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -46,6 +64,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				2CF8E15E2E6DF0E800DC771A /* KowalskiApp in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		434B6A427F5B4BF89E60ADC2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2CA465D82F786DBE001B57C8 /* KowalskiUtils in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -62,6 +88,7 @@
 				2CF6CAD52ECA193900FC32D6 /* KowalskiUtils */,
 				2CF8E15C2E6DF0E800DC771A /* Frameworks */,
 				2C7DA2F42E649C8E00C2454F /* Kowalski */,
+				2F13B3EBDF8B4FB59443E1EB /* KowalskiUITests */,
 				2C7DA2F32E649C8E00C2454F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -70,6 +97,7 @@
 			isa = PBXGroup;
 			children = (
 				2C7DA2F22E649C8E00C2454F /* Kowalski.app */,
+				461E170E47D64127A0CEED21 /* KowalskiUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -77,6 +105,7 @@
 		2CF8E15C2E6DF0E800DC771A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				2CA465D92F786DDF001B57C8 /* Testing.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -84,6 +113,27 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		07C8E59631C649F28E1D6347 /* KowalskiUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F49C7FF3E67A46F9BD3A5E90 /* Build configuration list for PBXNativeTarget "KowalskiUITests" */;
+			buildPhases = (
+				74185B4800BE48C2B1025FBF /* Sources */,
+				434B6A427F5B4BF89E60ADC2 /* Frameworks */,
+				D292A375F64B45A4941C81FD /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				1781F58AA9BD496D9B0EA57B /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				2F13B3EBDF8B4FB59443E1EB /* KowalskiUITests */,
+			);
+			name = KowalskiUITests;
+			productName = KowalskiUITests;
+			productReference = 461E170E47D64127A0CEED21 /* KowalskiUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		2C7DA2F12E649C8E00C2454F /* Kowalski */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 2C7DA2FE2E649C8F00C2454F /* Build configuration list for PBXNativeTarget "Kowalski" */;
@@ -117,6 +167,10 @@
 				LastSwiftUpdateCheck = 1640;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
+					07C8E59631C649F28E1D6347 = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = 2C7DA2F12E649C8E00C2454F;
+					};
 					2C7DA2F12E649C8E00C2454F = {
 						CreatedOnToolsVersion = 16.4;
 					};
@@ -137,12 +191,20 @@
 			projectRoot = "";
 			targets = (
 				2C7DA2F12E649C8E00C2454F /* Kowalski */,
+				07C8E59631C649F28E1D6347 /* KowalskiUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		2C7DA2F02E649C8E00C2454F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D292A375F64B45A4941C81FD /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -159,7 +221,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		74185B4800BE48C2B1025FBF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		1781F58AA9BD496D9B0EA57B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2C7DA2F12E649C8E00C2454F /* Kowalski */;
+			targetProxy = 2A1890E2F93D46A18173C090 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		2C7DA2FC2E649C8F00C2454F /* Debug */ = {
@@ -372,6 +449,48 @@
 			};
 			name = Release;
 		};
+		6A07E34EFCA94A94831A50C4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = DXUKH9VF73;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				PRODUCT_BUNDLE_IDENTIFIER = io.kamaal.KowalskiUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_TARGET_NAME = Kowalski;
+				XROS_DEPLOYMENT_TARGET = 2.5;
+			};
+			name = Debug;
+		};
+		A1D5D7A8BCED4392857303C0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = DXUKH9VF73;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				PRODUCT_BUNDLE_IDENTIFIER = io.kamaal.KowalskiUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_TARGET_NAME = Kowalski;
+				XROS_DEPLOYMENT_TARGET = 2.5;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -393,9 +512,22 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		F49C7FF3E67A46F9BD3A5E90 /* Build configuration list for PBXNativeTarget "KowalskiUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6A07E34EFCA94A94831A50C4 /* Debug */,
+				A1D5D7A8BCED4392857303C0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		2CA465D72F786DBE001B57C8 /* KowalskiUtils */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = KowalskiUtils;
+		};
 		2CF8E15D2E6DF0E800DC771A /* KowalskiApp */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = KowalskiApp;

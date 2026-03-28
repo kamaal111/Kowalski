@@ -16,6 +16,7 @@ private let logger = KamaalLogger(from: KowalskiPortfolioTransactionScreen.self,
 
 struct KowalskiPortfolioTransactionScreen: View {
     @Environment(KowalskiPortfolio.self) private var portfolio
+    @Environment(\.dismiss) private var dismiss
 
     @FocusState private var focusedTextfield: EntryScreenFocusFields?
 
@@ -26,6 +27,9 @@ struct KowalskiPortfolioTransactionScreen: View {
     @State private var purchasePriceValue = "0"
     @State private var transactionType: TransactionType = .purchase
     @State private var transactionDate: Date = .now
+    @State private var toast: Toast?
+
+    let onTransactionAdd: (_ formPayload: TransactionPayload) -> Void
 
     var body: some View {
         KFormBox(title: NSLocalizedString("Add Entry", comment: ""), minSize: ModuleConfig.screenMinSize) {
@@ -84,14 +88,24 @@ struct KowalskiPortfolioTransactionScreen: View {
                 }
                 .padding(.vertical, .small)
                 .ktakeWidthEagerly(alignment: .leading)
+                Button(action: handleSubmit) {
+                    Text("Add Transaction")
+                        .ktakeWidthEagerly()
+                }
+                .disabled(!submissionIsEnabled)
             }
         }
         .navigationTitle("Add Transaction")
         .onAppear(perform: handleOnAppear)
+        .toastView(toast: $toast)
+    }
+
+    private var submissionIsEnabled: Bool {
+        formIsValid
     }
 
     private var formPayload: TransactionPayload? {
-        guard formIsValid else { return nil }
+        guard submissionIsEnabled else { return nil }
         guard let stock = selectedStock else { return nil }
 
         let amount = amount.nsString?.doubleValue
@@ -147,14 +161,22 @@ struct KowalskiPortfolioTransactionScreen: View {
     }
 
     private func handleSubmit() {
-        guard formIsValid else { return }
+        guard submissionIsEnabled else { return }
         guard let formPayload else {
             logger.error("After that the form is valid, we should have had payload")
             return
         }
 
         Task {
-            await portfolio.storeTransaction(formPayload)
+            let result = await portfolio.storeTransaction(formPayload)
+            switch result {
+            case .failure:
+                logger.warning("Failed to add transaction")
+                toast = .error(message: NSLocalizedString("Failed to add transaction", comment: ""))
+            case .success:
+                dismiss()
+                onTransactionAdd(formPayload)
+            }
         }
     }
 
@@ -185,7 +207,7 @@ private enum EntryScreenFocusFields {
 
 #Preview("Transaction") {
     NavigationStack {
-        KowalskiPortfolioTransactionScreen()
+        KowalskiPortfolioTransactionScreen(onTransactionAdd: { _ in })
     }
     .preview()
 }

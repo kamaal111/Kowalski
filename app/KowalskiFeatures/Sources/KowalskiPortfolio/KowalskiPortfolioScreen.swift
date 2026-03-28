@@ -10,7 +10,7 @@ import KowalskiDesignSystem
 import SwiftUI
 
 public struct KowalskiPortfolioScreen: View {
-    @State private var screenEnabled: KowalskiPortfolioNavigationLinks?
+    @State private var toast: Toast?
 
     public init() {}
 
@@ -23,24 +23,27 @@ public struct KowalskiPortfolioScreen: View {
         .ktakeSizeEagerly(alignment: .topLeading)
         .toolbar {
             ToolbarItem(placement: .automatic) {
-                NavigationLink(destination: { KowalskiPortfolioTransactionScreen() }) {
+                NavigationLink(destination: {
+                    KowalskiPortfolioTransactionScreen(onTransactionAdd: { payload in
+                        toast = .success(
+                            message: String(localized: "\(payload.stock.name) entry added"),
+                        )
+                    })
+                }) {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel(Text("Add entry"))
             }
         }
         .frame(minSize: ModuleConfig.screenMinSize)
         .navigationTitle("")
         .onAppear(perform: handleOnAppear)
+        .toastView(toast: $toast)
     }
 
     private func handleOnAppear() {
         print("🐸🐸🐸 appearing in portfolio")
     }
-}
-
-/// 🐸🐸🐸 Continue with navigating back on succesfully adding the entry
-private enum KowalskiPortfolioNavigationLinks {
-    case addEntry
 }
 
 #Preview {

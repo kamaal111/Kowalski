@@ -4,6 +4,12 @@
     "" : {
 
     },
+    "%@ entry added" : {
+
+    },
+    "Add entry" : {
+
+    },
     "Add Entry" : {
 
     },
@@ -14,6 +20,9 @@
 
     },
     "Amount should be numeric" : {
+
+    },
+    "Failed to add transaction" : {
 
     },
     "Fix" : {

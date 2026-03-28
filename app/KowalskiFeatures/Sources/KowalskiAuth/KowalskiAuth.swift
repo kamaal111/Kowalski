@@ -9,6 +9,7 @@ import Foundation
 import KamaalLogger
 import KamaalUtils
 import KowalskiClient
+import KowalskiUtils
 import Observation
 
 @MainActor
@@ -119,6 +120,12 @@ public final class KowalskiAuth {
     }
 
     // MARK: Factory
+
+    public static func forEnvironment() -> KowalskiAuth {
+        KowalskiEnvironment.isUiTesting
+            ? preview(withCredentials: true)
+            : `default`()
+    }
 
     public static func `default`() -> KowalskiAuth {
         let client = KowalskiClient.default()

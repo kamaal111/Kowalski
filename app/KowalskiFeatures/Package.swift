@@ -43,6 +43,7 @@ let package = Package(
                 .product(name: "KamaalLogger", package: "KamaalSwift"),
                 .product(name: "KamaalExtensions", package: "KamaalSwift"),
                 "KowalskiAuth",
+                "KowalskiUtils",
                 "KowalskiDesignSystem",
             ],
             swiftSettings: [

@@ -28,6 +28,10 @@ struct KowalskiPortfolioClientFactory {
     static func preview() -> KowalskiPortfolioClient {
         KowalskiPortfolioClientPreview()
     }
+
+    static func createEntryFailingPreview() -> KowalskiPortfolioClient {
+        KowalskiPortfolioClientCreateEntryFailingPreview()
+    }
 }
 
 // MARK: Errors
@@ -114,5 +118,13 @@ struct KowalskiPortfolioClientPreview: KowalskiPortfolioClient {
                 transactionDate: Date(timeIntervalSince1970: 1_766_246_840),
             ),
         )
+    }
+}
+
+struct KowalskiPortfolioClientCreateEntryFailingPreview: KowalskiPortfolioClient {
+    func createEntry(
+        payload _: KowalskiPortfolioCreateEntryPayload,
+    ) async -> Result<KowalskiPortfolioClientCreateEntryResponse, KowalskiPortfolioClientCreateEntryErrors> {
+        .failure(.internalServerError)
     }
 }

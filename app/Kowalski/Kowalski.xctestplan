@@ -18,6 +18,13 @@
         "identifier" : "KowalskiClientTests",
         "name" : "KowalskiClientTests"
       }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Kowalski.xcodeproj",
+        "identifier" : "07C8E59631C649F28E1D6347",
+        "name" : "KowalskiUITests"
+      }
     }
   ],
   "version" : 1

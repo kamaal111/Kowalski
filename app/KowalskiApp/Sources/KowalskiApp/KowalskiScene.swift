@@ -11,8 +11,8 @@ import KowalskiPortfolio
 import SwiftUI
 
 public struct KowalskiScene: Scene {
-    @State private var auth = KowalskiAuth.default()
-    @State private var portfolio = KowalskiPortfolio.default()
+    @State private var auth = KowalskiAuth.forEnvironment()
+    @State private var portfolio = KowalskiPortfolio.forEnvironment()
 
     public init() {}
 
