@@ -12,6 +12,7 @@ const EnvSchema = z.object({
   PORT: z.coerce.number().gte(1000).lt(10_000).default(8080),
   DEBUG: z.coerce.boolean().default(false),
   DATABASE_URL: z.string(),
+  CACHE_DIR: z.string().trim().min(1).optional().default('.'),
   MODE: z.enum(Object.values(SERVER_MODES)).default(SERVER_MODES.SERVER),
 
   // Auth

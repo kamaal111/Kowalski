@@ -5,7 +5,7 @@ import { LRUCache } from '../utils/cache';
 import { ONE_MINUTE_IN_MILLISECONDS } from '../constants/common';
 import type { HonoContext } from '../api/contexts';
 import { logger } from './logging';
-import env, { SERVER_MODES } from '../api/env';
+import env, { SERVER_MODES, type ServerMode } from '../api/env';
 
 const DEFAULT_TTL = 5 * ONE_MINUTE_IN_MILLISECONDS;
 const DEFAULT_MAX_SIZE = 1000;
@@ -34,8 +34,7 @@ export function withCache<THandler extends (c: HonoContext) => Promise<Response>
   handler: THandler,
   config: CacheConfig,
 ): THandler {
-  const cacheDir = env.MODE === SERVER_MODES.TEST ? './.test-cache' : '.';
-  const dbPath = `${cacheDir}/cache-${config.keyPrefix.replace(/[/:]/g, '-')}.db`;
+  const dbPath = createCacheDbPath(config.keyPrefix, env.MODE, env.CACHE_DIR);
   const cache = new LRUCache<string, unknown>(
     config.maxSize ?? DEFAULT_MAX_SIZE,
     config.defaultTTL ?? DEFAULT_TTL,
@@ -68,6 +67,11 @@ export function withCache<THandler extends (c: HonoContext) => Promise<Response>
 
     return response;
   }) as THandler;
+}
+
+export function createCacheDbPath(keyPrefix: string, mode: ServerMode, cacheDir: string): string {
+  const effectiveCacheDir = mode === SERVER_MODES.TEST ? './.test-cache' : cacheDir;
+  return `${effectiveCacheDir}/cache-${keyPrefix.replace(/[/:]/g, '-')}.db`;
 }
 
 function isJsonResponse(response: Response): boolean {

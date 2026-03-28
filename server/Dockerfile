@@ -25,6 +25,7 @@ RUN pnpm prune --prod
 FROM node:24-bookworm-slim AS runtime
 
 ENV NODE_ENV="production"
+ENV CACHE_DIR="/tmp/cache"
 
 WORKDIR /app
 
