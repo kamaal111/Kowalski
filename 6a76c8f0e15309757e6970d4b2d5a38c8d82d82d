@@ -1,0 +1,25 @@
+justfile
+  39b51ecce8f300bc 212,216,220-228
+AGENTS.md
+  39b51ecce8f300bc 11,16,61,106-109,112,208
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "6a76c8f0e15309757e6970d4b2d5a38c8d82d82d",
+  "prompts": {
+    "39b51ecce8f300bc": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d3989-ab28-7620-8342-665266eaaef2",
+        "model": "unknown"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>",
+      "messages": [],
+      "total_additions": 20,
+      "total_deletions": 6,
+      "accepted_lines": 20,
+      "overriden_lines": 0
+    }
+  }
+}
