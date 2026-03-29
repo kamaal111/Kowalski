@@ -31,11 +31,7 @@
     "**/*.{js,ts,tsx}": [
       "eslint --fix"
     ],
-    "**/*.{cjs,css,html,js,json,json5,jsx,md,mjs,scss,ts,tsx,yaml,yml}": "prettier --write",
-    "**/*.swift": [
-      "swiftformat",
-      "swiftlint lint --fix"
-    ]
+    "**/*.{cjs,css,html,js,json,json5,jsx,md,mjs,scss,ts,tsx,yaml,yml}": "prettier --write"
   },
   "prettier": "@kamaalio/prettier-config"
 }

@@ -22,7 +22,49 @@ function loggingMiddleware(c: HonoContext, next: Next) {
 }
 
 export function makeUncaughtErrorLog(c: HonoContext, err: unknown) {
-  errorLogger(c, `${c.req.method} ${c.req.path} Uncaught exception; ${String(err)}`);
+  const logLines = [
+    `${c.req.method} ${c.req.path} Uncaught exception; ${describeError(err)}`,
+    ...collectErrorDetails(err),
+  ];
+
+  errorLogger(c, logLines.join('\n'));
 }
 
 export default loggingMiddleware;
+
+function describeError(err: unknown) {
+  if (err instanceof Error) {
+    return `${err.name}: ${err.message}`;
+  }
+
+  return String(err);
+}
+
+function collectErrorDetails(err: unknown, seen = new Set<unknown>(), depth = 0): string[] {
+  if (!(err instanceof Error) || seen.has(err)) {
+    return [];
+  }
+
+  seen.add(err);
+
+  const details: string[] = [];
+  const labelPrefix = depth === 0 ? 'Error' : `Cause ${depth}`;
+
+  if (err.stack != null) {
+    details.push(`${labelPrefix} stack:\n${indentMultiline(err.stack, '  ')}`);
+  }
+
+  if (err.cause !== undefined) {
+    details.push(`Cause ${depth + 1}: ${describeError(err.cause)}`);
+    details.push(...collectErrorDetails(err.cause, seen, depth + 1));
+  }
+
+  return details;
+}
+
+function indentMultiline(value: string, indentation: string) {
+  return value
+    .split('\n')
+    .map(line => `${indentation}${line}`)
+    .join('\n');
+}

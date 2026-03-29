@@ -35,7 +35,7 @@ final class MockClientTransport: ClientTransport, @unchecked Sendable {
         let queuedResponse = queuedResponses[responseIndex]
 
         let headerFields = HTTPFields([
-            HTTPField(name: .contentType, value: queuedResponse.contentType)
+            HTTPField(name: .contentType, value: queuedResponse.contentType),
         ])
         let response = HTTPResponse(status: queuedResponse.status, headerFields: headerFields)
         let body = queuedResponse.body.map(HTTPBody.init)

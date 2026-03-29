@@ -83,7 +83,8 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
     }
 
     func listEntries() async
-        -> Result<[KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientListEntriesErrors> {
+        -> Result<[KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientListEntriesErrors>
+    {
         listEntriesCallCount += 1
 
         return listEntriesResult

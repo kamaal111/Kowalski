@@ -19,7 +19,7 @@ struct KowalskiValidationErrorParserTests {
                         code: "invalid_type",
                         path: [.string("stock"), .string("aliases"), .number(0), .string("symbol")],
                         message: "Expected a ticker symbol",
-                    )
+                    ),
                 ],
             ),
         )
@@ -32,7 +32,7 @@ struct KowalskiValidationErrorParserTests {
                     code: "invalid_type",
                     path: ["stock", "aliases", "0", "symbol"],
                     message: "Expected a ticker symbol",
-                )
+                ),
             ],
         )
     }

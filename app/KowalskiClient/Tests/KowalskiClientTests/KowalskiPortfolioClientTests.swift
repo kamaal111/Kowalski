@@ -34,7 +34,7 @@ struct KowalskiPortfolioClientTests {
         )
         let transport = MockClientTransport(
             queuedResponses: [
-                QueuedResponse(status: .badRequest, body: responseBody)
+                QueuedResponse(status: .badRequest, body: responseBody),
             ],
         )
         let client = try makeGeneratedClient(transport: transport)
@@ -47,7 +47,7 @@ struct KowalskiPortfolioClientTests {
                     code: "too_small",
                     path: ["amount"],
                     message: "Number must be greater than 0",
-                )
+                ),
             ],
         )) {
             try await portfolioClient.createEntry(payload: makeCreateEntryPayload()).get()

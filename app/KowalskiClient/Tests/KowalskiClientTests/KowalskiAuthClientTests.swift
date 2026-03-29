@@ -34,7 +34,7 @@ struct KowalskiAuthClientTests {
         )
         let transport = MockClientTransport(
             queuedResponses: [
-                QueuedResponse(status: .badRequest, body: responseBody)
+                QueuedResponse(status: .badRequest, body: responseBody),
             ],
         )
         let client = try Client(
@@ -54,7 +54,7 @@ struct KowalskiAuthClientTests {
                 code: "invalid_string",
                 path: ["email"],
                 message: "Invalid email address",
-            )
+            ),
         ])) {
             try await authClient.signIn(email: "not-an-email", password: "123456").get()
         }

@@ -30,7 +30,7 @@ struct AuthClientConfigurationTests {
             RequestSigningMiddleware(keychainKey: "test_key", credentialsGetter: credentialsGetter),
             RefreshTokenMiddleware(credentialsGetter: credentialsGetter),
             RequiredHeadersMiddleware(),
-            LoggingMiddleware(bodyLoggingPolicy: .upTo(maxBytes: 1024))
+            LoggingMiddleware(bodyLoggingPolicy: .upTo(maxBytes: 1024)),
         ]
 
         let transport = MockTransport()

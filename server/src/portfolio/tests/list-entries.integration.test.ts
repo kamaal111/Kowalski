@@ -1,4 +1,5 @@
-import { describe, expect } from 'vitest';
+import { sql } from 'drizzle-orm';
+import { describe, expect, vi } from 'vitest';
 
 import { PORTFOLIO_ROUTE_NAME } from '..';
 import { ListEntriesResponseSchema } from '../schemas/responses';
@@ -117,6 +118,35 @@ describe('List Portfolio Entries Route', () => {
 
     await expectNotFoundErrorResponse(response);
   });
+
+  integrationTest(
+    'logs the database cause chain when listing entries fails unexpectedly',
+    async ({ app, db, sessionToken }) => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation((message: unknown) => {
+        void message;
+      });
+
+      try {
+        await db.execute(sql.raw('ALTER TABLE "stock_ticker" DROP COLUMN "sector"'));
+
+        const response = await sendListEntriesRequest(app, { sessionToken });
+        const body = await expectInternalServerErrorResponse(response);
+        const logOutput = consoleErrorSpy.mock.calls.flat().join('\n');
+
+        expect(body).toEqual({
+          message: 'Something went wrong',
+          code: 'INTERNAL_SERVER_ERROR',
+        });
+        expect(logOutput).toContain('GET /app-api/portfolio/entries Uncaught exception');
+        expect(logOutput).toContain('Failed query');
+        expect(logOutput).toContain('Cause 1:');
+        expect(logOutput).toContain('stack');
+        expect(logOutput).toContain('column stock_ticker.sector does not exist');
+      } finally {
+        consoleErrorSpy.mockRestore();
+      }
+    },
+  );
 });
 
 async function sendListEntriesRequest(
@@ -149,6 +179,12 @@ async function expectSuccessfulListEntriesResponse(response: Response) {
 
 async function expectNotFoundErrorResponse(response: Response) {
   expect(response.status).toBe(404);
+
+  return ErrorResponseSchema.parse(await response.json());
+}
+
+async function expectInternalServerErrorResponse(response: Response) {
+  expect(response.status).toBe(500);
 
   return ErrorResponseSchema.parse(await response.json());
 }
