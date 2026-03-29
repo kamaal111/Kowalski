@@ -1,0 +1,130 @@
+.agents/plans/500-on-listing-entries.md
+  d4ad0bdb4426904c 1-10,14-81
+  0e5eee610af2724e 11-13
+package.json
+  07ace6578e186428 34
+.codex/agents/testing.toml
+  d4ad0bdb4426904c 1-61
+app/KowalskiClient/Tests/KowalskiClientTests/Mocks/MockClientTransport.swift
+  46ea00ceb2454884 38
+app/KowalskiClient/Tests/KowalskiClientTests/KowalskiAuthClientTests.swift
+  46ea00ceb2454884 37,57
+app/KowalskiFeatures/Tests/KowalskiPortfolioTests/KowalskiPortfolioTests.swift
+  668480217884d83a 87
+  46ea00ceb2454884 86
+app/KowalskiClient/Tests/KowalskiClientTests/KowalskiValidationErrorParserTests.swift
+  46ea00ceb2454884 22,35
+app/KowalskiClient/Tests/KowalskiClientTests/KowalskiPortfolioClientTests.swift
+  46ea00ceb2454884 37,50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "448cf3d3b67aeece21faaad1594b1be504eaf80e",
+  "prompts": {
+    "07ace6578e186428": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d3966-d958-7043-bafb-faa431fb13be",
+        "model": "unknown"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>",
+      "messages": [],
+      "total_additions": 163,
+      "total_deletions": 27,
+      "accepted_lines": 163,
+      "overriden_lines": 0
+    },
+    "0e5eee610af2724e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d39a9-da14-7812-9811-b3caf015dd53",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>",
+      "messages": [],
+      "total_additions": 3,
+      "total_deletions": 1,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    },
+    "16e19a28f9464a79": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d16c8-b7e6-7ff0-85f1-989eb100b45f",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>",
+      "messages": [],
+      "total_additions": 2388,
+      "total_deletions": 419,
+      "accepted_lines": 2379,
+      "overriden_lines": 0
+    },
+    "46ea00ceb2454884": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d3983-2e88-7280-b662-f915e0451699",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>",
+      "messages": [],
+      "total_additions": 90,
+      "total_deletions": 7,
+      "accepted_lines": 90,
+      "overriden_lines": 0
+    },
+    "537ebf247f40e108": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d3645-3c4a-7e62-a22d-8308a2792853",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>",
+      "messages": [],
+      "total_additions": 1055,
+      "total_deletions": 137,
+      "accepted_lines": 1054,
+      "overriden_lines": 0
+    },
+    "668480217884d83a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d397e-d99d-7e91-85b6-ea5fab3f989a",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>",
+      "messages": [],
+      "total_additions": 433,
+      "total_deletions": 9,
+      "accepted_lines": 426,
+      "overriden_lines": 0
+    },
+    "87586c67d5cebf68": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d1162-ac25-7bb2-9a79-c5866c324729",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>",
+      "messages": [],
+      "total_additions": 108,
+      "total_deletions": 60,
+      "accepted_lines": 27,
+      "overriden_lines": 0
+    },
+    "d4ad0bdb4426904c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d39aa-0937-74a3-abf9-ce5b0d00704a",
+        "model": "unknown"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>",
+      "messages": [],
+      "total_additions": 140,
+      "total_deletions": 0,
+      "accepted_lines": 139,
+      "overriden_lines": 0
+    }
+  }
+}
