@@ -33,7 +33,7 @@ Kowalski is a monorepo project consisting of a TypeScript/Node.js backend server
 - **Node.js**: v24 (managed via `nvm` recommended)
 - **pnpm**: v10+
 - **Docker**: For running the database
-- **Xcode**: 15+ (for iOS/macOS app development)
+- **Xcode**: 16.3+ (for Swift 6.3 iOS/macOS app development)
 - **Just**: Command runner (`brew install just`)
 
 ### Installation

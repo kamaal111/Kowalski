@@ -71,7 +71,7 @@
 
 - **Language stack**
   - Server: TypeScript, ESM modules, Node.js 24+, Hono, Drizzle, Zod
-  - App: Swift 6.2+, SwiftUI, Observation, Swift Package Manager, Xcode
+  - App: Swift 6.3+, SwiftUI, Observation, Swift Package Manager, Xcode
 - **TypeScript**
   - Use `.js` extensions in local imports
   - Keep filenames in `kebab-case`
@@ -142,7 +142,7 @@ BETTER_AUTH_URL=http://localhost:8080
   - Node.js `24+`
   - pnpm `10+`
   - Docker
-  - Xcode `15+`
+  - Xcode `16.3+`
   - `just`
 
 ## API & OpenAPI Workflow
