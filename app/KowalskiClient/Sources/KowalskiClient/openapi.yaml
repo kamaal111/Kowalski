@@ -278,6 +278,45 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
   /app-api/portfolio/entries:
+    get:
+      tags:
+        - Portfolio
+      summary: List portfolio entries
+      description: List portfolio entries for the signed-in user default portfolio.
+      parameters:
+        - schema:
+            type: string
+            description: Bearer token for authentication
+            example: Bearer f21wcpz7Aokmlh2MB632MZpTgfruPc62
+          required: true
+          description: Bearer token for authentication
+          name: authorization
+          in: header
+      responses:
+        '200':
+          description: Portfolio entries retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListEntriesResponse'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Portfolio entries could not be retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
     post:
       tags:
         - Portfolio
@@ -589,6 +628,29 @@ components:
         sector: Technology
         industry: Consumer Electronics
         exchange_dispatch: NASDAQ
+    ListEntriesResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/CreateEntryResponse'
+      title: List Portfolio Entries Response
+      description: Response containing persisted portfolio entries for the signed-in user
+      example:
+        - id: 550e8400-e29b-41d4-a716-446655440000
+          stock:
+            symbol: AAPL
+            exchange: NMS
+            name: Apple Inc.
+            sector: Technology
+            industry: Consumer Electronics
+            exchange_dispatch: NASDAQ
+          amount: 10
+          purchase_price:
+            currency: USD
+            value: 150.5
+          transaction_type: buy
+          transaction_date: '2025-12-20T00:00:00.000Z'
+          created_at: '2025-12-20T12:00:00.000Z'
+          updated_at: '2025-12-20T12:00:00.000Z'
     CreateEntryResponse:
       type: object
       properties:

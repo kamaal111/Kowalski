@@ -3,13 +3,17 @@ import { allowedModes } from '@/api/middleware';
 import { openAPIRouterFactory } from '@/api/open-api';
 import { requireLoggedInSessionMiddleware } from '@/auth';
 import createEntryRoute from './create-entry';
+import listEntriesRoute from './list-entries';
 import createEntry from '../handlers/create-entry';
+import listEntries from '../handlers/list-entries';
 
 const portfolioApi = openAPIRouterFactory();
 
 portfolioApi.use(allowedModes(SERVER_MODES.SERVER)).use(requireLoggedInSessionMiddleware);
 
 portfolioApi
+  // GET: /entries
+  .openapi(listEntriesRoute, listEntries)
   // POST: /entries
   .openapi(createEntryRoute, createEntry);
 

@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 
+import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { Pool, Client } from 'pg';
@@ -51,9 +52,10 @@ export const createTestDatabase = async (): Promise<{
 
 export const createTestUserAndSession = async (db: Database) => {
   const auth = createAuth(db);
+  const email = `test_${randomUUID()}@example.com`;
   const res = await auth.api.signUpEmail({
     body: {
-      email: `test_${randomUUID()}@example.com`,
+      email,
       password: 'password123',
       name: 'Test User',
     },
@@ -76,5 +78,15 @@ export const createTestUserAndSession = async (db: Database) => {
     throw new Error('Failed to get token from sign up response');
   }
 
-  return { ...res, token };
+  const createdUsers = await db
+    .select({ id: schema.user.id })
+    .from(schema.user)
+    .where(eq(schema.user.email, email))
+    .limit(1);
+  const createdUser = createdUsers.at(0);
+  if (createdUser == null) {
+    throw new Error('Failed to find created test user');
+  }
+
+  return { ...res, token, userId: createdUser.id };
 };

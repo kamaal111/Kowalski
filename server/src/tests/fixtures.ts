@@ -14,11 +14,12 @@ export const integrationTest = test
 
     const app = createApp(db);
 
-    const { token } = await createTestUserAndSession(db);
+    const { token, userId } = await createTestUserAndSession(db);
     const sessionToken = token;
 
-    return { app, sessionToken, db };
+    return { app, sessionToken, db, userId };
   })
   .extend('db', ({ _fixturesSetup }) => _fixturesSetup.db)
   .extend('app', ({ _fixturesSetup }) => _fixturesSetup.app)
-  .extend('sessionToken', ({ _fixturesSetup }) => _fixturesSetup.sessionToken);
+  .extend('sessionToken', ({ _fixturesSetup }) => _fixturesSetup.sessionToken)
+  .extend('userId', ({ _fixturesSetup }) => _fixturesSetup.userId);

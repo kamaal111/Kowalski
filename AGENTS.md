@@ -51,6 +51,9 @@
   - Prefer integration tests over isolated unit tests when the behavior crosses handlers, middleware, database, auth, or HTTP boundaries
   - Avoid redundant tests when an existing integration test already covers the scenario
   - For detailed testing workflow and conventions, use `.agents/testing-best-practices/SKILL.md`
+- **If app UI tests look flaky, first make sure `Kowalski.app` is not already open**
+  - A locally open app can cause macOS UI tests to fail with launch, termination, or accessibility errors
+  - If you notice this kind of flakiness, terminate `Kowalski` and rerun the failing UI test or `just ready`
 - **NEVER manually edit `.xcstrings` files**
   - Add or update `NSLocalizedString` calls in Swift code and let Xcode update the localization catalogs
 

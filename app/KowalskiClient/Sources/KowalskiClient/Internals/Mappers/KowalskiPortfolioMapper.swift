@@ -37,7 +37,19 @@ struct KowalskiPortfolioMapper {
 
     func mapCreateEntryApiResponseToClient(
         _ response: Components.Schemas.CreateEntryResponse,
-    ) -> KowalskiPortfolioClientCreateEntryResponse {
+    ) -> KowalskiPortfolioClientEntryResponse {
+        mapEntryApiResponseToClient(response)
+    }
+
+    func mapListEntriesApiResponseToClient(
+        _ response: Components.Schemas.ListEntriesResponse,
+    ) -> [KowalskiPortfolioClientEntryResponse] {
+        response.map(mapEntryApiResponseToClient)
+    }
+
+    func mapEntryApiResponseToClient(
+        _ response: Components.Schemas.CreateEntryResponse,
+    ) -> KowalskiPortfolioClientEntryResponse {
         let stock = stocksMapper.mapStockItemFromApiToResponse(response.stock)
         let transactionType: KowalskiClientPortfolioTransactionTypes =
             switch response.transactionType {
@@ -46,7 +58,7 @@ struct KowalskiPortfolioMapper {
             case .split: .split
             }
 
-        return KowalskiPortfolioClientCreateEntryResponse(
+        return KowalskiPortfolioClientEntryResponse(
             id: response.id,
             createdAt: response.createdAt,
             updatedAt: response.updatedAt,

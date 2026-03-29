@@ -16,14 +16,16 @@ const LEGACY_CREATE_ENTRY_PATH = `${APP_API_BASE_PATH}${PORTFOLIO_ROUTE_NAME}/en
 
 const ValidationErrorResponseSchema = z.object({
   message: z.string(),
-  validations: z.array(
-    z
-      .object({
-        path: z.array(z.union([z.string(), z.number()])),
-        message: z.string(),
-      })
-      .loose(),
-  ),
+  context: z.object({
+    validations: z.array(
+      z
+        .object({
+          path: z.array(z.union([z.string(), z.number()])),
+          message: z.string(),
+        })
+        .loose(),
+    ),
+  }),
 });
 
 interface AppRequestClient {
@@ -67,6 +69,13 @@ describe('Create Portfolio Entry Route', () => {
       portfolioId: persistedState.portfolios[0].id,
       tickerId: persistedState.tickers[0].id,
     });
+    expect(persistedState.tickers[0]).toMatchObject({
+      symbol: 'AAPL',
+      name: 'Apple Inc.',
+      sector: 'Technology',
+      industry: 'Consumer Electronics',
+      exchangeDispatch: 'NASDAQ',
+    });
   });
 
   integrationTest(
@@ -99,7 +108,7 @@ describe('Create Portfolio Entry Route', () => {
     },
   );
 
-  integrationTest('updates the existing stock ticker name when it changes', async ({ app, db, sessionToken }) => {
+  integrationTest('updates the existing stock ticker details when they change', async ({ app, db, sessionToken }) => {
     await sendCreateEntryRequest(app, {
       payload: createValidCreateEntryPayload(),
       sessionToken,
@@ -110,6 +119,9 @@ describe('Create Portfolio Entry Route', () => {
       stock: {
         ...createValidCreateEntryPayload().stock,
         name: 'Apple Incorporated',
+        sector: 'Information Technology',
+        industry: 'Hardware',
+        exchange_dispatch: 'NASDAQ Global Select',
       },
     };
     const secondResponse = await sendCreateEntryRequest(app, {
@@ -122,7 +134,12 @@ describe('Create Portfolio Entry Route', () => {
     const persistedState = await getPersistedPortfolioState(db, 'AAPL');
 
     expect(persistedState.tickers).toHaveLength(1);
-    expect(persistedState.tickers[0]?.name).toBe('Apple Incorporated');
+    expect(persistedState.tickers[0]).toMatchObject({
+      name: 'Apple Incorporated',
+      sector: 'Information Technology',
+      industry: 'Hardware',
+      exchangeDispatch: 'NASDAQ Global Select',
+    });
   });
 
   integrationTest('rejects a request without authentication', async ({ app }) => {
@@ -231,7 +248,7 @@ async function expectValidationErrorResponse(response: Response) {
 }
 
 function expectValidationIssueForField(body: z.infer<typeof ValidationErrorResponseSchema>, fieldName: string) {
-  const hasMatchingIssue = body.validations.some(issue => issue.path.includes(fieldName));
+  const hasMatchingIssue = body.context.validations.some(issue => issue.path.includes(fieldName));
 
   expect(hasMatchingIssue).toBe(true);
 }

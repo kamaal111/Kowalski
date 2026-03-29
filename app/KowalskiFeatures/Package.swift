@@ -30,6 +30,9 @@ let package = Package(
                 "KowalskiDesignSystem",
                 "KowalskiUtils",
             ],
+            resources: [
+                .process("Localizable.xcstrings"),
+            ],
             swiftSettings: [
                 .treatAllWarnings(as: .error),
                 .strictMemorySafety(),
@@ -45,6 +48,9 @@ let package = Package(
                 "KowalskiAuth",
                 "KowalskiUtils",
                 "KowalskiDesignSystem",
+            ],
+            resources: [
+                .process("Localizable.xcstrings"),
             ],
             swiftSettings: [
                 .treatAllWarnings(as: .error),

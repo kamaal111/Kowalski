@@ -5,27 +5,23 @@ import type { HonoContext } from './contexts';
 import { STATUS_CODES, type StatusCode } from '../constants/http';
 
 export class APIException extends HTTPException {
-  readonly c: HonoContext;
+  readonly context?: unknown;
 
   constructor(
     c: HonoContext,
     statusCode: StatusCode,
-    options: { message: string; code?: string; headers?: Headers; context?: unknown },
+    options: { message: string; code: string; headers?: Headers; context?: unknown },
   ) {
+    const headers = options.headers ?? new Headers();
+    headers.set('Content-Type', 'application/json');
+    headers.set('Request-Id', c.get('requestId'));
+
     const response = new Response(
-      JSON.stringify({
-        message: options.message,
-        code: options.code,
-        context: options.context,
-        request_id: c.get('requestId'),
-      }),
-      {
-        status: statusCode,
-        headers: options.headers ?? { 'Content-Type': 'application/json' },
-      },
+      JSON.stringify({ message: options.message, code: options.code, context: options.context }),
+      { status: statusCode, headers },
     );
-    super(statusCode, { res: response });
-    this.c = c;
+    super(statusCode, { res: response, message: options.message });
+    this.context = options.context;
   }
 }
 
@@ -34,17 +30,14 @@ export class InvalidPayload extends APIException {
     super(c, STATUS_CODES.BAD_REQUEST, {
       message: options?.message ?? 'Invalid payload',
       code: 'INVALID_PAYLOAD',
+      context: options?.context,
     });
   }
 }
 
 export class InvalidValidation extends InvalidPayload {
-  readonly validationError: z.ZodError;
-
   constructor(c: HonoContext, validationError: z.ZodError) {
-    super(c);
-
-    this.validationError = validationError;
+    super(c, { context: { validations: validationError.issues } });
   }
 }
 

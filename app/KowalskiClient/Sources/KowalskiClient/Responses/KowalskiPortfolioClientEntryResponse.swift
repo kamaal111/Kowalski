@@ -1,5 +1,5 @@
 //
-//  KowalskiPortfolioClientCreateEntryResponse.swift
+//  KowalskiPortfolioClientEntryResponse.swift
 //  KowalskiClient
 //
 //  Created by Kamaal M Farah on 12/20/25.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct KowalskiPortfolioClientCreateEntryResponse: Codable, Sendable {
+public struct KowalskiPortfolioClientEntryResponse: Codable, Sendable {
     public let id: String
     public let createdAt: Date
     public let updatedAt: Date

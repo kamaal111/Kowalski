@@ -7,6 +7,9 @@
     "%@ entry added" : {
 
     },
+    "%@ shares" : {
+
+    },
     "Add entry" : {
 
     },
@@ -25,13 +28,22 @@
     "Failed to add transaction" : {
 
     },
+    "Failed to load portfolio entries" : {
+
+    },
     "Fix" : {
+
+    },
+    "Invalid information provided" : {
 
     },
     "Invalid purchase price" : {
 
     },
-    "Kowalski" : {
+    "Loading entries" : {
+
+    },
+    "No portfolio entries yet" : {
 
     },
     "Please select a stock" : {
@@ -50,6 +62,9 @@
 
     },
     "Symbol or ISIN" : {
+
+    },
+    "Use the add button to record your first stock transaction." : {
 
     }
   },

@@ -23,6 +23,7 @@ let package = Package(
             ],
             resources: [
                 .process("Resources/Assets.xcassets"),
+                .process("Localizable.xcstrings"),
             ],
             swiftSettings: [
                 .treatAllWarnings(as: .error),

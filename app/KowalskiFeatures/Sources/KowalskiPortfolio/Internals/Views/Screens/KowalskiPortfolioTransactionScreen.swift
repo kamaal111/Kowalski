@@ -12,7 +12,7 @@ import KamaalUI
 import KowalskiDesignSystem
 import SwiftUI
 
-private let logger = KamaalLogger(from: KowalskiPortfolioTransactionScreen.self, failOnError: true)
+private let logger = KamaalLogger(from: KowalskiPortfolioTransactionScreen.self, failOnError: false)
 
 struct KowalskiPortfolioTransactionScreen: View {
     @Environment(KowalskiPortfolio.self) private var portfolio
@@ -170,9 +170,9 @@ struct KowalskiPortfolioTransactionScreen: View {
         Task {
             let result = await portfolio.storeTransaction(formPayload)
             switch result {
-            case .failure:
-                logger.warning("Failed to add transaction")
-                toast = .error(message: NSLocalizedString("Failed to add transaction", comment: ""))
+            case let .failure(failure):
+                logger.error(label: "Failed to add transaction", error: failure)
+                toast = .error(message: failure.localizedDescription)
             case .success:
                 dismiss()
                 onTransactionAdd(formPayload)

@@ -12,9 +12,13 @@ type StockTickerInsert = typeof stockTicker.$inferInsert;
 type StockTickerSelect = typeof stockTicker.$inferSelect;
 
 type PortfolioRecord = Pick<PortfolioSelect, 'id'>;
-type StockTickerRecord = Pick<StockTickerSelect, 'id' | 'name'>;
+type StockTickerRecord = Pick<StockTickerSelect, 'id' | 'name' | 'sector' | 'industry' | 'exchangeDispatch'>;
 type CreatePortfolioInput = Pick<PortfolioInsert, 'id' | 'name' | 'userId'>;
-type CreateStockTickerInput = Pick<StockTickerInsert, 'id' | 'isin' | 'symbol' | 'name'>;
+type CreateStockTickerInput = Pick<
+  StockTickerInsert,
+  'id' | 'isin' | 'symbol' | 'name' | 'sector' | 'industry' | 'exchangeDispatch'
+>;
+type UpdateStockTickerInput = Pick<StockTickerInsert, 'name' | 'sector' | 'industry' | 'exchangeDispatch'>;
 type CreatePortfolioTransactionInput = Pick<
   PortfolioTransactionInsert,
   | 'id'
@@ -69,7 +73,13 @@ export async function createPortfolio(c: HonoContext, input: CreatePortfolioInpu
 export async function findStockTickerById(c: HonoContext, tickerId: string): Promise<StockTickerRecord | undefined> {
   const tickers = await c
     .get('db')
-    .select({ id: stockTicker.id, name: stockTicker.name })
+    .select({
+      id: stockTicker.id,
+      name: stockTicker.name,
+      sector: stockTicker.sector,
+      industry: stockTicker.industry,
+      exchangeDispatch: stockTicker.exchangeDispatch,
+    })
     .from(stockTicker)
     .where(eq(stockTicker.id, tickerId))
     .limit(1);
@@ -77,16 +87,30 @@ export async function findStockTickerById(c: HonoContext, tickerId: string): Pro
   return tickers.at(0);
 }
 
-export async function updateStockTickerName(c: HonoContext, tickerId: string, name: string) {
-  await c.get('db').update(stockTicker).set({ name }).where(eq(stockTicker.id, tickerId));
+export async function updateStockTicker(c: HonoContext, tickerId: string, input: UpdateStockTickerInput) {
+  await c.get('db').update(stockTicker).set(input).where(eq(stockTicker.id, tickerId));
 }
 
 export async function createStockTicker(c: HonoContext, input: CreateStockTickerInput): Promise<StockTickerRecord> {
   const createdTickers = await c
     .get('db')
     .insert(stockTicker)
-    .values({ id: input.id, isin: input.isin, symbol: input.symbol, name: input.name })
-    .returning({ id: stockTicker.id, name: stockTicker.name });
+    .values({
+      id: input.id,
+      isin: input.isin,
+      symbol: input.symbol,
+      name: input.name,
+      sector: input.sector,
+      industry: input.industry,
+      exchangeDispatch: input.exchangeDispatch,
+    })
+    .returning({
+      id: stockTicker.id,
+      name: stockTicker.name,
+      sector: stockTicker.sector,
+      industry: stockTicker.industry,
+      exchangeDispatch: stockTicker.exchangeDispatch,
+    });
   const createdTicker = createdTickers.at(0);
   if (createdTicker == null) {
     throw new StockTickerCreateFailed(c);

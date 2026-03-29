@@ -9,6 +9,9 @@ export const stockTicker = pgTable(
     symbol: text('symbol').notNull(),
     isin: text('isin').notNull().unique(),
     name: text('name').notNull(),
+    sector: text('sector'),
+    industry: text('industry'),
+    exchangeDispatch: text('exchange_dispatch'),
   },
   t => [unique().on(t.isin, t.symbol), unique('mapping').on(t.isin, t.symbol)],
 );

@@ -8,7 +8,7 @@ import {
   createStockTicker,
   findDefaultPortfolioByUserId,
   findStockTickerById,
-  updateStockTickerName,
+  updateStockTicker,
 } from '../repositories/create-entry';
 
 const DEFAULT_PORTFOLIO_NAME = 'Default Portfolio';
@@ -48,8 +48,13 @@ async function getOrCreateStockTicker(c: HonoContext, payload: CreateEntryPayloa
   const tickerId = createSyntheticTickerId(payload);
   const existingTicker = await findStockTickerById(c, tickerId);
   if (existingTicker != null) {
-    if (existingTicker.name !== payload.stock.name) {
-      await updateStockTickerName(c, existingTicker.id, payload.stock.name);
+    if (stockTickerNeedsUpdate(existingTicker, payload)) {
+      await updateStockTicker(c, existingTicker.id, {
+        name: payload.stock.name,
+        sector: payload.stock.sector,
+        industry: payload.stock.industry,
+        exchangeDispatch: payload.stock.exchange_dispatch,
+      });
     }
 
     return existingTicker.id;
@@ -60,9 +65,28 @@ async function getOrCreateStockTicker(c: HonoContext, payload: CreateEntryPayloa
     isin: createSyntheticTickerIsin(payload),
     symbol: payload.stock.symbol,
     name: payload.stock.name,
+    sector: payload.stock.sector,
+    industry: payload.stock.industry,
+    exchangeDispatch: payload.stock.exchange_dispatch,
   });
 
   return createdTicker.id;
+}
+
+function stockTickerNeedsUpdate(
+  existingTicker: Awaited<ReturnType<typeof findStockTickerById>>,
+  payload: CreateEntryPayload,
+) {
+  if (existingTicker == null) {
+    return false;
+  }
+
+  return (
+    existingTicker.name !== payload.stock.name ||
+    existingTicker.sector !== payload.stock.sector ||
+    existingTicker.industry !== payload.stock.industry ||
+    existingTicker.exchangeDispatch !== payload.stock.exchange_dispatch
+  );
 }
 
 function createSyntheticTickerId(payload: CreateEntryPayload) {

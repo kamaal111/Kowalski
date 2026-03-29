@@ -5,9 +5,14 @@
 //  Created by Kamaal M Farah on 11/17/25.
 //
 
+import ForexKit
 import KowalskiClient
 
 struct KowalskiPortfolioMappers {
+    func mapPortfolioEntries(_ entries: [KowalskiPortfolioClientEntryResponse]) -> [PortfolioEntry] {
+        entries.map(mapPortfolioEntry)
+    }
+
     func mapStocksSearchResponse(_ response: KowalskiStocksSearchResponse) -> [Stock] {
         response.quotes.map(mapStockQuoteItem)
     }
@@ -33,6 +38,29 @@ struct KowalskiPortfolioMappers {
             purchasePrice: purchasePrice,
             transactionType: transactionType,
             transactionDate: payload.transactionDate,
+        )
+    }
+
+    private func mapPortfolioEntry(_ entry: KowalskiPortfolioClientEntryResponse) -> PortfolioEntry {
+        let transactionType: TransactionType =
+            switch entry.transactionType {
+            case .buy: .purchase
+            case .sell: .sell
+            case .split: .split
+            }
+
+        return PortfolioEntry(
+            id: entry.id,
+            createdAt: entry.createdAt,
+            updatedAt: entry.updatedAt,
+            stock: mapStockQuoteItem(entry.stock),
+            amount: entry.amount,
+            purchasePrice: Money(
+                currency: Currencies(rawValue: entry.purchasePrice.currency) ?? .USD,
+                value: entry.purchasePrice.value,
+            ),
+            transactionType: transactionType,
+            transactionDate: entry.transactionDate,
         )
     }
 

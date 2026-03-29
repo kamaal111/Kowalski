@@ -1,6 +1,6 @@
 import { HTTPException } from 'hono/http-exception';
 
-import { InvalidValidation } from '../api/exceptions';
+import { APIException } from '../api/exceptions';
 import { openAPIRouterFactory } from '../api/open-api';
 import { AUTH_ROUTE_NAME, authApi } from '../auth';
 import type { HonoContext } from '../api/contexts';
@@ -18,24 +18,28 @@ appApi
   .route(AUTH_ROUTE_NAME, authApi)
   .route(STOCKS_ROUTE_NAME, stocksApi)
   .route(PORTFOLIO_ROUTE_NAME, portfolioApi)
-  .onError((err, c) => {
+  .onError(async (err, c) => {
     const ctx = c as HonoContext;
-    if (err instanceof InvalidValidation) {
-      errorLogger(
-        ctx,
-        `[ERROR HANDLER] Returning validation error response with ${err.validationError.issues.length} issue(s)`,
-      );
-      return c.json({ message: err.message, validations: err.validationError.issues }, err.status);
+    if (err instanceof APIException) {
+      errorLogger(ctx, `[ERROR HANDLER] API exception ${err.status}: ${err.message}`);
+      const response = err.getResponse();
+
+      return c.json(await response.json(), response);
     }
 
     if (err instanceof HTTPException) {
       errorLogger(ctx, `[ERROR HANDLER] HTTP ${err.status}: ${err.message}`);
-      return c.json({ message: err.message }, err.status);
+      const response = err.getResponse();
+
+      return c.json(await response.json(), response);
     }
 
     makeUncaughtErrorLog(ctx, err);
 
-    return c.json({ message: 'Something went wrong' }, STATUS_CODES.INTERNAL_SERVER_ERROR);
+    return c.json(
+      { message: 'Something went wrong', code: 'INTERNAL_SERVER_ERROR' },
+      STATUS_CODES.INTERNAL_SERVER_ERROR,
+    );
   });
 
 export default appApi;
