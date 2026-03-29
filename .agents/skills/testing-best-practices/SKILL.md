@@ -123,6 +123,7 @@ See [SWIFT.md](./SWIFT.md) for Swift Testing conventions used in this repository
 - When to use backtick test function names (always) and why `@Test("description")` with camelCase is not used
 - `@Suite` grouping conventions
 - SwiftLint configuration for test directories
+- Why `Result`-returning async APIs should usually be asserted through `.get()` plus `#require(throws:)` instead of `switch` statements with `Issue.record(...)` fallback branches
 
 ## Expected Output When Using This Skill
 

@@ -31,8 +31,8 @@
     "**/*.{js,ts,tsx}": [
       "eslint --fix"
     ],
-    "**/*": "prettier --write --ignore-unknown",
-    "app/**/*.swift": [
+    "**/*.{cjs,css,html,js,json,json5,jsx,md,mjs,scss,ts,tsx,yaml,yml}": "prettier --write",
+    "**/*.swift": [
       "swiftformat",
       "swiftlint lint --fix"
     ]

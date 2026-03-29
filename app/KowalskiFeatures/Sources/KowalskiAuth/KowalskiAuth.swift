@@ -70,8 +70,8 @@ public final class KowalskiAuth {
             case .unknown:
                 logger.error(label: "Failed to sign up", error: error)
                 return .generalFailure(context: error)
-            case .badRequest:
-                return .invalidCredentials(context: error)
+            case let .badRequest(validations):
+                return .invalidCredentials(validations: validations, context: error)
             case .conflict:
                 return .userAlreadyExists(context: error)
             }
@@ -97,11 +97,13 @@ public final class KowalskiAuth {
         let signInResult = await client.auth.signIn(email: payload.email, password: payload.password)
             .mapError { error -> KowalskiAuthSignInErrors in
                 switch error {
-                case .unknown, .badRequest:
+                case .unknown:
                     logger.error(label: "Failed to sign in", error: error)
                     return .generalFailure(context: error)
+                case let .badRequest(validations):
+                    return .invalidCredentials(validations: validations, context: error)
                 case .unauthorized:
-                    return .invalidCredentials(context: error)
+                    return .invalidCredentials(validations: [], context: error)
                 }
             }
         switch signInResult {
@@ -193,13 +195,16 @@ public final class KowalskiAuth {
 // MARK: - Errors
 
 enum KowalskiAuthSignInErrors: Error {
-    case invalidCredentials(context: Error)
+    case invalidCredentials(validations: [KowalskiClientValidationIssue], context: Error)
     case generalFailure(context: Error)
 
     var errorDescription: String? {
         switch self {
-        case .invalidCredentials:
-            NSLocalizedString("Invalid credentials provided.", bundle: .module, comment: "")
+        case let .invalidCredentials(validations, _):
+            validationErrorMessage(
+                validations,
+                fallback: NSLocalizedString("Invalid credentials provided.", bundle: .module, comment: ""),
+            )
         case .generalFailure:
             NSLocalizedString("Failed to log in.", bundle: .module, comment: "")
         }
@@ -207,14 +212,17 @@ enum KowalskiAuthSignInErrors: Error {
 }
 
 enum KowalskiAuthSignUpErrors: Error {
-    case invalidCredentials(context: Error)
+    case invalidCredentials(validations: [KowalskiClientValidationIssue], context: Error)
     case userAlreadyExists(context: Error)
     case generalFailure(context: Error)
 
     var errorDescription: String? {
         switch self {
-        case .invalidCredentials:
-            NSLocalizedString("Invalid credentials provided.", bundle: .module, comment: "")
+        case let .invalidCredentials(validations, _):
+            validationErrorMessage(
+                validations,
+                fallback: NSLocalizedString("Invalid credentials provided.", bundle: .module, comment: ""),
+            )
         case .userAlreadyExists:
             NSLocalizedString("User already exists", bundle: .module, comment: "")
         case .generalFailure:
@@ -231,4 +239,11 @@ private enum KowalskiAuthSessionErrors: Error {
 private struct CachedUserSession: Codable {
     let session: UserSession
     let cachedAt: Date
+}
+
+private func validationErrorMessage(_ validations: [KowalskiClientValidationIssue], fallback: String) -> String {
+    guard let firstValidation = validations.first else { return fallback }
+    guard let field = firstValidation.displayPath else { return fallback }
+
+    return "\(field): \(firstValidation.message)"
 }

@@ -33,8 +33,8 @@ public final class KowalskiPortfolio {
         switch createEntryResult {
         case let .failure(failure):
             switch failure {
-            case .badRequest:
-                return .failure(.badRequest)
+            case let .badRequest(_, validations):
+                return .failure(.badRequest(validations: validations))
             case .internalServerError, .notFound, .unauthorized, .unknown:
                 return .failure(.unknown)
             }
@@ -93,6 +93,9 @@ public final class KowalskiPortfolio {
     public static func forEnvironment() -> KowalskiPortfolio {
         guard KowalskiEnvironment.isUiTesting else { return `default`() }
 
+        if KowalskiEnvironment.isUiTestingValidationFailCreateEntry {
+            return createEntryValidationFailingPreview()
+        }
         if KowalskiEnvironment.isUiTestingFailCreateEntry {
             return createEntryFailingPreview()
         }
@@ -124,6 +127,12 @@ public final class KowalskiPortfolio {
         return KowalskiPortfolio(client: client)
     }
 
+    public static func createEntryValidationFailingPreview() -> KowalskiPortfolio {
+        let client = KowalskiClient.previewWithValidationFailingPortfolioCreateEntry(withCredentials: true)
+
+        return KowalskiPortfolio(client: client)
+    }
+
     private static func listEntriesPreview() -> KowalskiPortfolio {
         let client = KowalskiClient.previewWithPortfolioEntries(withCredentials: true)
 
@@ -135,18 +144,33 @@ public final class KowalskiPortfolio {
 
         return KowalskiPortfolio(client: client)
     }
+
+    static func testing(client: KowalskiClient) -> KowalskiPortfolio {
+        KowalskiPortfolio(client: client)
+    }
 }
 
 // - MARK: Errors
 
-enum StoreTransactionErrors: Error, LocalizedError {
+enum StoreTransactionErrors: Error, Equatable, LocalizedError {
     case unknown
-    case badRequest
+    case badRequest(validations: [KowalskiClientValidationIssue])
 
     var errorDescription: String? {
         switch self {
         case .unknown: NSLocalizedString("Failed to add transaction", comment: "")
-        case .badRequest: NSLocalizedString("Invalid information provided", comment: "")
+        case let .badRequest(validations):
+            validationErrorMessage(
+                validations,
+                fallback: NSLocalizedString("Invalid information provided", comment: ""),
+            )
         }
     }
+}
+
+private func validationErrorMessage(_ validations: [KowalskiClientValidationIssue], fallback: String) -> String {
+    guard let firstValidation = validations.first else { return fallback }
+    guard let field = firstValidation.displayPath else { return fallback }
+
+    return "\(field): \(firstValidation.message)"
 }

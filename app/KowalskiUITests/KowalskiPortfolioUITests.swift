@@ -8,7 +8,11 @@ import XCTest
 
 @MainActor
 final class KowalskiPortfolioUITests: XCTestCase {
-    private func launchApp(failCreateEntry: Bool = false, listEntries: Bool = false) -> XCUIApplication {
+    private func launchApp(
+        failCreateEntry: Bool = false,
+        validationFailCreateEntry: Bool = false,
+        listEntries: Bool = false,
+    ) -> XCUIApplication {
         let app = XCUIApplication().enableEnvironmentFlag(for: .isUiTesing)
         if listEntries {
             app.enableEnvironmentFlag(for: .isUiTestingListEntries)
@@ -16,11 +20,14 @@ final class KowalskiPortfolioUITests: XCTestCase {
         if failCreateEntry {
             app.enableEnvironmentFlag(for: .isUiTestingFailCreateEntry)
         }
+        if validationFailCreateEntry {
+            app.enableEnvironmentFlag(for: .isUiTestingValidationFailCreateEntry)
+        }
         app.launch()
         return app
     }
 
-    private func addAppleTransaction(in app: XCUIApplication) {
+    private func addAppleTransaction(in app: XCUIApplication, amount: String = "10") {
         let addEntryButton = app.buttons["Add entry"]
         XCTAssertTrue(addEntryButton.waitForExistence(timeout: 3))
         addEntryButton.tap()
@@ -40,7 +47,7 @@ final class KowalskiPortfolioUITests: XCTestCase {
         let amountField = app.textFields["Amount"]
         XCTAssertTrue(amountField.waitForExistence(timeout: 3))
         amountField.tap()
-        amountField.typeText("10")
+        amountField.typeText(amount)
 
         addTransactionButton.tap()
     }
@@ -74,5 +81,18 @@ final class KowalskiPortfolioUITests: XCTestCase {
 
         let failureAddTransactionButton = failureApp.buttons["Add Transaction"]
         XCTAssertTrue(failureAddTransactionButton.waitForExistence(timeout: 2))
+    }
+
+    func testServerValidationErrorsShowFieldSpecificFeedback() {
+        continueAfterFailure = false
+        let app = launchApp(validationFailCreateEntry: true, listEntries: true)
+
+        addAppleTransaction(in: app, amount: "0")
+
+        let errorToast = app.staticTexts["amount: Number must be greater than 0"]
+        XCTAssertTrue(errorToast.waitForExistence(timeout: 3))
+
+        let addTransactionButton = app.buttons["Add Transaction"]
+        XCTAssertTrue(addTransactionButton.waitForExistence(timeout: 2))
     }
 }

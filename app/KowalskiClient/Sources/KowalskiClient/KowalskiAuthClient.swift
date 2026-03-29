@@ -50,14 +50,35 @@ struct KowalskiAuthClientFactory {
 
 public enum KowalskiAuthSignUpErrors: Error {
     case unknown(statusCode: Int, payload: OpenAPIRuntime.UndocumentedPayload?, context: Error?)
-    case badRequest
+    case badRequest(validations: [KowalskiClientValidationIssue])
     case conflict
 }
 
-public enum KowalskiAuthSignInErrors: Error {
+public enum KowalskiAuthSignInErrors: Error, Equatable {
+    public static func == (lhs: KowalskiAuthSignInErrors, rhs: KowalskiAuthSignInErrors) -> Bool {
+        switch lhs {
+        case let .unknown(lhsStatusCode, lhsPayload, lhsContext):
+            if case let .unknown(rhsStatusCode, rhsPayload, rhsContext) = rhs {
+                return lhsStatusCode == rhsStatusCode &&
+                    lhsPayload == rhsPayload &&
+                    lhsContext?.localizedDescription == rhsContext?.localizedDescription
+            }
+        case .unauthorized:
+            if case .unauthorized = rhs {
+                return true
+            }
+        case let .badRequest(lhsValidations):
+            if case let .badRequest(rhsValidations) = rhs {
+                return lhsValidations == rhsValidations
+            }
+        }
+
+        return false
+    }
+
     case unknown(statusCode: Int, payload: OpenAPIRuntime.UndocumentedPayload?, context: Error?)
     case unauthorized
-    case badRequest
+    case badRequest(validations: [KowalskiClientValidationIssue])
 }
 
 public enum KowalskiAuthSessionErrors: Error {
@@ -104,8 +125,13 @@ struct KowalskiAuthClientImpl: KowalskiAuthClient {
 
         let payload: Operations.PostAppApiAuthSignUpEmail.Output.Created
         switch response {
-        case .badRequest, .unauthorized:
-            return .failure(.badRequest)
+        case let .badRequest(payload):
+            let body = try? payload.body.json
+            let validations = KowalskiClientValidationErrorParser.parseIssues(from: body)
+
+            return .failure(.badRequest(validations: validations))
+        case .unauthorized:
+            return .failure(.badRequest(validations: []))
         case .conflict:
             return .failure(.conflict)
         case let .undocumented(statusCode, payload):
@@ -152,8 +178,11 @@ struct KowalskiAuthClientImpl: KowalskiAuthClient {
             return .failure(.unknown(statusCode: statusCode, payload: payload, context: nil))
         case .unauthorized:
             return .failure(.unauthorized)
-        case .badRequest:
-            return .failure(.badRequest)
+        case let .badRequest(payload):
+            let body = try? payload.body.json
+            let validations = KowalskiClientValidationErrorParser.parseIssues(from: body)
+
+            return .failure(.badRequest(validations: validations))
         case let .ok(ok):
             payload = ok
         }

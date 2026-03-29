@@ -5,7 +5,7 @@ import { MIME_TYPES } from '../../constants/request';
 import { OPENAPI_TAG } from '../constants';
 import { STATUS_CODES } from '../../constants/http';
 import { TokenHeaders } from '../schemas/headers';
-import { ErrorResponseSchema } from '../../schemas/errors';
+import { ErrorResponseSchema, ValidationErrorResponseSchema } from '../../schemas/errors';
 
 const EmailPasswordSignUpSchema = z
   .object({
@@ -74,7 +74,7 @@ const signUpRoute = createRoute({
     [STATUS_CODES.BAD_REQUEST]: {
       description: 'Invalid request or email already exists',
       content: {
-        [MIME_TYPES.APPLICATION_JSON]: { schema: ErrorResponseSchema },
+        [MIME_TYPES.APPLICATION_JSON]: { schema: ValidationErrorResponseSchema },
       },
     },
     [STATUS_CODES.CONFLICT]: {

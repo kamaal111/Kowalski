@@ -3,7 +3,7 @@ import { createRoute } from '@hono/zod-openapi';
 import { OPENAPI_TAG } from '../constants';
 import { requireLoggedInSessionMiddleware } from '@/auth/middleware';
 import { AuthenticationHeaders } from '@/schemas/headers';
-import { ErrorResponseSchema } from '@/schemas/errors';
+import { ErrorResponseSchema, ValidationErrorResponseSchema } from '@/schemas/errors';
 import { STATUS_CODES } from '@/constants/http';
 import { MIME_TYPES } from '@/constants/request';
 import { CreateEntryPayloadSchema } from '../schemas/payloads';
@@ -40,7 +40,7 @@ const createEntryRoute = createRoute({
       description: 'Invalid portfolio entry payload',
       content: {
         [MIME_TYPES.APPLICATION_JSON]: {
-          schema: ErrorResponseSchema,
+          schema: ValidationErrorResponseSchema,
         },
       },
     },

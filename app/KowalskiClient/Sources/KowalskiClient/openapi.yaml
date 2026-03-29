@@ -59,7 +59,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ValidationErrorResponse'
         '401':
           description: Authentication failed or invalid credentials
           content:
@@ -128,7 +128,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ValidationErrorResponse'
         '401':
           description: Authentication failed
           content:
@@ -351,7 +351,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ValidationErrorResponse'
         '401':
           description: Authentication failed
           content:
@@ -386,6 +386,54 @@ components:
       description: Successful authentication response containing authentication token
       example:
         token: f21wcpz7Aokmlh2MB632MZpTgfruPc62
+    ValidationErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message
+        code:
+          type: string
+          description: Error code
+        context:
+          type: object
+          properties:
+            validations:
+              type: array
+              items:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    description: Validation issue code
+                    example: too_small
+                  path:
+                    type: array
+                    items:
+                      anyOf:
+                        - type: string
+                        - type: number
+                    description: Path to the invalid field
+                    example:
+                      - amount
+                  message:
+                    type: string
+                    description: Validation issue message
+                    example: Number must be greater than 0
+                required:
+                  - code
+                  - path
+                  - message
+                additionalProperties: {}
+              description: Per-field validation issues
+          required:
+            - validations
+      required:
+        - message
+      title: Validation Error Response
+      description: >-
+        Error response for invalid request payloads, optionally including
+        field-level validation issues
     ErrorResponse:
       type: object
       properties:

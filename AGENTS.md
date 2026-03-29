@@ -32,6 +32,10 @@
   - Prefer `just` over ad hoc command sequences for build, test, quality, database, and OpenAPI workflows
   - Start command discovery by running `just`, which lists available recipes with their descriptive comments
   - Use `just --list --unsorted` only if you specifically need the unsorted view
+- **ALWAYS look for existing patterns before writing code**
+  - Check whether the repository already solves the same or a similar problem elsewhere before you implement anything new
+  - Match the surrounding structure, naming, validation approach, error handling, and test style when an established pattern exists
+  - Only introduce a new pattern when the existing ones do not fit, and make that choice intentionally
 - **NEVER start the server directly or as a background process**
   - Do not use `node dist/src/index.js &`, `pnpm start &`, `tsx src/index.ts &`, or similar commands
   - Do not leave background processes running after the agent finishes

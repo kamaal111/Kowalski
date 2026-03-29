@@ -6,7 +6,7 @@ import { STATUS_CODES } from '../../constants/http';
 import { OPENAPI_TAG } from '../constants';
 import { MIME_TYPES } from '../../constants/request';
 import { TokenHeaders } from '../schemas/headers';
-import { ErrorResponseSchema } from '../../schemas/errors';
+import { ErrorResponseSchema, ValidationErrorResponseSchema } from '../../schemas/errors';
 
 const EmailPasswordSignInSchema = z
   .object({
@@ -58,7 +58,7 @@ const signInRoute = createRoute({
     [STATUS_CODES.BAD_REQUEST]: {
       description: 'Invalid credentials or request',
       content: {
-        [MIME_TYPES.APPLICATION_JSON]: { schema: ErrorResponseSchema },
+        [MIME_TYPES.APPLICATION_JSON]: { schema: ValidationErrorResponseSchema },
       },
     },
     [STATUS_CODES.UNAUTHORIZED]: {

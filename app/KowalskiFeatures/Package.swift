@@ -58,5 +58,18 @@ let package = Package(
                 .enableExperimentalFeature("StrictConcurrency"),
             ],
         ),
+        .testTarget(
+            name: "KowalskiPortfolioTests",
+            dependencies: [
+                "KowalskiPortfolio",
+                "KowalskiClient",
+                "ForexKit",
+            ],
+            swiftSettings: [
+                .treatAllWarnings(as: .error),
+                .strictMemorySafety(),
+                .enableExperimentalFeature("StrictConcurrency"),
+            ],
+        ),
     ],
 )

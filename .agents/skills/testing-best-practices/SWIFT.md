@@ -40,6 +40,34 @@ Run tests with:
 just test-app   # Swift app tests only
 ```
 
+## Asserting `Result` Failures
+
+When a Swift API under test returns `Result`, prefer asserting through `.get()` rather than switching over `.success` and `.failure` manually.
+
+For failure expectations, use `#require(throws:)` around `.get()` so the test proves the exact thrown error and fails naturally if the call unexpectedly succeeds.
+
+```swift
+try await #require(throws: MyFeatureError.badRequest(validations: [
+    ValidationIssue(path: ["email"], message: "Invalid email address"),
+])) {
+    try await client.submit(...).get()
+}
+```
+
+Avoid patterns like:
+
+```swift
+let result = await client.submit(...)
+switch result {
+case let .failure(error):
+    #expect(error == expectedError)
+case .success:
+    Issue.record("Expected submission to fail")
+}
+```
+
+That style duplicates Swift Testing's built-in failure behavior and makes tests noisier. If the code should succeed, call `.get()` directly in an `async throws` test instead of checking `if case .failure`.
+
 ---
 
 ## XCUITest (UI Testing)

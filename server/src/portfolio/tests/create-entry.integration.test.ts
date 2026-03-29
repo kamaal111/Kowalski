@@ -8,25 +8,11 @@ import { CreateEntryResponseSchema } from '../schemas/responses';
 import { APP_API_BASE_PATH } from '@/constants/common';
 import type { Database } from '@/db';
 import { portfolio, portfolioTransaction, stockTicker, user } from '@/db/schema';
-import { ErrorResponseSchema } from '@/schemas/errors';
+import { ErrorResponseSchema, ValidationErrorResponseSchema } from '@/schemas/errors';
 import { integrationTest } from '@/tests/fixtures';
 
 const CREATE_ENTRY_PATH = `${APP_API_BASE_PATH}${PORTFOLIO_ROUTE_NAME}/entries`;
 const LEGACY_CREATE_ENTRY_PATH = `${APP_API_BASE_PATH}${PORTFOLIO_ROUTE_NAME}/entry`;
-
-const ValidationErrorResponseSchema = z.object({
-  message: z.string(),
-  context: z.object({
-    validations: z.array(
-      z
-        .object({
-          path: z.array(z.union([z.string(), z.number()])),
-          message: z.string(),
-        })
-        .loose(),
-    ),
-  }),
-});
 
 interface AppRequestClient {
   request: (input: string, init?: RequestInit) => Response | Promise<Response>;
@@ -248,7 +234,7 @@ async function expectValidationErrorResponse(response: Response) {
 }
 
 function expectValidationIssueForField(body: z.infer<typeof ValidationErrorResponseSchema>, fieldName: string) {
-  const hasMatchingIssue = body.context.validations.some(issue => issue.path.includes(fieldName));
+  const hasMatchingIssue = body.context?.validations.some(issue => issue.path.includes(fieldName)) ?? false;
 
   expect(hasMatchingIssue).toBe(true);
 }

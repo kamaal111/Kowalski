@@ -38,6 +38,10 @@ struct KowalskiPortfolioClientFactory {
         KowalskiPortfolioClientCreateEntryFailingPreview()
     }
 
+    static func createEntryValidationFailingPreview() -> KowalskiPortfolioClient {
+        PortfolioCreateEntryValidationFailingClient()
+    }
+
     static func listEntriesFailingPreview() -> KowalskiPortfolioClient {
         KowalskiPortfolioClientListEntriesFailingPreview()
     }
@@ -45,9 +49,41 @@ struct KowalskiPortfolioClientFactory {
 
 // MARK: Errors
 
-public enum KowalskiPortfolioClientCreateEntryErrors: Error {
+public enum KowalskiPortfolioClientCreateEntryErrors: Error, Equatable {
+    public static func == (
+        lhs: KowalskiPortfolioClientCreateEntryErrors,
+        rhs: KowalskiPortfolioClientCreateEntryErrors,
+    ) -> Bool {
+        switch lhs {
+        case let .unknown(lhsStatusCode, lhsPayload, lhsContext):
+            if case let .unknown(rhsStatusCode, rhsPayload, rhsContext) = rhs {
+                return lhsStatusCode == rhsStatusCode &&
+                    lhsPayload == rhsPayload &&
+                    lhsContext?.localizedDescription == rhsContext?.localizedDescription
+            }
+        case let .badRequest(lhsErrorCode, lhsValidations):
+            if case let .badRequest(rhsErrorCode, rhsValidations) = rhs {
+                return lhsErrorCode == rhsErrorCode && lhsValidations == rhsValidations
+            }
+        case .unauthorized:
+            if case .unauthorized = rhs {
+                return true
+            }
+        case .notFound:
+            if case .notFound = rhs {
+                return true
+            }
+        case .internalServerError:
+            if case .internalServerError = rhs {
+                return true
+            }
+        }
+
+        return false
+    }
+
     case unknown(statusCode: Int, payload: OpenAPIRuntime.UndocumentedPayload?, context: Error?)
-    case badRequest(errorCode: String?)
+    case badRequest(errorCode: String?, validations: [KowalskiClientValidationIssue])
     case unauthorized
     case notFound
     case internalServerError
@@ -115,7 +151,9 @@ struct KowalskiPortfolioClientImpl: KowalskiPortfolioClient {
         switch response {
         case let .badRequest(payload):
             let body = try? payload.body.json
-            return .failure(.badRequest(errorCode: body?.code))
+            let validations = KowalskiClientValidationErrorParser.parseIssues(from: body)
+
+            return .failure(.badRequest(errorCode: body?.code, validations: validations))
         case .unauthorized:
             return .failure(.unauthorized)
         case .notFound:
@@ -181,6 +219,25 @@ struct KowalskiPortfolioClientCreateEntryFailingPreview: KowalskiPortfolioClient
     }
 }
 
+struct PortfolioCreateEntryValidationFailingClient: KowalskiPortfolioClient {
+    func listEntries() async -> Result<
+        [KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientListEntriesErrors,
+    > {
+        .success([])
+    }
+
+    func createEntry(
+        payload _: KowalskiPortfolioCreateEntryPayload,
+    ) async -> Result<KowalskiPortfolioClientEntryResponse, KowalskiPortfolioClientCreateEntryErrors> {
+        .failure(
+            .badRequest(
+                errorCode: "INVALID_PAYLOAD",
+                validations: [makePreviewValidationIssue()],
+            ),
+        )
+    }
+}
+
 struct KowalskiPortfolioClientListEntriesFailingPreview: KowalskiPortfolioClient {
     func listEntries() async -> Result<
         [KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientListEntriesErrors,
@@ -214,5 +271,13 @@ private func makePreviewEntry() -> KowalskiPortfolioClientEntryResponse {
         purchasePrice: KowalskiClientMoney(currency: "USD", value: 150.5),
         transactionType: .buy,
         transactionDate: Date(timeIntervalSince1970: 1_766_246_840),
+    )
+}
+
+private func makePreviewValidationIssue() -> KowalskiClientValidationIssue {
+    KowalskiClientValidationIssue(
+        code: "too_small",
+        path: ["amount"],
+        message: "Number must be greater than 0",
     )
 }
