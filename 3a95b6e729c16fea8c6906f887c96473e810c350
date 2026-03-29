@@ -1,0 +1,39 @@
+AGENTS.md
+  b0e7a178f9ce0ad7 74,145
+app/Kowalski.xcodeproj/project.pbxproj
+  b0e7a178f9ce0ad7 401,446,466,487
+.agents/plans/error-hint-to-app.md
+  b0e7a178f9ce0ad7 1-69
+app/KowalskiUtils/Package.swift
+  b0e7a178f9ce0ad7 1
+app/KowalskiClient/Package.swift
+  b0e7a178f9ce0ad7 1
+app/KowalskiFeatures/Package.swift
+  b0e7a178f9ce0ad7 1
+app/KowalskiDesignSystem/Package.swift
+  b0e7a178f9ce0ad7 1
+README.md
+  b0e7a178f9ce0ad7 36
+app/KowalskiApp/Package.swift
+  b0e7a178f9ce0ad7 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "3a95b6e729c16fea8c6906f887c96473e810c350",
+  "prompts": {
+    "b0e7a178f9ce0ad7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d3944-671f-79f0-bce2-d7a2a1e61371",
+        "model": "unknown"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>",
+      "messages": [],
+      "total_additions": 81,
+      "total_deletions": 12,
+      "accepted_lines": 81,
+      "overriden_lines": 0
+    }
+  }
+}
