@@ -86,7 +86,9 @@ public struct KowalskiPortfolioScreen: View {
             Text("Use the add button to record your first stock transaction.")
                 .foregroundStyle(.secondary)
         }
+        .multilineTextAlignment(.center)
         .padding(.all, .medium)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
     }
 
     @MainActor
