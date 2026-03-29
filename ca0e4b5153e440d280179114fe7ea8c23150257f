@@ -1,0 +1,39 @@
+.codex/agents/testing.toml
+  d4ad0bdb4426904c 1-61
+.agents/plans/500-on-listing-entries.md
+  d4ad0bdb4426904c 1-10,14-81
+  0e5eee610af2724e 11-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "ca0e4b5153e440d280179114fe7ea8c23150257f",
+  "prompts": {
+    "0e5eee610af2724e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d39a9-da14-7812-9811-b3caf015dd53",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>",
+      "messages": [],
+      "total_additions": 3,
+      "total_deletions": 1,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    },
+    "d4ad0bdb4426904c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d39aa-0937-74a3-abf9-ce5b0d00704a",
+        "model": "unknown"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>",
+      "messages": [],
+      "total_additions": 140,
+      "total_deletions": 0,
+      "accepted_lines": 139,
+      "overriden_lines": 0
+    }
+  }
+}
