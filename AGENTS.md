@@ -8,11 +8,12 @@
   - For TypeScript type changes: run `just typecheck`
   - For server compilation changes: run `just compile-server`
   - For server or app behavior changes: run `just test`
+  - Run `just test-ui` only when a human explicitly requests app UI test coverage
   - For Swift package changes: run `swift build` in the affected package directory
   - **ALWAYS run `just ready` from the repository root as the final verification before finishing code changes**
   - For docs-only changes, such as `AGENTS.md`, `README.md`, or other guidance files, do not run `just ready` unless the user explicitly asks for it
 - **NEVER claim code changes are done until `just ready` passes**
-  - `just ready` runs quality checks, downloads the OpenAPI spec, and runs server and Swift client tests
+  - `just ready` runs quality checks, downloads the OpenAPI spec, and runs server plus non-UI app tests
   - If `just ready` fails, fix the issues and re-run it until it succeeds
   - This is non-negotiable
 - **ALWAYS include proof of work in the final response**
@@ -57,7 +58,7 @@
   - For detailed testing workflow and conventions, use `.agents/testing-best-practices/SKILL.md`
 - **If app UI tests look flaky, first make sure `Kowalski.app` is not already open**
   - A locally open app can cause macOS UI tests to fail with launch, termination, or accessibility errors
-  - If you notice this kind of flakiness, terminate `Kowalski` and rerun the failing UI test or `just ready`
+  - If you notice this kind of flakiness, terminate `Kowalski` and rerun the failing UI test or `just test-ui`
 - **NEVER manually edit `.xcstrings` files**
   - Add or update `NSLocalizedString` calls in Swift code and let Xcode update the localization catalogs
 
@@ -102,9 +103,13 @@
 ## Testing Guidelines
 
 - **Primary command:** `just test`
-  - Runs server tests and Swift client/app tests
+  - Runs server tests and non-UI Swift client/app tests
+- **UI test command:** `just test-ui`
+  - Runs `KowalskiUITests`
+  - Only run this when a human explicitly requests app UI test coverage
 - **Final command:** `just ready`
   - Required for code changes
+  - Runs quality checks, downloads the OpenAPI spec, and executes non-UI test coverage
   - Not required for docs-only changes unless the user explicitly asks for it
 - **Preferred testing style**
   - Favor integration tests for routes, middleware, auth flows, and database-backed behavior
@@ -200,3 +205,4 @@ BETTER_AUTH_URL=http://localhost:8080
   - Add the product or dependency wiring in `Package.swift` where required
   - Run `swift build` in the affected package
   - Run `just test` and `just ready`
+  - Run `just test-ui` only when a human explicitly requests app UI test coverage

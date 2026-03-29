@@ -209,15 +209,23 @@ typecheck: typecheck-server
 typecheck-server:
     {{ PNR }} typecheck
 
-# Run tests
+# Run tests (excluding app UI tests)
 [parallel]
 test: test-server test-app
 
-# Run app tests
+# Run app tests (excluding UI tests)
 [working-directory("app")]
 test-app:
     set -o pipefail && xcodebuild test -scheme {{ SCHEME }} \
-        -destination {{ MACOS_DESTINATION }} | xcpretty
+        -destination {{ MACOS_DESTINATION }} \
+        -skip-testing:KowalskiUITests | xcpretty
+
+# Run app UI tests (only when explicitly requested)
+[working-directory("app")]
+test-ui:
+    set -o pipefail && xcodebuild test -scheme {{ SCHEME }} \
+        -destination {{ MACOS_DESTINATION }} \
+        -only-testing:KowalskiUITests | xcpretty
 
 # Run server tests
 [working-directory("server")]
