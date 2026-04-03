@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import KamaalExtensions
 import OpenAPIRuntime
 
 // MARK: Protocol
@@ -15,6 +16,10 @@ public protocol KowalskiPortfolioClient: Sendable {
     func createEntry(
         payload: KowalskiPortfolioCreateEntryPayload,
     ) async -> Result<KowalskiPortfolioClientEntryResponse, KowalskiPortfolioClientCreateEntryErrors>
+    func updateEntry(
+        entryId: String,
+        payload: KowalskiPortfolioCreateEntryPayload,
+    ) async -> Result<KowalskiPortfolioClientEntryResponse, KowalskiPortfolioClientUpdateEntryErrors>
 }
 
 // MARK: Factory
@@ -31,19 +36,24 @@ struct KowalskiPortfolioClientFactory {
     }
 
     static func entriesPreview() -> KowalskiPortfolioClient {
-        KowalskiPortfolioClientEntriesPreview()
+        KowalskiPortfolioClientPreview(entries: [makePreviewEntry()])
     }
 
     static func createEntryFailingPreview() -> KowalskiPortfolioClient {
-        KowalskiPortfolioClientCreateEntryFailingPreview()
+        KowalskiPortfolioClientPreview(createFailure: .internalServerError)
     }
 
     static func createEntryValidationFailingPreview() -> KowalskiPortfolioClient {
-        PortfolioCreateEntryValidationFailingClient()
+        KowalskiPortfolioClientPreview(
+            createFailure: .badRequest(
+                errorCode: "INVALID_PAYLOAD",
+                validations: [makePreviewValidationIssue()],
+            ),
+        )
     }
 
     static func listEntriesFailingPreview() -> KowalskiPortfolioClient {
-        KowalskiPortfolioClientListEntriesFailingPreview()
+        KowalskiPortfolioClientPreview(listFailure: .unknown(statusCode: 500, payload: nil, context: nil))
     }
 }
 
@@ -53,6 +63,46 @@ public enum KowalskiPortfolioClientCreateEntryErrors: Error, Equatable {
     public static func == (
         lhs: KowalskiPortfolioClientCreateEntryErrors,
         rhs: KowalskiPortfolioClientCreateEntryErrors,
+    ) -> Bool {
+        switch lhs {
+        case let .unknown(lhsStatusCode, lhsPayload, lhsContext):
+            if case let .unknown(rhsStatusCode, rhsPayload, rhsContext) = rhs {
+                return lhsStatusCode == rhsStatusCode &&
+                    lhsPayload == rhsPayload &&
+                    lhsContext?.localizedDescription == rhsContext?.localizedDescription
+            }
+        case let .badRequest(lhsErrorCode, lhsValidations):
+            if case let .badRequest(rhsErrorCode, rhsValidations) = rhs {
+                return lhsErrorCode == rhsErrorCode && lhsValidations == rhsValidations
+            }
+        case .unauthorized:
+            if case .unauthorized = rhs {
+                return true
+            }
+        case .notFound:
+            if case .notFound = rhs {
+                return true
+            }
+        case .internalServerError:
+            if case .internalServerError = rhs {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    case unknown(statusCode: Int, payload: OpenAPIRuntime.UndocumentedPayload?, context: Error?)
+    case badRequest(errorCode: String?, validations: [KowalskiClientValidationIssue])
+    case unauthorized
+    case notFound
+    case internalServerError
+}
+
+public enum KowalskiPortfolioClientUpdateEntryErrors: Error, Equatable {
+    public static func == (
+        lhs: KowalskiPortfolioClientUpdateEntryErrors,
+        rhs: KowalskiPortfolioClientUpdateEntryErrors,
     ) -> Bool {
         switch lhs {
         case let .unknown(lhsStatusCode, lhsPayload, lhsContext):
@@ -173,101 +223,171 @@ struct KowalskiPortfolioClientImpl: KowalskiPortfolioClient {
 
         return .success(mapper.mapCreateEntryApiResponseToClient(jsonResponse))
     }
+
+    func updateEntry(
+        entryId: String,
+        payload: KowalskiPortfolioCreateEntryPayload,
+    ) async -> Result<KowalskiPortfolioClientEntryResponse, KowalskiPortfolioClientUpdateEntryErrors> {
+        let apiPayload = mapper.mapCreateEntryPayloadToApi(payload)
+        let response: Operations.PutAppApiPortfolioEntriesEntryId.Output
+        do {
+            response = try await client.putAppApiPortfolioEntriesEntryId(
+                path: .init(entryId: entryId),
+                body: .json(apiPayload),
+            )
+        } catch {
+            return .failure(.unknown(statusCode: 503, payload: nil, context: error))
+        }
+
+        let okResponse: Operations.PutAppApiPortfolioEntriesEntryId.Output.Ok
+        switch response {
+        case let .badRequest(payload):
+            let body = try? payload.body.json
+            let validations = KowalskiClientValidationErrorParser.parseIssues(from: body)
+
+            return .failure(.badRequest(errorCode: body?.code, validations: validations))
+        case .unauthorized:
+            return .failure(.unauthorized)
+        case .notFound:
+            return .failure(.notFound)
+        case .internalServerError:
+            return .failure(.internalServerError)
+        case let .undocumented(statusCode, payload):
+            return .failure(.unknown(statusCode: statusCode, payload: payload, context: nil))
+        case let .ok(ok):
+            okResponse = ok
+        }
+        let jsonResponse: Components.Schemas.CreateEntryResponse
+        do {
+            jsonResponse = try okResponse.body.json
+        } catch {
+            return .failure(.unknown(statusCode: 500, payload: nil, context: error))
+        }
+
+        return .success(mapper.mapCreateEntryApiResponseToClient(jsonResponse))
+    }
 }
 
 // MARK: Preview
 
-struct KowalskiPortfolioClientPreview: KowalskiPortfolioClient {
+actor KowalskiPortfolioClientPreview: KowalskiPortfolioClient {
+    private var entries: [KowalskiPortfolioClientEntryResponse]
+    private let createFailure: KowalskiPortfolioClientCreateEntryErrors?
+    private let updateFailure: KowalskiPortfolioClientUpdateEntryErrors?
+    private let listFailure: KowalskiPortfolioClientListEntriesErrors?
+
+    init(
+        entries: [KowalskiPortfolioClientEntryResponse] = [],
+        createFailure: KowalskiPortfolioClientCreateEntryErrors? = nil,
+        updateFailure: KowalskiPortfolioClientUpdateEntryErrors? = nil,
+        listFailure: KowalskiPortfolioClientListEntriesErrors? = nil,
+    ) {
+        self.entries = entries
+        self.createFailure = createFailure
+        self.updateFailure = updateFailure
+        self.listFailure = listFailure
+    }
+
     func listEntries() async -> Result<
-        [KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientListEntriesErrors,
+        [KowalskiPortfolioClientEntryResponse],
+        KowalskiPortfolioClientListEntriesErrors,
     > {
-        .success([])
+        if let listFailure {
+            return .failure(listFailure)
+        }
+
+        return .success(sortedEntries())
     }
 
     func createEntry(
-        payload _: KowalskiPortfolioCreateEntryPayload,
+        payload: KowalskiPortfolioCreateEntryPayload,
     ) async -> Result<KowalskiPortfolioClientEntryResponse, KowalskiPortfolioClientCreateEntryErrors> {
-        .success(makePreviewEntry())
-    }
-}
+        if let createFailure {
+            return .failure(createFailure)
+        }
 
-struct KowalskiPortfolioClientEntriesPreview: KowalskiPortfolioClient {
-    func listEntries() async -> Result<
-        [KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientListEntriesErrors,
-    > {
-        .success([makePreviewEntry()])
-    }
-
-    func createEntry(
-        payload _: KowalskiPortfolioCreateEntryPayload,
-    ) async -> Result<KowalskiPortfolioClientEntryResponse, KowalskiPortfolioClientCreateEntryErrors> {
-        .success(makePreviewEntry())
-    }
-}
-
-struct KowalskiPortfolioClientCreateEntryFailingPreview: KowalskiPortfolioClient {
-    func listEntries() async -> Result<
-        [KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientListEntriesErrors,
-    > {
-        .success([])
-    }
-
-    func createEntry(
-        payload _: KowalskiPortfolioCreateEntryPayload,
-    ) async -> Result<KowalskiPortfolioClientEntryResponse, KowalskiPortfolioClientCreateEntryErrors> {
-        .failure(.internalServerError)
-    }
-}
-
-struct PortfolioCreateEntryValidationFailingClient: KowalskiPortfolioClient {
-    func listEntries() async -> Result<
-        [KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientListEntriesErrors,
-    > {
-        .success([])
-    }
-
-    func createEntry(
-        payload _: KowalskiPortfolioCreateEntryPayload,
-    ) async -> Result<KowalskiPortfolioClientEntryResponse, KowalskiPortfolioClientCreateEntryErrors> {
-        .failure(
-            .badRequest(
-                errorCode: "INVALID_PAYLOAD",
-                validations: [makePreviewValidationIssue()],
-            ),
+        let entry = makePreviewEntry(
+            payload: payload,
+            entryId: UUID().uuidString,
+            createdAt: .now,
+            updatedAt: .now,
         )
-    }
-}
+        entries.append(entry)
 
-struct KowalskiPortfolioClientListEntriesFailingPreview: KowalskiPortfolioClient {
-    func listEntries() async -> Result<
-        [KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientListEntriesErrors,
-    > {
-        .failure(.unknown(statusCode: 500, payload: nil, context: nil))
+        return .success(entry)
     }
 
-    func createEntry(
-        payload _: KowalskiPortfolioCreateEntryPayload,
-    ) async -> Result<KowalskiPortfolioClientEntryResponse, KowalskiPortfolioClientCreateEntryErrors> {
-        .success(makePreviewEntry())
+    func updateEntry(
+        entryId: String,
+        payload: KowalskiPortfolioCreateEntryPayload,
+    ) async -> Result<KowalskiPortfolioClientEntryResponse, KowalskiPortfolioClientUpdateEntryErrors> {
+        if let updateFailure {
+            return .failure(updateFailure)
+        }
+
+        guard let index = entries.findIndex(by: \.id, is: entryId) else { return .failure(.notFound) }
+
+        let existingEntry = entries[index]
+        let updatedEntry = makePreviewEntry(
+            payload: payload,
+            entryId: existingEntry.id,
+            createdAt: existingEntry.createdAt,
+            updatedAt: .now,
+        )
+        entries[index] = updatedEntry
+
+        return .success(updatedEntry)
+    }
+
+    private func sortedEntries() -> [KowalskiPortfolioClientEntryResponse] {
+        entries.sorted {
+            if $0.transactionDate == $1.transactionDate {
+                return $0.updatedAt > $1.updatedAt
+            }
+
+            return $0.transactionDate > $1.transactionDate
+        }
     }
 }
 
 private func makePreviewEntry() -> KowalskiPortfolioClientEntryResponse {
-    let stock = KowalskiClientStockItem(
-        symbol: "AAPL",
-        exchange: "NMS",
-        name: "Apple Inc.",
-        isin: "US0378331005",
-        sector: "Technology",
-        industry: "Consumer Electronics",
-        exchangeDispatch: "NASDAQ",
-    )
-
-    return KowalskiPortfolioClientEntryResponse(
-        id: UUID(uuidString: "cd81dbd7-3efa-42b3-8127-c1589279542f")!.uuidString,
+    makePreviewEntry(
+        payload: makePreviewCreatePayload(),
+        entryId: UUID(uuidString: "cd81dbd7-3efa-42b3-8127-c1589279542f")!.uuidString,
         createdAt: Date(timeIntervalSince1970: 1_766_246_840),
         updatedAt: Date(timeIntervalSince1970: 1_766_246_840),
-        stock: stock,
+    )
+}
+
+private func makePreviewEntry(
+    payload: KowalskiPortfolioCreateEntryPayload,
+    entryId: String,
+    createdAt: Date,
+    updatedAt: Date,
+) -> KowalskiPortfolioClientEntryResponse {
+    KowalskiPortfolioClientEntryResponse(
+        id: entryId,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+        stock: payload.stock,
+        amount: payload.amount,
+        purchasePrice: payload.purchasePrice,
+        transactionType: payload.transactionType,
+        transactionDate: payload.transactionDate,
+    )
+}
+
+private func makePreviewCreatePayload() -> KowalskiPortfolioCreateEntryPayload {
+    KowalskiPortfolioCreateEntryPayload(
+        stock: KowalskiClientStockItem(
+            symbol: "AAPL",
+            exchange: "NMS",
+            name: "Apple Inc.",
+            isin: "US0378331005",
+            sector: "Technology",
+            industry: "Consumer Electronics",
+            exchangeDispatch: "NASDAQ",
+        ),
         amount: 10,
         purchasePrice: KowalskiClientMoney(currency: "USD", value: 150.5),
         transactionType: .buy,

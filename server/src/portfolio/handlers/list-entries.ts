@@ -1,6 +1,7 @@
 import { getSessionWhereSessionIsRequired } from '@/auth';
 import { APP_API_BASE_PATH } from '@/constants/common';
 import { STATUS_CODES } from '@/constants/http';
+import { dateOnlyStringToISO8601String } from '@/utils/dates';
 import { toISO8601String } from '@/utils/strings';
 import { findPortfolioEntriesByUserId } from '../repositories/list-entries';
 import { ListEntriesResponseSchema } from '../schemas/responses';
@@ -17,7 +18,7 @@ async function listEntries(c: HonoContext) {
   const session = getSessionWhereSessionIsRequired(c);
   setRequestRoute(c, LIST_ENTRIES_ROUTE_PATH);
   setRequestUserId(c, session.user.id);
-  const entries = await findPortfolioEntriesByUserId(c, session.user.id);
+  const entries = await findPortfolioEntriesByUserId(c);
   const response = ListEntriesResponseSchema.parse(entries.map(mapPersistedEntryToResponse));
   logInfo(withRequestLogger(c, { component: 'portfolio' }), {
     event: 'portfolio.entries.listed',
@@ -48,7 +49,7 @@ function mapPersistedEntryToResponse(entry: PersistedPortfolioEntry) {
       value: Number(entry.purchasePrice),
     },
     transaction_type: entry.transactionType,
-    transaction_date: getTransactionDateForResponse(entry.transactionDate),
+    transaction_date: dateOnlyStringToISO8601String(entry.transactionDate),
     created_at: toISO8601String(entry.createdAt),
     updated_at: toISO8601String(entry.updatedAt),
   };
@@ -58,12 +59,6 @@ function getExchangeFromTickerId(tickerId: string) {
   const [, exchange] = tickerId.split(':');
 
   return exchange?.length ? exchange : 'UNKNOWN';
-}
-
-function getTransactionDateForResponse(transactionDate: string) {
-  const [year, month, day] = transactionDate.split('-').map(Number);
-
-  return toISO8601String(new Date(Date.UTC(year, month - 1, day)));
 }
 
 export default listEntries;

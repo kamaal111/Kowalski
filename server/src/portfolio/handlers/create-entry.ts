@@ -1,7 +1,9 @@
 import { getSessionWhereSessionIsRequired } from '@/auth';
 import { APP_API_BASE_PATH } from '@/constants/common';
 import { STATUS_CODES } from '@/constants/http';
+import { dateOnlyStringToISO8601String } from '@/utils/dates';
 import { toISO8601String } from '@/utils/strings';
+import { createSyntheticTickerId } from '@/utils/tickers';
 import { CreateEntryResponseSchema } from '../schemas/responses';
 import createPortfolioEntry from '../services/create-entry';
 import { ROUTE_NAME } from '../constants';
@@ -19,7 +21,7 @@ async function createEntry(c: HonoContext<string, { out: { json: CreateEntryPayl
   setRequestUserId(c, session.user.id);
 
   const payload = c.req.valid('json');
-  const createdEntry = await createPortfolioEntry(c, session.user.id, payload);
+  const createdEntry = await createPortfolioEntry(c, payload);
 
   const response = CreateEntryResponseSchema.parse({
     id: createdEntry.transaction.id,
@@ -30,7 +32,7 @@ async function createEntry(c: HonoContext<string, { out: { json: CreateEntryPayl
       value: Number(createdEntry.transaction.purchasePrice),
     },
     transaction_type: createdEntry.transaction.transactionType,
-    transaction_date: getTransactionDateForResponse(createdEntry.transaction.transactionDate),
+    transaction_date: dateOnlyStringToISO8601String(createdEntry.transaction.transactionDate),
     created_at: toISO8601String(createdEntry.transaction.createdAt),
     updated_at: toISO8601String(createdEntry.transaction.updatedAt),
   });
@@ -45,23 +47,6 @@ async function createEntry(c: HonoContext<string, { out: { json: CreateEntryPayl
   });
 
   return c.json(response, STATUS_CODES.CREATED);
-}
-
-function getTransactionDateForResponse(transactionDate: string) {
-  const [year, month, day] = transactionDate.split('-').map(Number);
-
-  return toISO8601String(new Date(Date.UTC(year, month - 1, day)));
-}
-
-function createSyntheticTickerId(exchange: string, symbol: string) {
-  return `portfolio-stock:${normalizeTickerPart(exchange)}:${normalizeTickerPart(symbol)}`;
-}
-
-function normalizeTickerPart(value: string) {
-  return value
-    .trim()
-    .toUpperCase()
-    .replaceAll(/[^A-Z0-9]+/g, '-');
 }
 
 export default createEntry;

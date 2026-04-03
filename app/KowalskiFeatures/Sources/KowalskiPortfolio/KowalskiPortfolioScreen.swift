@@ -55,26 +55,31 @@ public struct KowalskiPortfolioScreen: View {
 
     private var entriesList: some View {
         List(portfolio.entries) { entry in
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(entry.stock.symbol)
-                        .font(.headline)
-                    Text(entry.stock.name)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+            NavigationLink(destination: {
+                KowalskiPortfolioTransactionDetailScreen(entry: entry)
+            }) {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(entry.stock.symbol)
+                            .font(.headline)
+                        Text(entry.stock.name)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    HStack {
+                        Text(entry.transactionType.label)
+                        Spacer()
+                        Text("\(entry.amount.formatted(.number)) shares")
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    Text(entry.transactionDate.formatted(.dateTime.year().month().day()))
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
                 }
-                HStack {
-                    Text(entry.transactionType.label)
-                    Spacer()
-                    Text("\(entry.amount.formatted(.number)) shares")
-                }
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                Text(entry.transactionDate.formatted(.dateTime.year().month().day()))
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+                .padding(.vertical, .extraSmall)
             }
-            .padding(.vertical, .extraSmall)
+            .accessibilityLabel(Text(entry.stock.name))
         }
         .listStyle(.inset)
     }

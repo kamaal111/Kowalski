@@ -4,6 +4,8 @@ import { eq } from 'drizzle-orm';
 
 import type { Database } from '@/db';
 import { portfolio, portfolioTransaction, stockTicker } from '@/db/schema';
+import { dateOnlyStringToISO8601String } from '@/utils/dates';
+import { createSyntheticTickerId, createSyntheticTickerIsin } from '@/utils/tickers';
 import { CreateEntryResponseSchema } from '../schemas/responses';
 
 const DEFAULT_PORTFOLIO_NAME = 'Default Portfolio';
@@ -56,7 +58,7 @@ export async function seedPortfolioEntry(db: Database, input: SeedPortfolioEntry
       symbol: input.stock.symbol,
       exchange: input.stock.exchange,
       name: input.stock.name,
-      isin: input.stock.isin ?? createSyntheticTickerIsin(input.stock),
+      isin: input.stock.isin ?? createSyntheticTickerIsin(input.stock.exchange, input.stock.symbol),
       sector: input.stock.sector ?? null,
       industry: input.stock.industry ?? null,
       exchange_dispatch: input.stock.exchangeDispatch ?? null,
@@ -67,7 +69,7 @@ export async function seedPortfolioEntry(db: Database, input: SeedPortfolioEntry
       value: input.purchasePrice.value,
     },
     transaction_type: input.transactionType,
-    transaction_date: getTransactionDateForResponse(input.transactionDate.slice(0, 10)),
+    transaction_date: dateOnlyStringToISO8601String(input.transactionDate.slice(0, 10)),
     created_at: createdAt.toISOString(),
     updated_at: updatedAt.toISOString(),
   });
@@ -101,7 +103,7 @@ async function getOrCreateDefaultPortfolio(db: Database, userId: string) {
 }
 
 async function getOrCreateTicker(db: Database, stock: SeedPortfolioEntryInput['stock']) {
-  const tickerId = createSyntheticTickerId(stock);
+  const tickerId = createSyntheticTickerId(stock.exchange, stock.symbol);
   const existingTickers = await db
     .select({ id: stockTicker.id, isin: stockTicker.isin })
     .from(stockTicker)
@@ -126,7 +128,7 @@ async function getOrCreateTicker(db: Database, stock: SeedPortfolioEntryInput['s
     .insert(stockTicker)
     .values({
       id: tickerId,
-      isin: stock.isin ?? createSyntheticTickerIsin(stock),
+      isin: stock.isin ?? createSyntheticTickerIsin(stock.exchange, stock.symbol),
       symbol: stock.symbol,
       name: stock.name,
       sector: stock.sector ?? null,
@@ -140,25 +142,4 @@ async function getOrCreateTicker(db: Database, stock: SeedPortfolioEntryInput['s
   }
 
   return createdTicker;
-}
-
-function createSyntheticTickerId(stock: SeedPortfolioEntryInput['stock']) {
-  return `portfolio-stock:${normalizeTickerPart(stock.exchange)}:${normalizeTickerPart(stock.symbol)}`;
-}
-
-function createSyntheticTickerIsin(stock: SeedPortfolioEntryInput['stock']) {
-  return `PORTFOLIO-${normalizeTickerPart(stock.exchange)}-${normalizeTickerPart(stock.symbol)}`;
-}
-
-function normalizeTickerPart(value: string) {
-  return value
-    .trim()
-    .toUpperCase()
-    .replaceAll(/[^A-Z0-9]+/g, '-');
-}
-
-function getTransactionDateForResponse(transactionDate: string) {
-  const [year, month, day] = transactionDate.split('-').map(Number);
-
-  return new Date(Date.UTC(year, month - 1, day)).toISOString();
 }

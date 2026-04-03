@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import type { HonoContext } from '@/api/contexts';
 import { portfolio, portfolioTransaction, stockTicker } from '@/db/schema';
 import { DefaultPortfolioCreateFailed, PortfolioEntryCreateFailed, StockTickerCreateFailed } from '../exceptions';
+import { getSessionWhereSessionIsRequired } from '@/auth';
 
 type PortfolioInsert = typeof portfolio.$inferInsert;
 type PortfolioSelect = typeof portfolio.$inferSelect;
@@ -13,7 +14,7 @@ type StockTickerSelect = typeof stockTicker.$inferSelect;
 
 type PortfolioRecord = Pick<PortfolioSelect, 'id'>;
 type StockTickerRecord = Pick<StockTickerSelect, 'id' | 'isin' | 'name' | 'sector' | 'industry' | 'exchangeDispatch'>;
-type CreatePortfolioInput = Pick<PortfolioInsert, 'id' | 'name' | 'userId'>;
+type CreatePortfolioInput = Pick<PortfolioInsert, 'id' | 'name'>;
 type CreateStockTickerInput = Pick<
   StockTickerInsert,
   'id' | 'isin' | 'symbol' | 'name' | 'sector' | 'industry' | 'exchangeDispatch'
@@ -42,26 +43,24 @@ type CreatedPortfolioTransaction = Pick<
   | 'updatedAt'
 >;
 
-export async function findDefaultPortfolioByUserId(
-  c: HonoContext,
-  userId: string,
-): Promise<PortfolioRecord | undefined> {
-  // TODO: Assert that user id is that which is in the request context
+export async function findDefaultPortfolioByUserId(c: HonoContext): Promise<PortfolioRecord | undefined> {
+  const session = getSessionWhereSessionIsRequired(c);
   const portfolios = await c
     .get('db')
     .select({ id: portfolio.id })
     .from(portfolio)
-    .where(eq(portfolio.userId, userId))
+    .where(eq(portfolio.userId, session.user.id))
     .limit(1);
 
   return portfolios.at(0);
 }
 
 export async function createPortfolio(c: HonoContext, input: CreatePortfolioInput): Promise<PortfolioRecord> {
+  const session = getSessionWhereSessionIsRequired(c);
   const createdPortfolios = await c
     .get('db')
     .insert(portfolio)
-    .values({ id: input.id, name: input.name, userId: input.userId })
+    .values({ id: input.id, name: input.name, userId: session.user.id })
     .returning({ id: portfolio.id });
   const createdPortfolio = createdPortfolios.at(0);
   if (createdPortfolio == null) {

@@ -370,6 +370,69 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /app-api/portfolio/entries/{entryId}:
+    put:
+      tags:
+        - Portfolio
+      summary: Update portfolio entry
+      description: >-
+        Update an existing portfolio entry for the signed-in user. Replaces the
+        stock details, amount, price, transaction type, and transaction date for
+        the selected entry.
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier for the portfolio entry
+            example: 550e8400-e29b-41d4-a716-446655440000
+          required: true
+          description: Unique identifier for the portfolio entry
+          name: entryId
+          in: path
+        - schema:
+            type: string
+            description: Bearer token for authentication
+            example: Bearer f21wcpz7Aokmlh2MB632MZpTgfruPc62
+          required: true
+          description: Bearer token for authentication
+          name: authorization
+          in: header
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEntryPayload'
+      responses:
+        '200':
+          description: Portfolio entry updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateEntryResponse'
+        '400':
+          description: Invalid portfolio entry payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Portfolio entry or session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Portfolio entry update failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 components:
   schemas:
     AuthResponse:

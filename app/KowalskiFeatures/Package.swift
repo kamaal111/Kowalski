@@ -13,7 +13,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/Kamaalio/KamaalSwift", .upToNextMajor(from: "3.5.0")),
-        .package(url: "https://github.com/kamaal111/ForexKit", .upToNextMajor(from: "4.0.0")),
+        .package(url: "https://github.com/kamaal111/ForexKit", .upToNextMajor(from: "5.0.0")),
         .package(path: "../KowalskiClient"),
         .package(path: "../KowalskiDesignSystem"),
         .package(path: "../KowalskiUtils"),
