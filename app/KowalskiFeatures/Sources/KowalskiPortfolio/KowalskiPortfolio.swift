@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import KamaalExtensions
 import KamaalLogger
 import KowalskiClient
 import KowalskiUtils
@@ -41,7 +42,7 @@ public final class KowalskiPortfolio {
         case .success: break
         }
 
-        let fetchEntriesResult = await fetchEntries()
+        let fetchEntriesResult = await refreshEntries()
         switch fetchEntriesResult {
         case let .failure(failure):
             logger.error(label: "Failed to refresh entries after create", error: failure)
@@ -49,6 +50,39 @@ public final class KowalskiPortfolio {
         }
 
         return .success(())
+    }
+
+    func updateTransaction(
+        _ payload: TransactionPayload,
+        entryId: String,
+    ) async -> Result<PortfolioEntry, UpdateTransactionErrors> {
+        let payload = mapper.mapTransactionPayloadToCreateEntryPayload(payload)
+        let updateEntryResult = await client.portfolio.updateEntry(entryId: entryId, payload: payload)
+        switch updateEntryResult {
+        case let .failure(failure):
+            switch failure {
+            case let .badRequest(_, validations):
+                return .failure(.badRequest(validations: validations))
+            case .internalServerError, .notFound, .unauthorized, .unknown:
+                return .failure(.unknown)
+            }
+        case .success: break
+        }
+
+        let fetchEntriesResult = await refreshEntries()
+        switch fetchEntriesResult {
+        case let .failure(failure):
+            logger.error(label: "Failed to refresh entries after update", error: failure)
+        case .success:
+            guard let updatedEntry = entries.find(by: \.id, is: entryId) else {
+                logger.error("Updated entry missing from refreshed entries")
+                return .failure(.unknown)
+            }
+
+            return .success(updatedEntry)
+        }
+
+        return .failure(.unknown)
     }
 
     @MainActor
@@ -77,6 +111,10 @@ public final class KowalskiPortfolio {
     @MainActor
     private func setEntries(_ newEntries: [PortfolioEntry]) {
         entries = newEntries
+    }
+
+    private func refreshEntries() async -> Result<Void, Error> {
+        await fetchEntries()
     }
 
     @MainActor
@@ -159,6 +197,22 @@ enum StoreTransactionErrors: Error, Equatable, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .unknown: NSLocalizedString("Failed to add transaction", comment: "")
+        case let .badRequest(validations):
+            validationErrorMessage(
+                validations,
+                fallback: NSLocalizedString("Invalid information provided", comment: ""),
+            )
+        }
+    }
+}
+
+enum UpdateTransactionErrors: Error, Equatable, LocalizedError {
+    case unknown
+    case badRequest(validations: [KowalskiClientValidationIssue])
+
+    var errorDescription: String? {
+        switch self {
+        case .unknown: NSLocalizedString("Failed to update transaction", comment: "")
         case let .badRequest(validations):
             validationErrorMessage(
                 validations,

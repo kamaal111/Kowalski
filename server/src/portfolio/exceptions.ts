@@ -6,6 +6,7 @@ const CODE_TO_STATUS = {
   DEFAULT_PORTFOLIO_CREATE_FAILED: STATUS_CODES.INTERNAL_SERVER_ERROR,
   STOCK_TICKER_CREATE_FAILED: STATUS_CODES.INTERNAL_SERVER_ERROR,
   PORTFOLIO_ENTRY_CREATE_FAILED: STATUS_CODES.INTERNAL_SERVER_ERROR,
+  PORTFOLIO_ENTRY_UPDATE_FAILED: STATUS_CODES.INTERNAL_SERVER_ERROR,
 } satisfies Record<string, StatusCode>;
 
 type PortfolioExceptionCode = keyof typeof CODE_TO_STATUS;
@@ -39,6 +40,15 @@ export class PortfolioEntryCreateFailed extends PortfolioException {
     super(c, {
       code: 'PORTFOLIO_ENTRY_CREATE_FAILED',
       message: 'Failed to create portfolio entry',
+    });
+  }
+}
+
+export class PortfolioEntryUpdateFailed extends PortfolioException {
+  constructor(c: HonoContext) {
+    super(c, {
+      code: 'PORTFOLIO_ENTRY_UPDATE_FAILED',
+      message: 'Failed to update portfolio entry',
     });
   }
 }

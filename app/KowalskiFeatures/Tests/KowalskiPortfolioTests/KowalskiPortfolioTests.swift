@@ -29,6 +29,7 @@ struct KowalskiPortfolioTests {
                     ],
                 ),
             ),
+            updateEntryResult: .success(makePortfolioEntryResponse(amount: 10)),
             listEntriesResult: .success([]),
         )
         let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
@@ -49,6 +50,7 @@ struct KowalskiPortfolioTests {
         let createdEntry = makePortfolioEntryResponse(amount: 10)
         let portfolioClient = MockPortfolioClient(
             createEntryResult: .success(createdEntry),
+            updateEntryResult: .success(createdEntry),
             listEntriesResult: .success([createdEntry]),
         )
         let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
@@ -57,6 +59,60 @@ struct KowalskiPortfolioTests {
 
         #expect(portfolio.entries.map(\.stock.name) == ["Apple Inc."])
         #expect(await portfolioClient.createEntryCallCount == 1)
+        #expect(await portfolioClient.listEntriesCallCount == 1)
+    }
+
+    @Test
+    func `Update transaction should turn the first validation issue into the message shown to the user`() async throws {
+        let existingEntry = makePortfolioEntryResponse(amount: 10)
+        let portfolioClient = MockPortfolioClient(
+            createEntryResult: .success(existingEntry),
+            updateEntryResult: .failure(
+                .badRequest(
+                    errorCode: "INVALID_PAYLOAD",
+                    validations: [
+                        KowalskiClientValidationIssue(
+                            code: "too_small",
+                            path: ["amount"],
+                            message: "Number must be greater than 0",
+                        ),
+                    ],
+                ),
+            ),
+            listEntriesResult: .success([existingEntry]),
+        )
+        let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
+
+        try await #require(throws: UpdateTransactionErrors.badRequest(validations: [
+            KowalskiClientValidationIssue(
+                code: "too_small",
+                path: ["amount"],
+                message: "Number must be greater than 0",
+            ),
+        ])) {
+            try await portfolio.updateTransaction(makeTransactionPayload(amount: 0), entryId: existingEntry.id).get()
+        }
+    }
+
+    @Test
+    func `Update transaction should refresh the list and return the updated entry`() async throws {
+        let initialEntry = makePortfolioEntryResponse(amount: 10)
+        let updatedEntry = makePortfolioEntryResponse(amount: 15)
+        let portfolioClient = MockPortfolioClient(
+            createEntryResult: .success(initialEntry),
+            updateEntryResult: .success(updatedEntry),
+            listEntriesResult: .success([updatedEntry]),
+        )
+        let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
+
+        let refreshedEntry = try await portfolio
+            .updateTransaction(makeTransactionPayload(amount: 15), entryId: initialEntry.id)
+            .get()
+
+        #expect(refreshedEntry.id == initialEntry.id)
+        #expect(refreshedEntry.amount == 15)
+        #expect(portfolio.entries.map(\.amount) == [15])
+        #expect(await portfolioClient.updateEntryCallCount == 1)
         #expect(await portfolioClient.listEntriesCallCount == 1)
     }
 
@@ -89,11 +145,16 @@ struct KowalskiPortfolioTests {
 
 private actor MockPortfolioClient: KowalskiPortfolioClient {
     private(set) var createEntryCallCount = 0
+    private(set) var updateEntryCallCount = 0
     private(set) var listEntriesCallCount = 0
 
     private let createEntryResult: Result<
         KowalskiPortfolioClientEntryResponse,
         KowalskiPortfolioClientCreateEntryErrors,
+    >
+    private let updateEntryResult: Result<
+        KowalskiPortfolioClientEntryResponse,
+        KowalskiPortfolioClientUpdateEntryErrors,
     >
     private let listEntriesResult: Result<
         [KowalskiPortfolioClientEntryResponse],
@@ -102,9 +163,11 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
 
     init(
         createEntryResult: Result<KowalskiPortfolioClientEntryResponse, KowalskiPortfolioClientCreateEntryErrors>,
+        updateEntryResult: Result<KowalskiPortfolioClientEntryResponse, KowalskiPortfolioClientUpdateEntryErrors>,
         listEntriesResult: Result<[KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientListEntriesErrors>,
     ) {
         self.createEntryResult = createEntryResult
+        self.updateEntryResult = updateEntryResult
         self.listEntriesResult = listEntriesResult
     }
 
@@ -122,6 +185,15 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
         createEntryCallCount += 1
 
         return createEntryResult
+    }
+
+    func updateEntry(
+        entryId _: String,
+        payload _: KowalskiPortfolioCreateEntryPayload,
+    ) async -> Result<KowalskiPortfolioClientEntryResponse, KowalskiPortfolioClientUpdateEntryErrors> {
+        updateEntryCallCount += 1
+
+        return updateEntryResult
     }
 }
 

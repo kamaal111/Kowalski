@@ -2,6 +2,7 @@ import { desc, eq } from 'drizzle-orm';
 
 import type { HonoContext } from '@/api/contexts';
 import { portfolio, portfolioTransaction, stockTicker } from '@/db/schema';
+import { getSessionWhereSessionIsRequired } from '@/auth';
 
 type PortfolioTransactionSelect = typeof portfolioTransaction.$inferSelect;
 
@@ -23,7 +24,8 @@ export interface PersistedPortfolioEntry {
   stockExchangeDispatch: string | null;
 }
 
-export async function findPortfolioEntriesByUserId(c: HonoContext, userId: string): Promise<PersistedPortfolioEntry[]> {
+export async function findPortfolioEntriesByUserId(c: HonoContext): Promise<PersistedPortfolioEntry[]> {
+  const session = getSessionWhereSessionIsRequired(c);
   return c
     .get('db')
     .select({
@@ -46,6 +48,6 @@ export async function findPortfolioEntriesByUserId(c: HonoContext, userId: strin
     .from(portfolioTransaction)
     .innerJoin(portfolio, eq(portfolio.id, portfolioTransaction.portfolioId))
     .innerJoin(stockTicker, eq(stockTicker.id, portfolioTransaction.tickerId))
-    .where(eq(portfolio.userId, userId))
+    .where(eq(portfolio.userId, session.user.id))
     .orderBy(desc(portfolioTransaction.transactionDate), desc(portfolioTransaction.updatedAt));
 }
