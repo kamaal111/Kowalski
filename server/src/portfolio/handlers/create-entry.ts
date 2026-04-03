@@ -22,17 +22,17 @@ async function createEntry(c: HonoContext<string, { out: { json: CreateEntryPayl
   const createdEntry = await createPortfolioEntry(c, session.user.id, payload);
 
   const response = CreateEntryResponseSchema.parse({
-    id: createdEntry.id,
-    stock: payload.stock,
-    amount: Number(createdEntry.amount),
+    id: createdEntry.transaction.id,
+    stock: createdEntry.stock,
+    amount: Number(createdEntry.transaction.amount),
     purchase_price: {
-      currency: createdEntry.purchasePriceCurrency,
-      value: Number(createdEntry.purchasePrice),
+      currency: createdEntry.transaction.purchasePriceCurrency,
+      value: Number(createdEntry.transaction.purchasePrice),
     },
-    transaction_type: createdEntry.transactionType,
-    transaction_date: getTransactionDateForResponse(createdEntry.transactionDate),
-    created_at: toISO8601String(createdEntry.createdAt),
-    updated_at: toISO8601String(createdEntry.updatedAt),
+    transaction_type: createdEntry.transaction.transactionType,
+    transaction_date: getTransactionDateForResponse(createdEntry.transaction.transactionDate),
+    created_at: toISO8601String(createdEntry.transaction.createdAt),
+    updated_at: toISO8601String(createdEntry.transaction.updatedAt),
   });
   logInfo(withRequestLogger(c, { component: 'portfolio' }), {
     event: 'portfolio.entry.created',

@@ -244,10 +244,10 @@ paths:
         - schema:
             type: string
             minLength: 1
-            description: Search query for stock symbols or company names
+            description: Search query for stock symbols, ISINs, or company names
             example: AAPL
           required: true
-          description: Search query for stock symbols or company names
+          description: Search query for stock symbols, ISINs, or company names
           name: q
           in: query
         - schema:
@@ -621,6 +621,7 @@ components:
           - symbol: AAPL
             exchange: NMS
             name: Apple Inc.
+            isin: US0378331005
             sector: Technology
             industry: Consumer Electronics
             exchange_dispatch: NASDAQ
@@ -642,6 +643,12 @@ components:
           minLength: 1
           description: Company name
           example: Apple Inc.
+        isin:
+          type:
+            - null
+            - string
+          description: International Securities Identification Number
+          example: US0378331005
         sector:
           type:
             - null
@@ -673,6 +680,7 @@ components:
         symbol: AAPL
         exchange: NMS
         name: Apple Inc.
+        isin: US0378331005
         sector: Technology
         industry: Consumer Electronics
         exchange_dispatch: NASDAQ
@@ -688,6 +696,7 @@ components:
             symbol: AAPL
             exchange: NMS
             name: Apple Inc.
+            isin: US0378331005
             sector: Technology
             industry: Consumer Electronics
             exchange_dispatch: NASDAQ
@@ -757,6 +766,7 @@ components:
           symbol: AAPL
           exchange: NMS
           name: Apple Inc.
+          isin: US0378331005
           sector: Technology
           industry: Consumer Electronics
           exchange_dispatch: NASDAQ
@@ -828,6 +838,7 @@ components:
           symbol: AAPL
           exchange: NMS
           name: Apple Inc.
+          isin: US0378331005
           sector: Technology
           industry: Consumer Electronics
           exchange_dispatch: NASDAQ

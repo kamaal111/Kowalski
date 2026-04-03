@@ -9,6 +9,7 @@ public struct KowalskiClientStockItem: Codable, Sendable {
     public let symbol: String
     public let exchange: String
     public let name: String
+    public let isin: String?
     public let sector: String?
     public let industry: String?
     public let exchangeDispatch: String?
@@ -17,6 +18,7 @@ public struct KowalskiClientStockItem: Codable, Sendable {
         symbol: String,
         exchange: String,
         name: String,
+        isin: String?,
         sector: String?,
         industry: String?,
         exchangeDispatch: String?,
@@ -24,6 +26,7 @@ public struct KowalskiClientStockItem: Codable, Sendable {
         self.symbol = symbol
         self.exchange = exchange
         self.name = name
+        self.isin = isin
         self.sector = sector
         self.industry = industry
         self.exchangeDispatch = exchangeDispatch

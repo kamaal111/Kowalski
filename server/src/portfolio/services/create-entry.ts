@@ -16,21 +16,28 @@ import { withRequestLogger } from '@/logging/http';
 const DEFAULT_PORTFOLIO_NAME = 'Default Portfolio';
 
 async function createEntry(c: HonoContext, userId: string, payload: CreateEntryPayload) {
-  const [defaultPortfolio, tickerId] = await Promise.all([
+  const [defaultPortfolio, stockTicker] = await Promise.all([
     getOrCreateDefaultPortfolio(c, userId),
     getOrCreateStockTicker(c, payload),
   ]);
-
-  return createPortfolioTransaction(c, {
+  const transaction = await createPortfolioTransaction(c, {
     id: crypto.randomUUID(),
     transactionType: payload.transaction_type,
     transactionDate: getTransactionDateForStorage(payload.transaction_date),
     amount: payload.amount.toString(),
     purchasePrice: payload.purchase_price.value.toString(),
     purchasePriceCurrency: payload.purchase_price.currency,
-    tickerId,
+    tickerId: stockTicker.id,
     portfolioId: defaultPortfolio.id,
   });
+
+  return {
+    stock: {
+      ...payload.stock,
+      isin: stockTicker.isin,
+    },
+    transaction,
+  };
 }
 
 async function getOrCreateDefaultPortfolio(c: HonoContext, userId: string) {
@@ -61,6 +68,7 @@ async function getOrCreateStockTicker(c: HonoContext, payload: CreateEntryPayloa
   if (existingTicker != null) {
     if (stockTickerNeedsUpdate(existingTicker, payload)) {
       await updateStockTicker(c, existingTicker.id, {
+        isin: getStockTickerIsinForUpdate(existingTicker.isin, payload),
         name: payload.stock.name,
         sector: payload.stock.sector,
         industry: payload.stock.industry,
@@ -74,12 +82,12 @@ async function getOrCreateStockTicker(c: HonoContext, payload: CreateEntryPayloa
       });
     }
 
-    return existingTicker.id;
+    return existingTicker;
   }
 
   const createdTicker = await createStockTicker(c, {
     id: tickerId,
-    isin: createSyntheticTickerIsin(payload),
+    isin: getStockTickerIsinForCreate(payload),
     symbol: payload.stock.symbol,
     name: payload.stock.name,
     sector: payload.stock.sector,
@@ -87,7 +95,7 @@ async function getOrCreateStockTicker(c: HonoContext, payload: CreateEntryPayloa
     exchangeDispatch: payload.stock.exchange_dispatch,
   });
 
-  return createdTicker.id;
+  return createdTicker;
 }
 
 function stockTickerNeedsUpdate(
@@ -99,6 +107,7 @@ function stockTickerNeedsUpdate(
   }
 
   return (
+    existingTicker.isin !== getStockTickerIsinForUpdate(existingTicker.isin, payload) ||
     existingTicker.name !== payload.stock.name ||
     existingTicker.sector !== payload.stock.sector ||
     existingTicker.industry !== payload.stock.industry ||
@@ -112,6 +121,14 @@ function createSyntheticTickerId(payload: CreateEntryPayload) {
 
 function createSyntheticTickerIsin(payload: CreateEntryPayload) {
   return `PORTFOLIO-${normalizeTickerPart(payload.stock.exchange)}-${normalizeTickerPart(payload.stock.symbol)}`;
+}
+
+function getStockTickerIsinForCreate(payload: CreateEntryPayload) {
+  return payload.stock.isin ?? createSyntheticTickerIsin(payload);
+}
+
+function getStockTickerIsinForUpdate(existingIsin: string, payload: CreateEntryPayload) {
+  return payload.stock.isin ?? existingIsin;
 }
 
 function normalizeTickerPart(value: string) {

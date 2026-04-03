@@ -10,6 +10,7 @@ struct Stock: Hashable, Identifiable {
     let symbol: String
     let exchange: String
     let name: String
+    let isin: String?
     let sector: String?
     let industry: String?
     let exchangeDispatch: String?
@@ -18,6 +19,7 @@ struct Stock: Hashable, Identifiable {
         symbol: String,
         exchange: String,
         name: String,
+        isin: String?,
         sector: String?,
         industry: String?,
         exchangeDispatch: String?,
@@ -26,6 +28,7 @@ struct Stock: Hashable, Identifiable {
         self.symbol = symbol
         self.exchange = exchange
         self.name = name
+        self.isin = isin
         self.sector = sector
         self.industry = industry
         self.exchangeDispatch = exchangeDispatch

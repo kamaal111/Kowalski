@@ -16,6 +16,7 @@ export interface PersistedPortfolioEntry {
   updatedAt: PortfolioTransactionSelect['updatedAt'];
   tickerId: string;
   stockSymbol: string;
+  stockIsin: string;
   stockName: string;
   stockSector: string | null;
   stockIndustry: string | null;
@@ -36,6 +37,7 @@ export async function findPortfolioEntriesByUserId(c: HonoContext, userId: strin
       updatedAt: portfolioTransaction.updatedAt,
       tickerId: stockTicker.id,
       stockSymbol: stockTicker.symbol,
+      stockIsin: stockTicker.isin,
       stockName: stockTicker.name,
       stockSector: stockTicker.sector,
       stockIndustry: stockTicker.industry,

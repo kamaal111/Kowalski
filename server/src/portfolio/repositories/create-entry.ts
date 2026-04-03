@@ -12,13 +12,13 @@ type StockTickerInsert = typeof stockTicker.$inferInsert;
 type StockTickerSelect = typeof stockTicker.$inferSelect;
 
 type PortfolioRecord = Pick<PortfolioSelect, 'id'>;
-type StockTickerRecord = Pick<StockTickerSelect, 'id' | 'name' | 'sector' | 'industry' | 'exchangeDispatch'>;
+type StockTickerRecord = Pick<StockTickerSelect, 'id' | 'isin' | 'name' | 'sector' | 'industry' | 'exchangeDispatch'>;
 type CreatePortfolioInput = Pick<PortfolioInsert, 'id' | 'name' | 'userId'>;
 type CreateStockTickerInput = Pick<
   StockTickerInsert,
   'id' | 'isin' | 'symbol' | 'name' | 'sector' | 'industry' | 'exchangeDispatch'
 >;
-type UpdateStockTickerInput = Pick<StockTickerInsert, 'name' | 'sector' | 'industry' | 'exchangeDispatch'>;
+type UpdateStockTickerInput = Pick<StockTickerInsert, 'isin' | 'name' | 'sector' | 'industry' | 'exchangeDispatch'>;
 type CreatePortfolioTransactionInput = Pick<
   PortfolioTransactionInsert,
   | 'id'
@@ -76,6 +76,7 @@ export async function findStockTickerById(c: HonoContext, tickerId: string): Pro
     .get('db')
     .select({
       id: stockTicker.id,
+      isin: stockTicker.isin,
       name: stockTicker.name,
       sector: stockTicker.sector,
       industry: stockTicker.industry,
@@ -107,6 +108,7 @@ export async function createStockTicker(c: HonoContext, input: CreateStockTicker
     })
     .returning({
       id: stockTicker.id,
+      isin: stockTicker.isin,
       name: stockTicker.name,
       sector: stockTicker.sector,
       industry: stockTicker.industry,
