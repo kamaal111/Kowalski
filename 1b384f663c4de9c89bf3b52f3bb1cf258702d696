@@ -1,0 +1,34 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "1b384f663c4de9c89bf3b52f3bb1cf258702d696",
+  "prompts": {
+    "35a040283657a3ef": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d536b-adfa-7a73-826b-167f0e320764",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Kamaal Farah",
+      "messages": [],
+      "total_additions": 8,
+      "total_deletions": 19,
+      "accepted_lines": 8,
+      "overriden_lines": 0
+    },
+    "a4562bbf0b3c0f63": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d536b-b7eb-7442-8c35-6949454a1ed2",
+        "model": "unknown"
+      },
+      "human_author": "Kamaal Farah",
+      "messages": [],
+      "total_additions": 4,
+      "total_deletions": 0,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}
