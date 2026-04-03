@@ -59,6 +59,32 @@ struct KowalskiPortfolioTests {
         #expect(await portfolioClient.createEntryCallCount == 1)
         #expect(await portfolioClient.listEntriesCallCount == 1)
     }
+
+    @Test
+    func `Search stocks should preserve isin from the client response`() async throws {
+        let stocksClient = MockStocksClient(
+            searchResult: .success(
+                KowalskiStocksSearchResponse(
+                    quotes: [
+                        KowalskiClientStockItem(
+                            symbol: "AAPL",
+                            exchange: "NMS",
+                            name: "Apple Inc.",
+                            isin: "US0378331005",
+                            sector: "Technology",
+                            industry: "Consumer Electronics",
+                            exchangeDispatch: "NASDAQ",
+                        ),
+                    ],
+                ),
+            ),
+        )
+        let portfolio = KowalskiPortfolio.testing(client: .testing(stocks: stocksClient))
+
+        let stocks = try await portfolio.searchStocks(query: "AAPL").get()
+
+        #expect(stocks.map(\.isin) == ["US0378331005"])
+    }
 }
 
 private actor MockPortfolioClient: KowalskiPortfolioClient {
@@ -99,12 +125,25 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
     }
 }
 
+private actor MockStocksClient: KowalskiStocksClient {
+    private let searchResult: Result<KowalskiStocksSearchResponse, KowalskiStocksSearchErrors>
+
+    init(searchResult: Result<KowalskiStocksSearchResponse, KowalskiStocksSearchErrors>) {
+        self.searchResult = searchResult
+    }
+
+    func search(query _: String) async -> Result<KowalskiStocksSearchResponse, KowalskiStocksSearchErrors> {
+        searchResult
+    }
+}
+
 private func makeTransactionPayload(amount: Double) -> TransactionPayload {
     TransactionPayload(
         stock: Stock(
             symbol: "AAPL",
             exchange: "NMS",
             name: "Apple Inc.",
+            isin: "US0378331005",
             sector: "Technology",
             industry: "Consumer Electronics",
             exchangeDispatch: "NASDAQ",
@@ -125,6 +164,7 @@ private func makePortfolioEntryResponse(amount: Double) -> KowalskiPortfolioClie
             symbol: "AAPL",
             exchange: "NMS",
             name: "Apple Inc.",
+            isin: "US0378331005",
             sector: "Technology",
             industry: "Consumer Electronics",
             exchangeDispatch: "NASDAQ",

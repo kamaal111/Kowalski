@@ -43,7 +43,7 @@ public struct KowalskiPortfolioScreen: View {
             }
         }
         .frame(minSize: ModuleConfig.screenMinSize)
-        .navigationTitle("")
+        .navigationTitle("Transactions")
         .task {
             guard !hasLoadedEntries else { return }
 

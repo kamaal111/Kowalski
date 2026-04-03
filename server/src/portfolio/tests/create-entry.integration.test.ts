@@ -41,6 +41,7 @@ describe('Create Portfolio Entry Route', () => {
           symbol: 'AAPL',
           exchange: 'NMS',
           name: 'Apple Inc.',
+          isin: 'US0378331005',
           sector: 'Technology',
           industry: 'Consumer Electronics',
           exchange_dispatch: 'NASDAQ',
@@ -64,6 +65,7 @@ describe('Create Portfolio Entry Route', () => {
         tickerId: persistedState.tickers[0].id,
       });
       expect(persistedState.tickers[0]).toMatchObject({
+        isin: 'US0378331005',
         symbol: 'AAPL',
         name: 'Apple Inc.',
         sector: 'Technology',
@@ -131,7 +133,7 @@ describe('Create Portfolio Entry Route', () => {
     'updates the existing stock ticker details when they change',
     async ({ app, db, sessionToken, getLogsForRequestId, withRequestId }) => {
       await sendCreateEntryRequest(app, {
-        payload: createValidCreateEntryPayload(),
+        payload: createPayloadWithNullIsin(),
         sessionToken,
       });
 
@@ -160,6 +162,7 @@ describe('Create Portfolio Entry Route', () => {
 
       expect(persistedState.tickers).toHaveLength(1);
       expect(persistedState.tickers[0]).toMatchObject({
+        isin: 'US0378331005',
         name: 'Apple Incorporated',
         sector: 'Information Technology',
         industry: 'Hardware',
@@ -177,6 +180,19 @@ describe('Create Portfolio Entry Route', () => {
       );
     },
   );
+
+  integrationTest('accepts create-entry payloads when stock isin is omitted', async ({ app, sessionToken, expect }) => {
+    const payload = createPayloadWithoutIsin();
+    const response = await sendCreateEntryRequest(app, {
+      payload,
+      sessionToken,
+    });
+
+    expect(response.status).toBe(201);
+    const body = await expectSuccessfulCreateEntryResponse(response);
+
+    expect(body.stock.isin).toBe('PORTFOLIO-NMS-LBTYA');
+  });
 
   integrationTest('rejects a request without authentication', async ({ app }) => {
     const response = await sendCreateEntryRequest(app, {
@@ -217,6 +233,7 @@ function createValidCreateEntryPayload() {
       symbol: 'AAPL',
       exchange: 'NMS',
       name: 'Apple Inc.',
+      isin: 'US0378331005',
       sector: 'Technology',
       industry: 'Consumer Electronics',
       exchange_dispatch: 'NASDAQ',
@@ -229,6 +246,32 @@ function createValidCreateEntryPayload() {
     transaction_type: 'buy',
     transaction_date: '2025-12-20T10:30:00.000Z',
   });
+}
+
+function createPayloadWithNullIsin() {
+  return {
+    ...createValidCreateEntryPayload(),
+    stock: {
+      ...createValidCreateEntryPayload().stock,
+      isin: null,
+    },
+  };
+}
+
+function createPayloadWithoutIsin() {
+  const payloadWithIsin = createValidCreateEntryPayload();
+  const { isin: _isin, ...stockWithoutIsin } = payloadWithIsin.stock;
+
+  return {
+    ...payloadWithIsin,
+    stock: {
+      ...stockWithoutIsin,
+      symbol: 'LBTYA',
+      name: 'Liberty Global Ltd.',
+      sector: 'Communication Services',
+      industry: 'Telecom Services',
+    },
+  };
 }
 
 function createPayloadWithNonPositiveAmount() {

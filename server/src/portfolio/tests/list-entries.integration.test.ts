@@ -90,6 +90,30 @@ describe('List Portfolio Entries Route', () => {
     },
   );
 
+  integrationTest('returns stored isins for portfolio entries', async ({ app, db, sessionToken, userId }) => {
+    await seedPortfolioEntry(db, {
+      userId,
+      stock: {
+        symbol: 'AAPL',
+        exchange: 'NMS',
+        name: 'Apple Inc.',
+        isin: 'US0378331005',
+        sector: 'Technology',
+        industry: 'Consumer Electronics',
+        exchangeDispatch: 'NASDAQ',
+      },
+      amount: 10,
+      purchasePrice: { currency: 'USD', value: 150.5 },
+      transactionType: 'buy',
+      transactionDate: '2025-12-20T10:30:00.000Z',
+    });
+
+    const response = await sendListEntriesRequest(app, { sessionToken });
+    const body = await expectSuccessfulListEntriesResponse(response);
+
+    expect(body[0]?.stock.isin).toBe('US0378331005');
+  });
+
   integrationTest(
     'returns an empty array when the user has no portfolio entries yet',
     async ({ app, sessionToken }) => {

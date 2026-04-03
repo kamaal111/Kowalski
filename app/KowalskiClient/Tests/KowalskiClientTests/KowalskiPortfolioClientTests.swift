@@ -72,6 +72,7 @@ private func makeCreateEntryPayload() -> KowalskiPortfolioCreateEntryPayload {
             symbol: "AAPL",
             exchange: "NMS",
             name: "Apple Inc.",
+            isin: "US0378331005",
             sector: "Technology",
             industry: "Consumer Electronics",
             exchangeDispatch: "NASDAQ",

@@ -14,6 +14,7 @@ interface SeedPortfolioEntryInput {
     symbol: string;
     exchange: string;
     name: string;
+    isin?: string | null;
     sector?: string | null;
     industry?: string | null;
     exchangeDispatch?: string | null;
@@ -55,6 +56,7 @@ export async function seedPortfolioEntry(db: Database, input: SeedPortfolioEntry
       symbol: input.stock.symbol,
       exchange: input.stock.exchange,
       name: input.stock.name,
+      isin: input.stock.isin ?? createSyntheticTickerIsin(input.stock),
       sector: input.stock.sector ?? null,
       industry: input.stock.industry ?? null,
       exchange_dispatch: input.stock.exchangeDispatch ?? null,
@@ -101,7 +103,7 @@ async function getOrCreateDefaultPortfolio(db: Database, userId: string) {
 async function getOrCreateTicker(db: Database, stock: SeedPortfolioEntryInput['stock']) {
   const tickerId = createSyntheticTickerId(stock);
   const existingTickers = await db
-    .select({ id: stockTicker.id })
+    .select({ id: stockTicker.id, isin: stockTicker.isin })
     .from(stockTicker)
     .where(eq(stockTicker.id, tickerId))
     .limit(1);
@@ -110,6 +112,7 @@ async function getOrCreateTicker(db: Database, stock: SeedPortfolioEntryInput['s
     await db
       .update(stockTicker)
       .set({
+        isin: stock.isin ?? existingTicker.isin,
         name: stock.name,
         sector: stock.sector ?? null,
         industry: stock.industry ?? null,
@@ -123,7 +126,7 @@ async function getOrCreateTicker(db: Database, stock: SeedPortfolioEntryInput['s
     .insert(stockTicker)
     .values({
       id: tickerId,
-      isin: createSyntheticTickerIsin(stock),
+      isin: stock.isin ?? createSyntheticTickerIsin(stock),
       symbol: stock.symbol,
       name: stock.name,
       sector: stock.sector ?? null,

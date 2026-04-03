@@ -5,13 +5,13 @@ export type StocksSearchQuery = z.infer<typeof StocksSearchQuerySchema>;
 export const StocksSearchQuerySchema = z
   .object({
     q: z.string().nonempty().openapi({
-      description: 'Search query for stock symbols or company names',
+      description: 'Search query for stock symbols, ISINs, or company names',
       example: 'AAPL',
     }),
   })
   .openapi('StocksSearchParams', {
     title: 'Stocks Search Parameters',
-    description: 'Query parameters for searching stocks by symbol or company name',
+    description: 'Query parameters for searching stocks by symbol, ISIN, or company name',
     example: { q: 'AAPL' },
   });
 
@@ -22,6 +22,11 @@ const NullableString = z
   .trim()
   .transform(val => (val === '' ? null : val))
   .nullable();
+const OptionalNullableString = z
+  .string()
+  .trim()
+  .transform(val => (val === '' ? null : val))
+  .nullish();
 
 export const StocksSearchQuoteItemResponseSchema = z
   .object({
@@ -36,6 +41,10 @@ export const StocksSearchQuoteItemResponseSchema = z
     name: z.string().nonempty().openapi({
       description: 'Company name',
       example: 'Apple Inc.',
+    }),
+    isin: OptionalNullableString.openapi({
+      description: 'International Securities Identification Number',
+      example: 'US0378331005',
     }),
     sector: NullableString.openapi({
       description: 'Business sector',
@@ -57,6 +66,7 @@ export const StocksSearchQuoteItemResponseSchema = z
       symbol: 'AAPL',
       exchange: 'NMS',
       name: 'Apple Inc.',
+      isin: 'US0378331005',
       sector: 'Technology',
       industry: 'Consumer Electronics',
       exchange_dispatch: 'NASDAQ',
@@ -85,6 +95,7 @@ export const StocksSearchResponseSchema = z
           symbol: 'AAPL',
           exchange: 'NMS',
           name: 'Apple Inc.',
+          isin: 'US0378331005',
           sector: 'Technology',
           industry: 'Consumer Electronics',
           exchange_dispatch: 'NASDAQ',

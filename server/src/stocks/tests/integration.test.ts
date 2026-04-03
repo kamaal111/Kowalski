@@ -11,6 +11,7 @@ const StocksSearchResponseSchema = z.object({
     z.object({
       symbol: z.string(),
       name: z.string(),
+      isin: z.string().nullable(),
     }),
   ),
 });
@@ -37,6 +38,7 @@ describe('Stocks Integration Tests', () => {
         expect.objectContaining({
           symbol: 'AAPL',
           name: 'Apple Inc.',
+          isin: 'US0378331005',
         }),
       );
       expect(logs).toEqual(
@@ -72,6 +74,29 @@ describe('Stocks Integration Tests', () => {
             status_code: 200,
           }),
         ]),
+      );
+    },
+  );
+
+  integrationTest(
+    'returns a null isin when the upstream quote does not provide one',
+    async ({ app, sessionToken, expect }) => {
+      const res = await app.request('/app-api/stocks/search?q=MSFT&cacheTest=missing-isin', {
+        headers: {
+          Authorization: `Bearer ${sessionToken}`,
+        },
+      });
+
+      expect(res.status).toBe(200);
+      const body = StocksSearchResponseSchema.parse(await res.json());
+
+      expect(body.count).toBe(1);
+      expect(body.quotes[0]).toEqual(
+        expect.objectContaining({
+          symbol: 'MSFT',
+          name: 'Microsoft Corporation',
+          isin: null,
+        }),
       );
     },
   );

@@ -37,6 +37,7 @@ function mapPersistedEntryToResponse(entry: PersistedPortfolioEntry) {
       symbol: entry.stockSymbol,
       exchange: getExchangeFromTickerId(entry.tickerId),
       name: entry.stockName,
+      isin: entry.stockIsin,
       sector: entry.stockSector,
       industry: entry.stockIndustry,
       exchange_dispatch: entry.stockExchangeDispatch,
