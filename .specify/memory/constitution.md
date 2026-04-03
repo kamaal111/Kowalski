@@ -36,10 +36,10 @@ FOLLOW-UP TODOS: None - all placeholders resolved
 
 All code MUST compile without warnings or errors under strict mode:
 
-- **TypeScript**: `verbatimModuleSyntax` enabled, all ESLint rules enforced
+- **TypeScript**: `verbatimModuleSyntax` enabled, all Oxlint rules enforced
 - **Swift**: All packages MUST use `.treatAllWarnings(as: .error)` - zero tolerance for warnings
 - **Type Declarations**: Explicit typing required; no implicit `any` or loose inference
-- **Linting**: ESLint (TypeScript) and SwiftLint violations block PR merge
+- **Linting**: Oxlint (TypeScript) and SwiftLint violations block PR merge
 
 **Consistency & Standards**
 

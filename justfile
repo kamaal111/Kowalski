@@ -179,7 +179,7 @@ lint-app:
 [parallel]
 format: format-server format-app
 
-# Format server code with Prettier
+# Format server code with Oxfmt
 format-server:
     {{ PNR }} format
 
@@ -192,7 +192,7 @@ format-app:
 [parallel]
 format-check: format-check-server format-check-app
 
-# Check server code formatting with Prettier
+# Check server code formatting with Oxfmt
 format-check-server:
     {{ PNR }} format:check
 

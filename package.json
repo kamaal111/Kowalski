@@ -2,9 +2,9 @@
   "name": "kowalski",
   "version": "1.0.0",
   "scripts": {
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "lint": "eslint .",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "lint": "oxlint .",
     "prepare": "husky",
     "server": "pnpm --filter kowalski-server"
   },
@@ -12,26 +12,22 @@
   "author": "Kamaal Farah",
   "packageManager": "pnpm@10.26.1",
   "devDependencies": {
-    "@eslint/compat": "^2.0.3",
-    "@eslint/js": "^10.0.1",
     "@kamaalio/prettier-config": "^0.1.2",
-    "eslint": "^10.1.0",
-    "eslint-config-prettier": "^10.1.8",
-    "globals": "^17.4.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
+    "oxfmt": "^0.43.0",
+    "oxlint": "^1.58.0",
     "prettier": "^3.8.1",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.57.1"
+    "typescript": "^5.9.3"
   },
   "engines": {
     "node": ">=24.0.0"
   },
   "lint-staged": {
-    "**/*.{js,ts,tsx}": [
-      "eslint --fix"
+    "**/*.{cjs,js,mjs,ts,tsx}": [
+      "oxlint --fix"
     ],
-    "**/*.{cjs,css,html,js,json,json5,jsx,md,mjs,scss,ts,tsx,yaml,yml}": "prettier --write"
+    "**/*.{cjs,css,html,js,json,json5,jsx,md,mjs,scss,ts,tsx,yaml,yml}": "oxfmt --write --no-error-on-unmatched-pattern"
   },
   "prettier": "@kamaalio/prettier-config"
 }

@@ -1,6 +1,7 @@
+import childProcess from 'node:child_process';
+import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { ESLint } from 'eslint';
 import { afterEach, describe, expect, test } from 'vitest';
 
 import {
@@ -13,41 +14,38 @@ import {
 } from '@/logging';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '../../..');
+const OXLINT_BINARY = path.join(REPO_ROOT, 'node_modules/oxlint/bin/oxlint');
+const OXLINT_CONFIG = path.join(REPO_ROOT, '.oxlintrc.json');
 
 describe('Logging policy', () => {
   afterEach(() => {
     resetRootLogger();
   });
 
-  test('rejects console usage in server source and scripts', async () => {
-    const eslint = new ESLint({ cwd: REPO_ROOT });
-    const [sourceResults, scriptResults] = await Promise.all([
-      eslint.lintText("console.log('src');", {
-        filePath: path.join(REPO_ROOT, 'server/src/tests/integration.test.ts'),
-      }),
-      eslint.lintText("console.error('script');", {
-        filePath: path.join(REPO_ROOT, 'server/scripts/download-openapi-spec.ts'),
-      }),
-    ]);
-    const sourceResult = sourceResults[0];
-    const scriptResult = scriptResults[0];
+  test('rejects console usage in server source and allows it in scripts', async () => {
+    const fixtureId = crypto.randomUUID();
+    const sourceFilePath = path.join(REPO_ROOT, 'server/src/tests', `logging-policy-${fixtureId}.ts`);
+    const scriptFilePath = path.join(REPO_ROOT, 'server/scripts', `logging-policy-${fixtureId}.ts`);
 
-    expect(sourceResult.messages).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          ruleId: 'no-console',
-          severity: 2,
-        }),
-      ]),
-    );
-    expect(scriptResult.messages).not.toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          ruleId: 'no-console',
-          severity: 2,
-        }),
-      ]),
-    );
+    await Promise.all([
+      fs.writeFile(sourceFilePath, "console.log('src');\n", 'utf8'),
+      fs.writeFile(scriptFilePath, "console.error('script');\n", 'utf8'),
+    ]);
+
+    try {
+      const sourceResult = runOxlint(sourceFilePath);
+      const scriptResult = runOxlint(scriptFilePath);
+
+      expect(sourceResult.error).toBeUndefined();
+      expect(sourceResult.status).toBe(1);
+      expect(getLintOutput(sourceResult)).toContain('no-console');
+
+      expect(scriptResult.error).toBeUndefined();
+      expect(scriptResult.status).toBe(0);
+      expect(getLintOutput(scriptResult)).not.toContain('no-console');
+    } finally {
+      await Promise.all([fs.rm(sourceFilePath, { force: true }), fs.rm(scriptFilePath, { force: true })]);
+    }
   });
 
   test('emits flat structured logs only', () => {
@@ -103,4 +101,12 @@ function isStructuredLogRecord(value: unknown): value is Record<string, unknown>
 
 function parseJsonLogLine(line: string): unknown {
   return JSON.parse(line);
+}
+
+function runOxlint(filePath: string) {
+  return childProcess.spawnSync(OXLINT_BINARY, ['-c', OXLINT_CONFIG, filePath], { cwd: REPO_ROOT, encoding: 'utf8' });
+}
+
+function getLintOutput(result: { stdout: string; stderr: string }): string {
+  return `${result.stdout}${result.stderr}`;
 }

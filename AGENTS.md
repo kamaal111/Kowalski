@@ -44,7 +44,7 @@
   - For API verification, use `just compile-server` and let the user run the server manually
   - If OpenAPI spec download is needed, prefer asking the user to start the server first instead of relying on auto-start behavior
 - **NEVER suppress lint or type errors**
-  - Do not add `eslint-disable`, `eslint-disable-next-line`, `@ts-ignore`, or `@ts-expect-error`
+  - Do not add `oxlint-disable`, `oxlint-disable-next-line`, `eslint-disable`, `eslint-disable-next-line`, `@ts-ignore`, or `@ts-expect-error`
   - Fix the underlying issue with better types, refactors, validation, or type guards
 - **NEVER use TypeScript type assertions or casting**
   - Do not use `as Type` or `<Type>value`
@@ -54,7 +54,7 @@
   - Treat validation gaps as real bugs, not typing inconveniences
 - **ALWAYS use the shared Pino logger for server logging**
   - Use the shared logger entrypoint for `server/src/**` request middleware, handlers, error handling, and startup/shutdown
-  - Never introduce `console.*` in `server/src/**`; ESLint treats it as an error
+  - Never introduce `console.*` in `server/src/**`; Oxlint treats it as an error
   - `server/scripts/**` may use `console.*` for local operator feedback
   - Include the standard structured fields when relevant: `service`, `component`, `event`, `mode`, `request_id`, `method`, `path`, `route`, `status_code`, `duration_ms`, `user_id`, `outcome`, `error_code`, and `error_name`
   - Log meaningful successful business outcomes as well as failures
@@ -91,7 +91,7 @@
   - Use `camelCase` for variables and functions
   - Use `PascalCase` for schemas, types, and classes
   - Prefer default exports for routes and handlers where the codebase already follows that pattern
-  - Never use deprecated APIs when ESLint or TypeScript flags a modern replacement
+  - Never use deprecated APIs when Oxlint or TypeScript flags a modern replacement
   - Centralize reusable constants in `server/src/constants/`
 - **Type safety**
   - Do not cast values to force them through the type system

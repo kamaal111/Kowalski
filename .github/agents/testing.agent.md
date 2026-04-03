@@ -55,7 +55,7 @@ Also read the Swift-specific conventions when working on Swift packages or the a
 ## What Never to Do
 
 - Never claim tests pass without actually running them
-- Never add `eslint-disable`, `@ts-ignore`, or `@ts-expect-error` to fix test compilation issues — fix the underlying type
+- Never add `oxlint-disable`, `eslint-disable`, `@ts-ignore`, or `@ts-expect-error` to fix test compilation issues — fix the underlying type
 - Never run `just test-ui` unless the human explicitly asked for it
 - Never skip `just ready` as the final verification step
 
