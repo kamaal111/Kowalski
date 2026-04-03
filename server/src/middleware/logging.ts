@@ -1,70 +1,147 @@
-import type { Next } from 'hono';
-import { logger as honoLoggerMiddleware } from 'hono/logger';
+import { HTTPException } from 'hono/http-exception';
+import type { ErrorHandler, Next } from 'hono';
+import type { HonoContext, HonoEnvironment } from '@/api/contexts';
 
-import type { HonoContext } from '../api/contexts';
-
-function logConstructor(c: HonoContext, str: string, ...rest: string[]) {
-  return [c.get('requestId'), str, rest.join('')].join(' ');
-}
-
-export function errorLogger(c: HonoContext, str: string, ...rest: string[]) {
-  console.error(logConstructor(c, str, ...rest));
-}
-
-export function logger(c: HonoContext, str: string, ...rest: string[]) {
-  console.log(logConstructor(c, str, ...rest));
-}
+import { APIException, InvalidValidation } from '@/api/exceptions';
+import env from '@/api/env';
+import { STATUS_CODES } from '@/constants/http';
+import { logError, logInfo, logWarn } from '@/logging';
+import {
+  getRequestLogger,
+  getRouteForLog,
+  hasRequestFailed,
+  initializeRequestLogger,
+  markRequestFailed,
+} from '@/logging/http';
 
 function loggingMiddleware(c: HonoContext, next: Next) {
-  return honoLoggerMiddleware((str: string, ...rest: string[]) => {
-    logger(c, str, ...rest);
-  })(c, next);
+  const logger = initializeRequestLogger(c, env.MODE);
+  const startedAt = performance.now();
+
+  logInfo(logger, { event: 'request.started' });
+
+  return next().then(() => {
+    if (hasRequestFailed(c)) {
+      return;
+    }
+
+    logInfo(getRequestLogger(c), {
+      event: 'request.completed',
+      route: getRouteForLog(c),
+      status_code: c.res.status,
+      duration_ms: roundDurationMs(performance.now() - startedAt),
+      outcome: c.res.status >= STATUS_CODES.BAD_REQUEST ? 'failure' : 'success',
+    });
+  });
 }
 
-export function makeUncaughtErrorLog(c: HonoContext, err: unknown) {
-  const logLines = [
-    `${c.req.method} ${c.req.path} Uncaught exception; ${describeError(err)}`,
-    ...collectErrorDetails(err),
-  ];
+export const handleServerError = ((err, ctx: HonoContext) => {
+  const logger = getRequestLogger(ctx);
 
-  errorLogger(c, logLines.join('\n'));
-}
+  if (err instanceof InvalidValidation) {
+    const validationIssues = getValidationIssues(err.context);
+    logWarn(logger, {
+      event: 'request.validation.failed',
+      route: getRouteForLog(ctx),
+      status_code: err.status,
+      outcome: 'failure',
+      error_code: 'INVALID_PAYLOAD',
+      error_name: err.name,
+      validation_issue_count: validationIssues.length,
+      validation_issue_paths: getValidationIssuePaths(validationIssues),
+    });
+
+    return jsonExceptionResponse(err);
+  }
+
+  if (err instanceof APIException) {
+    logWarn(logger, {
+      event: 'request.error',
+      route: getRouteForLog(ctx),
+      status_code: err.status,
+      outcome: 'failure',
+      error_code: err.code,
+      error_name: err.name,
+    });
+
+    return jsonExceptionResponse(err);
+  }
+
+  if (err instanceof HTTPException) {
+    logWarn(logger, {
+      event: 'request.error',
+      route: getRouteForLog(ctx),
+      status_code: err.status,
+      outcome: 'failure',
+      error_name: err.name,
+    });
+
+    return jsonExceptionResponse(err);
+  }
+
+  markRequestFailed(ctx);
+  logError(
+    logger,
+    {
+      event: 'request.failed',
+      route: getRouteForLog(ctx),
+      status_code: STATUS_CODES.INTERNAL_SERVER_ERROR,
+      outcome: 'failure',
+      error_code: 'INTERNAL_SERVER_ERROR',
+    },
+    err,
+  );
+
+  return ctx.json(
+    { message: 'Something went wrong', code: 'INTERNAL_SERVER_ERROR' },
+    STATUS_CODES.INTERNAL_SERVER_ERROR,
+  );
+}) satisfies ErrorHandler<HonoEnvironment>;
 
 export default loggingMiddleware;
 
-function describeError(err: unknown) {
-  if (err instanceof Error) {
-    return `${err.name}: ${err.message}`;
-  }
-
-  return String(err);
+function jsonExceptionResponse(err: HTTPException) {
+  return err.getResponse();
 }
 
-function collectErrorDetails(err: unknown, seen = new Set<unknown>(), depth = 0): string[] {
-  if (!(err instanceof Error) || seen.has(err)) {
+function getValidationIssuePaths(validations: ValidationIssue[]) {
+  return validations.map(issue => {
+    if (issue == null || typeof issue !== 'object' || !('path' in issue) || !Array.isArray(issue.path)) {
+      return '<root>';
+    }
+
+    const path = issue.path.map((segment: string | number) => String(segment)).join('.');
+    return path.length > 0 ? path : '<root>';
+  });
+}
+
+function roundDurationMs(durationMs: number) {
+  return Math.round(durationMs * 100) / 100;
+}
+
+interface ValidationIssue {
+  path?: (string | number)[];
+}
+
+function getValidationIssues(context: unknown): ValidationIssue[] {
+  if (context == null || typeof context !== 'object' || !('validations' in context)) {
     return [];
   }
 
-  seen.add(err);
-
-  const details: string[] = [];
-  const labelPrefix = depth === 0 ? 'Error' : `Cause ${depth}`;
-
-  if (err.stack != null) {
-    details.push(`${labelPrefix} stack:\n${indentMultiline(err.stack, '  ')}`);
-  }
-
-  if (err.cause !== undefined) {
-    details.push(`Cause ${depth + 1}: ${describeError(err.cause)}`);
-    details.push(...collectErrorDetails(err.cause, seen, depth + 1));
-  }
-
-  return details;
+  const validations = context.validations;
+  return Array.isArray(validations) ? validations.filter(isValidationIssue) : [];
 }
 
-function indentMultiline(value: string, indentation: string) {
-  return value
-    .split('\n')
-    .map(line => `${indentation}${line}`)
-    .join('\n');
+function isValidationIssue(value: unknown): value is ValidationIssue {
+  if (value == null || typeof value !== 'object') {
+    return false;
+  }
+
+  if (!('path' in value) || value.path == null) {
+    return true;
+  }
+
+  return (
+    Array.isArray(value.path) && value.path.every(segment => typeof segment === 'string' || typeof segment === 'number')
+  );
 }

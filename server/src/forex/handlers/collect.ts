@@ -8,24 +8,49 @@ import { ExchangeRateRecord } from '../models/exchange-rate-record';
 import { ForexECPResponseSchema } from '../schemas/collect';
 import ForexItem from '../models/forex-item';
 import { exchangeRates } from '../../db/schema/forex';
+import { logInfo, logWarn } from '@/logging';
+import { setRequestRoute, withRequestLogger } from '@/logging/http';
 
 const BASE_FOREX_URL = new URL('https://www.ecb.europa.eu');
 const HOME_URL = new URL('/home/html/rss.en.html', BASE_FOREX_URL);
+export const FOREX_COLLECT_ROUTE_PATH = '/daily-api/forex/collect';
 
 async function collect(c: HonoContext) {
+  setRequestRoute(c, FOREX_COLLECT_ROUTE_PATH);
+  const logger = withRequestLogger(c, { component: 'forex' });
+  logInfo(logger, {
+    event: 'forex.collect.started',
+    route: FOREX_COLLECT_ROUTE_PATH,
+    source_url: HOME_URL.toString(),
+    outcome: 'success',
+  });
   const urls = await fetchUrls();
-  const fetchedExchangeRates = await fetExchangeRates(urls);
+  const fetchedExchangeRates = await fetExchangeRates(urls, logger);
   if (!fetchedExchangeRates || fetchedExchangeRates.ratesAreEmpty) {
+    logInfo(logger, {
+      event: 'forex.collect.no_data',
+      route: FOREX_COLLECT_ROUTE_PATH,
+      outcome: 'failure',
+    });
     return c.json({ message: 'No exchange rates found' }, 404);
   }
 
   const db = c.get('db');
   const storedItems = await storeExchangeRates(fetchedExchangeRates, db);
+  logInfo(logger, {
+    event: 'forex.collect.persisted',
+    route: FOREX_COLLECT_ROUTE_PATH,
+    stored_count: storedItems.length,
+    outcome: 'success',
+  });
 
   return c.json({ stored: storedItems.length, exchangeRate: fetchedExchangeRates }, 200);
 }
 
-async function fetExchangeRates(urls: URL[]): Promise<ExchangeRateRecord | undefined> {
+async function fetExchangeRates(
+  urls: URL[],
+  logger: ReturnType<typeof withRequestLogger>,
+): Promise<ExchangeRateRecord | undefined> {
   const spreadExchangeRatesResults = await Promise.allSettled(
     urls.map(async url => {
       const urlPart = url.toString().split('/').at(-1);
@@ -62,9 +87,17 @@ async function fetExchangeRates(urls: URL[]): Promise<ExchangeRateRecord | undef
 
   let latestDate: Date | undefined;
   const combinedExchangeRates: Record<string, ExchangeRateRecord> = {};
-  for (const exchangeRatesResult of spreadExchangeRatesResults) {
+  for (const [index, exchangeRatesResult] of spreadExchangeRatesResults.entries()) {
     if (exchangeRatesResult.status === 'rejected') {
-      console.warn(`Failed to get exchange rates;`, exchangeRatesResult.reason);
+      logWarn(logger, {
+        event: 'forex.collect.fetch_failed',
+        source_url: urls[index]?.toString(),
+        error_name:
+          exchangeRatesResult.reason instanceof Error
+            ? exchangeRatesResult.reason.name
+            : typeof exchangeRatesResult.reason,
+        outcome: 'failure',
+      });
       continue;
     }
 
@@ -108,11 +141,9 @@ async function storeExchangeRates(exchangeRate: ExchangeRateRecord, db: Database
 
   const itemsToStore = Object.values(itemsToStoreRecord);
   if (itemsToStore.length === 0) {
-    console.log('no new data found to save');
     return [];
   }
 
-  console.log(`saving ${itemsToStore.length} items to database`);
   await db.insert(exchangeRates).values(
     itemsToStore.map(item => {
       const doc = item.toDocumentObject();

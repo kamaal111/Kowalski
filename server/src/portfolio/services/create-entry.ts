@@ -10,6 +10,8 @@ import {
   findStockTickerById,
   updateStockTicker,
 } from '../repositories/create-entry';
+import { logInfo } from '@/logging';
+import { withRequestLogger } from '@/logging/http';
 
 const DEFAULT_PORTFOLIO_NAME = 'Default Portfolio';
 
@@ -37,11 +39,20 @@ async function getOrCreateDefaultPortfolio(c: HonoContext, userId: string) {
     return existingPortfolio;
   }
 
-  return createPortfolio(c, {
+  // TODO: Assert that user id is that which is in the request context
+  const createdPortfolio = await createPortfolio(c, {
     id: crypto.randomUUID(),
     name: DEFAULT_PORTFOLIO_NAME,
     userId,
   });
+  logInfo(withRequestLogger(c, { component: 'portfolio' }), {
+    event: 'portfolio.default_portfolio.created',
+    user_id: userId,
+    portfolio_id: createdPortfolio.id,
+    outcome: 'success',
+  });
+
+  return createdPortfolio;
 }
 
 async function getOrCreateStockTicker(c: HonoContext, payload: CreateEntryPayload) {
@@ -54,6 +65,12 @@ async function getOrCreateStockTicker(c: HonoContext, payload: CreateEntryPayloa
         sector: payload.stock.sector,
         industry: payload.stock.industry,
         exchangeDispatch: payload.stock.exchange_dispatch,
+      });
+      logInfo(withRequestLogger(c, { component: 'portfolio' }), {
+        event: 'portfolio.ticker.updated',
+        ticker_id: existingTicker.id,
+        ticker_symbol: payload.stock.symbol,
+        outcome: 'success',
       });
     }
 

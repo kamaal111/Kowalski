@@ -14,12 +14,25 @@ export default defineConfig([
     extends: ['js/recommended'],
     rules: {
       '@typescript-eslint/no-deprecated': 'error',
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        {
+          prefer: 'type-imports',
+          fixStyle: 'separate-type-imports',
+        },
+      ],
       'no-empty-pattern': 'off',
     },
   },
   {
     files: ['**/*.{js,mjs,cjs,ts}'],
     languageOptions: { globals: globals.node },
+  },
+  {
+    files: ['server/src/**/*.{js,mjs,cjs,ts}'],
+    rules: {
+      'no-console': 'error',
+    },
   },
   tseslint.configs.recommendedTypeChecked,
   tseslint.configs.strict,

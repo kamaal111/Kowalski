@@ -1,24 +1,19 @@
 import { createMiddleware } from 'hono/factory';
-import {
-  createLocalJWKSet,
-  createRemoteJWKSet,
-  jwtVerify,
-  type JWTPayload,
-  type JWTVerifyResult,
-  type ResolvedKey,
-} from 'jose';
+import { createLocalJWKSet, createRemoteJWKSet, jwtVerify } from 'jose';
 import z from 'zod';
-
+import type { JWTPayload } from 'jose';
 import type { HonoContext, HonoVariables } from '../api/contexts';
+import type { SessionResponse } from './schemas/responses';
+
 import { APIException } from '../api/exceptions';
 import { STATUS_CODES } from '../constants/http';
 import { toISO8601String } from '../utils/strings';
 import { SessionNotFound } from './exceptions';
-import type { SessionResponse } from './schemas/responses';
 import { JWKS_URL } from './better-auth';
-import { errorLogger, logger } from '../middleware/logging';
 import env, { IS_TEST } from '../api/env';
 import { jwks } from '../db/schema/better-auth';
+import { logInfo, logWarn } from '@/logging';
+import { setRequestUserId, withRequestLogger } from '@/logging/http';
 
 const RemoteJWKS = createRemoteJWKSet(JWKS_URL);
 
@@ -52,6 +47,13 @@ async function verifySession(c: HonoContext): Promise<SessionResponse> {
     throw new SessionNotFound(c);
   }
 
+  setRequestUserId(c, sessionResponse.user.id);
+  logInfo(withRequestLogger(c, { component: 'auth' }), {
+    event: 'auth.session.lookup',
+    user_id: sessionResponse.user.id,
+    outcome: 'success',
+  });
+
   const response: SessionResponse = {
     session: {
       expires_at: toISO8601String(sessionResponse.session.expiresAt),
@@ -75,25 +77,26 @@ async function verifyJwt(c: HonoContext): Promise<SessionResponse | null> {
   if (authHeader == null) return null;
   if (!authHeader.startsWith('Bearer ')) return null;
 
-  logger(c, `[AUTH] JWT token found, verifying with JWKS...`);
-
   const token = authHeader.slice(7);
-  let verificationResult: JWTVerifyResult<JWTPayload> & ResolvedKey;
   const jwks = await getJwksForVerification(c);
+  let verificationResult: Awaited<ReturnType<typeof jwtVerify<JWTPayload>>>;
   try {
     verificationResult = await jwtVerify(token, jwks, {
       issuer: env.BETTER_AUTH_URL,
       audience: env.BETTER_AUTH_URL,
     });
   } catch (error) {
-    errorLogger(c, `[AUTH] ❌ JWT verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    logWarn(withRequestLogger(c, { component: 'auth' }), {
+      event: 'auth.jwt.verification',
+      outcome: 'failure',
+      error_name: error instanceof Error ? error.name : typeof error,
+    });
     return null;
   }
 
   const payload = verificationResult.payload;
   const zResult = BetterAuthJWTPayloadSchema.safeParse(payload);
   if (!zResult.success) {
-    errorLogger(c, `[AUTH] ❌ JWT payload validation failed: ${zResult.error.message}`, 'error');
     throw new APIException(c, STATUS_CODES.UNAUTHORIZED, {
       message: 'Invalid JWT payload',
       code: 'INVALID_JWT_PAYLOAD',
@@ -101,6 +104,12 @@ async function verifyJwt(c: HonoContext): Promise<SessionResponse | null> {
   }
 
   const jwtPayload = zResult.data;
+  setRequestUserId(c, jwtPayload.sub);
+  logInfo(withRequestLogger(c, { component: 'auth' }), {
+    event: 'auth.jwt.verification',
+    user_id: jwtPayload.sub,
+    outcome: 'success',
+  });
 
   return {
     session: {

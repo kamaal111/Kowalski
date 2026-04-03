@@ -3,13 +3,25 @@ import type { RequestIdVariables } from 'hono/request-id';
 
 import type { Database } from '../db';
 import type { Auth, SessionResponse } from '../auth';
+import type { ServerLogger } from '../logging';
 
 interface InjectedContext {
   db: Database;
   auth: Auth;
 }
 
-export type HonoVariables = RequestIdVariables & InjectedContext & { session?: SessionResponse };
+interface LoggingVariables {
+  logger: ServerLogger;
+}
+
+interface RequestLifecycleVariables {
+  requestFailed?: boolean;
+}
+
+export type HonoVariables = RequestIdVariables &
+  InjectedContext &
+  LoggingVariables &
+  RequestLifecycleVariables & { session?: SessionResponse };
 
 export interface HonoEnvironment {
   Variables: HonoVariables;

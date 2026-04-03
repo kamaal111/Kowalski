@@ -1,5 +1,7 @@
 import { vi } from 'vitest';
 
+import { initializeTestLogs } from './logs';
+
 const QUOTES = [
   {
     symbol: 'AAPL',
@@ -10,6 +12,8 @@ const QUOTES = [
     isYahooFinance: true,
   },
 ];
+
+initializeTestLogs();
 
 vi.mock('yahoo-finance2', () => {
   return {

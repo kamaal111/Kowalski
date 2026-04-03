@@ -6,10 +6,12 @@ function SingleArrayItemOptionalShape<ItemShape extends z.ZodType>(item: ItemSha
 
 export type ForexItemExchangeRateECBResponse = z.infer<typeof ForexItemExchangeRateECBResponseSchema>;
 
+const XMLTextNodeSchema = z.union([z.string(), z.object({ _: z.string() })]);
+
 export const ForexItemExchangeRateECBResponseSchema = z.object({
-  'cb:value': SingleArrayItemOptionalShape(z.object({ _: z.string() })),
-  'cb:baseCurrency': SingleArrayItemOptionalShape(z.object({ _: z.string() })),
-  'cb:targetCurrency': SingleArrayItemOptionalShape(z.string()),
+  'cb:value': SingleArrayItemOptionalShape(XMLTextNodeSchema),
+  'cb:baseCurrency': SingleArrayItemOptionalShape(XMLTextNodeSchema),
+  'cb:targetCurrency': SingleArrayItemOptionalShape(XMLTextNodeSchema),
 });
 
 export type ForexItemECPResponse = z.infer<typeof ForexItemECPResponseSchema>;

@@ -1,11 +1,12 @@
-import type { Context } from 'hono';
 import { asserts } from '@kamaalio/kamaal';
+import type { Context } from 'hono';
 
 import { LRUCache } from '../utils/cache';
 import { ONE_MINUTE_IN_MILLISECONDS } from '../constants/common';
 import type { HonoContext } from '../api/contexts';
-import { logger } from './logging';
 import env, { SERVER_MODES, type ServerMode } from '../api/env';
+import { logInfo } from '@/logging';
+import { withRequestLogger } from '@/logging/http';
 
 const DEFAULT_TTL = 5 * ONE_MINUTE_IN_MILLISECONDS;
 const DEFAULT_MAX_SIZE = 1000;
@@ -45,17 +46,25 @@ export function withCache<THandler extends (c: HonoContext) => Promise<Response>
 
   return (async c => {
     const cacheKey = createCacheKey(c, config.keyPrefix);
+    const logger = withRequestLogger(c, { component: 'cache' });
     const cached = cache.get(cacheKey);
     if (cached != null) {
-      logger(c, '[Cache] HIT:', cacheKey);
+      logInfo(logger, { event: 'cache.hit', cache_status: 'hit', cache_key: cacheKey, outcome: 'success' });
       return c.json(cached);
     }
 
-    logger(c, '[Cache] MISS:', cacheKey);
+    logInfo(logger, { event: 'cache.miss', cache_status: 'miss', cache_key: cacheKey, outcome: 'success' });
     const response = await handler(c);
     const isJson = isJsonResponse(response);
     if (!response.ok || !isJson) {
-      logger(c, `[Cache] SKIP: ${cacheKey} (status: ${response.status}, json: ${isJson})`);
+      logInfo(logger, {
+        event: 'cache.skip',
+        cache_status: 'skip',
+        cache_key: cacheKey,
+        status_code: response.status,
+        is_json: isJson,
+        outcome: 'failure',
+      });
       return response;
     }
 
@@ -63,7 +72,7 @@ export function withCache<THandler extends (c: HonoContext) => Promise<Response>
     const data: unknown = await clonedResponse.json();
     cache.set(cacheKey, data, config.ttl);
     const ttl = config.ttl ?? config.defaultTTL ?? DEFAULT_TTL;
-    logger(c, `[Cache] SET: ${cacheKey} (TTL: ${ttl}ms)`);
+    logInfo(logger, { event: 'cache.set', cache_status: 'set', cache_key: cacheKey, ttl_ms: ttl, outcome: 'success' });
 
     return response;
   }) as THandler;

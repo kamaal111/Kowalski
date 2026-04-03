@@ -43,37 +43,75 @@ interface AppRequestClient {
 }
 
 describe('Sign-up session integration', () => {
-  integrationTest('returns auth and session headers when a user signs up', async ({ app }) => {
-    const payload = createValidSignUpPayload();
-    const response = await sendSignUpRequest(app, payload);
+  integrationTest(
+    'returns auth and session headers when a user signs up',
+    async ({ app, getLogsForRequestId, withRequestId }) => {
+      const payload = createValidSignUpPayload();
+      const { headers, requestId } = withRequestId({ 'Content-Type': 'application/json' });
+      const response = await sendSignUpRequest(app, payload, headers);
 
-    const { headers } = await expectSuccessfulSignUpResponse(response);
+      const { headers: responseHeaders } = await expectSuccessfulSignUpResponse(response);
+      const logs = getLogsForRequestId(requestId);
 
-    expect(Number(headers['set-auth-token-expiry'])).toBeGreaterThan(0);
-    expect(Number(headers['set-session-update-age'])).toBe(
-      ONE_DAY_IN_SECONDS * env.BETTER_AUTH_SESSION_UPDATE_AGE_DAYS,
-    );
-  });
+      expect(Number(responseHeaders['set-auth-token-expiry'])).toBeGreaterThan(0);
+      expect(Number(responseHeaders['set-session-update-age'])).toBe(
+        ONE_DAY_IN_SECONDS * env.BETTER_AUTH_SESSION_UPDATE_AGE_DAYS,
+      );
+      expect(logs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            event: 'auth.sign_up.succeeded',
+            request_id: requestId,
+            route: SIGN_UP_PATH,
+            component: 'auth',
+          }),
+        ]),
+      );
+    },
+  );
 
-  integrationTest('retrieves the current session with the session cookie issued at sign up', async ({ app }) => {
-    const payload = createValidSignUpPayload();
-    const signUpResponse = await sendSignUpRequest(app, payload);
-    const { headers } = await expectSuccessfulSignUpResponse(signUpResponse);
+  integrationTest(
+    'retrieves the current session with the session cookie issued at sign up',
+    async ({ app, getLogsForRequestId, withRequestId }) => {
+      const payload = createValidSignUpPayload();
+      const signUpResponse = await sendSignUpRequest(app, payload);
+      const { headers } = await expectSuccessfulSignUpResponse(signUpResponse);
 
-    const sessionResponse = await sendSessionRequest(app, {
-      sessionToken: headers['set-session-token'],
-    });
+      const request = withRequestId({
+        Cookie: `better-auth.session_token=${headers['set-session-token']}`,
+      });
+      const sessionResponse = await sendSessionRequest(app, {
+        headers: request.headers,
+      });
 
-    const session = await expectSuccessfulSessionResponse(sessionResponse);
+      const session = await expectSuccessfulSessionResponse(sessionResponse);
+      const logs = getLogsForRequestId(request.requestId);
 
-    expect(session).toMatchObject({
-      user: {
-        name: payload.name,
-        email: payload.email,
-        email_verified: false,
-      },
-    });
-  });
+      expect(session).toMatchObject({
+        user: {
+          name: payload.name,
+          email: payload.email,
+          email_verified: false,
+        },
+      });
+      expect(logs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            event: 'auth.session.lookup',
+            request_id: request.requestId,
+            component: 'auth',
+            outcome: 'success',
+          }),
+          expect.objectContaining({
+            event: 'request.completed',
+            request_id: request.requestId,
+            route: SESSION_PATH,
+            user_id: session.user.id,
+          }),
+        ]),
+      );
+    },
+  );
 
   integrationTest('retrieves the current session for a helper-created authorization token', async ({ app, db }) => {
     const { token } = await createTestUserAndSession(db);
@@ -93,12 +131,18 @@ function createValidSignUpPayload() {
   };
 }
 
-async function sendSignUpRequest(app: AppRequestClient, payload: ReturnType<typeof createValidSignUpPayload>) {
+async function sendSignUpRequest(
+  app: AppRequestClient,
+  payload: ReturnType<typeof createValidSignUpPayload>,
+  headers?: Headers,
+) {
   return app.request(SIGN_UP_PATH, {
     method: 'POST',
-    headers: new Headers({
-      'Content-Type': 'application/json',
-    }),
+    headers:
+      headers ??
+      new Headers({
+        'Content-Type': 'application/json',
+      }),
     body: JSON.stringify(payload),
   });
 }
@@ -107,12 +151,13 @@ async function sendSessionRequest(
   app: AppRequestClient,
   options: {
     authToken?: string;
+    headers?: Headers;
     sessionToken?: string;
   },
 ) {
   return app.request(SESSION_PATH, {
     method: 'GET',
-    headers: createSessionRequestHeaders(options),
+    headers: options.headers ?? createSessionRequestHeaders(options),
   });
 }
 

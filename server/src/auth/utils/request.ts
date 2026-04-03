@@ -8,7 +8,6 @@ import { getValueFromSetCookie, makeNewRequest } from '../../utils/request';
 import { BetterAuthException } from '../exceptions';
 import { APIException, Unauthorized } from '../../api/exceptions';
 import { STATUS_CODES } from '../../constants/http';
-import { errorLogger } from '../../middleware/logging';
 import env from '../../api/env';
 import { APP_API_BASE_PATH, ONE_DAY_IN_SECONDS } from '../../constants/common';
 import tokenRoute from '../routes/token';
@@ -35,8 +34,6 @@ export async function handleAuthRequest<Schema extends z.ZodType>(
   const jsonResponse: unknown = await response.json();
   const exceptionResult = BetterAuthExceptionSchema.safeParse(jsonResponse);
   if (exceptionResult.success) {
-    errorLogger(c, `better-auth error -> ${JSON.stringify(exceptionResult.data)}`);
-
     throw new BetterAuthException(c, {
       code: exceptionResult.data.code,
       message: exceptionResult.data.message,
@@ -64,7 +61,6 @@ export async function getHeadersWithJwtAfterAuth(c: HonoContext, sessionToken: s
   const tokenRequest = new Request(TOKEN_URL, { method: 'GET', headers: tokenRequestHeaders });
   const response = await c.get('auth').handler(tokenRequest);
   if (!response.ok) {
-    errorLogger(c, `Failed to retrieve JWT from token endpoint. Status: ${response.status}, URL: ${TOKEN_URL}`);
     throw new Unauthorized(c);
   }
 

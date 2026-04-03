@@ -46,6 +46,7 @@ export async function findDefaultPortfolioByUserId(
   c: HonoContext,
   userId: string,
 ): Promise<PortfolioRecord | undefined> {
+  // TODO: Assert that user id is that which is in the request context
   const portfolios = await c
     .get('db')
     .select({ id: portfolio.id })

@@ -1,5 +1,5 @@
 import { describe, expect } from 'vitest';
-import z from 'zod';
+import type z from 'zod';
 
 import { AUTH_ROUTE_NAME } from '..';
 import { APP_API_BASE_PATH } from '@/constants/common';
@@ -13,18 +13,41 @@ interface AppRequestClient {
 }
 
 describe('Sign-up validation integration', () => {
-  integrationTest('returns validation details for an invalid email', async ({ app }) => {
-    const response = await sendSignUpRequest(app, {
-      ...createValidSignUpPayload(),
-      email: 'invalid-email',
-    });
+  integrationTest(
+    'returns validation details for an invalid email',
+    async ({ app, getLogsForRequestId, withRequestId }) => {
+      const payload = {
+        ...createValidSignUpPayload(),
+        email: 'invalid-email',
+        password: 'SuperSecret123',
+        name: 'Private Person',
+      };
+      const { headers, requestId } = withRequestId({ 'Content-Type': 'application/json' });
+      const response = await sendSignUpRequest(app, payload, headers);
 
-    const body = await expectValidationErrorResponse(response);
+      const body = await expectValidationErrorResponse(response);
+      const logs = getLogsForRequestId(requestId);
+      const serializedLogs = JSON.stringify(logs);
 
-    expect(body.message).toBe('Invalid payload');
-    expect(body.code).toBe('INVALID_PAYLOAD');
-    expectValidationIssueForField(body, 'email');
-  });
+      expect(body.message).toBe('Invalid payload');
+      expect(body.code).toBe('INVALID_PAYLOAD');
+      expectValidationIssueForField(body, 'email');
+      expect(logs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            event: 'request.validation.failed',
+            request_id: requestId,
+            status_code: 400,
+            validation_issue_count: 1,
+            validation_issue_paths: ['email'],
+          }),
+        ]),
+      );
+      expect(serializedLogs).not.toContain(payload.email);
+      expect(serializedLogs).not.toContain(payload.password);
+      expect(serializedLogs).not.toContain(payload.name);
+    },
+  );
 
   integrationTest('returns validation details for a short password', async ({ app }) => {
     const response = await sendSignUpRequest(app, {
@@ -57,12 +80,14 @@ function createValidSignUpPayload() {
   };
 }
 
-async function sendSignUpRequest(app: AppRequestClient, payload: unknown) {
+async function sendSignUpRequest(app: AppRequestClient, payload: unknown, headers?: Headers) {
   return app.request(SIGN_UP_PATH, {
     method: 'POST',
-    headers: new Headers({
-      'Content-Type': 'application/json',
-    }),
+    headers:
+      headers ??
+      new Headers({
+        'Content-Type': 'application/json',
+      }),
     body: JSON.stringify(payload),
   });
 }

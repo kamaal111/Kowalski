@@ -2,6 +2,12 @@ import type { Currency } from '../constants';
 import type { ForexItemExchangeRateECBResponse } from '../schemas/collect';
 import isCurrency from '../utils/is-currency';
 
+interface XMLTextNode {
+  _: string;
+}
+
+type ECBResponseValue = string | XMLTextNode | undefined;
+
 class ForexItemExchangeRate {
   readonly value: number;
   readonly base: Currency;
@@ -14,7 +20,7 @@ class ForexItemExchangeRate {
   }
 
   static fromECBResponse(response: ForexItemExchangeRateECBResponse): ForexItemExchangeRate | null {
-    const rawValue = response['cb:value']?.at(0)?._;
+    const rawValue = getXmlTextValue(response['cb:value']?.at(0));
     if (!rawValue) {
       return null;
     }
@@ -24,18 +30,26 @@ class ForexItemExchangeRate {
       return null;
     }
 
-    const base = response['cb:baseCurrency']?.at(0)?._;
+    const base = getXmlTextValue(response['cb:baseCurrency']?.at(0));
     if (!base || !isCurrency(base)) {
       return null;
     }
 
-    const target = response['cb:targetCurrency']?.at(0);
+    const target = getXmlTextValue(response['cb:targetCurrency']?.at(0));
     if (!target || !isCurrency(target)) {
       return null;
     }
 
     return new ForexItemExchangeRate({ value, base, target });
   }
+}
+
+function getXmlTextValue(value: ECBResponseValue) {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  return value?._;
 }
 
 export default ForexItemExchangeRate;

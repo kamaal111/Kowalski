@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { describe, expect, vi } from 'vitest';
+import { describe, expect } from 'vitest';
 
 import { PORTFOLIO_ROUTE_NAME } from '..';
 import { ListEntriesResponseSchema } from '../schemas/responses';
@@ -18,7 +18,7 @@ interface AppRequestClient {
 describe('List Portfolio Entries Route', () => {
   integrationTest(
     'returns seeded entries in newest transaction order with updated-at tiebreakers',
-    async ({ app, db, sessionToken, userId }) => {
+    async ({ app, db, sessionToken, userId, getLogsForRequestId, withRequestId }) => {
       const oldestEntry = await seedPortfolioEntry(db, {
         userId,
         stock: {
@@ -71,10 +71,22 @@ describe('List Portfolio Entries Route', () => {
         updatedAt: new Date('2025-12-20T13:00:00.000Z'),
       });
 
-      const response = await sendListEntriesRequest(app, { sessionToken });
+      const request = withRequestId(createListEntriesRequestHeaders(sessionToken));
+      const response = await sendListEntriesRequest(app, {}, request.headers);
       const body = await expectSuccessfulListEntriesResponse(response);
+      const logs = getLogsForRequestId(request.requestId);
 
       expect(body).toEqual([laterUpdatedEntry, earlierUpdatedEntry, oldestEntry]);
+      expect(logs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            event: 'portfolio.entries.listed',
+            request_id: request.requestId,
+            component: 'portfolio',
+            result_count: 3,
+          }),
+        ]),
+      );
     },
   );
 
@@ -120,31 +132,32 @@ describe('List Portfolio Entries Route', () => {
   });
 
   integrationTest(
-    'logs the database cause chain when listing entries fails unexpectedly',
-    async ({ app, db, sessionToken }) => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation((message: unknown) => {
-        void message;
+    'logs structured request failures when listing entries fails unexpectedly',
+    async ({ app, db, sessionToken, getLogsForRequestId, withRequestId }) => {
+      await db.execute(sql.raw('ALTER TABLE "stock_ticker" DROP COLUMN "sector"'));
+
+      const request = withRequestId(createListEntriesRequestHeaders(sessionToken));
+      const response = await sendListEntriesRequest(app, {}, request.headers);
+      const body = await expectInternalServerErrorResponse(response);
+      const logs = getLogsForRequestId(request.requestId);
+
+      expect(body).toEqual({
+        message: 'Something went wrong',
+        code: 'INTERNAL_SERVER_ERROR',
       });
-
-      try {
-        await db.execute(sql.raw('ALTER TABLE "stock_ticker" DROP COLUMN "sector"'));
-
-        const response = await sendListEntriesRequest(app, { sessionToken });
-        const body = await expectInternalServerErrorResponse(response);
-        const logOutput = consoleErrorSpy.mock.calls.flat().join('\n');
-
-        expect(body).toEqual({
-          message: 'Something went wrong',
-          code: 'INTERNAL_SERVER_ERROR',
-        });
-        expect(logOutput).toContain('GET /app-api/portfolio/entries Uncaught exception');
-        expect(logOutput).toContain('Failed query');
-        expect(logOutput).toContain('Cause 1:');
-        expect(logOutput).toContain('stack');
-        expect(logOutput).toContain('column stock_ticker.sector does not exist');
-      } finally {
-        consoleErrorSpy.mockRestore();
-      }
+      expect(logs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            event: 'request.failed',
+            request_id: request.requestId,
+            route: LIST_ENTRIES_PATH,
+            status_code: 500,
+            error_code: 'INTERNAL_SERVER_ERROR',
+            error_name: 'DrizzleQueryError',
+          }),
+        ]),
+      );
+      expect(JSON.stringify(logs)).toContain('column stock_ticker.sector does not exist');
     },
   );
 });
@@ -154,10 +167,11 @@ async function sendListEntriesRequest(
   options: {
     sessionToken?: string;
   },
+  headers?: Headers,
 ) {
   return app.request(LIST_ENTRIES_PATH, {
     method: 'GET',
-    headers: createListEntriesRequestHeaders(options.sessionToken),
+    headers: headers ?? createListEntriesRequestHeaders(options.sessionToken),
   });
 }
 

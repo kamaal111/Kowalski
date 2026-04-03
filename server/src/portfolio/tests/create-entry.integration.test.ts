@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { describe, expect } from 'vitest';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 import { PORTFOLIO_ROUTE_NAME } from '..';
 import { CreateEntryPayloadSchema } from '../schemas/payloads';
@@ -19,50 +19,83 @@ interface AppRequestClient {
 }
 
 describe('Create Portfolio Entry Route', () => {
-  integrationTest('creates a portfolio entry for an authenticated request', async ({ app, db, sessionToken }) => {
-    const response = await sendCreateEntryRequest(app, {
-      payload: createValidCreateEntryPayload(),
-      sessionToken,
-    });
+  integrationTest(
+    'creates a portfolio entry for an authenticated request',
+    async ({ app, db, sessionToken, userId, getLogsForRequestId, withRequestId }) => {
+      const request = withRequestId(createCreateEntryRequestHeaders(sessionToken));
+      const response = await sendCreateEntryRequest(
+        app,
+        {
+          payload: createValidCreateEntryPayload(),
+        },
+        CREATE_ENTRY_PATH,
+        request.headers,
+      );
+      const logs = getLogsForRequestId(request.requestId);
 
-    const body = await expectSuccessfulCreateEntryResponse(response);
-    const persistedState = await getPersistedPortfolioState(db, body.stock.symbol);
+      const body = await expectSuccessfulCreateEntryResponse(response);
+      const persistedState = await getPersistedPortfolioState(db, body.stock.symbol);
 
-    expect(body).toMatchObject({
-      stock: {
+      expect(body).toMatchObject({
+        stock: {
+          symbol: 'AAPL',
+          exchange: 'NMS',
+          name: 'Apple Inc.',
+          sector: 'Technology',
+          industry: 'Consumer Electronics',
+          exchange_dispatch: 'NASDAQ',
+        },
+        amount: 10,
+        purchase_price: { currency: 'USD', value: 150.5 },
+        transaction_type: 'buy',
+        transaction_date: '2025-12-20T00:00:00.000Z',
+      });
+      expect(persistedState.portfolios).toHaveLength(1);
+      expect(persistedState.transactions).toHaveLength(1);
+      expect(persistedState.tickers).toHaveLength(1);
+      expect(persistedState.transactions[0]).toMatchObject({
+        id: body.id,
+        transactionType: 'buy',
+        transactionDate: '2025-12-20',
+        amount: '10.0000000000',
+        purchasePrice: '150.5000000000',
+        purchasePriceCurrency: 'USD',
+        portfolioId: persistedState.portfolios[0].id,
+        tickerId: persistedState.tickers[0].id,
+      });
+      expect(persistedState.tickers[0]).toMatchObject({
         symbol: 'AAPL',
-        exchange: 'NMS',
         name: 'Apple Inc.',
         sector: 'Technology',
         industry: 'Consumer Electronics',
-        exchange_dispatch: 'NASDAQ',
-      },
-      amount: 10,
-      purchase_price: { currency: 'USD', value: 150.5 },
-      transaction_type: 'buy',
-      transaction_date: '2025-12-20T00:00:00.000Z',
-    });
-    expect(persistedState.portfolios).toHaveLength(1);
-    expect(persistedState.transactions).toHaveLength(1);
-    expect(persistedState.tickers).toHaveLength(1);
-    expect(persistedState.transactions[0]).toMatchObject({
-      id: body.id,
-      transactionType: 'buy',
-      transactionDate: '2025-12-20',
-      amount: '10.0000000000',
-      purchasePrice: '150.5000000000',
-      purchasePriceCurrency: 'USD',
-      portfolioId: persistedState.portfolios[0].id,
-      tickerId: persistedState.tickers[0].id,
-    });
-    expect(persistedState.tickers[0]).toMatchObject({
-      symbol: 'AAPL',
-      name: 'Apple Inc.',
-      sector: 'Technology',
-      industry: 'Consumer Electronics',
-      exchangeDispatch: 'NASDAQ',
-    });
-  });
+        exchangeDispatch: 'NASDAQ',
+      });
+      expect(logs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            event: 'portfolio.default_portfolio.created',
+            request_id: request.requestId,
+            component: 'portfolio',
+          }),
+          expect.objectContaining({
+            event: 'portfolio.entry.created',
+            request_id: request.requestId,
+            component: 'portfolio',
+            user_id: userId,
+            route: CREATE_ENTRY_PATH,
+            ticker_symbol: 'AAPL',
+            transaction_type: 'buy',
+          }),
+          expect.objectContaining({
+            event: 'request.completed',
+            request_id: request.requestId,
+            route: CREATE_ENTRY_PATH,
+            user_id: userId,
+          }),
+        ]),
+      );
+    },
+  );
 
   integrationTest(
     'reuses the default portfolio and stock ticker for repeated creates',
@@ -94,39 +127,56 @@ describe('Create Portfolio Entry Route', () => {
     },
   );
 
-  integrationTest('updates the existing stock ticker details when they change', async ({ app, db, sessionToken }) => {
-    await sendCreateEntryRequest(app, {
-      payload: createValidCreateEntryPayload(),
-      sessionToken,
-    });
+  integrationTest(
+    'updates the existing stock ticker details when they change',
+    async ({ app, db, sessionToken, getLogsForRequestId, withRequestId }) => {
+      await sendCreateEntryRequest(app, {
+        payload: createValidCreateEntryPayload(),
+        sessionToken,
+      });
 
-    const updatedPayload = {
-      ...createValidCreateEntryPayload(),
-      stock: {
-        ...createValidCreateEntryPayload().stock,
+      const updatedPayload = {
+        ...createValidCreateEntryPayload(),
+        stock: {
+          ...createValidCreateEntryPayload().stock,
+          name: 'Apple Incorporated',
+          sector: 'Information Technology',
+          industry: 'Hardware',
+          exchange_dispatch: 'NASDAQ Global Select',
+        },
+      };
+      const request = withRequestId(createCreateEntryRequestHeaders(sessionToken));
+      const secondResponse = await sendCreateEntryRequest(
+        app,
+        { payload: updatedPayload },
+        CREATE_ENTRY_PATH,
+        request.headers,
+      );
+      const logs = getLogsForRequestId(request.requestId);
+
+      await expectSuccessfulCreateEntryResponse(secondResponse);
+
+      const persistedState = await getPersistedPortfolioState(db, 'AAPL');
+
+      expect(persistedState.tickers).toHaveLength(1);
+      expect(persistedState.tickers[0]).toMatchObject({
         name: 'Apple Incorporated',
         sector: 'Information Technology',
         industry: 'Hardware',
-        exchange_dispatch: 'NASDAQ Global Select',
-      },
-    };
-    const secondResponse = await sendCreateEntryRequest(app, {
-      payload: updatedPayload,
-      sessionToken,
-    });
-
-    await expectSuccessfulCreateEntryResponse(secondResponse);
-
-    const persistedState = await getPersistedPortfolioState(db, 'AAPL');
-
-    expect(persistedState.tickers).toHaveLength(1);
-    expect(persistedState.tickers[0]).toMatchObject({
-      name: 'Apple Incorporated',
-      sector: 'Information Technology',
-      industry: 'Hardware',
-      exchangeDispatch: 'NASDAQ Global Select',
-    });
-  });
+        exchangeDispatch: 'NASDAQ Global Select',
+      });
+      expect(logs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            event: 'portfolio.ticker.updated',
+            request_id: request.requestId,
+            component: 'portfolio',
+            ticker_symbol: 'AAPL',
+          }),
+        ]),
+      );
+    },
+  );
 
   integrationTest('rejects a request without authentication', async ({ app }) => {
     const response = await sendCreateEntryRequest(app, {
@@ -195,10 +245,11 @@ async function sendCreateEntryRequest(
     sessionToken?: string;
   },
   path = CREATE_ENTRY_PATH,
+  headers?: Headers,
 ) {
   return app.request(path, {
     method: 'POST',
-    headers: createCreateEntryRequestHeaders(options.sessionToken),
+    headers: headers ?? createCreateEntryRequestHeaders(options.sessionToken),
     body: JSON.stringify(options.payload),
   });
 }

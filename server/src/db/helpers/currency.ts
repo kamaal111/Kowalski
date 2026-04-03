@@ -1,6 +1,6 @@
-import { char, type PgCharBuilderInitial } from 'drizzle-orm/pg-core';
+import { char } from 'drizzle-orm/pg-core';
 
-function currency(name: string): PgCharBuilderInitial<string, [string, ...string[]], 3> {
+function currency(name: string) {
   return char(name, { length: 3 });
 }
 

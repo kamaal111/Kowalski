@@ -1,14 +1,14 @@
-import type { Env, Hono, Schema } from 'hono';
+import type { Env, Schema } from 'hono';
 import type { BlankSchema } from 'hono/types';
-import { OpenAPIHono } from '@hono/zod-openapi';
+import { $, OpenAPIHono } from '@hono/zod-openapi';
 import { swaggerUI } from '@hono/swagger-ui';
 import * as z from 'zod';
 import yaml from 'js-yaml';
 
-import type { HonoContext, HonoEnvironment } from './contexts';
+import type { HonoEnvironment } from './contexts';
 import { InvalidValidation } from './exceptions';
 import { STATUS_CODES } from '../constants/http';
-import { errorLogger } from '../middleware/logging';
+import { handleServerError } from '@/middleware/logging';
 
 export type OpenAPIRouter = OpenAPIHono<HonoEnvironment>;
 
@@ -56,61 +56,49 @@ const OpenAPISpecSchema = z
   .loose();
 
 export function openAPIRouterFactory(): OpenAPIHono<HonoEnvironment, BlankSchema, '/'> {
-  return new OpenAPIHono<HonoEnvironment>({
+  const router = new OpenAPIHono<HonoEnvironment>({
     defaultHook: (result, c) => {
       if (!result.success) {
-        const ctx = c as HonoContext;
-        const method = ctx.req.method;
-        const path = ctx.req.path;
-        const requestId = ctx.get('requestId');
-
-        errorLogger(
-          ctx,
-          `[VALIDATION ERROR] ${method} ${path}`,
-          `Request ID: ${requestId}`,
-          `Validation failed with ${result.error.issues.length} issue(s):`,
-        );
-
-        result.error.issues.forEach((issue, index) => {
-          const pathStr = issue.path.length > 0 ? issue.path.join('.') : '<root>';
-          errorLogger(ctx, `  Issue ${index + 1}: [${issue.code}] at '${pathStr}' - ${issue.message}`);
-        });
-
-        throw new InvalidValidation(ctx, result.error);
+        throw new InvalidValidation(c, result.error);
       }
     },
   });
+
+  router.onError(handleServerError);
+
+  return router;
 }
 
 export function withOpenAPIDocumentation<
   E extends Env = Env,
   S extends Schema = BlankSchema,
   BasePath extends string = '/',
->(app: Hono<E, S, BasePath>) {
-  (app as OpenAPIHono<E, S, BasePath>).doc(SPEC_SOURCE_OF_TRUTH_URL, OPENAPI_INFO);
-  withYamlSpec(app, { url: SPEC_SOURCE_OF_TRUTH_URL });
-  app.get('/doc', swaggerUI({ url: SPEC_SOURCE_OF_TRUTH_URL }));
+>(app: OpenAPIHono<E, S, BasePath>) {
+  const documentedApp = app.doc(SPEC_SOURCE_OF_TRUTH_URL, OPENAPI_INFO);
+  const appWithYamlSpec = withYamlSpec(documentedApp, { url: SPEC_SOURCE_OF_TRUTH_URL });
 
-  return app;
+  return $(appWithYamlSpec.get('/doc', swaggerUI({ url: SPEC_SOURCE_OF_TRUTH_URL })));
 }
 
 function withYamlSpec<E extends Env = Env, S extends Schema = BlankSchema, BasePath extends string = '/'>(
-  app: Hono<E, S, BasePath>,
+  app: OpenAPIHono<E, S, BasePath>,
   options: { url: string },
 ) {
-  return app.get(`${SPEC_NAME}.yaml`, async c => {
-    const origin = new URL(c.req.url).origin;
-    const requestInit = new Request(`${origin}${options.url}`, {
-      headers: { Accept: 'application/json' },
-    });
-    const response = await app.request(requestInit);
-    const rawData: unknown = await response.json();
-    const spec = OpenAPISpecSchema.parse(rawData);
-    const transformedSpec = transformNullableToUnion(spec);
-    const formattedSpec = yaml.dump(transformedSpec, { indent: 2 });
+  return $(
+    app.get(`${SPEC_NAME}.yaml`, async c => {
+      const origin = new URL(c.req.url).origin;
+      const requestInit = new Request(`${origin}${options.url}`, {
+        headers: { Accept: 'application/json' },
+      });
+      const response = await app.request(requestInit);
+      const rawData: unknown = await response.json();
+      const spec = OpenAPISpecSchema.parse(rawData);
+      const transformedSpec = transformNullableToUnion(spec);
+      const formattedSpec = yaml.dump(transformedSpec, { indent: 2 });
 
-    return c.text(formattedSpec, STATUS_CODES.OK, { 'Content-Type': 'text/yaml' });
-  });
+      return c.text(formattedSpec, STATUS_CODES.OK, { 'Content-Type': 'text/yaml' });
+    }),
+  );
 }
 
 function transformNullableToUnion(obj: unknown): unknown {

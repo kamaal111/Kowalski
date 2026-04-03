@@ -1,6 +1,7 @@
 import { asserts } from '@kamaalio/kamaal';
+import type { Currency } from '../constants';
 
-import { BASE_CURRENCY, CURRENCIES, type Currency } from '../constants';
+import { BASE_CURRENCY, CURRENCIES } from '../constants';
 
 export class ExchangeRateRecord {
   readonly date: Date;

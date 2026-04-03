@@ -52,6 +52,14 @@
 - **ALWAYS validate unknown or external data**
   - Use Zod `.parse()` or `.safeParse()` for database rows, request payloads, and external API responses
   - Treat validation gaps as real bugs, not typing inconveniences
+- **ALWAYS use the shared Pino logger for server logging**
+  - Use the shared logger entrypoint for `server/src/**` request middleware, handlers, error handling, and startup/shutdown
+  - Never introduce `console.*` in `server/src/**`; ESLint treats it as an error
+  - `server/scripts/**` may use `console.*` for local operator feedback
+  - Include the standard structured fields when relevant: `service`, `component`, `event`, `mode`, `request_id`, `method`, `path`, `route`, `status_code`, `duration_ms`, `user_id`, `outcome`, `error_code`, and `error_name`
+  - Log meaningful successful business outcomes as well as failures
+  - Never log secrets, tokens, cookies, email addresses, or raw request/response payload dumps
+  - Add or update tests whenever logging behavior changes
 - **ALWAYS write tests for behavior changes**
   - Prefer integration tests over isolated unit tests when the behavior crosses handlers, middleware, database, auth, or HTTP boundaries
   - Avoid redundant tests when an existing integration test already covers the scenario
@@ -139,6 +147,7 @@ BETTER_AUTH_URL=http://localhost:8080
 - **Optional server environment**
   - `PORT` defaults to `8080`
   - `DEBUG` defaults to `false`
+  - `LOG_LEVEL` defaults to `info`
   - `BETTER_AUTH_SESSION_UPDATE_AGE_DAYS` defaults to `1`
   - `BETTER_AUTH_SESSION_EXPIRY_DAYS` defaults to `30`
 - **Database service**

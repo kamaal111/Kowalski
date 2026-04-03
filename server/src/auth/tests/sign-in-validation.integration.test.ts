@@ -1,5 +1,5 @@
 import { describe, expect } from 'vitest';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 import { AUTH_ROUTE_NAME } from '..';
 import { APP_API_BASE_PATH } from '@/constants/common';
