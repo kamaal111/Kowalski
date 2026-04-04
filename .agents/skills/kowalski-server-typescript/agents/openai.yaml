@@ -1,0 +1,4 @@
+interface:
+  display_name: "Kowalski Server TS"
+  short_description: "Patterns for Kowalski Hono + Zod server"
+  default_prompt: "Use $kowalski-server-typescript when changing code under server/src in this repository."

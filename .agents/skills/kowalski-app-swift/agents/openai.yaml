@@ -1,0 +1,4 @@
+interface:
+  display_name: "Kowalski App Swift"
+  short_description: "Patterns for Kowalski SwiftUI app packages"
+  default_prompt: "Use $kowalski-app-swift when changing code under app/ in this repository."
