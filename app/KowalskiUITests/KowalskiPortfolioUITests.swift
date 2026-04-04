@@ -8,10 +8,20 @@ import XCTest
 
 @MainActor
 final class KowalskiPortfolioUITests: XCTestCase {
+    private let portfolioScreenLaunchTimeout: TimeInterval = 5
+
     private func launchApp(scenario: PortfolioUiTestScenario) -> XCUIApplication {
         let app = XCUIApplication().enableEnvironmentFlag(for: .isUiTesing)
         app.setEnvironment(for: .isUiTestingPortfolioScenario, scenario.rawValue)
         app.launch()
+        app.activate()
+        if !app.buttons["Add entry"].waitForExistenceUsingPredicate(timeout: portfolioScreenLaunchTimeout) {
+            app.typeKey("n", modifierFlags: .command)
+            XCTAssertTrue(
+                app.buttons["Add entry"].waitForExistenceUsingPredicate(timeout: portfolioScreenLaunchTimeout),
+                "Expected the portfolio screen to appear after opening a new window",
+            )
+        }
         return app
     }
 
@@ -106,6 +116,13 @@ final class KowalskiPortfolioUITests: XCTestCase {
         XCTFail("Expected to return to the transactions list")
     }
 
+    private func attachScreenshot(named name: String, in app: XCUIApplication) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
     func testTransactionCreationFeedbackFlows() {
         continueAfterFailure = false
         let app = launchApp(scenario: .createSequence)
@@ -122,6 +139,7 @@ final class KowalskiPortfolioUITests: XCTestCase {
             assertTransactionsListShown(in: app)
             XCTAssertFalse(app.buttons["Add Transaction"].exists)
             XCTAssertTrue(app.staticTexts["Apple Inc. entry added"].waitForExistenceUsingPredicate(timeout: 3))
+            attachScreenshot(named: "success-toast", in: app)
         }
 
         XCTContext.runActivity(named: "Generic create failure keeps the editor open") { _ in

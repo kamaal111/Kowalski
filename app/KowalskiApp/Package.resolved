@@ -1,5 +1,5 @@
 {
-  "originHash" : "950884d64f24357193259a89bf075129e6022d70282a4e1c9ff2f613ee34e2fc",
+  "originHash" : "802c5093278acd548103ab094d593e0e960eec47910953afcbc33899269ea1e3",
   "pins" : [
     {
       "identity" : "confettiswiftui",
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/kamaal111/ForexKit",
       "state" : {
-        "revision" : "ff51e6e84fb045f924faade23e9f6ece3ee9d9a6",
-        "version" : "4.0.0"
+        "revision" : "9fb206a23f392e88ce5ea756fe5286e89d11cbc5",
+        "version" : "5.0.0"
       }
     },
     {

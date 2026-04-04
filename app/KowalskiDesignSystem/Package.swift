@@ -31,5 +31,16 @@ let package = Package(
                 .enableExperimentalFeature("StrictConcurrency"),
             ],
         ),
+        .testTarget(
+            name: "KowalskiDesignSystemTests",
+            dependencies: [
+                "KowalskiDesignSystem",
+            ],
+            swiftSettings: [
+                .treatAllWarnings(as: .error),
+                .strictMemorySafety(),
+                .enableExperimentalFeature("StrictConcurrency"),
+            ],
+        ),
     ],
 )

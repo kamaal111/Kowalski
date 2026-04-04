@@ -8,6 +8,12 @@
 import KamaalUI
 import SwiftUI
 
+private let toastTopPadding: CGFloat = 8
+private let toastDismissOffset: CGFloat = -12
+private let toastPresentationAnimation = Animation.spring(duration: 0.45, bounce: 0.1)
+private let toastDismissAnimationDuration = 0.18
+private let toastDismissAnimation = Animation.easeOut(duration: toastDismissAnimationDuration)
+
 public extension View {
     func toastView(toast: Binding<Toast?>) -> some View {
         modifier(ToastModifier(toast: toast))
@@ -16,6 +22,8 @@ public extension View {
 
 private struct ToastModifier: ViewModifier {
     @State private var workItem: DispatchWorkItem?
+    @State private var removalWorkItem: DispatchWorkItem?
+    @State private var presentationState = ToastPresentationState()
 
     @Binding var toast: Toast?
 
@@ -26,38 +34,60 @@ private struct ToastModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .ktakeSizeEagerly()
-            .overlay(
-                ZStack {
-                    mainToastView
-                        .offset(y: 32)
-                }.animation(.spring, value: toast),
-            )
-            .onChange(of: toast, showToast)
+            .overlay(alignment: .top) {
+                mainToastView
+                    .padding(.top, toastTopPadding)
+            }
+            .onAppear(perform: syncInitialToast)
+            .onChange(of: toast, handleToastChange)
+            .onDisappear(perform: cancelPendingWorkItems)
     }
 
     @ViewBuilder
     private var mainToastView: some View {
-        if let toast {
-            VStack {
-                ToastView(style: toast.style, message: toast.message, width: toast.width) {
-                    dismissToast()
-                }
-                Spacer()
+        if let presentedToast = presentationState.toast {
+            ToastView(style: presentedToast.style, message: presentedToast.message, width: presentedToast.width) {
+                dismissToast()
             }
-            .transition(.move(edge: .top))
+            .offset(y: presentationState.isVisible ? 0 : toastDismissOffset)
+            .opacity(presentationState.isVisible ? 1 : 0)
+            .allowsHitTesting(presentationState.isVisible)
         }
     }
 
-    private func showToast(_: Toast?, _: Toast?) {
+    private func syncInitialToast() {
         guard let toast else { return }
+
+        showToast(toast)
+    }
+
+    private func handleToastChange(_: Toast?, _ newToast: Toast?) {
+        guard let newToast else {
+            hideToast()
+            return
+        }
+
+        showToast(newToast)
+    }
+
+    private func showToast(_ toast: Toast) {
+        removalWorkItem?.cancel()
+        removalWorkItem = nil
+        presentationState.prepareToPresent(toast)
 
         #if os(iOS)
             UIImpactFeedbackGenerator(style: .light)
                 .impactOccurred()
         #endif
-        guard toast.duration > 0 else { return }
+
+        withAnimation(toastPresentationAnimation) {
+            presentationState.show()
+        }
 
         workItem?.cancel()
+        workItem = nil
+        guard toast.duration > 0 else { return }
+
         let task = DispatchWorkItem { dismissToast() }
 
         workItem = task
@@ -65,10 +95,39 @@ private struct ToastModifier: ViewModifier {
     }
 
     private func dismissToast() {
-        withAnimation { toast = nil }
+        if toast != nil {
+            toast = nil
+            return
+        }
 
+        hideToast()
+    }
+
+    private func hideToast() {
         workItem?.cancel()
         workItem = nil
+
+        removalWorkItem?.cancel()
+        guard presentationState.toast != nil else { return }
+
+        withAnimation(toastDismissAnimation) {
+            presentationState.startDismissal()
+        }
+
+        let task = DispatchWorkItem {
+            presentationState.finishDismissal()
+            removalWorkItem = nil
+        }
+
+        removalWorkItem = task
+        DispatchQueue.main.asyncAfter(deadline: .now() + toastDismissAnimationDuration, execute: task)
+    }
+
+    private func cancelPendingWorkItems() {
+        workItem?.cancel()
+        workItem = nil
+        removalWorkItem?.cancel()
+        removalWorkItem = nil
     }
 }
 
