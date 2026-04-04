@@ -32,6 +32,7 @@ struct KowalskiPortfolioTransactionEditor<SuccessValue: Sendable>: View {
     @State private var transactionDate: Date
 
     private let autofocusAmountField: Bool
+    private let configuration: KowalskiPortfolioTransactionEditorConfiguration
     private let submitButtonTitle: LocalizedStringResource
     private let onSubmit: (_ formPayload: TransactionPayload) async -> Result<SuccessValue, Error>
     private let onFailure: @MainActor (_ error: Error) -> Void
@@ -40,6 +41,7 @@ struct KowalskiPortfolioTransactionEditor<SuccessValue: Sendable>: View {
     init(
         initialValues: KowalskiPortfolioTransactionFormValues,
         autofocusAmountField: Bool = true,
+        configuration: KowalskiPortfolioTransactionEditorConfiguration = .default,
         submitButtonTitle: LocalizedStringResource,
         onSubmit: @escaping (_ formPayload: TransactionPayload) async -> Result<SuccessValue, Error>,
         onFailure: @escaping @MainActor (_ error: Error) -> Void = { _ in },
@@ -49,9 +51,10 @@ struct KowalskiPortfolioTransactionEditor<SuccessValue: Sendable>: View {
         _amount = State(initialValue: initialValues.amount)
         _purchasePriceCurrency = State(initialValue: initialValues.purchasePriceCurrency)
         _purchasePriceValue = State(initialValue: initialValues.purchasePriceValue)
-        _transactionType = State(initialValue: initialValues.transactionType)
+        _transactionType = State(initialValue: configuration.fixedTransactionType ?? initialValues.transactionType)
         _transactionDate = State(initialValue: initialValues.transactionDate)
         self.autofocusAmountField = autofocusAmountField
+        self.configuration = configuration
         self.submitButtonTitle = submitButtonTitle
         self.onSubmit = onSubmit
         self.onFailure = onFailure
@@ -68,6 +71,7 @@ struct KowalskiPortfolioTransactionEditor<SuccessValue: Sendable>: View {
                     await portfolio.searchStocks(query: query)
                 },
             )
+            .disabled(!configuration.stockSelectionIsEnabled)
             MoneyField(
                 currency: $purchasePriceCurrency,
                 value: $purchasePriceValue,
@@ -101,11 +105,14 @@ struct KowalskiPortfolioTransactionEditor<SuccessValue: Sendable>: View {
                         }
                     },
                     label: {
-                        EmptyView()
+                        Text(transactionTypeAccessibilityLabel)
                     },
                 )
                 .labelsHidden()
                 .pickerStyle(.menu)
+                .disabled(configuration.fixedTransactionType != nil)
+                .accessibilityIdentifier(transactionTypeAccessibilityLabel)
+                .accessibilityLabel(Text(transactionTypeAccessibilityLabel))
                 DatePicker("", selection: $transactionDate, displayedComponents: .date)
                     .labelsHidden()
             }
@@ -220,6 +227,27 @@ struct KowalskiPortfolioTransactionEditor<SuccessValue: Sendable>: View {
 
         return "\(stock.symbol) - \(stock.name)\(isinLabel) (\(exchange))"
     }
+
+    private var transactionTypeAccessibilityLabel: String {
+        NSLocalizedString("Transaction Type", comment: "")
+    }
+}
+
+struct KowalskiPortfolioTransactionEditorConfiguration {
+    let stockSelectionIsEnabled: Bool
+    let fixedTransactionType: TransactionType?
+
+    static let `default` = KowalskiPortfolioTransactionEditorConfiguration(
+        stockSelectionIsEnabled: true,
+        fixedTransactionType: nil,
+    )
+
+    static func pairedCreate(transactionType: TransactionType) -> KowalskiPortfolioTransactionEditorConfiguration {
+        KowalskiPortfolioTransactionEditorConfiguration(
+            stockSelectionIsEnabled: false,
+            fixedTransactionType: transactionType,
+        )
+    }
 }
 
 struct KowalskiPortfolioTransactionFormValues {
@@ -263,6 +291,17 @@ struct KowalskiPortfolioTransactionFormValues {
             purchasePriceValue: Self.formattedNumber(entry.purchasePrice.value),
             transactionType: entry.transactionType,
             transactionDate: entry.transactionDate,
+        )
+    }
+
+    static func pairedCreate(from entry: PortfolioEntry, transactionType: TransactionType) -> Self {
+        Self(
+            selectedStock: entry.stock,
+            amount: formattedNumber(entry.amount),
+            purchasePriceCurrency: empty.purchasePriceCurrency,
+            purchasePriceValue: empty.purchasePriceValue,
+            transactionType: transactionType,
+            transactionDate: empty.transactionDate,
         )
     }
 

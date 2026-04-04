@@ -25,6 +25,12 @@
     "Audit" : {
 
     },
+    "Buy" : {
+
+    },
+    "Buy Transaction" : {
+
+    },
     "Cancel" : {
 
     },
@@ -71,6 +77,9 @@
 
     },
     "Sell" : {
+
+    },
+    "Sell Transaction" : {
 
     },
     "Split" : {
