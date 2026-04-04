@@ -7,21 +7,22 @@
 
 import Foundation
 
+public enum PortfolioUiTestScenario: String, Sendable {
+    case entries
+    case createSequence = "create-sequence"
+    case listFailure = "list-failure"
+}
+
 public enum KowalskiEnvironment {
     public static let isUiTesting = ProcessInfo.processInfo[.isUiTesing] == "1"
-    public static let isUiTestingListEntries = ProcessInfo.processInfo[.isUiTestingListEntries] == "1"
-    public static let isUiTestingFailCreateEntry = ProcessInfo.processInfo[.isUiTestingFailCreateEntry] == "1"
-    public static let isUiTestingValidationFailCreateEntry =
-        ProcessInfo.processInfo[.isUiTestingValidationFailCreateEntry] == "1"
-    public static let isUiTestingFailListEntries = ProcessInfo.processInfo[.isUiTestingFailListEntries] == "1"
+    public static let portfolioUiTestScenario =
+        ProcessInfo.processInfo[.isUiTestingPortfolioScenario]
+            .flatMap(PortfolioUiTestScenario.init(rawValue:))
 }
 
 public enum KowalskiEnvironmentKeys: String {
     case isUiTesing = "IS_UI_TESTING"
-    case isUiTestingListEntries = "IS_UI_TESTING_LIST_ENTRIES"
-    case isUiTestingFailCreateEntry = "IS_UI_TESTING_FAIL_CREATE_ENTRY"
-    case isUiTestingValidationFailCreateEntry = "IS_UI_TESTING_VALIDATION_FAIL_CREATE_ENTRY"
-    case isUiTestingFailListEntries = "IS_UI_TESTING_FAIL_LIST_ENTRIES"
+    case isUiTestingPortfolioScenario = "IS_UI_TESTING_PORTFOLIO_SCENARIO"
 }
 
 public extension ProcessInfo {

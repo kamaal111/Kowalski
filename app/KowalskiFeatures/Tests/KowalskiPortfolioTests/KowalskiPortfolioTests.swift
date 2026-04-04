@@ -46,6 +46,19 @@ struct KowalskiPortfolioTests {
     }
 
     @Test
+    func `Store transaction validation errors should format the first issue for the user`() {
+        let error = StoreTransactionErrors.badRequest(validations: [
+            KowalskiClientValidationIssue(
+                code: "too_small",
+                path: ["amount"],
+                message: "Number must be greater than 0",
+            ),
+        ])
+
+        #expect(error.errorDescription == "amount: Number must be greater than 0")
+    }
+
+    @Test
     func `Store transaction should refresh the list after a successful create`() async throws {
         let createdEntry = makePortfolioEntryResponse(amount: 10)
         let portfolioClient = MockPortfolioClient(
@@ -144,8 +157,16 @@ struct KowalskiPortfolioTests {
 
     @Test
     func `Paired create form values should use the opposite transaction type`() throws {
-        let buyEntry = makePortfolioEntry(amount: 10, transactionType: .purchase)
-        let sellEntry = makePortfolioEntry(amount: 7, transactionType: .sell)
+        let buyEntry = makePortfolioEntry(
+            stock: makeAppleStock(),
+            amount: 10,
+            transactionType: .purchase,
+        )
+        let sellEntry = makePortfolioEntry(
+            stock: makeTeslaStock(),
+            amount: 7,
+            transactionType: .sell,
+        )
         let pairedSellType = try #require(buyEntry.transactionType.pairedTransactionType)
         let pairedBuyType = try #require(sellEntry.transactionType.pairedTransactionType)
 
@@ -159,10 +180,14 @@ struct KowalskiPortfolioTests {
         )
 
         #expect(sellFormValues.selectedStock?.symbol == "AAPL")
+        #expect(sellFormValues.selectedStock?.name == "Apple Inc.")
+        #expect(sellFormValues.selectedStock?.isin == "US0378331005")
         #expect(sellFormValues.amount == "10")
         #expect(sellFormValues.transactionType == .sell)
 
-        #expect(buyFormValues.selectedStock?.symbol == "AAPL")
+        #expect(buyFormValues.selectedStock?.symbol == "TSLA")
+        #expect(buyFormValues.selectedStock?.name == "Tesla, Inc.")
+        #expect(buyFormValues.selectedStock?.isin == "US88160R1014")
         #expect(buyFormValues.amount == "7")
         #expect(buyFormValues.transactionType == .purchase)
     }
@@ -280,23 +305,39 @@ private func makePortfolioEntryResponse(
     )
 }
 
-private func makePortfolioEntry(amount: Double, transactionType: TransactionType) -> PortfolioEntry {
+private func makePortfolioEntry(stock: Stock, amount: Double, transactionType: TransactionType) -> PortfolioEntry {
     PortfolioEntry(
         id: UUID(uuidString: "cd81dbd7-3efa-42b3-8127-c1589279542f")!.uuidString,
         createdAt: Date(timeIntervalSince1970: 1_766_246_840),
         updatedAt: Date(timeIntervalSince1970: 1_766_246_840),
-        stock: Stock(
-            symbol: "AAPL",
-            exchange: "NMS",
-            name: "Apple Inc.",
-            isin: "US0378331005",
-            sector: "Technology",
-            industry: "Consumer Electronics",
-            exchangeDispatch: "NASDAQ",
-        ),
+        stock: stock,
         amount: amount,
         purchasePrice: Money(currency: .USD, value: 150.5),
         transactionType: transactionType,
         transactionDate: Date(timeIntervalSince1970: 1_766_246_840),
+    )
+}
+
+private func makeAppleStock() -> Stock {
+    Stock(
+        symbol: "AAPL",
+        exchange: "NMS",
+        name: "Apple Inc.",
+        isin: "US0378331005",
+        sector: "Technology",
+        industry: "Consumer Electronics",
+        exchangeDispatch: "NASDAQ",
+    )
+}
+
+private func makeTeslaStock() -> Stock {
+    Stock(
+        symbol: "TSLA",
+        exchange: "NMS",
+        name: "Tesla, Inc.",
+        isin: "US88160R1014",
+        sector: "Consumer Cyclical",
+        industry: "Auto Manufacturers",
+        exchangeDispatch: "NASDAQ",
     )
 }

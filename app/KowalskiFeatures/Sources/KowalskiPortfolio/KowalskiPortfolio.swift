@@ -130,21 +130,16 @@ public final class KowalskiPortfolio {
 
     public static func forEnvironment() -> KowalskiPortfolio {
         guard KowalskiEnvironment.isUiTesting else { return `default`() }
+        guard let scenario = KowalskiEnvironment.portfolioUiTestScenario else { return preview() }
 
-        if KowalskiEnvironment.isUiTestingValidationFailCreateEntry {
-            return createEntryValidationFailingPreview()
-        }
-        if KowalskiEnvironment.isUiTestingFailCreateEntry {
-            return createEntryFailingPreview()
-        }
-        if KowalskiEnvironment.isUiTestingFailListEntries {
+        switch scenario {
+        case .entries:
+            return listEntriesPreview()
+        case .createSequence:
+            return createEntrySequencePreview()
+        case .listFailure:
             return listEntriesFailingPreview()
         }
-        if KowalskiEnvironment.isUiTestingListEntries {
-            return listEntriesPreview()
-        }
-
-        return preview()
     }
 
     public static func `default`() -> KowalskiPortfolio {
@@ -167,6 +162,12 @@ public final class KowalskiPortfolio {
 
     public static func createEntryValidationFailingPreview() -> KowalskiPortfolio {
         let client = KowalskiClient.previewWithValidationFailingPortfolioCreateEntry(withCredentials: true)
+
+        return KowalskiPortfolio(client: client)
+    }
+
+    private static func createEntrySequencePreview() -> KowalskiPortfolio {
+        let client = KowalskiClient.previewWithPortfolioCreateSequence(withCredentials: true)
 
         return KowalskiPortfolio(client: client)
     }
