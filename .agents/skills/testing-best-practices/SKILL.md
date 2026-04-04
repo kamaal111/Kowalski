@@ -61,6 +61,9 @@ Prefer the repository's command runner when one exists, such as `just`, `make`, 
 
 - Use the repository's preferred UI testing libraries and helpers.
 - Prefer user-facing queries such as roles, labels, accessible names, and visible text over DOM traversal or CSS selectors.
+- When UI tests need an accessibility hook, prefer a meaningful accessible label or name that also improves the real product experience, including VoiceOver.
+- Do not add opaque test-only accessibility identifiers when a user-facing accessible name can serve the test.
+- If an identifier is genuinely necessary, pair it with a real accessibility label/value and keep it human-readable rather than machine-ish.
 - Prefer async-native queries such as `findBy*` over wrapping synchronous queries in polling helpers when the framework supports that distinction.
 - Simulate realistic user interactions instead of calling component internals directly.
 - Cover loading, empty, error, success, and permission-related states when applicable.
