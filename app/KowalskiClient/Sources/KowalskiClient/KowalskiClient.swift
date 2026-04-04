@@ -79,6 +79,15 @@ public struct KowalskiClient: Sendable {
         return KowalskiClient(auth: auth, stocks: stocks, portfolio: portfolio, credentialsGetter: credentialsGetter)
     }
 
+    public static func previewWithPortfolioCreateSequence(withCredentials: Bool) -> KowalskiClient {
+        let credentialsGetter = CredentialsGetterFactory.preview(withCredentials: withCredentials)
+        let auth = KowalskiAuthClientFactory.preview()
+        let stocks = KowalskiStocksClientFactory.preview()
+        let portfolio = KowalskiPortfolioClientFactory.createSequencePreview()
+
+        return KowalskiClient(auth: auth, stocks: stocks, portfolio: portfolio, credentialsGetter: credentialsGetter)
+    }
+
     public static func previewWithFailingPortfolioListEntries(withCredentials: Bool) -> KowalskiClient {
         let credentialsGetter = CredentialsGetterFactory.preview(withCredentials: withCredentials)
         let auth = KowalskiAuthClientFactory.preview()
