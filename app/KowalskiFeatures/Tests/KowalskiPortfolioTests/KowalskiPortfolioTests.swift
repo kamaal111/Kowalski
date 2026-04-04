@@ -141,6 +141,31 @@ struct KowalskiPortfolioTests {
 
         #expect(stocks.map(\.isin) == ["US0378331005"])
     }
+
+    @Test
+    func `Paired create form values should use the opposite transaction type`() throws {
+        let buyEntry = makePortfolioEntry(amount: 10, transactionType: .purchase)
+        let sellEntry = makePortfolioEntry(amount: 7, transactionType: .sell)
+        let pairedSellType = try #require(buyEntry.transactionType.pairedTransactionType)
+        let pairedBuyType = try #require(sellEntry.transactionType.pairedTransactionType)
+
+        let sellFormValues = KowalskiPortfolioTransactionFormValues.pairedCreate(
+            from: buyEntry,
+            transactionType: pairedSellType,
+        )
+        let buyFormValues = KowalskiPortfolioTransactionFormValues.pairedCreate(
+            from: sellEntry,
+            transactionType: pairedBuyType,
+        )
+
+        #expect(sellFormValues.selectedStock?.symbol == "AAPL")
+        #expect(sellFormValues.amount == "10")
+        #expect(sellFormValues.transactionType == .sell)
+
+        #expect(buyFormValues.selectedStock?.symbol == "AAPL")
+        #expect(buyFormValues.amount == "7")
+        #expect(buyFormValues.transactionType == .purchase)
+    }
 }
 
 private actor MockPortfolioClient: KowalskiPortfolioClient {
@@ -228,6 +253,13 @@ private func makeTransactionPayload(amount: Double) -> TransactionPayload {
 }
 
 private func makePortfolioEntryResponse(amount: Double) -> KowalskiPortfolioClientEntryResponse {
+    makePortfolioEntryResponse(amount: amount, transactionType: .buy)
+}
+
+private func makePortfolioEntryResponse(
+    amount: Double,
+    transactionType: KowalskiClientPortfolioTransactionTypes,
+) -> KowalskiPortfolioClientEntryResponse {
     KowalskiPortfolioClientEntryResponse(
         id: UUID(uuidString: "cd81dbd7-3efa-42b3-8127-c1589279542f")!.uuidString,
         createdAt: Date(timeIntervalSince1970: 1_766_246_840),
@@ -243,7 +275,28 @@ private func makePortfolioEntryResponse(amount: Double) -> KowalskiPortfolioClie
         ),
         amount: amount,
         purchasePrice: KowalskiClientMoney(currency: "USD", value: 150.5),
-        transactionType: .buy,
+        transactionType: transactionType,
+        transactionDate: Date(timeIntervalSince1970: 1_766_246_840),
+    )
+}
+
+private func makePortfolioEntry(amount: Double, transactionType: TransactionType) -> PortfolioEntry {
+    PortfolioEntry(
+        id: UUID(uuidString: "cd81dbd7-3efa-42b3-8127-c1589279542f")!.uuidString,
+        createdAt: Date(timeIntervalSince1970: 1_766_246_840),
+        updatedAt: Date(timeIntervalSince1970: 1_766_246_840),
+        stock: Stock(
+            symbol: "AAPL",
+            exchange: "NMS",
+            name: "Apple Inc.",
+            isin: "US0378331005",
+            sector: "Technology",
+            industry: "Consumer Electronics",
+            exchangeDispatch: "NASDAQ",
+        ),
+        amount: amount,
+        purchasePrice: Money(currency: .USD, value: 150.5),
+        transactionType: transactionType,
         transactionDate: Date(timeIntervalSince1970: 1_766_246_840),
     )
 }

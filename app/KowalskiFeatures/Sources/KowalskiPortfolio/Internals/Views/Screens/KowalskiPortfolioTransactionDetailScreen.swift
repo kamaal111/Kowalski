@@ -10,10 +10,13 @@ import KowalskiDesignSystem
 import SwiftUI
 
 struct KowalskiPortfolioTransactionDetailScreen: View {
+    @Environment(\.dismiss) private var dismiss
     @Environment(KowalskiPortfolio.self) private var portfolio
 
     @State private var entry: PortfolioEntry
     @State private var isEditing = false
+    @State private var pairedTransactionScreenIsShown = false
+    @State private var shouldDismissAfterPairedTransaction = false
     @State private var toast: Toast?
 
     init(entry: PortfolioEntry) {
@@ -31,11 +34,25 @@ struct KowalskiPortfolioTransactionDetailScreen: View {
         .frame(minSize: ModuleConfig.screenMinSize)
         .navigationTitle(isEditing ? "Edit Transaction" : "Transaction Details")
         .toolbar {
-            ToolbarItem(placement: .automatic) {
+            ToolbarItemGroup(placement: .automatic) {
+                if !isEditing, let pairedActionTitle = entry.transactionType.pairedActionTitle {
+                    Button(pairedActionTitle) {
+                        pairedTransactionScreenIsShown = true
+                    }
+                }
                 Button(isEditing ? "Cancel" : "Edit") {
                     isEditing.toggle()
                 }
             }
+        }
+        .navigationDestination(isPresented: $pairedTransactionScreenIsShown) {
+            pairedTransactionView
+        }
+        .onChange(of: pairedTransactionScreenIsShown) { _, isShown in
+            guard !isShown, shouldDismissAfterPairedTransaction else { return }
+
+            shouldDismissAfterPairedTransaction = false
+            dismiss()
         }
         .toastView(toast: $toast)
     }
@@ -93,6 +110,19 @@ struct KowalskiPortfolioTransactionDetailScreen: View {
             )
             .padding(.horizontal, .medium)
             .padding(.vertical, .small)
+        }
+    }
+
+    @ViewBuilder
+    private var pairedTransactionView: some View {
+        if let pairedTransactionType = entry.transactionType.pairedTransactionType {
+            KowalskiPortfolioTransactionScreen(
+                initialValues: .pairedCreate(from: entry, transactionType: pairedTransactionType),
+                editorConfiguration: .pairedCreate(transactionType: pairedTransactionType),
+                onTransactionAdd: { _ in
+                    shouldDismissAfterPairedTransaction = true
+                },
+            )
         }
     }
 

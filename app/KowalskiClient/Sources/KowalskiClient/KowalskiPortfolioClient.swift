@@ -36,7 +36,51 @@ struct KowalskiPortfolioClientFactory {
     }
 
     static func entriesPreview() -> KowalskiPortfolioClient {
-        KowalskiPortfolioClientPreview(entries: [makePreviewEntry()])
+        KowalskiPortfolioClientPreview(
+            entries: [
+                makePreviewEntry(),
+                makePreviewEntry(
+                    payload: makePreviewCreatePayload(
+                        stock: KowalskiClientStockItem(
+                            symbol: "TSLA",
+                            exchange: "NMS",
+                            name: "Tesla, Inc.",
+                            isin: "US88160R1014",
+                            sector: "Consumer Cyclical",
+                            industry: "Auto Manufacturers",
+                            exchangeDispatch: "NASDAQ",
+                        ),
+                        amount: 7,
+                        purchasePrice: KowalskiClientMoney(currency: "USD", value: 210),
+                        transactionType: .sell,
+                        transactionDate: Date(timeIntervalSince1970: 1_766_160_440),
+                    ),
+                    entryId: UUID(uuidString: "d0db73d8-2794-4141-bf4b-d9f332298b5f")!.uuidString,
+                    createdAt: Date(timeIntervalSince1970: 1_766_160_440),
+                    updatedAt: Date(timeIntervalSince1970: 1_766_160_440),
+                ),
+                makePreviewEntry(
+                    payload: makePreviewCreatePayload(
+                        stock: KowalskiClientStockItem(
+                            symbol: "NVDA",
+                            exchange: "NMS",
+                            name: "NVIDIA Corporation",
+                            isin: "US67066G1040",
+                            sector: "Technology",
+                            industry: "Semiconductors",
+                            exchangeDispatch: "NASDAQ",
+                        ),
+                        amount: 4,
+                        purchasePrice: KowalskiClientMoney(currency: "USD", value: 120),
+                        transactionType: .split,
+                        transactionDate: Date(timeIntervalSince1970: 1_766_074_040),
+                    ),
+                    entryId: UUID(uuidString: "853459e7-7640-40a0-a2a5-e799af704503")!.uuidString,
+                    createdAt: Date(timeIntervalSince1970: 1_766_074_040),
+                    updatedAt: Date(timeIntervalSince1970: 1_766_074_040),
+                ),
+            ],
+        )
     }
 
     static func createEntryFailingPreview() -> KowalskiPortfolioClient {
@@ -378,7 +422,7 @@ private func makePreviewEntry(
 }
 
 private func makePreviewCreatePayload() -> KowalskiPortfolioCreateEntryPayload {
-    KowalskiPortfolioCreateEntryPayload(
+    makePreviewCreatePayload(
         stock: KowalskiClientStockItem(
             symbol: "AAPL",
             exchange: "NMS",
@@ -392,6 +436,22 @@ private func makePreviewCreatePayload() -> KowalskiPortfolioCreateEntryPayload {
         purchasePrice: KowalskiClientMoney(currency: "USD", value: 150.5),
         transactionType: .buy,
         transactionDate: Date(timeIntervalSince1970: 1_766_246_840),
+    )
+}
+
+private func makePreviewCreatePayload(
+    stock: KowalskiClientStockItem,
+    amount: Double,
+    purchasePrice: KowalskiClientMoney,
+    transactionType: KowalskiClientPortfolioTransactionTypes,
+    transactionDate: Date,
+) -> KowalskiPortfolioCreateEntryPayload {
+    KowalskiPortfolioCreateEntryPayload(
+        stock: stock,
+        amount: amount,
+        purchasePrice: purchasePrice,
+        transactionType: transactionType,
+        transactionDate: transactionDate,
     )
 }
 
