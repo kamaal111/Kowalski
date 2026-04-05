@@ -23,12 +23,7 @@ public struct KowalskiClient: Sendable {
     }
 
     public static func `default`() -> KowalskiClient {
-        let url: URL
-        do {
-            url = try Servers.Server1.url()
-        } catch {
-            preconditionFailure("Failed to construct server URL: \(error)")
-        }
+        let url = KowalskiServerConfiguration.serverURL()
         let credentialsGetter = CredentialsGetterFactory.default(keychainKey: credentialsKeychainKey)
         let auth = KowalskiAuthClientFactory.default(
             client: makeClientForAuth(url: url, credentialsGetter: credentialsGetter),

@@ -15,6 +15,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-openapi-generator", .upToNextMajor(from: "1.11.0")),
         .package(url: "https://github.com/apple/swift-http-types", .upToNextMajor(from: "1.5.1")),
         .package(url: "https://github.com/Kamaalio/KamaalSwift", .upToNextMajor(from: "3.5.0")),
+        .package(url: "https://github.com/kamaal111/ForexKit", .upToNextMajor(from: "5.0.0")),
         .package(path: "../KowalskiUtils"),
     ],
     targets: [
@@ -27,6 +28,7 @@ let package = Package(
                 .product(name: "KamaalUtils", package: "KamaalSwift"),
                 .product(name: "KamaalLogger", package: "KamaalSwift"),
                 .product(name: "KamaalExtensions", package: "KamaalSwift"),
+                "ForexKit",
                 "KowalskiUtils",
             ],
             swiftSettings: [
@@ -42,6 +44,7 @@ let package = Package(
             name: "KowalskiClientTests",
             dependencies: [
                 "KowalskiClient",
+                "ForexKit",
                 .product(name: "HTTPTypes", package: "swift-http-types"),
                 .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
             ],

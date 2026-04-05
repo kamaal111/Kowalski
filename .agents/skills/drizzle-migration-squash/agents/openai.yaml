@@ -1,4 +1,4 @@
 interface:
-  display_name: "Drizzle Migration Squash"
-  short_description: "Squash early Drizzle migrations into one baseline"
+  display_name: 'Drizzle Migration Squash'
+  short_description: 'Squash early Drizzle migrations into one baseline'
   default_prompt: "Use $drizzle-migration-squash when consolidating this repository's early Drizzle migrations into a single baseline while preserving local schema state."

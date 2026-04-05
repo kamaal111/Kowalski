@@ -122,9 +122,10 @@ public final class KowalskiPortfolio {
                 return
             }
 
-            let sourceCurrencies = Array(
-                Set(valuedEntries.map(\.purchasePrice.currency).filter { $0 != preferredCurrency }),
-            )
+            let sourceCurrencies = valuedEntries
+                .map(\.purchasePrice.currency)
+                .filter { $0 != preferredCurrency }
+                .uniques()
             let exchangeRates: ExchangeRates?
             if sourceCurrencies.isEmpty {
                 exchangeRates = ExchangeRates(base: preferredCurrency, date: .now, rates: [:])
@@ -253,7 +254,7 @@ public final class KowalskiPortfolio {
 
     public static func `default`() -> KowalskiPortfolio {
         let client = KowalskiClient.default()
-        let forexKitConfiguration = ForexKitConfiguration()
+        let forexKitConfiguration = KowalskiServerConfiguration.defaultForexKitConfiguration()
 
         return KowalskiPortfolio(client: client, forexKitConfiguration: forexKitConfiguration)
     }
