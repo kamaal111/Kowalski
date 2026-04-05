@@ -1,0 +1,73 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "017c7549694e49149c645674d53cc7aa9f7b4284",
+  "prompts": {
+    "16e19a28f9464a79": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d16c8-b7e6-7ff0-85f1-989eb100b45f",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>",
+      "messages": [],
+      "total_additions": 2388,
+      "total_deletions": 419,
+      "accepted_lines": 2379,
+      "overriden_lines": 0
+    },
+    "354f8e724d529309": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d3a17-48a9-7b01-b2e8-a9b785e42aa4",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>",
+      "messages": [],
+      "total_additions": 1391,
+      "total_deletions": 680,
+      "accepted_lines": 1103,
+      "overriden_lines": 2
+    },
+    "36fb08e90fc99d39": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d3942-286c-7121-8343-db83e4d53b9d",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>",
+      "messages": [],
+      "total_additions": 240,
+      "total_deletions": 26,
+      "accepted_lines": 226,
+      "overriden_lines": 0
+    },
+    "537ebf247f40e108": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d3645-3c4a-7e62-a22d-8308a2792853",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>",
+      "messages": [],
+      "total_additions": 1055,
+      "total_deletions": 137,
+      "accepted_lines": 1054,
+      "overriden_lines": 0
+    },
+    "9f4a339a1bd8a48a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d161f-ae7b-7683-ac5f-fc920da250c9",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>",
+      "messages": [],
+      "total_additions": 1124,
+      "total_deletions": 456,
+      "accepted_lines": 817,
+      "overriden_lines": 3
+    }
+  }
+}
