@@ -13,4 +13,6 @@ enum ModuleConfig {
     static let identifier = "\(Bundle.main.bundleIdentifier!).KowalskiClient"
     static let maxLogSize = oneKiloByte
     static let credentialsKeychainKey = "\(identifier).credentials"
+    static let appApiPath = "app-api"
+    static let forexPath = "forex"
 }
