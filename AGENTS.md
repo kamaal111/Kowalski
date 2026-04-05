@@ -30,6 +30,15 @@
   - Do not run destructive or state-changing git commands in the current worktree, such as `git checkout`, `git reset`, `git stash`, `git revert`, or `git rebase`
   - If changes need to be undone, prefer making the correcting edits directly
   - If destructive git operations are genuinely required to complete the task, do that work in a separate worktree instead of the user's active worktree
+- **When working in a dedicated git worktree, follow the repository worktree workflow**
+  - Use `.agents/skills/kowalski-git-worktree/SKILL.md` when the task involves detached `HEAD`, branch sync, rebasing, amending, force-pushing, or PR updates from a worktree branch
+  - Start by checking `git status --short`, `git rev-parse --abbrev-ref HEAD`, `git branch -vv`, and recent commits
+  - If the worktree is detached, run `git switch <expected-branch>` before pulling, committing, or pushing
+  - If `git pull --rebase` reports missing tracking information, set it with `git branch --set-upstream-to=origin/<branch> <branch>` and retry
+  - After `git commit --amend`, prefer `git push --force-with-lease origin <branch>` to update the PR branch safely
+  - In linked worktrees, `git switch`, `git add`, `git commit`, `git pull --rebase`, and `git push` may need elevated permissions because git metadata lives under the parent repository's `.git/worktrees/...`
+  - If commit hooks modify files during commit or amend, rerun the required verification on the final committed tree before finishing
+  - If `gh auth` is stale or broken, prefer the GitHub connector for PR creation or updates instead of blocking on CLI auth
 - **ALWAYS use `pnpm` for Node.js work**
   - Use `pnpm` for dependency installation, upgrades, scripts, and workspace commands
   - Do not use `npm` or `yarn` anywhere in this repository
