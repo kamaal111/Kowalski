@@ -186,4 +186,10 @@ private struct MockAuthClient: KowalskiAuthClient {
     func refreshToken() async -> Result<Void, KowalskiAuthRefreshErrors> {
         .failure(.unknown(statusCode: 500, payload: nil, context: nil))
     }
+
+    func updatePreferences(
+        preferredCurrency _: String,
+    ) async -> Result<KowalskiAuthSessionResponse, KowalskiAuthPreferencesErrors> {
+        .failure(.unknown(statusCode: 500, payload: nil, context: nil))
+    }
 }

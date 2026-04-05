@@ -5,21 +5,23 @@
 //  Created by Kamaal M Farah on 11/2/25.
 //
 
+import KowalskiAuth
 import KowalskiDesignSystem
 import SwiftUI
 
 struct KowalskiPortfolioTransactionScreen: View {
     @Environment(KowalskiPortfolio.self) private var portfolio
+    @Environment(KowalskiAuth.self) private var auth
     @Environment(\.dismiss) private var dismiss
 
     @State private var toast: Toast?
 
-    let initialValues: KowalskiPortfolioTransactionFormValues
+    let initialValues: KowalskiPortfolioTransactionFormValues?
     let editorConfiguration: KowalskiPortfolioTransactionEditorConfiguration
     let onTransactionAdd: (_ formPayload: TransactionPayload) -> Void
 
     init(
-        initialValues: KowalskiPortfolioTransactionFormValues = .empty,
+        initialValues: KowalskiPortfolioTransactionFormValues? = nil,
         editorConfiguration: KowalskiPortfolioTransactionEditorConfiguration = .default,
         onTransactionAdd: @escaping (_ formPayload: TransactionPayload) -> Void = { _ in },
     ) {
@@ -31,7 +33,7 @@ struct KowalskiPortfolioTransactionScreen: View {
     var body: some View {
         ScrollView {
             KowalskiPortfolioTransactionEditor(
-                initialValues: initialValues,
+                initialValues: initialValues ?? .empty(preferredCurrency: auth.effectiveCurrency),
                 autofocusAmountField: false,
                 configuration: editorConfiguration,
                 submitButtonTitle: "Add Transaction",

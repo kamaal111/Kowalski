@@ -22,6 +22,10 @@ public protocol KowalskiAuthClient: Sendable {
     func session() async -> Result<KowalskiAuthSessionResponse, KowalskiAuthSessionErrors>
 
     func refreshToken() async -> Result<Void, KowalskiAuthRefreshErrors>
+
+    func updatePreferences(
+        preferredCurrency: String,
+    ) async -> Result<KowalskiAuthSessionResponse, KowalskiAuthPreferencesErrors>
 }
 
 // MARK: Factory
@@ -89,6 +93,12 @@ public enum KowalskiAuthSessionErrors: Error {
 public enum KowalskiAuthRefreshErrors: Error {
     case unknown(statusCode: Int, payload: OpenAPIRuntime.UndocumentedPayload?, context: Error?)
     case unauthorized
+}
+
+public enum KowalskiAuthPreferencesErrors: Error {
+    case unknown(statusCode: Int, payload: OpenAPIRuntime.UndocumentedPayload?, context: Error?)
+    case unauthorized
+    case badRequest
 }
 
 // MARK: Implementation
@@ -284,6 +294,39 @@ struct KowalskiAuthClientImpl: KowalskiAuthClient {
         return .success(())
     }
 
+    // MARK: Update Preferences
+
+    func updatePreferences(
+        preferredCurrency: String,
+    ) async -> Result<KowalskiAuthSessionResponse, KowalskiAuthPreferencesErrors> {
+        let response: Operations.PatchAppApiAuthPreferences.Output
+        do {
+            response = try await client.patchAppApiAuthPreferences(
+                body: .json(.init(preferredCurrency: preferredCurrency)),
+            )
+        } catch {
+            return .failure(.unknown(statusCode: 503, payload: nil, context: error))
+        }
+
+        switch response {
+        case .notFound, .unauthorized:
+            return .failure(.unauthorized)
+        case .badRequest:
+            return .failure(.badRequest)
+        case let .undocumented(statusCode, payload):
+            return .failure(.unknown(statusCode: statusCode, payload: payload, context: nil))
+        case let .ok(ok):
+            let body: Components.Schemas.SessionResponse
+            do {
+                body = try ok.body.json
+            } catch {
+                return .failure(.unknown(statusCode: 500, payload: nil, context: error))
+            }
+
+            return .success(mapper.mapSessionResponse(body))
+        }
+    }
+
     private func storeCredentials(
         token: String,
         expiryTime expiryTimeString: String,
@@ -330,11 +373,25 @@ struct KowalskiAuthClientPreview: KowalskiAuthClient {
                 name: "Yami Sukehiro",
                 email: "yami@bulls.io",
                 expiresAt: Date(timeIntervalSince1970: 1_762_088_596),
+                preferredCurrency: nil,
             ),
         )
     }
 
     func refreshToken() async -> Result<Void, KowalskiAuthRefreshErrors> {
         .success(())
+    }
+
+    func updatePreferences(
+        preferredCurrency: String,
+    ) async -> Result<KowalskiAuthSessionResponse, KowalskiAuthPreferencesErrors> {
+        .success(
+            KowalskiAuthSessionResponse(
+                name: "Yami Sukehiro",
+                email: "yami@bulls.io",
+                expiresAt: Date(timeIntervalSince1970: 1_762_088_596),
+                preferredCurrency: preferredCurrency,
+            ),
+        )
     }
 }

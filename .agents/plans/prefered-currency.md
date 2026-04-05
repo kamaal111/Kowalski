@@ -1,9 +1,11 @@
 ## Native Settings + Server-Backed Preferred Currency
 
 ### Summary
+
 Add a native macOS `Settings` scene for preferred currency, store the value on the server as part of the `user` record, and use that preference as the default currency for new transaction creation without removing any other currency choices.
 
 ### Key Changes
+
 - Add a nullable `preferred_currency` column to the server `user` table.
   Existing users start as `null`; the app will seed the value after login using the device locale and fall back to `USD` when the locale currency is unsupported by `ForexKit`.
 - Extend `GET /auth/session` so `user.preferred_currency` is included in the response.
@@ -26,6 +28,7 @@ Add a native macOS `Settings` scene for preferred currency, store the value on t
   The preferred currency only controls the initially selected value.
 
 ### Public API / Interface Changes
+
 - Server `GET /app-api/auth/session` response:
   add `user.preferred_currency: string | null`
 - Server `PATCH /app-api/auth/preferences`:
@@ -37,6 +40,7 @@ Add a native macOS `Settings` scene for preferred currency, store the value on t
   replace the hardcoded `.USD` empty-state default with a preferred-currency-aware initializer/factory
 
 ### Test Plan
+
 - Server integration tests:
   `GET /auth/session` returns `preferred_currency` when set
   `GET /auth/session` returns `preferred_currency: null` when unset
@@ -53,6 +57,7 @@ Add a native macOS `Settings` scene for preferred currency, store the value on t
   run the relevant focused tests during development, then finish with `just ready`
 
 ### Assumptions
+
 - “Settings pane” means a native macOS `Settings` window, not an in-app route.
 - Locale-based defaulting should happen in the app, not on the server, because only the app has reliable access to the user’s device locale.
 - `ForexKit` defines the currencies users can choose from in the UI.

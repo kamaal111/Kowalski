@@ -24,5 +24,9 @@ public struct KowalskiScene: Scene {
             .kowalskiAuth(auth)
             .kowalskiPortfolio(portfolio)
         }
+        Settings {
+            KowalskiAuthSettingsView()
+                .environment(auth)
+        }
     }
 }

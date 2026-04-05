@@ -93,6 +93,7 @@
   - Prefer default exports for routes and handlers where the codebase already follows that pattern
   - Never use deprecated APIs when Oxlint or TypeScript flags a modern replacement
   - Centralize reusable constants in `server/src/constants/`
+  - For OpenAPI-backed Hono handlers, type `HonoContext` with validated `out` shapes so `c.req.valid(...)` is strongly typed without casts
 - **Type safety**
   - Do not cast values to force them through the type system
   - Validate unknown data at boundaries with Zod

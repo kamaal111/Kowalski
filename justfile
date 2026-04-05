@@ -71,6 +71,10 @@ docker-run-server tag=DOCKER_IMAGE host_port=SERVER_PORT: start-services
 # Run all verification checks
 ready: download-spec _ready-tasks
 
+# Run verification checks including ui tests
+[parallel]
+heavy: ready test-ui
+
 # Compile server
 [working-directory("server")]
 compile-server:
@@ -235,6 +239,11 @@ test-server: prepare-server start-services
 # Run quality checks
 [parallel]
 quality: lint format-check typecheck
+
+# Open app in Xcode
+[working-directory("app")]
+xcode:
+    open Kowalski.xcodeproj
 
 # Prepare project to work with
 prepare: install-modules prepare-server

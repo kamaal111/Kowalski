@@ -1,17 +1,18 @@
 import { createMiddleware } from 'hono/factory';
 import { createLocalJWKSet, createRemoteJWKSet, jwtVerify } from 'jose';
+import { eq } from 'drizzle-orm';
 import z from 'zod';
 import type { JWTPayload } from 'jose';
+
 import type { HonoContext, HonoVariables } from '../api/contexts';
 import type { SessionResponse } from './schemas/responses';
-
 import { APIException } from '../api/exceptions';
 import { STATUS_CODES } from '../constants/http';
 import { toISO8601String } from '../utils/strings';
 import { SessionNotFound } from './exceptions';
 import { JWKS_URL } from './better-auth';
 import env, { IS_TEST } from '../api/env';
-import { jwks } from '../db/schema/better-auth';
+import { jwks, user } from '../db/schema/better-auth';
 import { logInfo, logWarn } from '@/logging';
 import { setRequestUserId, withRequestLogger } from '@/logging/http';
 
@@ -23,20 +24,21 @@ const BetterAuthJWTPayloadSchema = z
 const PublicJWKSchema = z.object({ kty: z.string() }).catchall(z.unknown());
 
 export const requireLoggedInSessionMiddleware = createMiddleware<{ Variables: HonoVariables }>(async (c, next) => {
-  if (c.get('session') != null) {
-    await next();
-    return;
-  }
-
-  const sessionResponse = await getUserSession(c);
-
-  c.set('session', sessionResponse);
+  const session = await getUserSession(c);
+  c.set('session', session);
   await next();
 });
 
 async function getUserSession(c: HonoContext): Promise<SessionResponse> {
+  const session = c.get('session');
+  if (session != null) {
+    return session;
+  }
+
   const jwtSessionResponse = await verifyJwt(c);
-  if (jwtSessionResponse != null) return jwtSessionResponse;
+  if (jwtSessionResponse != null) {
+    return jwtSessionResponse;
+  }
 
   return verifySession(c);
 }
@@ -54,6 +56,7 @@ async function verifySession(c: HonoContext): Promise<SessionResponse> {
     outcome: 'success',
   });
 
+  const preferredCurrency = await getPreferredCurrency(c, sessionResponse.user.id);
   const response: SessionResponse = {
     session: {
       expires_at: toISO8601String(sessionResponse.session.expiresAt),
@@ -66,6 +69,7 @@ async function verifySession(c: HonoContext): Promise<SessionResponse> {
       email: sessionResponse.user.email,
       email_verified: sessionResponse.user.emailVerified,
       created_at: toISO8601String(sessionResponse.user.createdAt),
+      preferred_currency: preferredCurrency,
     },
   };
 
@@ -111,6 +115,8 @@ async function verifyJwt(c: HonoContext): Promise<SessionResponse | null> {
     outcome: 'success',
   });
 
+  const preferredCurrency = await getPreferredCurrency(c, jwtPayload.sub);
+
   return {
     session: {
       expires_at: toISO8601String(new Date((payload.exp ?? 0) * 1000)),
@@ -123,6 +129,7 @@ async function verifyJwt(c: HonoContext): Promise<SessionResponse | null> {
       email: jwtPayload.email,
       email_verified: jwtPayload.emailVerified,
       created_at: toISO8601String(new Date((payload.iat ?? 0) * 1000)),
+      preferred_currency: preferredCurrency,
     },
   };
 }
@@ -134,4 +141,15 @@ async function getJwksForVerification(c: HonoContext) {
   const keys = keyRows.map(keyRow => ({ ...PublicJWKSchema.parse(JSON.parse(keyRow.publicKey)), kid: keyRow.id }));
 
   return createLocalJWKSet({ keys });
+}
+
+async function getPreferredCurrency(c: HonoContext, userId: string): Promise<string | null> {
+  const rows = await c
+    .get('db')
+    .select({ preferredCurrency: user.preferredCurrency })
+    .from(user)
+    .where(eq(user.id, userId))
+    .limit(1);
+
+  return rows.at(0)?.preferredCurrency ?? null;
 }

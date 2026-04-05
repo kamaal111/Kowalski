@@ -234,6 +234,53 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /app-api/auth/preferences:
+    patch:
+      tags:
+        - Authentication
+      summary: Update user preferences
+      description: >-
+        Update user preferences such as the preferred currency for new
+        transactions.
+      parameters:
+        - schema:
+            type: string
+            description: Bearer token for authentication
+            example: Bearer f21wcpz7Aokmlh2MB632MZpTgfruPc62
+          required: true
+          description: Bearer token for authentication
+          name: authorization
+          in: header
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePreferencesPayload'
+      responses:
+        '200':
+          description: Preferences updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '400':
+          description: Invalid preferences payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /app-api/stocks/search:
     get:
       summary: Search stocks
@@ -629,12 +676,19 @@ components:
               format: date-time
               description: User account creation timestamp
               example: '2025-10-05T12:08:28.374Z'
+            preferred_currency:
+              type:
+                - null
+                - string
+              description: ISO 4217 currency code the user prefers for new transactions
+              example: USD
           required:
             - id
             - name
             - email
             - email_verified
             - created_at
+            - preferred_currency
       required:
         - session
         - user
@@ -651,6 +705,7 @@ components:
           email: john@apple.com
           email_verified: false
           created_at: '2025-10-05T12:08:28.374Z'
+          preferred_currency: null
     TokenResponse:
       type: object
       properties:
@@ -660,6 +715,19 @@ components:
           example: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9...
       required:
         - token
+    UpdatePreferencesPayload:
+      type: object
+      properties:
+        preferred_currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+          description: ISO 4217 currency code the user prefers for new transactions
+          example: USD
+      required:
+        - preferred_currency
+      title: Update Preferences Payload
+      description: Payload to update user preferences
     StocksSearchResponse:
       type: object
       properties:
