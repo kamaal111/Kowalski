@@ -1,6 +1,5 @@
 import { createMiddleware } from 'hono/factory';
 import { createLocalJWKSet, createRemoteJWKSet, jwtVerify } from 'jose';
-import { eq } from 'drizzle-orm';
 import z from 'zod';
 import type { JWTPayload } from 'jose';
 
@@ -12,7 +11,8 @@ import { toISO8601String } from '../utils/strings';
 import { SessionNotFound } from './exceptions';
 import { JWKS_URL } from './better-auth';
 import env, { IS_TEST } from '../api/env';
-import { jwks, user } from '../db/schema/better-auth';
+import { jwks } from '../db/schema/better-auth';
+import { findUserPreferredCurrencyByUserId } from './repositories/preferences';
 import { logInfo, logWarn } from '@/logging';
 import { setRequestUserId, withRequestLogger } from '@/logging/http';
 
@@ -144,12 +144,7 @@ async function getJwksForVerification(c: HonoContext) {
 }
 
 async function getPreferredCurrency(c: HonoContext, userId: string): Promise<string | null> {
-  const rows = await c
-    .get('db')
-    .select({ preferredCurrency: user.preferredCurrency })
-    .from(user)
-    .where(eq(user.id, userId))
-    .limit(1);
+  const preferences = await findUserPreferredCurrencyByUserId(c, userId);
 
-  return rows.at(0)?.preferredCurrency ?? null;
+  return preferences?.preferredCurrency ?? null;
 }

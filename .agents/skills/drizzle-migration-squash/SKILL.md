@@ -29,26 +29,31 @@ Collapse the current Drizzle migration chain into a single `0000_*.sql` baseline
    - Read the SQL files in `server/drizzle/`.
    - Inspect the latest snapshot in `server/drizzle/meta/`.
 
-2. Fold the latest schema into the baseline migration.
+2. If the schema change also moves live data, apply that transition before squashing.
+   - Generate or hand-write a normal migration on the current chain that creates the new table or column, backfills existing data, and removes the legacy shape.
+   - Run `just migrate` so the local database is already on the target schema before rewriting history.
+   - Keep that backfill logic out of the final squashed `0000_*.sql`; the squashed baseline should describe the final schema for fresh databases, not legacy transition steps.
+
+3. Fold the latest schema into the baseline migration.
    - Update `server/drizzle/0000_*.sql` so it directly creates the latest schema.
    - If later migrations added enum values, indexes, or constraints, move those into the baseline SQL.
    - Prefer direct `CREATE TABLE` constraints when possible, and keep separate `CREATE INDEX` statements when needed.
 
-3. Collapse the metadata to one baseline snapshot.
+4. Collapse the metadata to one baseline snapshot.
    - Keep only `server/drizzle/meta/0000_snapshot.json`.
    - Ensure that snapshot reflects the latest schema, not the old baseline.
    - Set `prevId` in `0000_snapshot.json` to `00000000-0000-0000-0000-000000000000`.
    - Reduce `server/drizzle/meta/_journal.json` to one entry for the `0000_*` migration.
 
-4. Remove later migration files.
+5. Remove later migration files.
    - Delete `server/drizzle/0001_*.sql` and above.
    - Delete `server/drizzle/meta/0001_snapshot.json` and above.
 
-5. Recompute the baseline migration hash.
+6. Recompute the baseline migration hash.
    - Run `shasum -a 256 server/drizzle/0000_*.sql`.
    - Drizzle stores the SHA-256 of the SQL file in `drizzle.__drizzle_migrations.hash`.
 
-6. Rewrite the local Drizzle migration journal in Postgres.
+7. Rewrite the local Drizzle migration journal in Postgres.
    - Inspect the table with:
      - `docker compose exec -T kowalski_db psql -U kowalski_user -d kowalski -c "\d drizzle.__drizzle_migrations"`
    - Replace its rows with the single new baseline:
@@ -56,7 +61,7 @@ Collapse the current Drizzle migration chain into a single `0000_*.sql` baseline
      - `INSERT INTO drizzle.__drizzle_migrations (hash, created_at) VALUES ('<new_sha256>', <journal_when_value>);`
    - This preserves the current schema and data while aligning Drizzle’s bookkeeping with the squashed files.
 
-7. Verify.
+8. Verify.
    - Run `just migrate` and confirm it is a no-op or succeeds cleanly.
    - Run `just ready`.
 

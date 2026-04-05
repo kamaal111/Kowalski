@@ -231,10 +231,19 @@ test-ui:
         -destination {{ MACOS_DESTINATION }} \
         -only-testing:KowalskiUITests | xcpretty
 
+# Run app UI tests and unit tests
+[working-directory("app")]
+[parallel]
+test-app-heavy: test-app test-ui
+
 # Run server tests
 [working-directory("server")]
 test-server: prepare-server start-services
     {{ PNR }} test
+
+# Run all tests
+[parallel]
+test-heavy: test-server test-app-heavy
 
 # Run quality checks
 [parallel]
