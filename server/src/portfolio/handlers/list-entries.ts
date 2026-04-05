@@ -8,7 +8,7 @@ import { ListEntriesResponseSchema } from '../schemas/responses';
 import { ROUTE_NAME } from '../constants';
 import listEntriesRoute from '../routes/list-entries';
 import { logInfo } from '@/logging';
-import { setRequestRoute, setRequestUserId, withRequestLogger } from '@/logging/http';
+import { withRequestLogger } from '@/logging/http';
 import type { HonoContext } from '@/api/contexts';
 import type { PersistedPortfolioEntry } from '../repositories/list-entries';
 
@@ -16,8 +16,6 @@ const LIST_ENTRIES_ROUTE_PATH = `${APP_API_BASE_PATH}${ROUTE_NAME}${listEntriesR
 
 async function listEntries(c: HonoContext) {
   const session = getSessionWhereSessionIsRequired(c);
-  setRequestRoute(c, LIST_ENTRIES_ROUTE_PATH);
-  setRequestUserId(c, session.user.id);
   const entries = await findPortfolioEntriesByUserId(c);
   const response = ListEntriesResponseSchema.parse(entries.map(mapPersistedEntryToResponse));
   logInfo(withRequestLogger(c, { component: 'portfolio' }), {

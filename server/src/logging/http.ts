@@ -1,3 +1,5 @@
+import { routePath } from 'hono/route';
+
 import type { HonoContext } from '@/api/contexts';
 import type { ServerMode } from '@/api/env';
 import env from '@/api/env';
@@ -9,7 +11,7 @@ export function initializeRequestLogger(c: HonoContext, mode: ServerMode) {
     method: c.req.method,
     path: c.req.path,
     url: c.req.url,
-    route: c.req.path,
+    route: getMatchedRoutePath(c),
     mode,
   });
 
@@ -22,31 +24,12 @@ export function getRequestLogger(c: HonoContext) {
   return bindAuthenticatedUserIdFromContext(c, existingLogger);
 }
 
-function bindRequestLogger(c: HonoContext, bindings: LogBindings) {
-  const logger = childLogger(getRequestLogger(c), bindings);
-  c.set('logger', logger);
-
-  return logger;
-}
-
 export function withRequestLogger(c: HonoContext, bindings: LogBindings) {
   return childLogger(getRequestLogger(c), bindings);
 }
 
-export function setRequestUserId(c: HonoContext, userId: string) {
-  return bindRequestLogger(c, { user_id: userId });
-}
-
-export function setRequestRoute(c: HonoContext, route: string) {
-  return bindRequestLogger(c, { route });
-}
-
 export function getRouteForLog(c: HonoContext) {
-  const logger = getRequestLogger(c);
-  const bindings = getLoggerBindings(logger);
-  const route = bindings.route;
-
-  return typeof route === 'string' && route.length > 0 ? route : c.req.path;
+  return getMatchedRoutePath(c);
 }
 
 export function markRequestFailed(c: HonoContext) {
@@ -78,4 +61,9 @@ function bindAuthenticatedUserIdFromContext(c: HonoContext, logger: ServerLogger
   c.set('logger', loggerWithUserId);
 
   return loggerWithUserId;
+}
+
+function getMatchedRoutePath(c: HonoContext) {
+  const matchedRoutePath = routePath(c);
+  return matchedRoutePath.length > 0 && !matchedRoutePath.includes('*') ? matchedRoutePath : c.req.path;
 }

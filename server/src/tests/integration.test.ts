@@ -13,7 +13,7 @@ integrationTest('should handle 404', async ({ app, expect, getLogsForRequestId, 
         event: 'request.started',
         request_id: requestId,
         method: 'GET',
-        path: '/api/v1/unknown',
+        route: '/api/v1/unknown',
         url: 'http://localhost/api/v1/unknown',
       }),
       expect.objectContaining({
