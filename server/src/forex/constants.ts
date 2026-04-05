@@ -1,4 +1,5 @@
 export const ROUTE_NAME = '/forex';
+export const OPENAPI_TAG = 'Forex';
 
 export type Currency = typeof CURRENCIES extends Set<infer T> ? T : never;
 

@@ -281,6 +281,49 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /app-api/forex/latest:
+    get:
+      tags:
+        - Forex
+      summary: Get latest forex rates
+      description: >-
+        Return the latest stored forex rates in the ForexKit-compatible response
+        format.
+      parameters:
+        - schema:
+            type: string
+            default: EUR
+            description: Base currency code. Invalid or missing values fall back to EUR.
+            example: EUR
+          required: false
+          description: Base currency code. Invalid or missing values fall back to EUR.
+          name: base
+          in: query
+        - schema:
+            type: string
+            description: >-
+              Optional comma-separated list of target currency codes, or * for
+              all rates.
+            example: USD,GBP
+          required: false
+          description: >-
+            Optional comma-separated list of target currency codes, or * for all
+            rates.
+          name: symbols
+          in: query
+      responses:
+        '200':
+          description: Latest forex rates retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForexLatestResponse'
+        '404':
+          description: No forex rates are available for the resolved base currency
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /app-api/stocks/search:
     get:
       summary: Search stocks
@@ -728,6 +771,40 @@ components:
         - preferred_currency
       title: Update Preferences Payload
       description: Payload to update user preferences
+    ForexLatestResponse:
+      type: object
+      properties:
+        base:
+          type: string
+          minLength: 3
+          maxLength: 3
+          description: Base currency code for the returned rates.
+          example: EUR
+        date:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+          description: Effective date of the returned forex snapshot.
+          example: '2026-03-29'
+        rates:
+          type: object
+          additionalProperties:
+            type: number
+          description: Target currency rates keyed by currency code.
+          example:
+            USD: 1.09
+            GBP: 0.85
+      required:
+        - base
+        - date
+        - rates
+      title: Forex Latest Response
+      description: Latest exchange rates in the contract expected by ForexKit.
+      example:
+        base: EUR
+        date: '2026-03-29'
+        rates:
+          USD: 1.09
+          GBP: 0.85
     StocksSearchResponse:
       type: object
       properties:
