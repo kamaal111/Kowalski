@@ -21,6 +21,10 @@
   - List the commands, builds, tests, or manual checks you ran
   - If you did not run a validation step, say that explicitly instead of implying it passed
   - For docs-only changes, say that no code validation was run and why
+- **ALWAYS write review-friendly commit messages when a commit is requested or required**
+  - Use a declarative commit title that clearly states what the commit does
+  - Include a detailed commit description/body that captures the full scope of the change, including the important files, behaviors, and intent
+  - Assume reviewers will inspect every commit individually, and make each commit message complete enough to support that commit-by-commit review
 - **ONLY use non-destructive git operations in the main worktree**
   - Read-only git commands for inspection or debugging are allowed, such as `git status`, `git diff`, `git log`, `git show`, and `git blame`
   - Do not run destructive or state-changing git commands in the current worktree, such as `git checkout`, `git reset`, `git stash`, `git revert`, or `git rebase`
