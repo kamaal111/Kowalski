@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Kowalski Git Worktree'
+  short_description: 'Worktree branch sync, amend, and PR workflow'
+  default_prompt: 'Use $kowalski-git-worktree when working in a linked git worktree, especially for detached HEAD recovery, upstream tracking, rebases, amends, force-pushes, or PR branch publishing.'
