@@ -156,6 +156,90 @@ struct KowalskiPortfolioTests {
     }
 
     @Test
+    func `Net worth should sum purchases and subtract sells in the preferred currency`() {
+        let portfolio = KowalskiPortfolio.testing(client: .testing())
+        let exchangeRates = ExchangeRates(base: .USD, date: .now, rates: [:])
+        let entries = [
+            makePortfolioEntry(
+                stock: makeAppleStock(),
+                amount: 2,
+                purchasePrice: Money(currency: .USD, value: 100),
+                transactionType: .purchase,
+            ),
+            makePortfolioEntry(
+                stock: makeTeslaStock(),
+                amount: 1,
+                purchasePrice: Money(currency: .USD, value: 40),
+                transactionType: .sell,
+            ),
+        ]
+
+        let netWorth = portfolio.computeNetWorth(for: entries, in: .USD, using: exchangeRates)
+
+        #expect(netWorth == 160)
+    }
+
+    @Test
+    func `Net worth should exclude split transactions`() {
+        let portfolio = KowalskiPortfolio.testing(client: .testing())
+        let exchangeRates = ExchangeRates(base: .USD, date: .now, rates: [:])
+        let entries = [
+            makePortfolioEntry(
+                stock: makeAppleStock(),
+                amount: 2,
+                purchasePrice: Money(currency: .USD, value: 100),
+                transactionType: .purchase,
+            ),
+            makePortfolioEntry(
+                stock: makeTeslaStock(),
+                amount: 10,
+                purchasePrice: Money(currency: .EUR, value: 1000),
+                transactionType: .split,
+            ),
+        ]
+
+        let netWorth = portfolio.computeNetWorth(for: entries, in: .USD, using: exchangeRates)
+
+        #expect(netWorth == 200)
+    }
+
+    @Test
+    func `Net worth should use ForexKit preview rates for mixed currencies`() async throws {
+        let listEntries = [
+            makePortfolioEntryResponse(
+                stock: makeAppleStockResponse(),
+                amount: 1,
+                purchasePrice: KowalskiClientMoney(currency: "USD", value: 106.66),
+                transactionType: .buy,
+            ),
+            makePortfolioEntryResponse(
+                stock: makeTeslaStockResponse(),
+                amount: 1,
+                purchasePrice: KowalskiClientMoney(currency: "GBP", value: 88.693),
+                transactionType: .buy,
+            ),
+            makePortfolioEntryResponse(
+                stock: makeAppleStockResponse(),
+                amount: 1,
+                purchasePrice: KowalskiClientMoney(currency: "USD", value: 53.33),
+                transactionType: .sell,
+            ),
+        ]
+        let portfolioClient = MockPortfolioClient(
+            createEntryResult: .success(listEntries[0]),
+            updateEntryResult: .success(listEntries[0]),
+            listEntriesResult: .success(listEntries),
+        )
+        let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
+
+        try await portfolio.fetchEntries().get()
+        await portfolio.fetchNetWorth(preferredCurrency: .EUR)
+        let netWorth = try #require(portfolio.netWorth)
+
+        #expect(abs(netWorth - 150) < 0.0001)
+    }
+
+    @Test
     func `Paired create form values should use the opposite transaction type`() throws {
         let buyEntry = makePortfolioEntry(
             stock: makeAppleStock(),
@@ -342,14 +426,46 @@ private func makePortfolioEntryResponse(
     )
 }
 
+private func makePortfolioEntryResponse(
+    stock: KowalskiClientStockItem,
+    amount: Double,
+    purchasePrice: KowalskiClientMoney,
+    transactionType: KowalskiClientPortfolioTransactionTypes,
+) -> KowalskiPortfolioClientEntryResponse {
+    KowalskiPortfolioClientEntryResponse(
+        id: UUID(uuidString: "cd81dbd7-3efa-42b3-8127-c1589279542f")!.uuidString,
+        createdAt: Date(timeIntervalSince1970: 1_766_246_840),
+        updatedAt: Date(timeIntervalSince1970: 1_766_246_840),
+        stock: stock,
+        amount: amount,
+        purchasePrice: purchasePrice,
+        transactionType: transactionType,
+        transactionDate: Date(timeIntervalSince1970: 1_766_246_840),
+    )
+}
+
 private func makePortfolioEntry(stock: Stock, amount: Double, transactionType: TransactionType) -> PortfolioEntry {
+    makePortfolioEntry(
+        stock: stock,
+        amount: amount,
+        purchasePrice: Money(currency: .USD, value: 150.5),
+        transactionType: transactionType,
+    )
+}
+
+private func makePortfolioEntry(
+    stock: Stock,
+    amount: Double,
+    purchasePrice: Money,
+    transactionType: TransactionType,
+) -> PortfolioEntry {
     PortfolioEntry(
         id: UUID(uuidString: "cd81dbd7-3efa-42b3-8127-c1589279542f")!.uuidString,
         createdAt: Date(timeIntervalSince1970: 1_766_246_840),
         updatedAt: Date(timeIntervalSince1970: 1_766_246_840),
         stock: stock,
         amount: amount,
-        purchasePrice: Money(currency: .USD, value: 150.5),
+        purchasePrice: purchasePrice,
         transactionType: transactionType,
         transactionDate: Date(timeIntervalSince1970: 1_766_246_840),
     )
@@ -369,6 +485,30 @@ private func makeAppleStock() -> Stock {
 
 private func makeTeslaStock() -> Stock {
     Stock(
+        symbol: "TSLA",
+        exchange: "NMS",
+        name: "Tesla, Inc.",
+        isin: "US88160R1014",
+        sector: "Consumer Cyclical",
+        industry: "Auto Manufacturers",
+        exchangeDispatch: "NASDAQ",
+    )
+}
+
+private func makeAppleStockResponse() -> KowalskiClientStockItem {
+    KowalskiClientStockItem(
+        symbol: "AAPL",
+        exchange: "NMS",
+        name: "Apple Inc.",
+        isin: "US0378331005",
+        sector: "Technology",
+        industry: "Consumer Electronics",
+        exchangeDispatch: "NASDAQ",
+    )
+}
+
+private func makeTeslaStockResponse() -> KowalskiClientStockItem {
+    KowalskiClientStockItem(
         symbol: "TSLA",
         exchange: "NMS",
         name: "Tesla, Inc.",
