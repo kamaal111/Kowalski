@@ -16,6 +16,9 @@
     "Failed to log in." : {
 
     },
+    "Failed to save preferred currency." : {
+
+    },
     "Failed to sign up." : {
 
     },
@@ -38,6 +41,15 @@
 
     },
     "Password must be the same as the password above" : {
+
+    },
+    "Preferred Currency" : {
+
+    },
+    "Preferred currency saved." : {
+
+    },
+    "Save" : {
 
     },
     "Sign In" : {

@@ -15,6 +15,13 @@
       "when": 1774780259037,
       "tag": "0001_tough_lenny_balinger",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1775312340458,
+      "tag": "0002_odd_miss_america",
+      "breakpoints": true
     }
   ]
 }

@@ -258,14 +258,16 @@ struct KowalskiPortfolioTransactionFormValues {
     let transactionType: TransactionType
     let transactionDate: Date
 
-    static let empty = KowalskiPortfolioTransactionFormValues(
-        selectedStock: nil,
-        amount: "",
-        purchasePriceCurrency: .USD,
-        purchasePriceValue: "0",
-        transactionType: .purchase,
-        transactionDate: .now,
-    )
+    static func empty(preferredCurrency: Currencies = .USD) -> KowalskiPortfolioTransactionFormValues {
+        KowalskiPortfolioTransactionFormValues(
+            selectedStock: nil,
+            amount: "",
+            purchasePriceCurrency: preferredCurrency,
+            purchasePriceValue: "0",
+            transactionType: .purchase,
+            transactionDate: .now,
+        )
+    }
 
     init(
         selectedStock: Stock?,
@@ -294,14 +296,20 @@ struct KowalskiPortfolioTransactionFormValues {
         )
     }
 
-    static func pairedCreate(from entry: PortfolioEntry, transactionType: TransactionType) -> Self {
-        Self(
+    static func pairedCreate(
+        from entry: PortfolioEntry,
+        transactionType: TransactionType,
+        preferredCurrency: Currencies = .USD,
+    ) -> Self {
+        let emptyValues = empty(preferredCurrency: preferredCurrency)
+
+        return Self(
             selectedStock: entry.stock,
             amount: formattedNumber(entry.amount),
-            purchasePriceCurrency: empty.purchasePriceCurrency,
-            purchasePriceValue: empty.purchasePriceValue,
+            purchasePriceCurrency: emptyValues.purchasePriceCurrency,
+            purchasePriceValue: emptyValues.purchasePriceValue,
             transactionType: transactionType,
-            transactionDate: empty.transactionDate,
+            transactionDate: emptyValues.transactionDate,
         )
     }
 

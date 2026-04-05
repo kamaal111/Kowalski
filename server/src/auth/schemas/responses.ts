@@ -58,6 +58,10 @@ export const SessionResponseSchema = z
         description: 'User account creation timestamp',
         example: '2025-10-05T12:08:28.374Z',
       }),
+      preferred_currency: z.string().nullable().openapi({
+        description: 'ISO 4217 currency code the user prefers for new transactions',
+        example: 'USD',
+      }),
     }),
   })
   .openapi('SessionResponse', {
@@ -75,6 +79,7 @@ export const SessionResponseSchema = z
         email: 'john@apple.com',
         email_verified: false,
         created_at: '2025-10-05T12:08:28.374Z',
+        preferred_currency: null,
       },
     },
   });

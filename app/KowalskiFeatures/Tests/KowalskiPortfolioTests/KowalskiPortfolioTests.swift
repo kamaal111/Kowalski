@@ -191,6 +191,43 @@ struct KowalskiPortfolioTests {
         #expect(buyFormValues.amount == "7")
         #expect(buyFormValues.transactionType == .purchase)
     }
+
+    @Test
+    func `Empty form values should default to USD when no preferred currency is given`() {
+        let formValues = KowalskiPortfolioTransactionFormValues.empty()
+
+        #expect(formValues.purchasePriceCurrency == .USD)
+        #expect(formValues.purchasePriceValue == "0")
+        #expect(formValues.selectedStock == nil)
+        #expect(formValues.transactionType == .purchase)
+    }
+
+    @Test
+    func `Empty form values should use the given preferred currency`() {
+        let formValues = KowalskiPortfolioTransactionFormValues.empty(preferredCurrency: .EUR)
+
+        #expect(formValues.purchasePriceCurrency == .EUR)
+    }
+
+    @Test
+    func `Paired create should use the given preferred currency for purchase price`() {
+        let entry = makePortfolioEntry(
+            stock: makeAppleStock(),
+            amount: 5,
+            transactionType: .purchase,
+        )
+
+        let formValues = KowalskiPortfolioTransactionFormValues.pairedCreate(
+            from: entry,
+            transactionType: .sell,
+            preferredCurrency: .GBP,
+        )
+
+        #expect(formValues.purchasePriceCurrency == .GBP)
+        #expect(formValues.selectedStock?.symbol == "AAPL")
+        #expect(formValues.amount == "5")
+        #expect(formValues.transactionType == .sell)
+    }
 }
 
 private actor MockPortfolioClient: KowalskiPortfolioClient {

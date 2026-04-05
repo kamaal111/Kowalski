@@ -31,6 +31,7 @@ Use the established flow:
 - Define the OpenAPI contract in `routes/` with `createRoute(...)`.
 - Define request and response Zod schemas in `schemas/`.
 - Read validated request data in `handlers/` with `c.req.valid(...)`.
+- Type handler contexts with `HonoContext<..., { out: ... }>` so `c.req.valid('json' | 'query' | 'param')` returns the validated shape directly instead of needing casts.
 - Delegate business logic to `services/`.
 - Keep database access in `repositories/`.
 - Throw domain exceptions when required persistence work fails.
@@ -49,6 +50,7 @@ Model new work after files such as:
 - Describe endpoints with `@hono/zod-openapi` instead of undocumented Hono handlers.
 - Attach request headers, request bodies, response bodies, status codes, tags, and descriptions in the route definition.
 - Keep schema naming explicit and reusable. Use shared schema fragments when the shape is already defined elsewhere.
+- Export inferred payload types when handlers need them for `HonoContext` typing, and treat missing handler types as a typing problem to fix rather than a reason to cast `c.req.valid(...)`.
 - Use `.parse(...)` for values that must be correct and `.safeParse(...)` when a graceful branch is required.
 - Treat response mapping as a validation boundary too. The handlers in portfolio routes parse the response shape right before `c.json(...)`.
 

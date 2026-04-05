@@ -6,6 +6,7 @@ import { describe, expect } from 'vitest';
 import { AUTH_ROUTE_NAME } from '..';
 import env from '@/api/env';
 import { APP_API_BASE_PATH, ONE_DAY_IN_SECONDS } from '@/constants/common';
+import { SessionResponseSchema } from '@/auth/schemas/responses';
 import { integrationTest } from '@/tests/fixtures';
 import { createTestUserAndSession } from '@/tests/utils';
 
@@ -21,21 +22,6 @@ const SignUpTokenHeadersSchema = z.object({
   'set-auth-token-expiry': z.string().min(1),
   'set-session-token': z.string().min(1),
   'set-session-update-age': z.string().min(1),
-});
-
-const SessionPayloadSchema = z.object({
-  session: z.object({
-    expires_at: z.string().min(1),
-    created_at: z.string().min(1),
-    updated_at: z.string().min(1),
-  }),
-  user: z.object({
-    id: z.string().min(1),
-    name: z.string().min(1),
-    email: z.email(),
-    email_verified: z.boolean(),
-    created_at: z.string().min(1),
-  }),
 });
 
 interface AppRequestClient {
@@ -192,5 +178,5 @@ async function expectSuccessfulSignUpResponse(response: Response) {
 async function expectSuccessfulSessionResponse(response: Response) {
   expect(response.status).toBe(200);
 
-  return SessionPayloadSchema.parse(await response.json());
+  return SessionResponseSchema.parse(await response.json());
 }

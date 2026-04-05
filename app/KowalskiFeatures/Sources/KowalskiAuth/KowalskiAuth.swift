@@ -5,6 +5,7 @@
 //  Created by Kamaal M Farah on 10/5/25.
 //
 
+import ForexKit
 import Foundation
 import KamaalLogger
 import KamaalUtils
@@ -55,6 +56,15 @@ public final class KowalskiAuth {
 
     package var isLoggedIn: Bool {
         session != nil
+    }
+
+    /// The currency the app should use for new transaction defaults.
+    /// Priority: server-stored preference → device locale currency (if supported) → USD.
+    public var effectiveCurrency: Currencies {
+        let defaultCurrency = Self.localeCurrency ?? .USD
+        guard let preferredCurrency = session?.preferredCurrency else { return defaultCurrency }
+
+        return Currencies(rawValue: preferredCurrency) ?? defaultCurrency
     }
 
     // MARK: - Sign Up
@@ -121,6 +131,23 @@ public final class KowalskiAuth {
             }
     }
 
+    // MARK: - Preferences
+
+    public func updatePreferredCurrency(_ currency: Currencies) async -> Result<Void, KowalskiAuthPreferenceErrors> {
+        let result = await client.auth.updatePreferences(preferredCurrency: currency.rawValue)
+        switch result {
+        case let .failure(failure):
+            logger.error(label: "Failed to update preferences", error: failure)
+            return .failure(.generalFailure(context: failure))
+        case let .success(response):
+            let updatedSession = mapper.mapSessionResponse(response)
+            setSession(updatedSession)
+            cacheSession(updatedSession)
+
+            return .success(())
+        }
+    }
+
     // MARK: Factory
 
     public static func forEnvironment() -> KowalskiAuth {
@@ -167,6 +194,10 @@ public final class KowalskiAuth {
         setSession(session)
         cacheSession(session)
 
+        if session.preferredCurrency == nil {
+            await seedPreferredCurrency()
+        }
+
         return .success(())
     }
 
@@ -189,6 +220,22 @@ public final class KowalskiAuth {
 
     private func cacheSession(_ session: UserSession) {
         Self.cachedSession = CachedUserSession(session: session, cachedAt: .now)
+    }
+
+    private func seedPreferredCurrency() async {
+        let currency = effectiveCurrency
+        let result = await updatePreferredCurrency(currency)
+        switch result {
+        case let .failure(failure):
+            logger.error(label: "Failed to seed preferred currency; will retry next session load", error: failure)
+        case .success: break
+        }
+    }
+
+    static var localeCurrency: Currencies? {
+        guard let currencyCode = Locale.current.currency?.identifier else { return nil }
+
+        return Currencies(rawValue: currencyCode)
     }
 }
 
@@ -236,9 +283,8 @@ private enum KowalskiAuthSessionErrors: Error {
     case unauthorized(context: Error?)
 }
 
-private struct CachedUserSession: Codable {
-    let session: UserSession
-    let cachedAt: Date
+public enum KowalskiAuthPreferenceErrors: Error {
+    case generalFailure(context: Error)
 }
 
 private func validationErrorMessage(_ validations: [KowalskiClientValidationIssue], fallback: String) -> String {

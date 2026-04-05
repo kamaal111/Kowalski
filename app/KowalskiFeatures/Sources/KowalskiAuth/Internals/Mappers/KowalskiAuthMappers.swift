@@ -9,6 +9,11 @@ import KowalskiClient
 
 struct KowalskiAuthMappers {
     func mapSessionResponse(_ response: KowalskiAuthSessionResponse) -> UserSession {
-        UserSession(name: response.name, email: response.email, expiresAt: response.expiresAt)
+        UserSession(
+            name: response.name,
+            email: response.email,
+            expiresAt: response.expiresAt,
+            preferredCurrency: response.preferredCurrency,
+        )
     }
 }
