@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Choose how Kowalski behaves by default." : {
+
+    },
     "Confirm Password" : {
 
     },
@@ -20,6 +23,9 @@
 
     },
     "Failed to sign up." : {
+
+    },
+    "General" : {
 
     },
     "Invalid credentials provided." : {
@@ -46,16 +52,13 @@
     "Preferred Currency" : {
 
     },
-    "Preferred currency saved." : {
-
-    },
-    "Save" : {
-
-    },
     "Sign In" : {
 
     },
     "Sign Up" : {
+
+    },
+    "Used as the default currency for new transactions." : {
 
     },
     "User already exists" : {

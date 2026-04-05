@@ -35,6 +35,8 @@ async function preferencesHandler(c: HonoContext<string, { out: { json: UpdatePr
 
   logInfo(withRequestLogger(c, { component: 'auth' }), {
     event: 'auth.preferences.updated',
+    preference_key: 'preferred_currency',
+    preferred_currency: updatedPreferredCurrency,
     user_id: session.user.id,
     outcome: 'success',
   });

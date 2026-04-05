@@ -98,6 +98,8 @@ describe('PATCH /auth/preferences integration', () => {
         expect.arrayContaining([
           expect.objectContaining({
             event: 'auth.preferences.updated',
+            preference_key: 'preferred_currency',
+            preferred_currency: 'EUR',
             user_id: userId,
             outcome: 'success',
           }),

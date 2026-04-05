@@ -13,7 +13,7 @@ let toastDefaultDuration: Double = 3
 @usableFromInline
 let toastDefaultWidth: CGFloat = .infinity
 
-public struct Toast: Equatable {
+public struct Toast: Equatable, Hashable {
     public let style: ToastStyle
     public let message: String
     public let duration: Double
