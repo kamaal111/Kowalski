@@ -28,10 +28,10 @@ describe('Session preferred currency integration', () => {
     expect(session.user.preferred_currency).toBeNull();
   });
 
-  integrationTest('returns preferred_currency when set on the user', async ({ app, db }) => {
+  integrationTest('returns preferred_currency when set in user preferences', async ({ app, db }) => {
     const { token, userId } = await createTestUserAndSession(db);
 
-    await db.update(schema.user).set({ preferredCurrency: 'EUR' }).where(eq(schema.user.id, userId));
+    await db.insert(schema.userPreferences).values({ userId, preferredCurrency: 'EUR' });
 
     const response = await sendSessionRequest(app, { authToken: token });
     const session = SessionResponseSchema.parse(await response.json());
@@ -87,9 +87,9 @@ describe('PATCH /auth/preferences integration', () => {
       expect(body.session.expires_at).toBe(sessionBeforeUpdate.session.expires_at);
 
       const rows = await db
-        .select({ preferredCurrency: schema.user.preferredCurrency })
-        .from(schema.user)
-        .where(eq(schema.user.id, userId))
+        .select({ preferredCurrency: schema.userPreferences.preferredCurrency })
+        .from(schema.userPreferences)
+        .where(eq(schema.userPreferences.userId, userId))
         .limit(1);
       expect(rows.at(0)?.preferredCurrency).toBe('EUR');
 

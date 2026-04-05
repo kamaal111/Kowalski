@@ -58,6 +58,7 @@ Model new work after files such as:
 
 - Prefer context-injected dependencies over global singletons. The server expects things like `db`, `auth`, `logger`, `requestId`, and `session` to flow through Hono context.
 - Use shared auth helpers such as `getSessionWhereSessionIsRequired(...)` once middleware guarantees a session.
+- Keep app-owned auth-adjacent state, such as user preferences, out of generated Better Auth schema files. Model it in app-owned tables keyed off `user.id` and enrich session responses by reading that state separately.
 - Update request logging context when the route or authenticated user becomes known. Use helpers such as `setRequestRoute(...)`, `setRequestUserId(...)`, and `withRequestLogger(...)`.
 - Keep middleware focused. Reuse `allowedModes(...)`, auth middleware, cache middleware, and the centralized error handler instead of duplicating their logic.
 
@@ -81,6 +82,7 @@ Model new work after files such as:
 ## Testing Patterns
 
 - Prefer the existing integration harness from `server/src/tests/fixtures` and helpers from `server/src/tests/`.
+- Server integration tests create a temporary Postgres database and run the current Drizzle migrations from `server/drizzle/` before booting the app. Migration and squash changes must leave a fresh database bootstrapable.
 - Parse response bodies in tests with the same Zod schemas used by production code.
 - Assert behavior across the full path when it matters: HTTP status, response body, persisted database state, and emitted logs.
 - Reuse helper constructors for authenticated requests, request IDs, and fixtures instead of rebuilding them in each test.

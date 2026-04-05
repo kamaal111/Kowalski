@@ -23,9 +23,6 @@ export const user = pgTable('user', {
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
-  // ISO 4217 currency code the user prefers for new transactions (e.g. "USD").
-  // Null until the app seeds the value from the device locale on first login.
-  preferredCurrency: text('preferred_currency'),
 });
 
 /**
