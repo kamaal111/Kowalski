@@ -14,7 +14,7 @@ import env, { IS_TEST } from '../api/env';
 import { jwks } from '../db/schema/better-auth';
 import { findUserPreferredCurrencyByUserId } from './repositories/preferences';
 import { logInfo, logWarn } from '@/logging';
-import { setRequestUserId, withRequestLogger } from '@/logging/http';
+import { withRequestLogger } from '@/logging/http';
 
 const RemoteJWKS = createRemoteJWKSet(JWKS_URL);
 
@@ -49,7 +49,6 @@ async function verifySession(c: HonoContext): Promise<SessionResponse> {
     throw new SessionNotFound(c);
   }
 
-  setRequestUserId(c, sessionResponse.user.id);
   logInfo(withRequestLogger(c, { component: 'auth' }), {
     event: 'auth.session.lookup',
     user_id: sessionResponse.user.id,
@@ -108,7 +107,6 @@ async function verifyJwt(c: HonoContext): Promise<SessionResponse | null> {
   }
 
   const jwtPayload = zResult.data;
-  setRequestUserId(c, jwtPayload.sub);
   logInfo(withRequestLogger(c, { component: 'auth' }), {
     event: 'auth.jwt.verification',
     user_id: jwtPayload.sub,

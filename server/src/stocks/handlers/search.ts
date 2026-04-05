@@ -9,13 +9,12 @@ import { withCache } from '../../middleware/cache';
 import { ROUTE_NAME } from '../constants';
 import searchRoute from '../routes/search';
 import { logInfo } from '@/logging';
-import { setRequestRoute, withRequestLogger } from '@/logging/http';
+import { withRequestLogger } from '@/logging/http';
 
 const yahooFinance = new YahooFinance();
 const SEARCH_ROUTE_PATH = `${APP_API_BASE_PATH}${ROUTE_NAME}${searchRoute.path}` as const;
 
 async function searchHandlerImpl(c: HonoContext<string, { out: { query: StocksSearchQuery } }>) {
-  setRequestRoute(c, SEARCH_ROUTE_PATH);
   const params = c.req.valid('query');
   const results = await yahooFinance.search(params.q);
   const response = mapYahooFinanceSearchQuoteToEquitySearchResponse(results);

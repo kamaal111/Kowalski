@@ -9,14 +9,13 @@ import { ForexECPResponseSchema } from '../schemas/collect';
 import ForexItem from '../models/forex-item';
 import { exchangeRates } from '../../db/schema/forex';
 import { logInfo, logWarn } from '@/logging';
-import { setRequestRoute, withRequestLogger } from '@/logging/http';
+import { withRequestLogger } from '@/logging/http';
 
 const BASE_FOREX_URL = new URL('https://www.ecb.europa.eu');
 const HOME_URL = new URL('/home/html/rss.en.html', BASE_FOREX_URL);
 export const FOREX_COLLECT_ROUTE_PATH = '/daily-api/forex/collect';
 
 async function collect(c: HonoContext) {
-  setRequestRoute(c, FOREX_COLLECT_ROUTE_PATH);
   const logger = withRequestLogger(c, { component: 'forex' });
   logInfo(logger, {
     event: 'forex.collect.started',

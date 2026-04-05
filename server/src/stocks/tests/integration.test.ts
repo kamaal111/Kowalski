@@ -47,7 +47,7 @@ describe('Stocks Integration Tests', () => {
             event: 'request.started',
             request_id: request.requestId,
             method: 'GET',
-            path: '/app-api/stocks/search',
+            route: '/app-api/stocks/search',
           }),
           expect.objectContaining({
             event: 'cache.miss',

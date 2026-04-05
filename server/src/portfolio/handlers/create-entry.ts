@@ -9,7 +9,7 @@ import createPortfolioEntry from '../services/create-entry';
 import { ROUTE_NAME } from '../constants';
 import createEntryRoute from '../routes/create-entry';
 import { logInfo } from '@/logging';
-import { setRequestRoute, setRequestUserId, withRequestLogger } from '@/logging/http';
+import { withRequestLogger } from '@/logging/http';
 import type { HonoContext } from '@/api/contexts';
 import type { CreateEntryPayload } from '../schemas/payloads';
 
@@ -17,8 +17,6 @@ const CREATE_ENTRY_ROUTE_PATH = `${APP_API_BASE_PATH}${ROUTE_NAME}${createEntryR
 
 async function createEntry(c: HonoContext<string, { out: { json: CreateEntryPayload } }>) {
   const session = getSessionWhereSessionIsRequired(c);
-  setRequestRoute(c, CREATE_ENTRY_ROUTE_PATH);
-  setRequestUserId(c, session.user.id);
 
   const payload = c.req.valid('json');
   const createdEntry = await createPortfolioEntry(c, payload);

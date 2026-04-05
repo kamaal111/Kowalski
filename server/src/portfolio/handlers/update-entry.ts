@@ -9,7 +9,7 @@ import updatePortfolioEntry from '../services/update-entry';
 import { ROUTE_NAME } from '../constants';
 import updateEntryRoute from '../routes/update-entry';
 import { logInfo } from '@/logging';
-import { setRequestRoute, setRequestUserId, withRequestLogger } from '@/logging/http';
+import { withRequestLogger } from '@/logging/http';
 import type { HonoContext } from '@/api/contexts';
 import type { CreateEntryPayload } from '../schemas/payloads';
 import type { PortfolioEntryPathParams } from '../schemas/params';
@@ -20,8 +20,6 @@ async function updateEntry(
   c: HonoContext<string, { out: { json: CreateEntryPayload; param: PortfolioEntryPathParams } }>,
 ) {
   const session = getSessionWhereSessionIsRequired(c);
-  setRequestRoute(c, UPDATE_ENTRY_ROUTE_PATH);
-  setRequestUserId(c, session.user.id);
 
   const params = c.req.valid('param');
   const payload = c.req.valid('json');

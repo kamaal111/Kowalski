@@ -99,14 +99,29 @@ describe('Sign-up session integration', () => {
     },
   );
 
-  integrationTest('retrieves the current session for a helper-created authorization token', async ({ app, db }) => {
-    const { token } = await createTestUserAndSession(db);
-    const response = await sendSessionRequest(app, { authToken: token });
+  integrationTest(
+    'retrieves the current session for a helper-created authorization token',
+    async ({ app, db, getLogsForRequestId, withRequestId }) => {
+      const { token } = await createTestUserAndSession(db);
+      const request = withRequestId({ Authorization: `Bearer ${token}` });
+      const response = await sendSessionRequest(app, { headers: request.headers });
 
-    const session = await expectSuccessfulSessionResponse(response);
+      const session = await expectSuccessfulSessionResponse(response);
+      const logs = getLogsForRequestId(request.requestId);
 
-    expect(session.user.id).toBeTruthy();
-  });
+      expect(session.user.id).toBeTruthy();
+      expect(logs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            event: 'request.completed',
+            request_id: request.requestId,
+            route: SESSION_PATH,
+            user_id: session.user.id,
+          }),
+        ]),
+      );
+    },
+  );
 });
 
 function createValidSignUpPayload() {

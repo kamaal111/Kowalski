@@ -15,6 +15,7 @@ import { integrationTest } from '@/tests/fixtures';
 import { createTestUserAndSession } from '@/tests/utils';
 
 const UPDATE_ENTRY_PATH = `${APP_API_BASE_PATH}${PORTFOLIO_ROUTE_NAME}/entries`;
+const UPDATE_ENTRY_ROUTE = `${UPDATE_ENTRY_PATH}/:entryId`;
 
 interface AppRequestClient {
   request: (input: string, init?: RequestInit) => Response | Promise<Response>;
@@ -123,6 +124,12 @@ describe('Update Portfolio Entry Route', () => {
             request_id: request.requestId,
             component: 'portfolio',
             ticker_symbol: 'AAPL',
+          }),
+          expect.objectContaining({
+            event: 'request.completed',
+            request_id: request.requestId,
+            route: UPDATE_ENTRY_ROUTE,
+            user_id: userId,
           }),
         ]),
       );
