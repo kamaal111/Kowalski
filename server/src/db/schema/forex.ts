@@ -1,4 +1,4 @@
-import { date, jsonb, pgTable, text, unique } from 'drizzle-orm/pg-core';
+import { date, jsonb, pgTable, text, timestamp, unique } from 'drizzle-orm/pg-core';
 
 import currency from '../helpers/currency';
 
@@ -12,6 +12,8 @@ export const exchangeRates = pgTable(
     id: text('id').primaryKey(),
     // Effective date for the daily exchange-rate snapshot.
     date: date('date').notNull(),
+    // When this FX snapshot was collected locally. Used to skip duplicate daily scrapes.
+    collectedAt: timestamp('collected_at').defaultNow().notNull(),
     // Base currency the `rates` object is relative to.
     base: currency('base').notNull(),
     // Map of target currency codes to conversion rates for the given base and date.

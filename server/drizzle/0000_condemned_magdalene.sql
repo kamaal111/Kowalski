@@ -64,6 +64,7 @@ CREATE TABLE "verification" (
 CREATE TABLE "exchange_rates" (
 	"id" text PRIMARY KEY NOT NULL,
 	"date" date NOT NULL,
+	"collected_at" timestamp DEFAULT now() NOT NULL,
 	"base" char(3) NOT NULL,
 	"rates" jsonb NOT NULL,
 	CONSTRAINT "exchange_rates_base_date_unique" UNIQUE("base","date"),

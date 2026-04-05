@@ -1,5 +1,5 @@
 {
-  "id": "3856d1f2-d02e-401d-91e0-9700c168ef1b",
+  "id": "3fa0d02b-1e2f-4aee-8278-b75f5bf56a85",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -363,6 +363,13 @@
           "type": "date",
           "primaryKey": false,
           "notNull": true
+        },
+        "collected_at": {
+          "name": "collected_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         },
         "base": {
           "name": "base",

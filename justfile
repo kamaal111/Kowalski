@@ -85,6 +85,11 @@ compile-server:
 migrate: prepare-server
     {{ PNX }} drizzle-kit migrate
 
+# Fetch daily currencies unless today's snapshot is already stored
+[working-directory("server")]
+fetch-daily-currencies: start-services migrate
+    {{ TSX }} scripts/fetch-daily-currencies.ts
+
 # Generate migrations
 [working-directory("server")]
 make-migrations: prepare-server
