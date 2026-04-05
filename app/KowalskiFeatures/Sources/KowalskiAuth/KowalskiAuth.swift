@@ -168,6 +168,14 @@ public final class KowalskiAuth {
         return KowalskiAuth(client: client, withCredentials: withCredentials)
     }
 
+    static func testing(client: KowalskiClient, session: UserSession? = nil) -> KowalskiAuth {
+        let auth = KowalskiAuth(client: client)
+        auth.session = session
+        auth.initiallyValidatingToken = false
+
+        return auth
+    }
+
     @discardableResult
     private func loadSession() async -> Result<Void, KowalskiAuthSessionErrors> {
         if let cachedSession = getCachedSessionIfLoadedToday() {
