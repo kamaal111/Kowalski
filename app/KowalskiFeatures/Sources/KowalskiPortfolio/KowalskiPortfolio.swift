@@ -5,6 +5,7 @@
 //  Created by Kamaal M Farah on 11/1/25.
 //
 
+import ForexKit
 import Foundation
 import KamaalExtensions
 import KamaalLogger
@@ -18,13 +19,18 @@ private let logger = KamaalLogger(from: KowalskiPortfolio.self, failOnError: tru
 @MainActor
 public final class KowalskiPortfolio {
     private let client: KowalskiClient
+    private let forexKitConfiguration: ForexKitConfiguration
     private let mapper = KowalskiPortfolioMappers()
+    private var lastPreferredCurrency: Currencies?
 
     private(set) var entries: [PortfolioEntry] = []
     private(set) var isLoading = false
+    private(set) var netWorth: Double?
+    private(set) var isLoadingNetWorth = false
 
-    private init(client: KowalskiClient) {
+    private init(client: KowalskiClient, forexKitConfiguration: ForexKitConfiguration) {
         self.client = client
+        self.forexKitConfiguration = forexKitConfiguration
     }
 
     @MainActor
@@ -106,6 +112,89 @@ public final class KowalskiPortfolio {
         }
     }
 
+    func fetchNetWorth(preferredCurrency: Currencies) async {
+        lastPreferredCurrency = preferredCurrency
+
+        await withLoadingNetWorth {
+            let valuedEntries = entries.filter { $0.transactionType != .split }
+            guard !valuedEntries.isEmpty else {
+                setNetWorth(0)
+                return
+            }
+
+            let sourceCurrencies = Array(
+                Set(valuedEntries.map(\.purchasePrice.currency).filter { $0 != preferredCurrency }),
+            )
+            let exchangeRates: ExchangeRates?
+            if sourceCurrencies.isEmpty {
+                exchangeRates = ExchangeRates(base: preferredCurrency, date: .now, rates: [:])
+            } else {
+                let forexKit = ForexKit(configuration: forexKitConfiguration)
+                let latestRatesResult = await forexKit.getLatest(base: preferredCurrency, symbols: sourceCurrencies)
+                switch latestRatesResult {
+                case let .failure(failure):
+                    logger.error(label: "Failed to fetch exchange rates for net worth", error: failure)
+                    exchangeRates = await forexKit.getFallback(base: preferredCurrency, symbols: sourceCurrencies)
+                case let .success(success):
+                    if let success {
+                        exchangeRates = success
+                    } else {
+                        exchangeRates = await forexKit.getFallback(base: preferredCurrency, symbols: sourceCurrencies)
+                    }
+                }
+            }
+
+            guard let exchangeRates else {
+                logger.error("No exchange rates available for net worth calculation")
+                setNetWorth(nil)
+                return
+            }
+
+            guard let netWorth = computeNetWorth(for: valuedEntries, in: preferredCurrency, using: exchangeRates) else {
+                logger.error("Failed to compute net worth from exchange rates")
+                setNetWorth(nil)
+                return
+            }
+
+            setNetWorth(netWorth)
+        }
+    }
+
+    func computeNetWorth(
+        for entries: [PortfolioEntry],
+        in preferredCurrency: Currencies,
+        using exchangeRates: ExchangeRates,
+    ) -> Double? {
+        guard exchangeRates.baseCurrency == preferredCurrency else { return nil }
+
+        var runningTotal = 0.0
+        for entry in entries {
+            let signedAmount: Double = switch entry.transactionType {
+            case .purchase:
+                entry.amount * entry.purchasePrice.value
+            case .sell:
+                -(entry.amount * entry.purchasePrice.value)
+            case .split:
+                0
+            }
+
+            let convertedAmount: Double
+            if entry.purchasePrice.currency == preferredCurrency || signedAmount == 0 {
+                convertedAmount = signedAmount
+            } else {
+                guard let rate = exchangeRates.ratesMappedByCurrency[entry.purchasePrice.currency] else {
+                    return nil
+                }
+
+                convertedAmount = signedAmount / rate
+            }
+
+            runningTotal += convertedAmount
+        }
+
+        return runningTotal
+    }
+
     // MARK: Helpers
 
     @MainActor
@@ -113,8 +202,19 @@ public final class KowalskiPortfolio {
         entries = newEntries
     }
 
+    @MainActor
+    private func setNetWorth(_ newNetWorth: Double?) {
+        netWorth = newNetWorth
+    }
+
     private func refreshEntries() async -> Result<Void, Error> {
-        await fetchEntries()
+        let result = await fetchEntries()
+        guard case .success = result else { return result }
+        if let lastPreferredCurrency {
+            await fetchNetWorth(preferredCurrency: lastPreferredCurrency)
+        }
+
+        return result
     }
 
     @MainActor
@@ -122,6 +222,15 @@ public final class KowalskiPortfolio {
         isLoading = true
         let result = await block()
         isLoading = false
+
+        return result
+    }
+
+    @MainActor
+    private func withLoadingNetWorth<T>(_ block: () async -> T) async -> T {
+        isLoadingNetWorth = true
+        let result = await block()
+        isLoadingNetWorth = false
 
         return result
     }
@@ -144,48 +253,62 @@ public final class KowalskiPortfolio {
 
     public static func `default`() -> KowalskiPortfolio {
         let client = KowalskiClient.default()
+        let forexKitConfiguration = ForexKitConfiguration()
 
-        return KowalskiPortfolio(client: client)
+        return KowalskiPortfolio(client: client, forexKitConfiguration: forexKitConfiguration)
     }
 
     public static func preview() -> KowalskiPortfolio {
         let client = KowalskiClient.preview(withCredentials: true)
+        let forexKitConfiguration = previewForexKitConfiguration()
 
-        return KowalskiPortfolio(client: client)
+        return KowalskiPortfolio(client: client, forexKitConfiguration: forexKitConfiguration)
     }
 
     public static func createEntryFailingPreview() -> KowalskiPortfolio {
         let client = KowalskiClient.previewWithFailingPortfolioCreateEntry(withCredentials: true)
+        let forexKitConfiguration = previewForexKitConfiguration()
 
-        return KowalskiPortfolio(client: client)
+        return KowalskiPortfolio(client: client, forexKitConfiguration: forexKitConfiguration)
     }
 
     public static func createEntryValidationFailingPreview() -> KowalskiPortfolio {
         let client = KowalskiClient.previewWithValidationFailingPortfolioCreateEntry(withCredentials: true)
+        let forexKitConfiguration = previewForexKitConfiguration()
 
-        return KowalskiPortfolio(client: client)
+        return KowalskiPortfolio(client: client, forexKitConfiguration: forexKitConfiguration)
     }
 
     private static func createEntrySequencePreview() -> KowalskiPortfolio {
         let client = KowalskiClient.previewWithPortfolioCreateSequence(withCredentials: true)
+        let forexKitConfiguration = previewForexKitConfiguration()
 
-        return KowalskiPortfolio(client: client)
+        return KowalskiPortfolio(client: client, forexKitConfiguration: forexKitConfiguration)
     }
 
     private static func listEntriesPreview() -> KowalskiPortfolio {
         let client = KowalskiClient.previewWithPortfolioEntries(withCredentials: true)
+        let forexKitConfiguration = previewForexKitConfiguration()
 
-        return KowalskiPortfolio(client: client)
+        return KowalskiPortfolio(client: client, forexKitConfiguration: forexKitConfiguration)
     }
 
     public static func listEntriesFailingPreview() -> KowalskiPortfolio {
         let client = KowalskiClient.previewWithFailingPortfolioListEntries(withCredentials: true)
+        let forexKitConfiguration = previewForexKitConfiguration()
 
-        return KowalskiPortfolio(client: client)
+        return KowalskiPortfolio(client: client, forexKitConfiguration: forexKitConfiguration)
     }
 
-    static func testing(client: KowalskiClient) -> KowalskiPortfolio {
-        KowalskiPortfolio(client: client)
+    static func testing(
+        client: KowalskiClient,
+        forexKitConfiguration: ForexKitConfiguration = previewForexKitConfiguration(),
+    ) -> KowalskiPortfolio {
+        KowalskiPortfolio(client: client, forexKitConfiguration: forexKitConfiguration)
+    }
+
+    private static func previewForexKitConfiguration() -> ForexKitConfiguration {
+        ForexKitConfiguration(preview: true, skipCaching: true)
     }
 }
 

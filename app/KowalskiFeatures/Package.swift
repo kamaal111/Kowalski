@@ -45,6 +45,7 @@ let package = Package(
                 .product(name: "KamaalUI", package: "KamaalSwift"),
                 .product(name: "KamaalLogger", package: "KamaalSwift"),
                 .product(name: "KamaalExtensions", package: "KamaalSwift"),
+                "ForexKit",
                 "KowalskiAuth",
                 "KowalskiUtils",
                 "KowalskiDesignSystem",
