@@ -12,7 +12,7 @@ import Foundation
 import Testing
 
 @MainActor
-@Suite("Portfolio Feature Tests")
+@Suite("Portfolio Feature Tests", .serialized)
 struct KowalskiPortfolioTests {
     @Test
     func `Store transaction should turn the first validation issue into the message shown to the user`() async throws {
@@ -242,15 +242,14 @@ struct KowalskiPortfolioTests {
         )
         let portfolio = KowalskiPortfolio.testing(
             client: .testing(portfolio: portfolioClient),
-            exchangeRatesFetcher: { _, _ in
-                ExchangeRates(base: .EUR, date: .now, rates: [.USD: 1.0666, .GBP: 0.88693])
-            },
+            forexKitConfiguration: makeMockForexKitConfiguration(responseBody: mixedCurrencyForexResponseBody),
         )
 
         try await portfolio.fetchEntries().get()
         await portfolio.fetchNetWorth(preferredCurrency: .EUR)
 
-        #expect(abs((portfolio.netWorth ?? 0) - 150) < 0.0001)
+        let netWorth = try #require(portfolio.netWorth)
+        #expect(abs(netWorth - 150) < 0.0001)
     }
 
     @Test
@@ -271,9 +270,7 @@ struct KowalskiPortfolioTests {
         )
         let portfolio = KowalskiPortfolio.testing(
             client: .testing(portfolio: portfolioClient),
-            exchangeRatesFetcher: { _, _ in
-                ExchangeRates(base: .USD, date: .now, rates: [.GBP: 0.75])
-            },
+            forexKitConfiguration: makeMockForexKitConfiguration(responseBody: wrongBaseForexResponseBody),
         )
 
         try await portfolio.fetchEntries().get()
@@ -305,9 +302,7 @@ struct KowalskiPortfolioTests {
         )
         let portfolio = KowalskiPortfolio.testing(
             client: .testing(portfolio: portfolioClient),
-            exchangeRatesFetcher: { _, _ in
-                ExchangeRates(base: .EUR, date: .now, rates: [.USD: 1.0666])
-            },
+            forexKitConfiguration: makeMockForexKitConfiguration(responseBody: missingRateForexResponseBody),
         )
 
         try await portfolio.fetchEntries().get()
@@ -647,3 +642,106 @@ private func makeTeslaStockResponse() -> KowalskiClientStockItem {
         exchangeDispatch: "NASDAQ",
     )
 }
+
+private func makeMockForexKitConfiguration(responseBody: String) -> ForexKitConfiguration {
+    let sessionConfiguration = URLSessionConfiguration.ephemeral
+    sessionConfiguration.protocolClasses = [MockForexURLProtocol.self]
+    let urlSession = URLSession(configuration: sessionConfiguration)
+    MockForexURLProtocol.setHandler { request in
+        guard let url = request.url else { throw MockForexURLProtocolError.missingURL }
+        guard let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil) else {
+            throw MockForexURLProtocolError.invalidResponse
+        }
+
+        return (response, Data(responseBody.utf8))
+    }
+
+    return KowalskiServerConfiguration.defaultForexKitConfiguration(urlSession: urlSession, skipCaching: true)
+}
+
+private enum MockForexURLProtocolError: Error {
+    case invalidResponse
+    case missingHandler
+    case missingURL
+}
+
+private final class MockForexURLProtocolStore: @unchecked Sendable {
+    private let lock = NSLock()
+    private var handler: (@Sendable (URLRequest) throws -> (HTTPURLResponse, Data))?
+
+    func setHandler(_ handler: @escaping @Sendable (URLRequest) throws -> (HTTPURLResponse, Data)) {
+        lock.lock()
+        defer { lock.unlock() }
+
+        self.handler = handler
+    }
+
+    func response(for request: URLRequest) throws -> (HTTPURLResponse, Data) {
+        lock.lock()
+        let handler = handler
+        lock.unlock()
+
+        guard let handler else { throw MockForexURLProtocolError.missingHandler }
+        return try handler(request)
+    }
+}
+
+private final class MockForexURLProtocol: URLProtocol {
+    private static let store = MockForexURLProtocolStore()
+
+    static func setHandler(_ handler: @escaping @Sendable (URLRequest) throws -> (HTTPURLResponse, Data)) {
+        store.setHandler(handler)
+    }
+
+    override class func canInit(with request: URLRequest) -> Bool {
+        request.url?.path == "/app-api/forex/latest"
+    }
+
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest {
+        request
+    }
+
+    override func startLoading() {
+        do {
+            let (response, data) = try Self.store.response(for: request)
+            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            client?.urlProtocol(self, didLoad: data)
+            client?.urlProtocolDidFinishLoading(self)
+        } catch {
+            client?.urlProtocol(self, didFailWithError: error)
+        }
+    }
+
+    override func stopLoading() {}
+}
+
+private let mixedCurrencyForexResponseBody = """
+{
+    "base": "EUR",
+    "date": "2022-12-30",
+    "rates": {
+        "USD": 1.0666,
+        "GBP": 0.88693
+    }
+}
+"""
+
+private let wrongBaseForexResponseBody = """
+{
+    "base": "USD",
+    "date": "2022-12-30",
+    "rates": {
+        "GBP": 0.75
+    }
+}
+"""
+
+private let missingRateForexResponseBody = """
+{
+    "base": "EUR",
+    "date": "2022-12-30",
+    "rates": {
+        "USD": 1.0666
+    }
+}
+"""
