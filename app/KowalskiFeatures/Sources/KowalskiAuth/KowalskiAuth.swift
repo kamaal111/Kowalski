@@ -69,13 +69,13 @@ public final class KowalskiAuth {
 
     // MARK: - Sign Up
 
-    func signUp(_ payload: SignUpPayload) async -> Result<Void, KowalskiAuthSignUpErrors> {
+    func signUp(_ payload: SignUpPayload) async -> Result<Void, KowalskiAuthFeatureSignUpError> {
         let signUpResult = await client.auth.signUp(
             name: payload.name,
             email: payload.email,
             password: payload.password,
         )
-        .mapError { error -> KowalskiAuthSignUpErrors in
+        .mapError { error -> KowalskiAuthFeatureSignUpError in
             switch error {
             case .unknown:
                 logger.error(label: "Failed to sign up", error: error)
@@ -92,7 +92,7 @@ public final class KowalskiAuth {
         }
 
         return await loadSession()
-            .mapError { error -> KowalskiAuthSignUpErrors in
+            .mapError { error -> KowalskiAuthFeatureSignUpError in
                 switch error {
                 case .serverUnavailable, .unauthorized:
                     logger.error(label: "Failed to load session", error: error)
@@ -103,9 +103,9 @@ public final class KowalskiAuth {
 
     // MARK: - Sign In
 
-    func signIn(_ payload: SignInPayload) async -> Result<Void, KowalskiAuthSignInErrors> {
+    func signIn(_ payload: SignInPayload) async -> Result<Void, KowalskiAuthFeatureSignInError> {
         let signInResult = await client.auth.signIn(email: payload.email, password: payload.password)
-            .mapError { error -> KowalskiAuthSignInErrors in
+            .mapError { error -> KowalskiAuthFeatureSignInError in
                 switch error {
                 case .unknown:
                     logger.error(label: "Failed to sign in", error: error)
@@ -122,7 +122,7 @@ public final class KowalskiAuth {
         }
 
         return await loadSession()
-            .mapError { error -> KowalskiAuthSignInErrors in
+            .mapError { error -> KowalskiAuthFeatureSignInError in
                 switch error {
                 case .serverUnavailable, .unauthorized:
                     logger.error(label: "Failed to load session", error: error)
@@ -177,7 +177,7 @@ public final class KowalskiAuth {
     }
 
     @discardableResult
-    private func loadSession() async -> Result<Void, KowalskiAuthSessionErrors> {
+    private func loadSession() async -> Result<Void, KowalskiAuthFeatureSessionError> {
         if let cachedSession = getCachedSessionIfLoadedToday() {
             setSession(cachedSession)
             return .success(())
@@ -185,7 +185,7 @@ public final class KowalskiAuth {
 
         let result = await client.auth.session()
             .map(mapper.mapSessionResponse)
-            .mapError { error -> KowalskiAuthSessionErrors in
+            .mapError { error -> KowalskiAuthFeatureSessionError in
                 switch error {
                 case .unknown:
                     logger.error(label: "Failed to get session", error: error)
@@ -249,7 +249,7 @@ public final class KowalskiAuth {
 
 // MARK: - Errors
 
-enum KowalskiAuthSignInErrors: Error {
+enum KowalskiAuthFeatureSignInError: Error {
     case invalidCredentials(validations: [KowalskiClientValidationIssue], context: Error)
     case generalFailure(context: Error)
 
@@ -266,7 +266,7 @@ enum KowalskiAuthSignInErrors: Error {
     }
 }
 
-enum KowalskiAuthSignUpErrors: Error {
+enum KowalskiAuthFeatureSignUpError: Error {
     case invalidCredentials(validations: [KowalskiClientValidationIssue], context: Error)
     case userAlreadyExists(context: Error)
     case generalFailure(context: Error)
@@ -286,7 +286,7 @@ enum KowalskiAuthSignUpErrors: Error {
     }
 }
 
-private enum KowalskiAuthSessionErrors: Error {
+private enum KowalskiAuthFeatureSessionError: Error {
     case serverUnavailable(context: Error?)
     case unauthorized(context: Error?)
 }

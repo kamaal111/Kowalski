@@ -204,6 +204,78 @@ struct KowalskiPortfolioTests {
     }
 
     @Test
+    func `Net worth should convert mixed currency entries into the preferred currency`() {
+        let portfolio = KowalskiPortfolio.testing(client: .testing())
+        let exchangeRates = ExchangeRates(base: .EUR, date: .now, rates: [.USD: 1.0666, .GBP: 0.88693])
+        let entries = [
+            makePortfolioEntry(
+                stock: makeAppleStock(),
+                amount: 1,
+                purchasePrice: Money(currency: .USD, value: 106.66),
+                transactionType: .purchase,
+            ),
+            makePortfolioEntry(
+                stock: makeTeslaStock(),
+                amount: 1,
+                purchasePrice: Money(currency: .GBP, value: 88.693),
+                transactionType: .purchase,
+            ),
+            makePortfolioEntry(
+                stock: makeAppleStock(),
+                amount: 1,
+                purchasePrice: Money(currency: .USD, value: 53.33),
+                transactionType: .sell,
+            ),
+        ]
+
+        let netWorth = portfolio.computeNetWorth(for: entries, in: .EUR, using: exchangeRates)
+
+        #expect(abs((netWorth ?? 0) - 150) < 0.0001)
+    }
+
+    @Test
+    func `Net worth should return nil when exchange rates base does not match the preferred currency`() {
+        let portfolio = KowalskiPortfolio.testing(client: .testing())
+        let exchangeRates = ExchangeRates(base: .USD, date: .now, rates: [.GBP: 0.75])
+        let entries = [
+            makePortfolioEntry(
+                stock: makeAppleStock(),
+                amount: 1,
+                purchasePrice: Money(currency: .GBP, value: 75),
+                transactionType: .purchase,
+            ),
+        ]
+
+        let netWorth = portfolio.computeNetWorth(for: entries, in: .EUR, using: exchangeRates)
+
+        #expect(netWorth == nil)
+    }
+
+    @Test
+    func `Net worth should return nil when a required exchange rate is missing`() {
+        let portfolio = KowalskiPortfolio.testing(client: .testing())
+        let exchangeRates = ExchangeRates(base: .EUR, date: .now, rates: [.USD: 1.0666])
+        let entries = [
+            makePortfolioEntry(
+                stock: makeAppleStock(),
+                amount: 1,
+                purchasePrice: Money(currency: .USD, value: 106.66),
+                transactionType: .purchase,
+            ),
+            makePortfolioEntry(
+                stock: makeTeslaStock(),
+                amount: 1,
+                purchasePrice: Money(currency: .GBP, value: 88.693),
+                transactionType: .purchase,
+            ),
+        ]
+
+        let netWorth = portfolio.computeNetWorth(for: entries, in: .EUR, using: exchangeRates)
+
+        #expect(netWorth == nil)
+    }
+
+    @Test
     func `Net worth should use ForexKit preview rates for mixed currencies`() async throws {
         let listEntries = [
             makePortfolioEntryResponse(
@@ -249,7 +321,7 @@ struct KowalskiPortfolioTests {
     @Test
     func `Forex latest response log body should summarize returned currencies`() {
         let body = KowalskiPortfolio.forexLatestResponseBody(
-            ExchangeRates(base: "EUR", date: .now, rates: ["USD": 1.0666, "GBP": 0.88693]),
+            ExchangeRates(base: .EUR, date: .now, rates: [.USD: 1.0666, .GBP: 0.88693]),
         )
 
         #expect(body == "{base: EUR, rateCount: 2, currencies: [GBP,USD]}")
