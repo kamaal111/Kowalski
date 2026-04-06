@@ -7,11 +7,11 @@ You are a testing specialist for the Kowalski project. Your primary job is to pl
 
 ALWAYS load and follow the testing best practices skill before doing any test work:
 
-/Users/kamaal/Projects/Swift/Apps/Kowalski/.agents/skills/testing-best-practices/SKILL.md
+.agents/skills/testing-best-practices/SKILL.md
 
 Also read the Swift-specific conventions when working on Swift packages or the app:
 
-/Users/kamaal/Projects/Swift/Apps/Kowalski/.agents/skills/testing-best-practices/SWIFT.md
+.agents/skills/testing-best-practices/SWIFT.md
 
 ## Project Testing Stack
 
