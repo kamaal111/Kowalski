@@ -7,14 +7,15 @@
 
 import ForexKit
 import KowalskiDesignSystem
+import KowalskiFeaturesConfig
 import SwiftUI
 
 public struct KowalskiAuthSettingsView: View {
     @Environment(KowalskiAuth.self) private var auth
 
     @State private var selectedPane: KowalskiAuthSettingsPane = .general
-    @State private var persistedCurrency: Currencies = .USD
-    @State private var selectedCurrency: Currencies = .USD
+    @State private var persistedCurrency: Currencies = KowalskiFeatureDefaults.fallbackCurrency
+    @State private var selectedCurrency: Currencies = KowalskiFeatureDefaults.fallbackCurrency
     @State private var isSaving = false
     @State private var toast: Toast?
 

@@ -1,27 +1,17 @@
-import { getSessionWhereSessionIsRequired } from '@/auth';
-import { APP_API_BASE_PATH } from '@/constants/common';
 import { STATUS_CODES } from '@/constants/http';
-import { dateOnlyStringToISO8601String } from '@/utils/dates';
-import { toISO8601String } from '@/utils/strings';
-import { findPortfolioEntriesByUserId } from '../repositories/list-entries';
+import listPortfolioEntries from '../services/list-entries';
 import type { CreateEntryResponse, ListEntriesResponse } from '../schemas/responses';
-import { ROUTE_NAME } from '../constants';
-import listEntriesRoute from '../routes/list-entries';
 import { logInfo } from '@/logging';
 import { withRequestLogger } from '@/logging/http';
 import type { HonoContext } from '@/api/contexts';
 import type { PersistedPortfolioEntry } from '../repositories/list-entries';
-
-const LIST_ENTRIES_ROUTE_PATH = `${APP_API_BASE_PATH}${ROUTE_NAME}${listEntriesRoute.path}` as const;
+import { mapPortfolioEntryToResponse } from '../mappers/entry-response';
 
 async function listEntries(c: HonoContext) {
-  const session = getSessionWhereSessionIsRequired(c);
-  const entries = await findPortfolioEntriesByUserId(c);
+  const entries = await listPortfolioEntries(c);
   const response = entries.map(mapPersistedEntryToResponse) satisfies ListEntriesResponse;
   logInfo(withRequestLogger(c, { component: 'portfolio' }), {
     event: 'portfolio.entries.listed',
-    route: LIST_ENTRIES_ROUTE_PATH,
-    user_id: session.user.id,
     result_count: response.length,
     outcome: 'success',
   });
@@ -29,8 +19,17 @@ async function listEntries(c: HonoContext) {
   return c.json(response, STATUS_CODES.OK);
 }
 
-function mapPersistedEntryToResponse(entry: PersistedPortfolioEntry): CreateEntryResponse {
-  return {
+function mapPersistedEntryToResponse({
+  entry,
+  preferredCurrencyPurchasePrice,
+}: {
+  entry: PersistedPortfolioEntry;
+  preferredCurrencyPurchasePrice: {
+    currency: string;
+    value: number;
+  } | null;
+}): CreateEntryResponse {
+  return mapPortfolioEntryToResponse({
     id: entry.id,
     stock: {
       symbol: entry.stockSymbol,
@@ -41,16 +40,15 @@ function mapPersistedEntryToResponse(entry: PersistedPortfolioEntry): CreateEntr
       industry: entry.stockIndustry,
       exchange_dispatch: entry.stockExchangeDispatch,
     },
-    amount: Number(entry.amount),
-    purchase_price: {
-      currency: entry.purchasePriceCurrency,
-      value: Number(entry.purchasePrice),
-    },
-    transaction_type: entry.transactionType,
-    transaction_date: dateOnlyStringToISO8601String(entry.transactionDate),
-    created_at: toISO8601String(entry.createdAt),
-    updated_at: toISO8601String(entry.updatedAt),
-  };
+    amount: entry.amount,
+    purchasePrice: entry.purchasePrice,
+    purchasePriceCurrency: entry.purchasePriceCurrency,
+    preferredCurrencyPurchasePrice,
+    transactionType: entry.transactionType,
+    transactionDate: entry.transactionDate,
+    createdAt: entry.createdAt,
+    updatedAt: entry.updatedAt,
+  });
 }
 
 function getExchangeFromTickerId(tickerId: string) {

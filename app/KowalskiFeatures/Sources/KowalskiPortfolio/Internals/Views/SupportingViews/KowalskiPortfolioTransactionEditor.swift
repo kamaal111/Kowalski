@@ -10,6 +10,7 @@ import KamaalExtensions
 import KamaalLogger
 import KamaalUI
 import KowalskiDesignSystem
+import KowalskiFeaturesConfig
 import KowalskiUtils
 import SwiftUI
 
@@ -258,7 +259,9 @@ struct KowalskiPortfolioTransactionFormValues {
     let transactionType: TransactionType
     let transactionDate: Date
 
-    static func empty(preferredCurrency: Currencies = .USD) -> KowalskiPortfolioTransactionFormValues {
+    static func empty(
+        preferredCurrency: Currencies = KowalskiFeatureDefaults.fallbackCurrency,
+    ) -> KowalskiPortfolioTransactionFormValues {
         KowalskiPortfolioTransactionFormValues(
             selectedStock: nil,
             amount: "",
@@ -299,7 +302,7 @@ struct KowalskiPortfolioTransactionFormValues {
     static func pairedCreate(
         from entry: PortfolioEntry,
         transactionType: TransactionType,
-        preferredCurrency: Currencies = .USD,
+        preferredCurrency: Currencies = KowalskiFeatureDefaults.fallbackCurrency,
     ) -> Self {
         let emptyValues = empty(preferredCurrency: preferredCurrency)
 

@@ -6,10 +6,10 @@ import { PORTFOLIO_ROUTE_NAME } from '..';
 import { PortfolioEntryPathParamsSchema } from '../schemas/params';
 import { CreateEntryPayloadSchema } from '../schemas/payloads';
 import { CreateEntryResponseSchema } from '../schemas/responses';
-import { seedPortfolioEntry } from './helpers';
+import { seedExchangeRate, seedPortfolioEntry } from './helpers';
 import { APP_API_BASE_PATH } from '@/constants/common';
 import type { Database } from '@/db';
-import { portfolioTransaction, stockTicker } from '@/db/schema';
+import { portfolioTransaction, stockTicker, userPreferences } from '@/db/schema';
 import { ErrorResponseSchema, ValidationErrorResponseSchema } from '@/schemas/errors';
 import { integrationTest } from '@/tests/fixtures';
 import { createTestUserAndSession } from '@/tests/utils';
@@ -88,6 +88,7 @@ describe('Update Portfolio Entry Route', () => {
         },
         amount: 12,
         purchase_price: { currency: 'USD', value: 175.25 },
+        preferred_currency_purchase_price: null,
         transaction_type: 'sell',
         transaction_date: '2025-12-21T00:00:00.000Z',
       });
@@ -115,6 +116,7 @@ describe('Update Portfolio Entry Route', () => {
             request_id: request.requestId,
             component: 'portfolio',
             user_id: userId,
+            route: `${UPDATE_ENTRY_PATH}/${existingEntry.id}`,
             entry_id: existingEntry.id,
             ticker_symbol: 'AAPL',
             transaction_type: 'sell',
@@ -133,6 +135,56 @@ describe('Update Portfolio Entry Route', () => {
           }),
         ]),
       );
+    },
+  );
+
+  integrationTest(
+    'returns preferred_currency_purchase_price when the updated entry can be converted',
+    async ({ app, db, sessionToken, userId }) => {
+      await db.insert(userPreferences).values({ userId, preferredCurrency: 'EUR' });
+      await seedExchangeRate(db, {
+        base: 'EUR',
+        date: '2026-03-29',
+        rates: { USD: 1.1 },
+      });
+      const existingEntry = await seedPortfolioEntry(db, {
+        userId,
+        stock: {
+          symbol: 'AAPL',
+          exchange: 'NMS',
+          name: 'Apple Inc.',
+        },
+        amount: 10,
+        purchasePrice: { currency: 'USD', value: 150.5 },
+        transactionType: 'buy',
+        transactionDate: '2025-12-20T10:30:00.000Z',
+      });
+
+      const response = await sendUpdateEntryRequest(app, existingEntry.id, {
+        payload: CreateEntryPayloadSchema.parse({
+          stock: {
+            symbol: 'AAPL',
+            exchange: 'NMS',
+            name: 'Apple Inc.',
+            isin: 'US0378331005',
+            sector: 'Technology',
+            industry: 'Consumer Electronics',
+            exchange_dispatch: 'NASDAQ',
+          },
+          amount: 12,
+          purchase_price: {
+            currency: 'USD',
+            value: 110,
+          },
+          transaction_type: 'sell',
+          transaction_date: '2025-12-21T00:00:00.000Z',
+        }),
+        sessionToken,
+      });
+      const body = await expectSuccessfulUpdateEntryResponse(response);
+
+      expect(body.preferred_currency_purchase_price?.currency).toBe('EUR');
+      expect(body.preferred_currency_purchase_price?.value).toBeCloseTo(100);
     },
   );
 

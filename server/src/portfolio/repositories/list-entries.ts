@@ -1,7 +1,7 @@
 import { desc, eq } from 'drizzle-orm';
 
 import type { HonoContext } from '@/api/contexts';
-import { portfolio, portfolioTransaction, stockTicker } from '@/db/schema';
+import { exchangeRates, portfolio, portfolioTransaction, stockTicker } from '@/db/schema';
 import { getSessionWhereSessionIsRequired } from '@/auth';
 
 type PortfolioTransactionSelect = typeof portfolioTransaction.$inferSelect;
@@ -22,6 +22,12 @@ export interface PersistedPortfolioEntry {
   stockSector: string | null;
   stockIndustry: string | null;
   stockExchangeDispatch: string | null;
+}
+
+export interface PersistedExchangeRateSnapshot {
+  base: string;
+  date: string;
+  rates: Record<string, number>;
 }
 
 export async function findPortfolioEntriesByUserId(c: HonoContext): Promise<PersistedPortfolioEntry[]> {
@@ -50,4 +56,19 @@ export async function findPortfolioEntriesByUserId(c: HonoContext): Promise<Pers
     .innerJoin(stockTicker, eq(stockTicker.id, portfolioTransaction.tickerId))
     .where(eq(portfolio.userId, session.user.id))
     .orderBy(desc(portfolioTransaction.transactionDate), desc(portfolioTransaction.updatedAt));
+}
+
+export async function findLatestExchangeRateSnapshotByBase(
+  c: HonoContext,
+  base: string,
+): Promise<PersistedExchangeRateSnapshot | undefined> {
+  const latestRates = await c
+    .get('db')
+    .select({ base: exchangeRates.base, date: exchangeRates.date, rates: exchangeRates.rates })
+    .from(exchangeRates)
+    .where(eq(exchangeRates.base, base))
+    .orderBy(desc(exchangeRates.date))
+    .limit(1);
+
+  return latestRates.at(0);
 }

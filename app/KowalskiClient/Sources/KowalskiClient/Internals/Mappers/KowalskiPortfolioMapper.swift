@@ -50,26 +50,45 @@ struct KowalskiPortfolioMapper {
     func mapEntryApiResponseToClient(
         _ response: Components.Schemas.CreateEntryResponse,
     ) -> KowalskiPortfolioClientEntryResponse {
-        let stock = stocksMapper.mapStockItemFromApiToResponse(response.stock)
-        let transactionType: KowalskiClientPortfolioTransactionTypes =
-            switch response.transactionType {
-            case .buy: .buy
-            case .sell: .sell
-            case .split: .split
-            }
-
-        return KowalskiPortfolioClientEntryResponse(
+        KowalskiPortfolioClientEntryResponse(
             id: response.id,
             createdAt: response.createdAt,
             updatedAt: response.updatedAt,
-            stock: stock,
+            stock: stocksMapper.mapStockItemFromApiToResponse(response.stock),
             amount: response.amount,
-            purchasePrice: KowalskiClientMoney(
-                currency: response.purchasePrice.currency,
-                value: response.purchasePrice.value,
-            ),
-            transactionType: transactionType,
+            purchasePrice: mapMoney(response.purchasePrice),
+            preferredCurrencyPurchasePrice: mapPreferredCurrencyPurchasePrice(response.preferredCurrencyPurchasePrice),
+            transactionType: mapTransactionType(response.transactionType),
             transactionDate: response.transactionDate,
         )
+    }
+
+    private func mapMoney(_ response: Components.Schemas.Money) -> KowalskiClientMoney {
+        KowalskiClientMoney(
+            currency: response.currency,
+            value: response.value,
+        )
+    }
+
+    private func mapTransactionType(
+        _ response: Components.Schemas.CreateEntryResponse.TransactionTypePayload,
+    ) -> KowalskiClientPortfolioTransactionTypes {
+        switch response {
+        case .buy: .buy
+        case .sell: .sell
+        case .split: .split
+        }
+    }
+
+    private func mapPreferredCurrencyPurchasePrice(
+        _ response: Components.Schemas.CreateEntryResponse.PreferredCurrencyPurchasePricePayload,
+    ) -> KowalskiClientMoney? {
+        // The OpenAPI generator models `Money | null` as a wrapper containing both the decoded `Money`
+        // and a generic `OpenAPIValueContainer`. When the payload is actually `null`, `value1` isn't
+        // meaningful, so we have to inspect the generic container to distinguish "real money object"
+        // from "JSON null" before mapping the money value.
+        guard response.value2.value != nil else { return nil }
+
+        return mapMoney(response.value1)
     }
 }

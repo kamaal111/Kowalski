@@ -445,6 +445,7 @@ private func makePreviewEntry(
         stock: payload.stock,
         amount: payload.amount,
         purchasePrice: payload.purchasePrice,
+        preferredCurrencyPurchasePrice: payload.purchasePrice,
         transactionType: payload.transactionType,
         transactionDate: payload.transactionDate,
     )

@@ -2,12 +2,13 @@ import { sql } from 'drizzle-orm';
 import { describe, expect } from 'vitest';
 
 import { PORTFOLIO_ROUTE_NAME } from '..';
-import { ListEntriesResponseSchema } from '../schemas/responses';
-import { seedPortfolioEntry } from './helpers';
+import { ListEntriesResponseSchema, type CreateEntryResponse } from '../schemas/responses';
+import { seedExchangeRate, seedPortfolioEntry } from './helpers';
 import { APP_API_BASE_PATH } from '@/constants/common';
 import { ErrorResponseSchema } from '@/schemas/errors';
 import { integrationTest } from '@/tests/fixtures';
 import { createTestUserAndSession } from '@/tests/utils';
+import * as schema from '@/db/schema';
 
 const LIST_ENTRIES_PATH = `${APP_API_BASE_PATH}${PORTFOLIO_ROUTE_NAME}/entries`;
 
@@ -76,7 +77,11 @@ describe('List Portfolio Entries Route', () => {
       const body = await expectSuccessfulListEntriesResponse(response);
       const logs = getLogsForRequestId(request.requestId);
 
-      expect(body).toEqual([laterUpdatedEntry, earlierUpdatedEntry, oldestEntry]);
+      expect(body).toEqual([
+        withPreferredCurrencyPurchasePrice(laterUpdatedEntry),
+        withPreferredCurrencyPurchasePrice(earlierUpdatedEntry),
+        withPreferredCurrencyPurchasePrice(oldestEntry),
+      ]);
       expect(logs).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
@@ -112,7 +117,131 @@ describe('List Portfolio Entries Route', () => {
     const body = await expectSuccessfulListEntriesResponse(response);
 
     expect(body[0]?.stock.isin).toBe('US0378331005');
+    expect(body[0]?.preferred_currency_purchase_price).toBeNull();
   });
+
+  integrationTest(
+    'returns preferred_currency_purchase_price as null when the user has no preferred currency',
+    async ({ app, db, sessionToken, userId }) => {
+      await seedPortfolioEntry(db, {
+        userId,
+        stock: {
+          symbol: 'AAPL',
+          exchange: 'NMS',
+          name: 'Apple Inc.',
+        },
+        amount: 10,
+        purchasePrice: { currency: 'USD', value: 150.5 },
+        transactionType: 'buy',
+        transactionDate: '2025-12-20T10:30:00.000Z',
+      });
+
+      const response = await sendListEntriesRequest(app, { sessionToken });
+      const body = await expectSuccessfulListEntriesResponse(response);
+
+      expect(body[0]?.preferred_currency_purchase_price).toBeNull();
+    },
+  );
+
+  integrationTest(
+    'returns the stored purchase price when the entry already uses the preferred currency',
+    async ({ app, db, sessionToken, userId }) => {
+      await db.insert(schema.userPreferences).values({ userId, preferredCurrency: 'EUR' });
+      await seedPortfolioEntry(db, {
+        userId,
+        stock: {
+          symbol: 'SAP',
+          exchange: 'XETR',
+          name: 'SAP SE',
+        },
+        amount: 3,
+        purchasePrice: { currency: 'EUR', value: 200.25 },
+        transactionType: 'buy',
+        transactionDate: '2025-12-20T10:30:00.000Z',
+      });
+
+      const response = await sendListEntriesRequest(app, { sessionToken });
+      const body = await expectSuccessfulListEntriesResponse(response);
+
+      expect(body[0]?.preferred_currency_purchase_price).toEqual({
+        currency: 'EUR',
+        value: 200.25,
+      });
+    },
+  );
+
+  integrationTest(
+    'converts preferred_currency_purchase_price from the latest stored FX snapshot',
+    async ({ app, db, sessionToken, userId }) => {
+      await db.insert(schema.userPreferences).values({ userId, preferredCurrency: 'EUR' });
+      await seedExchangeRate(db, {
+        base: 'EUR',
+        date: '2026-03-29',
+        rates: { USD: 1.1, GBP: 0.8 },
+      });
+      await seedPortfolioEntry(db, {
+        userId,
+        stock: {
+          symbol: 'AAPL',
+          exchange: 'NMS',
+          name: 'Apple Inc.',
+        },
+        amount: 1,
+        purchasePrice: { currency: 'USD', value: 110 },
+        transactionType: 'buy',
+        transactionDate: '2025-12-20T10:30:00.000Z',
+      });
+      await seedPortfolioEntry(db, {
+        userId,
+        stock: {
+          symbol: 'BP',
+          exchange: 'LSE',
+          name: 'BP p.l.c.',
+        },
+        amount: 1,
+        purchasePrice: { currency: 'GBP', value: 80 },
+        transactionType: 'buy',
+        transactionDate: '2025-12-19T10:30:00.000Z',
+      });
+
+      const response = await sendListEntriesRequest(app, { sessionToken });
+      const body = await expectSuccessfulListEntriesResponse(response);
+
+      expect(body[0]?.preferred_currency_purchase_price?.currency).toBe('EUR');
+      expect(body[1]?.preferred_currency_purchase_price?.currency).toBe('EUR');
+      expect(body[0]?.preferred_currency_purchase_price?.value).toBeCloseTo(100);
+      expect(body[1]?.preferred_currency_purchase_price?.value).toBe(100);
+    },
+  );
+
+  integrationTest(
+    'returns null preferred_currency_purchase_price when no usable FX rate exists',
+    async ({ app, db, sessionToken, userId }) => {
+      await db.insert(schema.userPreferences).values({ userId, preferredCurrency: 'EUR' });
+      await seedExchangeRate(db, {
+        base: 'EUR',
+        date: '2026-03-29',
+        rates: { GBP: 0.8 },
+      });
+      await seedPortfolioEntry(db, {
+        userId,
+        stock: {
+          symbol: 'AAPL',
+          exchange: 'NMS',
+          name: 'Apple Inc.',
+        },
+        amount: 1,
+        purchasePrice: { currency: 'USD', value: 110 },
+        transactionType: 'buy',
+        transactionDate: '2025-12-20T10:30:00.000Z',
+      });
+
+      const response = await sendListEntriesRequest(app, { sessionToken });
+      const body = await expectSuccessfulListEntriesResponse(response);
+
+      expect(body[0]?.preferred_currency_purchase_price).toBeNull();
+    },
+  );
 
   integrationTest(
     'returns an empty array when the user has no portfolio entries yet',
@@ -146,7 +275,7 @@ describe('List Portfolio Entries Route', () => {
     const response = await sendListEntriesRequest(app, { sessionToken });
     const body = await expectSuccessfulListEntriesResponse(response);
 
-    expect(body).toEqual([currentUserEntry]);
+    expect(body).toEqual([withPreferredCurrencyPurchasePrice(currentUserEntry)]);
   });
 
   integrationTest('rejects a request without authentication', async ({ app }) => {
@@ -213,6 +342,16 @@ async function expectSuccessfulListEntriesResponse(response: Response) {
   expect(response.status).toBe(200);
 
   return ListEntriesResponseSchema.parse(await response.json());
+}
+
+function withPreferredCurrencyPurchasePrice(
+  entry: CreateEntryResponse,
+  preferredCurrencyPurchasePrice: CreateEntryResponse['preferred_currency_purchase_price'] = null,
+): CreateEntryResponse {
+  return {
+    ...entry,
+    preferred_currency_purchase_price: preferredCurrencyPurchasePrice,
+  };
 }
 
 async function expectNotFoundErrorResponse(response: Response) {

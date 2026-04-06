@@ -5,9 +5,10 @@ import type { z } from 'zod';
 import { PORTFOLIO_ROUTE_NAME } from '..';
 import { CreateEntryPayloadSchema } from '../schemas/payloads';
 import { CreateEntryResponseSchema } from '../schemas/responses';
+import { seedExchangeRate } from './helpers';
 import { APP_API_BASE_PATH } from '@/constants/common';
 import type { Database } from '@/db';
-import { portfolio, portfolioTransaction, stockTicker, user } from '@/db/schema';
+import { portfolio, portfolioTransaction, stockTicker, user, userPreferences } from '@/db/schema';
 import { ErrorResponseSchema, ValidationErrorResponseSchema } from '@/schemas/errors';
 import { integrationTest } from '@/tests/fixtures';
 
@@ -48,6 +49,7 @@ describe('Create Portfolio Entry Route', () => {
         },
         amount: 10,
         purchase_price: { currency: 'USD', value: 150.5 },
+        preferred_currency_purchase_price: null,
         transaction_type: 'buy',
         transaction_date: '2025-12-20T00:00:00.000Z',
       });
@@ -96,6 +98,33 @@ describe('Create Portfolio Entry Route', () => {
           }),
         ]),
       );
+    },
+  );
+
+  integrationTest(
+    'returns preferred_currency_purchase_price when the created entry can be converted',
+    async ({ app, db, sessionToken, userId }) => {
+      await db.insert(userPreferences).values({ userId, preferredCurrency: 'EUR' });
+      await seedExchangeRate(db, {
+        base: 'EUR',
+        date: '2026-03-29',
+        rates: { USD: 1.1 },
+      });
+
+      const response = await sendCreateEntryRequest(app, {
+        payload: {
+          ...createValidCreateEntryPayload(),
+          purchase_price: {
+            currency: 'USD',
+            value: 110,
+          },
+        },
+        sessionToken,
+      });
+      const body = await expectSuccessfulCreateEntryResponse(response);
+
+      expect(body.preferred_currency_purchase_price?.currency).toBe('EUR');
+      expect(body.preferred_currency_purchase_price?.value).toBeCloseTo(100);
     },
   );
 

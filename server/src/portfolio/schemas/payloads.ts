@@ -4,7 +4,7 @@ import { TRANSACTION_TYPE_ARRAY } from '@/constants/common';
 import { ApiCommonDatetimeShape } from '@/schemas/common';
 import { StocksSearchQuoteItemResponseSchema } from '@/stocks';
 
-const MoneySchema = z
+export const MoneySchema = z
   .object({
     currency: z.string().min(3).openapi({
       description: 'Currency code',
