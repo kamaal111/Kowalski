@@ -72,7 +72,7 @@ docker-run-server tag=DOCKER_IMAGE host_port=SERVER_PORT: start-services
 ready: download-spec _ready-tasks
 
 # Run verification checks including ui tests
-heavy: download-spec _ready-heavy-tasks
+heavy: download-spec heavy-tasks
 
 # Compile server
 [working-directory("server")]
@@ -275,7 +275,7 @@ _ready-tasks: quality test
 
 [private]
 [parallel]
-_ready-heavy-tasks: quality test-heavy
+heavy-tasks: quality test-heavy
 
 [private]
 install-modules:

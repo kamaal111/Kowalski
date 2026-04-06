@@ -24,6 +24,17 @@ public enum KowalskiServerConfiguration {
     }
 
     public static func defaultForexKitConfiguration() -> ForexKitConfiguration {
-        ForexKitConfiguration(forexBaseURL: forexBaseURL())
+        defaultForexKitConfiguration(urlSession: .shared, skipCaching: false)
+    }
+
+    public static func defaultForexKitConfiguration(urlSession: URLSession) -> ForexKitConfiguration {
+        defaultForexKitConfiguration(urlSession: urlSession, skipCaching: false)
+    }
+
+    public static func defaultForexKitConfiguration(
+        urlSession: URLSession,
+        skipCaching: Bool,
+    ) -> ForexKitConfiguration {
+        ForexKitConfiguration(skipCaching: skipCaching, urlSession: urlSession, forexBaseURL: forexBaseURL())
     }
 }
