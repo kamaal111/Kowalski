@@ -126,23 +126,14 @@ public final class KowalskiPortfolio {
                 .map(\.purchasePrice.currency)
                 .filter { $0 != preferredCurrency }
                 .uniques()
-            let exchangeRates: ExchangeRates?
-            if sourceCurrencies.isEmpty {
-                exchangeRates = ExchangeRates(base: preferredCurrency, date: .now, rates: [:])
+                .sorted { $0.rawValue < $1.rawValue }
+            let exchangeRates: ExchangeRates? = if sourceCurrencies.isEmpty {
+                ExchangeRates(base: preferredCurrency, date: .now, rates: [:])
             } else {
-                let forexKit = ForexKit(configuration: forexKitConfiguration)
-                let latestRatesResult = await forexKit.getLatest(base: preferredCurrency, symbols: sourceCurrencies)
-                switch latestRatesResult {
-                case let .failure(failure):
-                    logger.error(label: "Failed to fetch exchange rates for net worth", error: failure)
-                    exchangeRates = await forexKit.getFallback(base: preferredCurrency, symbols: sourceCurrencies)
-                case let .success(success):
-                    if let success {
-                        exchangeRates = success
-                    } else {
-                        exchangeRates = await forexKit.getFallback(base: preferredCurrency, symbols: sourceCurrencies)
-                    }
-                }
+                await fetchLatestExchangeRates(
+                    preferredCurrency: preferredCurrency,
+                    sourceCurrencies: sourceCurrencies,
+                )
             }
 
             guard let exchangeRates else {
@@ -197,6 +188,80 @@ public final class KowalskiPortfolio {
     }
 
     // MARK: Helpers
+
+    private func fetchLatestExchangeRates(
+        preferredCurrency: Currencies,
+        sourceCurrencies: [Currencies],
+    ) async -> ExchangeRates? {
+        let forexKit = ForexKit(configuration: forexKitConfiguration)
+        let requestPath = Self.forexLatestRequestPath(base: preferredCurrency, symbols: sourceCurrencies)
+
+        logger.debug("Request: GET \(requestPath) body: <nil>")
+
+        let latestRatesResult = await forexKit.getLatest(base: preferredCurrency, symbols: sourceCurrencies)
+        switch latestRatesResult {
+        case let .failure(failure):
+            logger.warning("Request failed. Error: \(failure.localizedDescription)")
+            logger.error(label: "Failed to fetch exchange rates for net worth", error: failure)
+
+            return await fetchFallbackExchangeRates(
+                preferredCurrency: preferredCurrency,
+                sourceCurrencies: sourceCurrencies,
+                requestPath: requestPath,
+            )
+        case let .success(success):
+            guard let success else {
+                logger.debug("Response: GET \(requestPath) 200 body: <nil>")
+
+                return await fetchFallbackExchangeRates(
+                    preferredCurrency: preferredCurrency,
+                    sourceCurrencies: sourceCurrencies,
+                    requestPath: requestPath,
+                )
+            }
+
+            logger.debug("Response: GET \(requestPath) 200 body: \(Self.forexLatestResponseBody(success))")
+            return success
+        }
+    }
+
+    private func fetchFallbackExchangeRates(
+        preferredCurrency: Currencies,
+        sourceCurrencies: [Currencies],
+        requestPath: String,
+    ) async -> ExchangeRates? {
+        let forexKit = ForexKit(configuration: forexKitConfiguration)
+        let fallbackRates = await forexKit.getFallback(base: preferredCurrency, symbols: sourceCurrencies)
+        guard let fallbackRates else {
+            logger.warning("Response: GET \(requestPath) fallback body: <nil>")
+            return nil
+        }
+
+        logger.debug("Response: GET \(requestPath) fallback body: \(Self.forexLatestResponseBody(fallbackRates))")
+        return fallbackRates
+    }
+
+    static func forexLatestRequestPath(base: Currencies, symbols: [Currencies]) -> String {
+        let latestPath = KowalskiServerConfiguration.forexBaseURL()
+            .appendingPathComponent("latest")
+            .path
+        let symbolsValue = symbols
+            .map(\.rawValue)
+            .sorted()
+            .joined(separator: ",")
+
+        return "\(latestPath)?base=\(base.rawValue)&symbols=\(symbolsValue)"
+    }
+
+    static func forexLatestResponseBody(_ exchangeRates: ExchangeRates) -> String {
+        let rateCount = exchangeRates.ratesMappedByCurrency.count
+        let currencies = exchangeRates.ratesMappedByCurrency.keys
+            .map(\.rawValue)
+            .sorted()
+            .joined(separator: ",")
+
+        return "{base: \(exchangeRates.base), rateCount: \(rateCount), currencies: [\(currencies)]}"
+    }
 
     @MainActor
     private func setEntries(_ newEntries: [PortfolioEntry]) {

@@ -240,6 +240,22 @@ struct KowalskiPortfolioTests {
     }
 
     @Test
+    func `Forex latest request log path should match the shared app endpoint`() {
+        let path = KowalskiPortfolio.forexLatestRequestPath(base: .EUR, symbols: [.USD, .GBP])
+
+        #expect(path == "/app-api/forex/latest?base=EUR&symbols=GBP,USD")
+    }
+
+    @Test
+    func `Forex latest response log body should summarize returned currencies`() {
+        let body = KowalskiPortfolio.forexLatestResponseBody(
+            ExchangeRates(base: "EUR", date: .now, rates: ["USD": 1.0666, "GBP": 0.88693]),
+        )
+
+        #expect(body == "{base: EUR, rateCount: 2, currencies: [GBP,USD]}")
+    }
+
+    @Test
     func `Paired create form values should use the opposite transaction type`() throws {
         let buyEntry = makePortfolioEntry(
             stock: makeAppleStock(),
