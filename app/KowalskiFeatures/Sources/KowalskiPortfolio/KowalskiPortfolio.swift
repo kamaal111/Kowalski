@@ -113,7 +113,7 @@ public final class KowalskiPortfolio {
     }
 
     func fetchNetWorth(preferredCurrency: Currencies) async {
-        lastPreferredCurrency = preferredCurrency
+        setLastPreferredCurrency(preferredCurrency)
 
         await withLoadingNetWorth {
             let valuedEntries = entries.filter { $0.transactionType != .split }
@@ -157,10 +157,12 @@ public final class KowalskiPortfolio {
         in preferredCurrency: Currencies,
         using exchangeRates: ExchangeRates,
     ) -> Double? {
-        guard exchangeRates.baseCurrency == preferredCurrency else { return nil }
+        guard exchangeRates.baseCurrency == preferredCurrency else {
+            assertionFailure("Exchange rate base currency should be the same as preferred currency")
+            return nil
+        }
 
-        var runningTotal = 0.0
-        for entry in entries {
+        return entries.reduce(0.0) { partialResult, entry in
             let signedAmount: Double = switch entry.transactionType {
             case .purchase:
                 entry.amount * entry.purchasePrice.value
@@ -170,24 +172,25 @@ public final class KowalskiPortfolio {
                 0
             }
 
-            let convertedAmount: Double
             if entry.purchasePrice.currency == preferredCurrency || signedAmount == 0 {
-                convertedAmount = signedAmount
-            } else {
-                guard let rate = exchangeRates.ratesMappedByCurrency[entry.purchasePrice.currency] else {
-                    return nil
-                }
-
-                convertedAmount = signedAmount / rate
+                return partialResult + signedAmount
             }
 
-            runningTotal += convertedAmount
-        }
+            guard let rate = exchangeRates.ratesMappedByCurrency[entry.purchasePrice.currency] else {
+                assertionFailure("Expecting rates to be present for entry")
+                return partialResult
+            }
 
-        return runningTotal
+            return partialResult + (signedAmount / rate)
+        }
     }
 
     // MARK: Helpers
+
+    @MainActor
+    private func setLastPreferredCurrency(_ preferredCurrency: Currencies) {
+        lastPreferredCurrency = preferredCurrency
+    }
 
     private func fetchLatestExchangeRates(
         preferredCurrency: Currencies,
