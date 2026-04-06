@@ -156,123 +156,164 @@ struct KowalskiPortfolioTests {
     }
 
     @Test
-    func `Net worth should sum purchases and subtract sells in the preferred currency`() {
-        let portfolio = KowalskiPortfolio.testing(client: .testing())
-        let exchangeRates = ExchangeRates(base: .USD, date: .now, rates: [:])
-        let entries = [
-            makePortfolioEntry(
-                stock: makeAppleStock(),
+    func `Net worth fetch should sum purchases and subtract sells in the preferred currency`() async throws {
+        let listEntries = [
+            makePortfolioEntryResponse(
+                stock: makeAppleStockResponse(),
                 amount: 2,
-                purchasePrice: Money(currency: .USD, value: 100),
-                transactionType: .purchase,
+                purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                transactionType: .buy,
             ),
-            makePortfolioEntry(
-                stock: makeTeslaStock(),
+            makePortfolioEntryResponse(
+                stock: makeTeslaStockResponse(),
                 amount: 1,
-                purchasePrice: Money(currency: .USD, value: 40),
+                purchasePrice: KowalskiClientMoney(currency: "USD", value: 40),
                 transactionType: .sell,
             ),
         ]
+        let portfolioClient = MockPortfolioClient(
+            createEntryResult: .success(listEntries[0]),
+            updateEntryResult: .success(listEntries[0]),
+            listEntriesResult: .success(listEntries),
+        )
+        let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
 
-        let netWorth = portfolio.computeNetWorth(for: entries, in: .USD, using: exchangeRates)
+        try await portfolio.fetchEntries().get()
+        await portfolio.fetchNetWorth(preferredCurrency: .USD)
 
-        #expect(netWorth == 160)
+        #expect(portfolio.netWorth == 160)
     }
 
     @Test
-    func `Net worth should exclude split transactions`() {
-        let portfolio = KowalskiPortfolio.testing(client: .testing())
-        let exchangeRates = ExchangeRates(base: .USD, date: .now, rates: [:])
-        let entries = [
-            makePortfolioEntry(
-                stock: makeAppleStock(),
+    func `Net worth fetch should exclude split transactions`() async throws {
+        let listEntries = [
+            makePortfolioEntryResponse(
+                stock: makeAppleStockResponse(),
                 amount: 2,
-                purchasePrice: Money(currency: .USD, value: 100),
-                transactionType: .purchase,
+                purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                transactionType: .buy,
             ),
-            makePortfolioEntry(
-                stock: makeTeslaStock(),
+            makePortfolioEntryResponse(
+                stock: makeTeslaStockResponse(),
                 amount: 10,
-                purchasePrice: Money(currency: .EUR, value: 1000),
+                purchasePrice: KowalskiClientMoney(currency: "EUR", value: 1000),
                 transactionType: .split,
             ),
         ]
+        let portfolioClient = MockPortfolioClient(
+            createEntryResult: .success(listEntries[0]),
+            updateEntryResult: .success(listEntries[0]),
+            listEntriesResult: .success(listEntries),
+        )
+        let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
 
-        let netWorth = portfolio.computeNetWorth(for: entries, in: .USD, using: exchangeRates)
+        try await portfolio.fetchEntries().get()
+        await portfolio.fetchNetWorth(preferredCurrency: .USD)
 
-        #expect(netWorth == 200)
+        #expect(portfolio.netWorth == 200)
     }
 
     @Test
-    func `Net worth should convert mixed currency entries into the preferred currency`() {
-        let portfolio = KowalskiPortfolio.testing(client: .testing())
-        let exchangeRates = ExchangeRates(base: .EUR, date: .now, rates: [.USD: 1.0666, .GBP: 0.88693])
-        let entries = [
-            makePortfolioEntry(
-                stock: makeAppleStock(),
+    func `Net worth fetch should convert mixed currency entries into the preferred currency`() async throws {
+        let listEntries = [
+            makePortfolioEntryResponse(
+                stock: makeAppleStockResponse(),
                 amount: 1,
-                purchasePrice: Money(currency: .USD, value: 106.66),
-                transactionType: .purchase,
+                purchasePrice: KowalskiClientMoney(currency: "USD", value: 106.66),
+                transactionType: .buy,
             ),
-            makePortfolioEntry(
-                stock: makeTeslaStock(),
+            makePortfolioEntryResponse(
+                stock: makeTeslaStockResponse(),
                 amount: 1,
-                purchasePrice: Money(currency: .GBP, value: 88.693),
-                transactionType: .purchase,
+                purchasePrice: KowalskiClientMoney(currency: "GBP", value: 88.693),
+                transactionType: .buy,
             ),
-            makePortfolioEntry(
-                stock: makeAppleStock(),
+            makePortfolioEntryResponse(
+                stock: makeAppleStockResponse(),
                 amount: 1,
-                purchasePrice: Money(currency: .USD, value: 53.33),
+                purchasePrice: KowalskiClientMoney(currency: "USD", value: 53.33),
                 transactionType: .sell,
             ),
         ]
+        let portfolioClient = MockPortfolioClient(
+            createEntryResult: .success(listEntries[0]),
+            updateEntryResult: .success(listEntries[0]),
+            listEntriesResult: .success(listEntries),
+        )
+        let portfolio = KowalskiPortfolio.testing(
+            client: .testing(portfolio: portfolioClient),
+            exchangeRatesFetcher: { _, _ in
+                ExchangeRates(base: .EUR, date: .now, rates: [.USD: 1.0666, .GBP: 0.88693])
+            },
+        )
 
-        let netWorth = portfolio.computeNetWorth(for: entries, in: .EUR, using: exchangeRates)
+        try await portfolio.fetchEntries().get()
+        await portfolio.fetchNetWorth(preferredCurrency: .EUR)
 
-        #expect(abs((netWorth ?? 0) - 150) < 0.0001)
+        #expect(abs((portfolio.netWorth ?? 0) - 150) < 0.0001)
     }
 
     @Test
-    func `Net worth should return nil when exchange rates base does not match the preferred currency`() {
-        let portfolio = KowalskiPortfolio.testing(client: .testing())
-        let exchangeRates = ExchangeRates(base: .USD, date: .now, rates: [.GBP: 0.75])
-        let entries = [
-            makePortfolioEntry(
-                stock: makeAppleStock(),
+    func `Net worth fetch should clear net worth when fetched exchange rates use the wrong base currency`(
+    ) async throws {
+        let listEntries = [
+            makePortfolioEntryResponse(
+                stock: makeAppleStockResponse(),
                 amount: 1,
-                purchasePrice: Money(currency: .GBP, value: 75),
-                transactionType: .purchase,
+                purchasePrice: KowalskiClientMoney(currency: "GBP", value: 75),
+                transactionType: .buy,
             ),
         ]
+        let portfolioClient = MockPortfolioClient(
+            createEntryResult: .success(listEntries[0]),
+            updateEntryResult: .success(listEntries[0]),
+            listEntriesResult: .success(listEntries),
+        )
+        let portfolio = KowalskiPortfolio.testing(
+            client: .testing(portfolio: portfolioClient),
+            exchangeRatesFetcher: { _, _ in
+                ExchangeRates(base: .USD, date: .now, rates: [.GBP: 0.75])
+            },
+        )
 
-        let netWorth = portfolio.computeNetWorth(for: entries, in: .EUR, using: exchangeRates)
+        try await portfolio.fetchEntries().get()
+        await portfolio.fetchNetWorth(preferredCurrency: .EUR)
 
-        #expect(netWorth == nil)
+        #expect(portfolio.netWorth == nil)
     }
 
     @Test
-    func `Net worth should return nil when a required exchange rate is missing`() {
-        let portfolio = KowalskiPortfolio.testing(client: .testing())
-        let exchangeRates = ExchangeRates(base: .EUR, date: .now, rates: [.USD: 1.0666])
-        let entries = [
-            makePortfolioEntry(
-                stock: makeAppleStock(),
+    func `Net worth fetch should clear net worth when a fetched exchange rate is missing`() async throws {
+        let listEntries = [
+            makePortfolioEntryResponse(
+                stock: makeAppleStockResponse(),
                 amount: 1,
-                purchasePrice: Money(currency: .USD, value: 106.66),
-                transactionType: .purchase,
+                purchasePrice: KowalskiClientMoney(currency: "USD", value: 106.66),
+                transactionType: .buy,
             ),
-            makePortfolioEntry(
-                stock: makeTeslaStock(),
+            makePortfolioEntryResponse(
+                stock: makeTeslaStockResponse(),
                 amount: 1,
-                purchasePrice: Money(currency: .GBP, value: 88.693),
-                transactionType: .purchase,
+                purchasePrice: KowalskiClientMoney(currency: "GBP", value: 88.693),
+                transactionType: .buy,
             ),
         ]
+        let portfolioClient = MockPortfolioClient(
+            createEntryResult: .success(listEntries[0]),
+            updateEntryResult: .success(listEntries[0]),
+            listEntriesResult: .success(listEntries),
+        )
+        let portfolio = KowalskiPortfolio.testing(
+            client: .testing(portfolio: portfolioClient),
+            exchangeRatesFetcher: { _, _ in
+                ExchangeRates(base: .EUR, date: .now, rates: [.USD: 1.0666])
+            },
+        )
 
-        let netWorth = portfolio.computeNetWorth(for: entries, in: .EUR, using: exchangeRates)
+        try await portfolio.fetchEntries().get()
+        await portfolio.fetchNetWorth(preferredCurrency: .EUR)
 
-        #expect(netWorth == nil)
+        #expect(portfolio.netWorth == nil)
     }
 
     @Test
