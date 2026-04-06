@@ -20,6 +20,17 @@ let package = Package(
     ],
     targets: [
         .target(
+            name: "KowalskiFeaturesConfig",
+            dependencies: [
+                "ForexKit",
+            ],
+            swiftSettings: [
+                .treatAllWarnings(as: .error),
+                .strictMemorySafety(),
+                .enableExperimentalFeature("StrictConcurrency"),
+            ],
+        ),
+        .target(
             name: "KowalskiAuth",
             dependencies: [
                 .product(name: "KamaalLogger", package: "KamaalSwift"),
@@ -28,6 +39,7 @@ let package = Package(
                 "ForexKit",
                 "KowalskiClient",
                 "KowalskiDesignSystem",
+                "KowalskiFeaturesConfig",
                 "KowalskiUtils",
             ],
             resources: [
@@ -49,6 +61,7 @@ let package = Package(
                 "KowalskiAuth",
                 "KowalskiUtils",
                 "KowalskiDesignSystem",
+                "KowalskiFeaturesConfig",
             ],
             resources: [
                 .process("Localizable.xcstrings"),
@@ -65,6 +78,7 @@ let package = Package(
                 "KowalskiPortfolio",
                 "KowalskiClient",
                 "ForexKit",
+                "KowalskiFeaturesConfig",
             ],
             swiftSettings: [
                 .treatAllWarnings(as: .error),

@@ -10,6 +10,7 @@ import Foundation
 import KamaalLogger
 import KamaalUtils
 import KowalskiClient
+import KowalskiFeaturesConfig
 import KowalskiUtils
 import Observation
 
@@ -59,9 +60,9 @@ public final class KowalskiAuth {
     }
 
     /// The currency the app should use for new transaction defaults.
-    /// Priority: server-stored preference → device locale currency (if supported) → USD.
+    /// Priority: server-stored preference → device locale currency (if supported) → app fallback currency.
     public var effectiveCurrency: Currencies {
-        let defaultCurrency = Self.localeCurrency ?? .USD
+        let defaultCurrency = Self.localeCurrency ?? KowalskiFeatureDefaults.fallbackCurrency
         guard let preferredCurrency = session?.preferredCurrency else { return defaultCurrency }
 
         return Currencies(rawValue: preferredCurrency) ?? defaultCurrency

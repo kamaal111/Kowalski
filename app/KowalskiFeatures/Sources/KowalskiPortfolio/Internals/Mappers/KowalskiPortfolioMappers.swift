@@ -7,6 +7,7 @@
 
 import ForexKit
 import KowalskiClient
+import KowalskiFeaturesConfig
 
 struct KowalskiPortfolioMappers {
     func mapPortfolioEntries(_ entries: [KowalskiPortfolioClientEntryResponse]) -> [PortfolioEntry] {
@@ -55,13 +56,25 @@ struct KowalskiPortfolioMappers {
             updatedAt: entry.updatedAt,
             stock: mapStockQuoteItem(entry.stock),
             amount: entry.amount,
-            purchasePrice: Money(
-                currency: Currencies(rawValue: entry.purchasePrice.currency) ?? .USD,
-                value: entry.purchasePrice.value,
-            ),
+            purchasePrice: mapMoney(entry.purchasePrice),
+            preferredCurrencyPurchasePrice: mapOptionalMoney(entry.preferredCurrencyPurchasePrice),
             transactionType: transactionType,
             transactionDate: entry.transactionDate,
         )
+    }
+
+    private func mapMoney(_ money: KowalskiClientMoney) -> Money {
+        Money(
+            currency: Currencies(rawValue: money.currency) ?? KowalskiFeatureDefaults.fallbackCurrency,
+            value: money.value,
+        )
+    }
+
+    private func mapOptionalMoney(_ money: KowalskiClientMoney?) -> Money? {
+        guard let money else { return nil }
+        guard let currency = Currencies(rawValue: money.currency) else { return nil }
+
+        return Money(currency: currency, value: money.value)
     }
 
     private func mapStockToKowalskiClientStockItem(_ stock: Stock) -> KowalskiClientStockItem {

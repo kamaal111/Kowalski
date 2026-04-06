@@ -5,9 +5,9 @@
 //  Created by OpenAI Codex on 3/29/26.
 //
 
-import ForexKit
 import Foundation
 @testable import KowalskiClient
+import KowalskiFeaturesConfig
 @testable import KowalskiPortfolio
 import Testing
 
@@ -162,12 +162,14 @@ struct KowalskiPortfolioTests {
                 stock: makeAppleStockResponse(),
                 amount: 2,
                 purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                preferredCurrencyPurchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
                 transactionType: .buy,
             ),
             makePortfolioEntryResponse(
                 stock: makeTeslaStockResponse(),
                 amount: 1,
                 purchasePrice: KowalskiClientMoney(currency: "USD", value: 40),
+                preferredCurrencyPurchasePrice: KowalskiClientMoney(currency: "USD", value: 40),
                 transactionType: .sell,
             ),
         ]
@@ -191,6 +193,7 @@ struct KowalskiPortfolioTests {
                 stock: makeAppleStockResponse(),
                 amount: 2,
                 purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                preferredCurrencyPurchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
                 transactionType: .buy,
             ),
             makePortfolioEntryResponse(
@@ -214,122 +217,28 @@ struct KowalskiPortfolioTests {
     }
 
     @Test
-    func `Net worth fetch should convert mixed currency entries into the preferred currency`() async throws {
-        let listEntries = [
-            makePortfolioEntryResponse(
-                stock: makeAppleStockResponse(),
-                amount: 1,
-                purchasePrice: KowalskiClientMoney(currency: "USD", value: 106.66),
-                transactionType: .buy,
-            ),
-            makePortfolioEntryResponse(
-                stock: makeTeslaStockResponse(),
-                amount: 1,
-                purchasePrice: KowalskiClientMoney(currency: "GBP", value: 88.693),
-                transactionType: .buy,
-            ),
-            makePortfolioEntryResponse(
-                stock: makeAppleStockResponse(),
-                amount: 1,
-                purchasePrice: KowalskiClientMoney(currency: "USD", value: 53.33),
-                transactionType: .sell,
-            ),
-        ]
-        let portfolioClient = MockPortfolioClient(
-            createEntryResult: .success(listEntries[0]),
-            updateEntryResult: .success(listEntries[0]),
-            listEntriesResult: .success(listEntries),
-        )
-        let portfolio = KowalskiPortfolio.testing(
-            client: .testing(portfolio: portfolioClient),
-            forexKitConfiguration: makeMockForexKitConfiguration(responseBody: mixedCurrencyForexResponseBody),
-        )
-
-        try await portfolio.fetchEntries().get()
-        await portfolio.fetchNetWorth(preferredCurrency: .EUR)
-
-        let netWorth = try #require(portfolio.netWorth)
-        #expect(abs(netWorth - 150) < 0.0001)
-    }
-
-    @Test
-    func `Net worth fetch should clear net worth when fetched exchange rates use the wrong base currency`(
+    func `Net worth fetch should sum server-provided preferred-currency values for mixed currency entries`(
     ) async throws {
         let listEntries = [
             makePortfolioEntryResponse(
                 stock: makeAppleStockResponse(),
                 amount: 1,
-                purchasePrice: KowalskiClientMoney(currency: "GBP", value: 75),
-                transactionType: .buy,
-            ),
-        ]
-        let portfolioClient = MockPortfolioClient(
-            createEntryResult: .success(listEntries[0]),
-            updateEntryResult: .success(listEntries[0]),
-            listEntriesResult: .success(listEntries),
-        )
-        let portfolio = KowalskiPortfolio.testing(
-            client: .testing(portfolio: portfolioClient),
-            forexKitConfiguration: makeMockForexKitConfiguration(responseBody: wrongBaseForexResponseBody),
-        )
-
-        try await portfolio.fetchEntries().get()
-        await portfolio.fetchNetWorth(preferredCurrency: .EUR)
-
-        #expect(portfolio.netWorth == nil)
-    }
-
-    @Test
-    func `Net worth fetch should clear net worth when a fetched exchange rate is missing`() async throws {
-        let listEntries = [
-            makePortfolioEntryResponse(
-                stock: makeAppleStockResponse(),
-                amount: 1,
                 purchasePrice: KowalskiClientMoney(currency: "USD", value: 106.66),
+                preferredCurrencyPurchasePrice: KowalskiClientMoney(currency: "EUR", value: 100),
                 transactionType: .buy,
             ),
             makePortfolioEntryResponse(
                 stock: makeTeslaStockResponse(),
                 amount: 1,
                 purchasePrice: KowalskiClientMoney(currency: "GBP", value: 88.693),
-                transactionType: .buy,
-            ),
-        ]
-        let portfolioClient = MockPortfolioClient(
-            createEntryResult: .success(listEntries[0]),
-            updateEntryResult: .success(listEntries[0]),
-            listEntriesResult: .success(listEntries),
-        )
-        let portfolio = KowalskiPortfolio.testing(
-            client: .testing(portfolio: portfolioClient),
-            forexKitConfiguration: makeMockForexKitConfiguration(responseBody: missingRateForexResponseBody),
-        )
-
-        try await portfolio.fetchEntries().get()
-        await portfolio.fetchNetWorth(preferredCurrency: .EUR)
-
-        #expect(portfolio.netWorth == nil)
-    }
-
-    @Test
-    func `Net worth should use ForexKit preview rates for mixed currencies`() async throws {
-        let listEntries = [
-            makePortfolioEntryResponse(
-                stock: makeAppleStockResponse(),
-                amount: 1,
-                purchasePrice: KowalskiClientMoney(currency: "USD", value: 106.66),
-                transactionType: .buy,
-            ),
-            makePortfolioEntryResponse(
-                stock: makeTeslaStockResponse(),
-                amount: 1,
-                purchasePrice: KowalskiClientMoney(currency: "GBP", value: 88.693),
+                preferredCurrencyPurchasePrice: KowalskiClientMoney(currency: "EUR", value: 100),
                 transactionType: .buy,
             ),
             makePortfolioEntryResponse(
                 stock: makeAppleStockResponse(),
                 amount: 1,
                 purchasePrice: KowalskiClientMoney(currency: "USD", value: 53.33),
+                preferredCurrencyPurchasePrice: KowalskiClientMoney(currency: "EUR", value: 50),
                 transactionType: .sell,
             ),
         ]
@@ -342,25 +251,72 @@ struct KowalskiPortfolioTests {
 
         try await portfolio.fetchEntries().get()
         await portfolio.fetchNetWorth(preferredCurrency: .EUR)
-        let netWorth = try #require(portfolio.netWorth)
 
+        let netWorth = try #require(portfolio.netWorth)
         #expect(abs(netWorth - 150) < 0.0001)
     }
 
     @Test
-    func `Forex latest request log path should match the shared app endpoint`() {
-        let path = KowalskiPortfolio.forexLatestRequestPath(base: .EUR, symbols: [.USD, .GBP])
+    func `Net worth fetch should clear net worth when preferred-currency values are missing`() async throws {
+        let listEntries = [
+            makePortfolioEntryResponse(
+                stock: makeAppleStockResponse(),
+                amount: 1,
+                purchasePrice: KowalskiClientMoney(currency: "GBP", value: 75),
+                preferredCurrencyPurchasePrice: nil,
+                transactionType: .buy,
+            ),
+        ]
+        let portfolioClient = MockPortfolioClient(
+            createEntryResult: .success(listEntries[0]),
+            updateEntryResult: .success(listEntries[0]),
+            listEntriesResult: .success(listEntries),
+        )
+        let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
 
-        #expect(path == "/app-api/forex/latest?base=EUR&symbols=GBP,USD")
+        try await portfolio.fetchEntries().get()
+        await portfolio.fetchNetWorth(preferredCurrency: .EUR)
+
+        #expect(portfolio.netWorth == nil)
     }
 
     @Test
-    func `Forex latest response log body should summarize returned currencies`() {
-        let body = KowalskiPortfolio.forexLatestResponseBody(
-            ExchangeRates(base: .EUR, date: .now, rates: [.USD: 1.0666, .GBP: 0.88693]),
+    func `Net worth fetch should refresh entries when the preferred currency changes`() async throws {
+        let usdEntries = [
+            makePortfolioEntryResponse(
+                stock: makeAppleStockResponse(),
+                amount: 2,
+                purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                preferredCurrencyPurchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                transactionType: .buy,
+            ),
+        ]
+        let eurEntries = [
+            makePortfolioEntryResponse(
+                stock: makeAppleStockResponse(),
+                amount: 2,
+                purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                preferredCurrencyPurchasePrice: KowalskiClientMoney(currency: "EUR", value: 80),
+                transactionType: .buy,
+            ),
+        ]
+        let portfolioClient = MockPortfolioClient(
+            createEntryResult: .success(usdEntries[0]),
+            updateEntryResult: .success(usdEntries[0]),
+            listEntriesResult: .success(usdEntries),
+            listEntriesResults: [
+                .success(usdEntries),
+                .success(eurEntries),
+            ],
         )
+        let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
 
-        #expect(body == "{base: EUR, rateCount: 2, currencies: [GBP,USD]}")
+        try await portfolio.fetchEntries().get()
+        await portfolio.fetchNetWorth(preferredCurrency: .USD)
+        await portfolio.fetchNetWorth(preferredCurrency: .EUR)
+
+        #expect(portfolio.netWorth == 160)
+        #expect(await portfolioClient.listEntriesCallCount == 2)
     }
 
     @Test
@@ -401,10 +357,10 @@ struct KowalskiPortfolioTests {
     }
 
     @Test
-    func `Empty form values should default to USD when no preferred currency is given`() {
+    func `Empty form values should default to the shared fallback currency when no preferred currency is given`() {
         let formValues = KowalskiPortfolioTransactionFormValues.empty()
 
-        #expect(formValues.purchasePriceCurrency == .USD)
+        #expect(formValues.purchasePriceCurrency == KowalskiFeatureDefaults.fallbackCurrency)
         #expect(formValues.purchasePriceValue == "0")
         #expect(formValues.selectedStock == nil)
         #expect(formValues.transactionType == .purchase)
@@ -451,19 +407,21 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
         KowalskiPortfolioClientEntryResponse,
         KowalskiPortfolioClientUpdateEntryErrors,
     >
-    private let listEntriesResult: Result<
+    private var listEntriesResults: [Result<
         [KowalskiPortfolioClientEntryResponse],
         KowalskiPortfolioClientListEntriesErrors,
-    >
+    >]
 
     init(
         createEntryResult: Result<KowalskiPortfolioClientEntryResponse, KowalskiPortfolioClientCreateEntryErrors>,
         updateEntryResult: Result<KowalskiPortfolioClientEntryResponse, KowalskiPortfolioClientUpdateEntryErrors>,
         listEntriesResult: Result<[KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientListEntriesErrors>,
+        listEntriesResults: [Result<[KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientListEntriesErrors>] =
+            [],
     ) {
         self.createEntryResult = createEntryResult
         self.updateEntryResult = updateEntryResult
-        self.listEntriesResult = listEntriesResult
+        self.listEntriesResults = listEntriesResults.isEmpty ? [listEntriesResult] : listEntriesResults
     }
 
     func listEntries() async
@@ -471,7 +429,12 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
     {
         listEntriesCallCount += 1
 
-        return listEntriesResult
+        guard !listEntriesResults.isEmpty else { return .success([]) }
+        if listEntriesResults.count == 1 {
+            return listEntriesResults[0]
+        }
+
+        return listEntriesResults.removeFirst()
     }
 
     func createEntry(
@@ -554,6 +517,7 @@ private func makePortfolioEntryResponse(
     stock: KowalskiClientStockItem,
     amount: Double,
     purchasePrice: KowalskiClientMoney,
+    preferredCurrencyPurchasePrice: KowalskiClientMoney? = nil,
     transactionType: KowalskiClientPortfolioTransactionTypes,
 ) -> KowalskiPortfolioClientEntryResponse {
     KowalskiPortfolioClientEntryResponse(
@@ -563,6 +527,7 @@ private func makePortfolioEntryResponse(
         stock: stock,
         amount: amount,
         purchasePrice: purchasePrice,
+        preferredCurrencyPurchasePrice: preferredCurrencyPurchasePrice,
         transactionType: transactionType,
         transactionDate: Date(timeIntervalSince1970: 1_766_246_840),
     )
@@ -642,106 +607,3 @@ private func makeTeslaStockResponse() -> KowalskiClientStockItem {
         exchangeDispatch: "NASDAQ",
     )
 }
-
-private func makeMockForexKitConfiguration(responseBody: String) -> ForexKitConfiguration {
-    let sessionConfiguration = URLSessionConfiguration.ephemeral
-    sessionConfiguration.protocolClasses = [MockForexURLProtocol.self]
-    let urlSession = URLSession(configuration: sessionConfiguration)
-    MockForexURLProtocol.setHandler { request in
-        guard let url = request.url else { throw MockForexURLProtocolError.missingURL }
-        guard let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil) else {
-            throw MockForexURLProtocolError.invalidResponse
-        }
-
-        return (response, Data(responseBody.utf8))
-    }
-
-    return KowalskiServerConfiguration.defaultForexKitConfiguration(urlSession: urlSession, skipCaching: true)
-}
-
-private enum MockForexURLProtocolError: Error {
-    case invalidResponse
-    case missingHandler
-    case missingURL
-}
-
-private final class MockForexURLProtocolStore: @unchecked Sendable {
-    private let lock = NSLock()
-    private var handler: (@Sendable (URLRequest) throws -> (HTTPURLResponse, Data))?
-
-    func setHandler(_ handler: @escaping @Sendable (URLRequest) throws -> (HTTPURLResponse, Data)) {
-        lock.lock()
-        defer { lock.unlock() }
-
-        self.handler = handler
-    }
-
-    func response(for request: URLRequest) throws -> (HTTPURLResponse, Data) {
-        lock.lock()
-        let handler = handler
-        lock.unlock()
-
-        guard let handler else { throw MockForexURLProtocolError.missingHandler }
-        return try handler(request)
-    }
-}
-
-private final class MockForexURLProtocol: URLProtocol {
-    private static let store = MockForexURLProtocolStore()
-
-    static func setHandler(_ handler: @escaping @Sendable (URLRequest) throws -> (HTTPURLResponse, Data)) {
-        store.setHandler(handler)
-    }
-
-    override class func canInit(with request: URLRequest) -> Bool {
-        request.url?.path == "/app-api/forex/latest"
-    }
-
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest {
-        request
-    }
-
-    override func startLoading() {
-        do {
-            let (response, data) = try Self.store.response(for: request)
-            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-            client?.urlProtocol(self, didLoad: data)
-            client?.urlProtocolDidFinishLoading(self)
-        } catch {
-            client?.urlProtocol(self, didFailWithError: error)
-        }
-    }
-
-    override func stopLoading() {}
-}
-
-private let mixedCurrencyForexResponseBody = """
-{
-    "base": "EUR",
-    "date": "2022-12-30",
-    "rates": {
-        "USD": 1.0666,
-        "GBP": 0.88693
-    }
-}
-"""
-
-private let wrongBaseForexResponseBody = """
-{
-    "base": "USD",
-    "date": "2022-12-30",
-    "rates": {
-        "GBP": 0.75
-    }
-}
-"""
-
-private let missingRateForexResponseBody = """
-{
-    "base": "EUR",
-    "date": "2022-12-30",
-    "rates": {
-        "USD": 1.0666
-    }
-}
-"""

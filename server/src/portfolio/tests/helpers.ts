@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
 
 import type { Database } from '@/db';
-import { portfolio, portfolioTransaction, stockTicker } from '@/db/schema';
+import { exchangeRates, portfolio, portfolioTransaction, stockTicker } from '@/db/schema';
 import { dateOnlyStringToISO8601String } from '@/utils/dates';
 import { createSyntheticTickerId, createSyntheticTickerIsin } from '@/utils/tickers';
 import { CreateEntryResponseSchema } from '../schemas/responses';
@@ -68,10 +68,23 @@ export async function seedPortfolioEntry(db: Database, input: SeedPortfolioEntry
       currency: input.purchasePrice.currency,
       value: input.purchasePrice.value,
     },
+    preferred_currency_purchase_price: null,
     transaction_type: input.transactionType,
     transaction_date: dateOnlyStringToISO8601String(input.transactionDate.slice(0, 10)),
     created_at: createdAt.toISOString(),
     updated_at: updatedAt.toISOString(),
+  });
+}
+
+export async function seedExchangeRate(
+  db: Database,
+  item: { base: string; date: string; rates: Record<string, number> },
+) {
+  await db.insert(exchangeRates).values({
+    id: `${item.base}-${item.date}`,
+    base: item.base,
+    date: item.date,
+    rates: item.rates,
   });
 }
 
