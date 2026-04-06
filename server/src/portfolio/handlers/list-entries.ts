@@ -4,7 +4,7 @@ import { STATUS_CODES } from '@/constants/http';
 import { dateOnlyStringToISO8601String } from '@/utils/dates';
 import { toISO8601String } from '@/utils/strings';
 import { findPortfolioEntriesByUserId } from '../repositories/list-entries';
-import { ListEntriesResponseSchema } from '../schemas/responses';
+import type { CreateEntryResponse, ListEntriesResponse } from '../schemas/responses';
 import { ROUTE_NAME } from '../constants';
 import listEntriesRoute from '../routes/list-entries';
 import { logInfo } from '@/logging';
@@ -17,7 +17,7 @@ const LIST_ENTRIES_ROUTE_PATH = `${APP_API_BASE_PATH}${ROUTE_NAME}${listEntriesR
 async function listEntries(c: HonoContext) {
   const session = getSessionWhereSessionIsRequired(c);
   const entries = await findPortfolioEntriesByUserId(c);
-  const response = ListEntriesResponseSchema.parse(entries.map(mapPersistedEntryToResponse));
+  const response = entries.map(mapPersistedEntryToResponse) satisfies ListEntriesResponse;
   logInfo(withRequestLogger(c, { component: 'portfolio' }), {
     event: 'portfolio.entries.listed',
     route: LIST_ENTRIES_ROUTE_PATH,
@@ -29,7 +29,7 @@ async function listEntries(c: HonoContext) {
   return c.json(response, STATUS_CODES.OK);
 }
 
-function mapPersistedEntryToResponse(entry: PersistedPortfolioEntry) {
+function mapPersistedEntryToResponse(entry: PersistedPortfolioEntry): CreateEntryResponse {
   return {
     id: entry.id,
     stock: {
