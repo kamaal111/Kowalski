@@ -158,11 +158,12 @@ public final class KowalskiPortfolio {
         using exchangeRates: ExchangeRates,
     ) -> Double? {
         guard exchangeRates.baseCurrency == preferredCurrency else {
-            assertionFailure("Exchange rate base currency should be the same as preferred currency")
+            logger.warning("Exchange rate base currency should match the preferred currency for net worth calculation")
             return nil
         }
 
-        return entries.reduce(0.0) { partialResult, entry in
+        var runningTotal = 0.0
+        for entry in entries {
             let signedAmount: Double = switch entry.transactionType {
             case .purchase:
                 entry.amount * entry.purchasePrice.value
@@ -173,16 +174,19 @@ public final class KowalskiPortfolio {
             }
 
             if entry.purchasePrice.currency == preferredCurrency || signedAmount == 0 {
-                return partialResult + signedAmount
+                runningTotal += signedAmount
+                continue
             }
 
             guard let rate = exchangeRates.ratesMappedByCurrency[entry.purchasePrice.currency] else {
-                assertionFailure("Expecting rates to be present for entry")
-                return partialResult
+                logger.warning("Missing exchange rate required for net worth calculation")
+                return nil
             }
 
-            return partialResult + (signedAmount / rate)
+            runningTotal += signedAmount / rate
         }
+
+        return runningTotal
     }
 
     // MARK: Helpers
