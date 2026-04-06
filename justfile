@@ -72,8 +72,7 @@ docker-run-server tag=DOCKER_IMAGE host_port=SERVER_PORT: start-services
 ready: download-spec _ready-tasks
 
 # Run verification checks including ui tests
-[parallel]
-heavy: ready test-ui
+heavy: download-spec _ready-heavy-tasks
 
 # Compile server
 [working-directory("server")]
@@ -238,7 +237,6 @@ test-ui:
 
 # Run app UI tests and unit tests
 [working-directory("app")]
-[parallel]
 test-app-heavy: test-app test-ui
 
 # Run server tests
@@ -274,6 +272,10 @@ bootstrap-server: prepare-server
 [private]
 [parallel]
 _ready-tasks: quality test
+
+[private]
+[parallel]
+_ready-heavy-tasks: quality test-heavy
 
 [private]
 install-modules:

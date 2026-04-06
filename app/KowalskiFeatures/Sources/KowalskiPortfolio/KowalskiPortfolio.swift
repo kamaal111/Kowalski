@@ -14,12 +14,14 @@ import KowalskiUtils
 import Observation
 
 private let logger = KamaalLogger(from: KowalskiPortfolio.self, failOnError: true)
+typealias ExchangeRatesFetcher = @Sendable (Currencies, [Currencies]) async -> ExchangeRates?
 
 @Observable
 @MainActor
 public final class KowalskiPortfolio {
     private let client: KowalskiClient
     private let forexKitConfiguration: ForexKitConfiguration
+    private let exchangeRatesFetcher: ExchangeRatesFetcher?
     private let mapper = KowalskiPortfolioMappers()
     private var lastPreferredCurrency: Currencies?
 
@@ -28,9 +30,14 @@ public final class KowalskiPortfolio {
     private(set) var netWorth: Double?
     private(set) var isLoadingNetWorth = false
 
-    private init(client: KowalskiClient, forexKitConfiguration: ForexKitConfiguration) {
+    private init(
+        client: KowalskiClient,
+        forexKitConfiguration: ForexKitConfiguration,
+        exchangeRatesFetcher: ExchangeRatesFetcher? = nil,
+    ) {
         self.client = client
         self.forexKitConfiguration = forexKitConfiguration
+        self.exchangeRatesFetcher = exchangeRatesFetcher
     }
 
     @MainActor
@@ -129,6 +136,8 @@ public final class KowalskiPortfolio {
                 .sorted { $0.rawValue < $1.rawValue }
             let exchangeRates: ExchangeRates? = if sourceCurrencies.isEmpty {
                 ExchangeRates(base: preferredCurrency, date: .now, rates: [:])
+            } else if let exchangeRatesFetcher {
+                await exchangeRatesFetcher(preferredCurrency, sourceCurrencies)
             } else {
                 await fetchLatestExchangeRates(
                     preferredCurrency: preferredCurrency,
@@ -137,13 +146,13 @@ public final class KowalskiPortfolio {
             }
 
             guard let exchangeRates else {
-                logger.error("No exchange rates available for net worth calculation")
+                logger.warning("No exchange rates available for net worth calculation")
                 setNetWorth(nil)
                 return
             }
 
             guard let netWorth = computeNetWorth(for: valuedEntries, in: preferredCurrency, using: exchangeRates) else {
-                logger.error("Failed to compute net worth from exchange rates")
+                logger.warning("Failed to compute net worth from exchange rates")
                 setNetWorth(nil)
                 return
             }
@@ -152,7 +161,7 @@ public final class KowalskiPortfolio {
         }
     }
 
-    func computeNetWorth(
+    private func computeNetWorth(
         for entries: [PortfolioEntry],
         in preferredCurrency: Currencies,
         using exchangeRates: ExchangeRates,
@@ -376,8 +385,13 @@ public final class KowalskiPortfolio {
     static func testing(
         client: KowalskiClient,
         forexKitConfiguration: ForexKitConfiguration = previewForexKitConfiguration(),
+        exchangeRatesFetcher: ExchangeRatesFetcher? = nil,
     ) -> KowalskiPortfolio {
-        KowalskiPortfolio(client: client, forexKitConfiguration: forexKitConfiguration)
+        KowalskiPortfolio(
+            client: client,
+            forexKitConfiguration: forexKitConfiguration,
+            exchangeRatesFetcher: exchangeRatesFetcher,
+        )
     }
 
     private static func previewForexKitConfiguration() -> ForexKitConfiguration {
