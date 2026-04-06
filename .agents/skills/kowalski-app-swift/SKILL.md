@@ -55,6 +55,7 @@ Model new work after files such as:
 ## Client and Error-Handling Patterns
 
 - Keep the generated OpenAPI surface behind small protocols and wrapper types in `KowalskiClient`.
+- Prefer shared configuration entry points such as `KowalskiServerConfiguration` for deployment-sensitive clients like `ForexKit`, so base URLs and transport setup stay centralized.
 - Return `Result<Success, Failure>` from async client and feature APIs when the surrounding module already does so.
 - Map transport and API errors into feature-specific error enums instead of leaking raw generated types into the UI.
 - Use explicit `switch` or `do/catch` flows for fallible calls that matter.
@@ -81,6 +82,8 @@ Model new work after files such as:
 - Prefer `@Suite` and `@Test` with descriptive backtick names.
 - Assert `Result` values through `.get()` and `#require(throws:)` or `#expect(...)` rather than large manual switch statements.
 - Build focused mocks and previews that match the package's protocol boundaries.
+- When a dependency already supports `URLSession` injection, prefer testing through that transport hook instead of adding a second production-only seam.
+- For `ForexKit`, keep the production path on the real `fetchLatestExchangeRates` flow and inject test sessions through `KowalskiServerConfiguration.defaultForexKitConfiguration(...)`.
 - Verify user-facing error formatting, refreshed state after mutations, and request construction in client tests when those behaviors change.
 
 ## Verification Workflow

@@ -56,6 +56,9 @@ Prefer the repository's command runner when one exists, such as `just`, `make`, 
 - Control clocks, timers, randomness, and async scheduling when possible.
 - Avoid sleeps and broad retries that hide race conditions.
 - Keep assertions focused enough that a failing test points to one behavior.
+- If a client library already accepts a transport object such as `URLSession`, mock at that boundary before adding a new production seam only for tests.
+- If the code under test caches fetched results, disable or isolate that cache in tests so earlier responses cannot mask later failures.
+- If a test helper uses shared mutable state, serialize that suite or otherwise isolate execution so parallel runs do not contaminate each other.
 
 ## Frontend Testing Guidelines
 
@@ -127,6 +130,8 @@ See [SWIFT.md](./SWIFT.md) for Swift Testing conventions used in this repository
 - `@Suite` grouping conventions
 - SwiftLint configuration for test directories
 - Why `Result`-returning async APIs should usually be asserted through `.get()` plus `#require(throws:)` instead of `switch` statements with `Issue.record(...)` fallback branches
+- When using `URLProtocol`-backed `URLSession` mocks, prefer `@Suite(..., .serialized)` if the handler state is shared across tests
+- In this repository, recoverable negative-path tests can fail hard if they trigger `KamaalLogger(..., failOnError: true)` at error level, so treat log-level changes as test-impacting behavior
 
 ## Expected Output When Using This Skill
 
