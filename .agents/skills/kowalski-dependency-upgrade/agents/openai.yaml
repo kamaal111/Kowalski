@@ -1,0 +1,4 @@
+interface:
+  display_name: "Kowalski Dependency Upgrade"
+  short_description: "Upgrade and validate Kowalski dependencies"
+  default_prompt: "Use $kowalski-dependency-upgrade to upgrade dependencies in this repository, verify the result, and fix breakages introduced by newer versions."
