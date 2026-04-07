@@ -1,0 +1,57 @@
+app/KowalskiUtils/Package.swift
+  b0e7a178f9ce0ad7 1
+app/KowalskiApp/Package.swift
+  b0e7a178f9ce0ad7 1
+app/KowalskiClient/Package.swift
+  b0e7a178f9ce0ad7 1
+app/KowalskiFeatures/Package.swift
+  b0e7a178f9ce0ad7 1
+app/KowalskiDesignSystem/Package.swift
+  b0e7a178f9ce0ad7 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "21353b755b8c34faf13c68d984479ca4f14816f9",
+  "prompts": {
+    "07ace6578e186428": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d3966-d958-7043-bafb-faa431fb13be",
+        "model": "unknown"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>",
+      "messages": [],
+      "total_additions": 163,
+      "total_deletions": 27,
+      "accepted_lines": 163,
+      "overriden_lines": 0
+    },
+    "537ebf247f40e108": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d3645-3c4a-7e62-a22d-8308a2792853",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>",
+      "messages": [],
+      "total_additions": 1055,
+      "total_deletions": 137,
+      "accepted_lines": 1054,
+      "overriden_lines": 0
+    },
+    "b0e7a178f9ce0ad7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d3944-671f-79f0-bce2-d7a2a1e61371",
+        "model": "unknown"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>",
+      "messages": [],
+      "total_additions": 81,
+      "total_deletions": 12,
+      "accepted_lines": 81,
+      "overriden_lines": 0
+    }
+  }
+}
