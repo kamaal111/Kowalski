@@ -2,53 +2,64 @@ import type { HonoContext } from '@/api/contexts';
 import { APIException } from '@/api/exceptions';
 import { STATUS_CODES, type StatusCode } from '@/constants/http';
 
-const CODE_TO_STATUS = {
+type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
+
+const ERROR_CODES = {
+  DEFAULT_PORTFOLIO_CREATE_FAILED: 'DEFAULT_PORTFOLIO_CREATE_FAILED',
+  STOCK_TICKER_CREATE_FAILED: 'STOCK_TICKER_CREATE_FAILED',
+  PORTFOLIO_ENTRY_CREATE_FAILED: 'PORTFOLIO_ENTRY_CREATE_FAILED',
+  PORTFOLIO_ENTRY_UPDATE_FAILED: 'PORTFOLIO_ENTRY_UPDATE_FAILED',
+  STOCK_PRICE_FETCH_FAILED: 'STOCK_PRICE_FETCH_FAILED',
+} as const;
+
+const CODE_TO_STATUS: Record<ErrorCode, StatusCode> = {
   DEFAULT_PORTFOLIO_CREATE_FAILED: STATUS_CODES.INTERNAL_SERVER_ERROR,
   STOCK_TICKER_CREATE_FAILED: STATUS_CODES.INTERNAL_SERVER_ERROR,
   PORTFOLIO_ENTRY_CREATE_FAILED: STATUS_CODES.INTERNAL_SERVER_ERROR,
   PORTFOLIO_ENTRY_UPDATE_FAILED: STATUS_CODES.INTERNAL_SERVER_ERROR,
-} satisfies Record<string, StatusCode>;
+  STOCK_PRICE_FETCH_FAILED: STATUS_CODES.INTERNAL_SERVER_ERROR,
+};
 
-type PortfolioExceptionCode = keyof typeof CODE_TO_STATUS;
+const CODE_TO_MESSAGE: Record<ErrorCode, string> = {
+  DEFAULT_PORTFOLIO_CREATE_FAILED: 'Failed to create default portfolio',
+  STOCK_TICKER_CREATE_FAILED: 'Failed to create stock ticker',
+  PORTFOLIO_ENTRY_CREATE_FAILED: 'Failed to create portfolio entry',
+  PORTFOLIO_ENTRY_UPDATE_FAILED: 'Failed to update portfolio entry',
+  STOCK_PRICE_FETCH_FAILED: 'Failed to resolve current stock prices',
+};
 
 class PortfolioException extends APIException {
-  constructor(c: HonoContext, { code, message }: { code: PortfolioExceptionCode; message: string }) {
-    super(c, CODE_TO_STATUS[code], { message, code });
+  constructor(c: HonoContext, { code }: { code: ErrorCode }) {
+    super(c, CODE_TO_STATUS[code], { message: CODE_TO_MESSAGE[code], code });
   }
 }
 
 export class DefaultPortfolioCreateFailed extends PortfolioException {
   constructor(c: HonoContext) {
-    super(c, {
-      code: 'DEFAULT_PORTFOLIO_CREATE_FAILED',
-      message: 'Failed to create default portfolio',
-    });
+    super(c, { code: ERROR_CODES.DEFAULT_PORTFOLIO_CREATE_FAILED });
   }
 }
 
 export class StockTickerCreateFailed extends PortfolioException {
   constructor(c: HonoContext) {
-    super(c, {
-      code: 'STOCK_TICKER_CREATE_FAILED',
-      message: 'Failed to create stock ticker',
-    });
+    super(c, { code: ERROR_CODES.STOCK_TICKER_CREATE_FAILED });
   }
 }
 
 export class PortfolioEntryCreateFailed extends PortfolioException {
   constructor(c: HonoContext) {
-    super(c, {
-      code: 'PORTFOLIO_ENTRY_CREATE_FAILED',
-      message: 'Failed to create portfolio entry',
-    });
+    super(c, { code: ERROR_CODES.PORTFOLIO_ENTRY_CREATE_FAILED });
   }
 }
 
 export class PortfolioEntryUpdateFailed extends PortfolioException {
   constructor(c: HonoContext) {
-    super(c, {
-      code: 'PORTFOLIO_ENTRY_UPDATE_FAILED',
-      message: 'Failed to update portfolio entry',
-    });
+    super(c, { code: ERROR_CODES.PORTFOLIO_ENTRY_UPDATE_FAILED });
+  }
+}
+
+export class StockPriceFetchFailed extends PortfolioException {
+  constructor(c: HonoContext) {
+    super(c, { code: ERROR_CODES.STOCK_PRICE_FETCH_FAILED });
   }
 }

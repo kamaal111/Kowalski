@@ -1,7 +1,6 @@
 import { createRoute } from '@hono/zod-openapi';
 
 import { OPENAPI_TAG } from '../constants';
-import { requireLoggedInSessionMiddleware } from '@/auth/middleware';
 import { AuthenticationHeaders } from '@/schemas/headers';
 import { ErrorResponseSchema, ValidationErrorResponseSchema } from '@/schemas/errors';
 import { STATUS_CODES } from '@/constants/http';
@@ -14,7 +13,6 @@ const createEntryRoute = createRoute({
   path: '/entries',
   tags: [OPENAPI_TAG],
   summary: 'Create portfolio entry',
-  middleware: [requireLoggedInSessionMiddleware],
   description:
     'Create a new portfolio entry for a stock transaction. Records buy, sell, or split transactions with stock details, amount, price, and transaction date.',
   request: {

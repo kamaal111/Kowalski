@@ -2,6 +2,7 @@ import { dateOnlyStringToISO8601String } from '@/utils/dates';
 import { toISO8601String } from '@/utils/strings';
 import type { CreateEntryResponse } from '../schemas/responses';
 import { assertToFloat } from '@/utils/numbers';
+import type { PersistedPortfolioEntry } from '../repositories/list-entries';
 
 interface PortfolioEntryResponseInput {
   id: string;
@@ -31,4 +32,39 @@ export function mapPortfolioEntryToResponse(input: PortfolioEntryResponseInput):
     created_at: toISO8601String(input.createdAt),
     updated_at: toISO8601String(input.updatedAt),
   };
+}
+
+export function mapPersistedPortfolioEntryToResponse({
+  entry,
+  preferredCurrencyPurchasePrice,
+}: {
+  entry: PersistedPortfolioEntry;
+  preferredCurrencyPurchasePrice: CreateEntryResponse['preferred_currency_purchase_price'];
+}): CreateEntryResponse {
+  return mapPortfolioEntryToResponse({
+    id: entry.id,
+    stock: {
+      symbol: entry.stockSymbol,
+      exchange: getExchangeFromTickerId(entry.tickerId),
+      name: entry.stockName,
+      isin: entry.stockIsin,
+      sector: entry.stockSector,
+      industry: entry.stockIndustry,
+      exchange_dispatch: entry.stockExchangeDispatch,
+    },
+    amount: entry.amount,
+    purchasePrice: entry.purchasePrice,
+    purchasePriceCurrency: entry.purchasePriceCurrency,
+    preferredCurrencyPurchasePrice,
+    transactionType: entry.transactionType,
+    transactionDate: entry.transactionDate,
+    createdAt: entry.createdAt,
+    updatedAt: entry.updatedAt,
+  });
+}
+
+function getExchangeFromTickerId(tickerId: string) {
+  const [, exchange] = tickerId.split(':');
+
+  return exchange?.length ? exchange : 'UNKNOWN';
 }

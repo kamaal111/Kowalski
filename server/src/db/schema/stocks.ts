@@ -1,4 +1,4 @@
-import { pgTable, text, unique, timestamp, numeric } from 'drizzle-orm/pg-core';
+import { date, numeric, pgTable, text, unique } from 'drizzle-orm/pg-core';
 
 import currency from '../helpers/currency';
 
@@ -28,10 +28,10 @@ export const stockTicker = pgTable(
 );
 
 /**
- * Price snapshots for a stock ticker keyed by timestamp.
+ * Daily price snapshots for a stock ticker keyed by date.
  *
- * This is schema groundwork for storing market data. It is not currently read
- * or written by the active portfolio flow yet.
+ * This powers cached portfolio overview prices and stores at most one price per
+ * ticker per day.
  */
 export const stockInfo = pgTable(
   'stock_info',
@@ -40,8 +40,8 @@ export const stockInfo = pgTable(
     id: text('id').primaryKey(),
     // Quote currency for the recorded close price.
     currency: currency('currency').notNull(),
-    // Point in time the price snapshot applies to.
-    timestamp: timestamp('timestamp').notNull(),
+    // Effective date for the stored market price.
+    date: date('date').notNull(),
     // Stored closing price or observed rate for the ticker at the given timestamp.
     close: numeric('rate', { precision: 20, scale: 10 }).notNull(),
     // Parent ticker whose price history this snapshot belongs to.
@@ -49,5 +49,5 @@ export const stockInfo = pgTable(
       .notNull()
       .references(() => stockTicker.id, { onDelete: 'cascade' }),
   },
-  t => [unique().on(t.tickerId, t.timestamp), unique('entry').on(t.tickerId, t.timestamp)],
+  t => [unique().on(t.tickerId, t.date), unique('entry').on(t.tickerId, t.date)],
 );

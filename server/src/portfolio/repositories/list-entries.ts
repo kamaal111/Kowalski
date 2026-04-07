@@ -32,6 +32,7 @@ export interface PersistedExchangeRateSnapshot {
 
 export async function findPortfolioEntriesByUserId(c: HonoContext): Promise<PersistedPortfolioEntry[]> {
   const session = getSessionWhereSessionIsRequired(c);
+
   return c
     .get('db')
     .select({
