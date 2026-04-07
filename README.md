@@ -33,7 +33,7 @@ Kowalski is a monorepo project consisting of a TypeScript/Node.js backend server
 - **Node.js**: v24 (managed via `nvm` recommended)
 - **pnpm**: v10+
 - **Docker**: For running the database
-- **Xcode**: 16.3+ (for Swift 6.3 iOS/macOS app development)
+- **Xcode**: 26.3+ (for Swift 6.2.4 iOS/macOS app development)
 - **Just**: Command runner (`brew install just`)
 
 ### Installation
@@ -46,10 +46,10 @@ Kowalski is a monorepo project consisting of a TypeScript/Node.js backend server
    ```
 
 2. **Environment Setup**
-   Create a `.env` file in the `server/` directory based on `.env.example`.
+   Create a `.env` file in the repository root based on `.env.example`.
 
    ```bash
-   cp server/.env.example server/.env
+   cp .env.example .env
    ```
 
    Ensure the following variables are set:
@@ -59,6 +59,14 @@ Kowalski is a monorepo project consisting of a TypeScript/Node.js backend server
    BETTER_AUTH_SECRET=<generate-random-string>
    BETTER_AUTH_URL=http://localhost:8080
    ```
+
+   In a linked worktree, prefer:
+
+   ```bash
+   just setup-worktree-env
+   ```
+
+   That generates isolated root and `server/` env files plus a non-`5432` database port so agents do not collide with local development services.
 
 3. **Start Services**
    Start the PostgreSQL database container.
@@ -85,17 +93,18 @@ Kowalski is a monorepo project consisting of a TypeScript/Node.js backend server
 
 We use `just` to manage project tasks.
 
-| Command                | Description                                        |
-| ---------------------- | -------------------------------------------------- |
-| `just dev-server`      | Start DB and run server in dev mode                |
-| `just start-services`  | Start Docker containers (DB)                       |
-| `just stop-services`   | Stop Docker containers                             |
-| `just migrate`         | Run pending database migrations                    |
-| `just make-migrations` | Generate new migrations from schema changes        |
-| `just download-spec`   | Generate OpenAPI spec and update Swift client      |
-| `just test`            | Run server and client tests                        |
-| `just quality`         | Run linting, formatting, and type checking         |
-| `just ready`           | Run all checks before committing (quality + tests) |
+| Command                   | Description                                        |
+| ------------------------- | -------------------------------------------------- |
+| `just dev-server`         | Start DB and run server in dev mode                |
+| `just setup-worktree-env` | Generate isolated env files for a linked worktree  |
+| `just start-services`     | Start Docker containers (DB)                       |
+| `just stop-services`      | Stop Docker containers                             |
+| `just migrate`            | Run pending database migrations                    |
+| `just make-migrations`    | Generate new migrations from schema changes        |
+| `just download-spec`      | Generate OpenAPI spec and update Swift client      |
+| `just test`               | Run server and client tests                        |
+| `just quality`            | Run linting, formatting, and type checking         |
+| `just ready`              | Run all checks before committing (quality + tests) |
 
 ## 📂 Project Structure
 

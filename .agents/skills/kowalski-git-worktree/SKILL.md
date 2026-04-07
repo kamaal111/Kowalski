@@ -1,6 +1,6 @@
 ---
 name: kowalski-git-worktree
-description: Repository-specific workflow for working safely in Kowalski git worktrees. Use when the checkout is a linked worktree, `HEAD` is detached, a branch needs upstream tracking, the task requires `git pull --rebase`, `git commit --amend`, `git push --force-with-lease`, or a PR must be updated from a worktree branch.
+description: Repository-specific workflow for working safely in Kowalski git worktrees. Use when the checkout is a linked worktree, `HEAD` is detached, a branch needs upstream tracking, the task requires isolated database or port setup, `git pull --rebase`, `git commit --amend`, `git push --force-with-lease`, or the work must be published as a GitHub PR from a worktree branch.
 ---
 
 # Kowalski Git Worktree
@@ -18,7 +18,24 @@ Use this skill when git worktree state is part of the task, not just the code ch
   - `git log --oneline --decorate -n 6`
 - Confirm whether you are in a detached `HEAD` state before pulling, committing, or pushing.
 - Read `AGENTS.md` before doing state-changing git work so you follow the repository's worktree rules.
+- Before running recipes that touch PostgreSQL, server ports, or OpenAPI download, run:
+  - `just setup-worktree-env`
+- Treat the generated root `.env` and `server/.env` as part of worktree setup, not as user-facing deliverables. They should point the worktree at its own Compose project, database name, database port, and server ports.
 - If the user's main checkout is dirty or mixed, prefer a clean temp worktree for the task rather than trying to separate unrelated changes in place.
+
+## Isolated Environment
+
+- Use `just setup-worktree-env` once near the start of a new linked worktree or whenever env files are missing.
+- The helper writes:
+  - `.env` in the repo root so `just` recipes pick up worktree-specific overrides
+  - `server/.env` so direct server commands in `server/` use the same database and auth URL
+- The helper chooses:
+  - a non-`5432` PostgreSQL host port
+  - worktree-specific server and daily ports
+  - a unique `COMPOSE_PROJECT_NAME` so Docker containers and volumes do not collide across worktrees
+- If the default ports are somehow busy, rerun the helper directly with overrides:
+  - `pnpm exec tsx .agents/skills/kowalski-git-worktree/scripts/setup-worktree-env.ts --db-port <port> --server-port <port> --daily-port <port>`
+- Keep local-development defaults for the main checkout. Do not change shared repo defaults just to fit a worktree.
 
 ## Reattach the Branch
 
@@ -50,6 +67,7 @@ Use this skill when git worktree state is part of the task, not just the code ch
 
 ## Push and PR Updates
 
+- Publish worktree changes as a GitHub pull request unless the user explicitly says not to.
 - For a first push from a worktree branch without local tracking, use:
   - `git push -u origin HEAD:refs/heads/<branch>`
 - If the branch is intentionally detached because the named branch is already checked out elsewhere, it is acceptable to commit on `HEAD` and push with `HEAD:refs/heads/<branch>`.
@@ -81,8 +99,10 @@ Use this skill when git worktree state is part of the task, not just the code ch
 
 Finish by stating:
 
+- whether `just setup-worktree-env` ran and which ports or compose project it configured
 - whether the worktree started detached or attached
 - whether upstream tracking had to be configured
 - which sync command ran
+- whether a PR was created or updated
 - whether the branch was amended or force-pushed
 - which verification commands ran, or why docs-only validation was skipped

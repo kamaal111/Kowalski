@@ -33,9 +33,11 @@
 - **When working in a dedicated git worktree, follow the repository worktree workflow**
   - Use `.agents/skills/kowalski-git-worktree/SKILL.md` when the task involves detached `HEAD`, branch sync, rebasing, amending, force-pushing, or PR updates from a worktree branch
   - Start by checking `git status --short`, `git rev-parse --abbrev-ref HEAD`, `git branch -vv`, and recent commits
+  - Run `just setup-worktree-env` before any recipe that touches PostgreSQL, server ports, or OpenAPI download so the worktree uses its own Compose project, database port, and `server/.env`
   - If the worktree is detached, run `git switch <expected-branch>` before pulling, committing, or pushing
   - If `git pull --rebase` reports missing tracking information, set it with `git branch --set-upstream-to=origin/<branch> <branch>` and retry
   - After `git commit --amend`, prefer `git push --force-with-lease origin <branch>` to update the PR branch safely
+  - Publish worktree changes as a GitHub pull request for review unless the user explicitly says not to create one
   - In linked worktrees, `git switch`, `git add`, `git commit`, `git pull --rebase`, and `git push` may need elevated permissions because git metadata lives under the parent repository's `.git/worktrees/...`
   - If commit hooks modify files during commit or amend, rerun the required verification on the final committed tree before finishing
   - If `gh auth` is stale or broken, prefer the GitHub connector for PR creation or updates instead of blocking on CLI auth
@@ -149,7 +151,8 @@
 ## Security & Configuration Tips
 
 - **Required server environment**
-  - Create `server/.env` from `server/.env.example`
+  - Create `.env` in the repository root from `.env.example`
+  - In linked worktrees, prefer `just setup-worktree-env`, which writes both files with isolated ports and database settings
   - Required values:
 
 ```bash

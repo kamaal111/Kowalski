@@ -8,11 +8,19 @@ PNR := PN + " run"
 PNX := PN + " exec"
 TSX := PNX + " tsx"
 
-SERVER_PORT := "8080"
-DAILY_PORT := "8081"
+COMPOSE_PROJECT_NAME := env_var_or_default("COMPOSE_PROJECT_NAME", "kowalski")
+DATABASE_HOST := env_var_or_default("KOWALSKI_DB_HOST", "localhost")
+DATABASE_PORT := env_var_or_default("KOWALSKI_DB_PORT", "5432")
+DATABASE_NAME := env_var_or_default("KOWALSKI_DB_NAME", "kowalski")
+DATABASE_USER := env_var_or_default("KOWALSKI_DB_USER", "kowalski_user")
+DATABASE_PASSWORD := env_var_or_default("KOWALSKI_DB_PASSWORD", "kowalski_password")
+DATABASE_URL := env_var_or_default("DATABASE_URL", "postgresql://" + DATABASE_USER + ":" + DATABASE_PASSWORD + "@" + DATABASE_HOST + ":" + DATABASE_PORT + "/" + DATABASE_NAME)
+DOCKER_DATABASE_HOST := env_var_or_default("KOWALSKI_DOCKER_DB_HOST", "host.docker.internal")
+SERVER_PORT := env_var_or_default("KOWALSKI_SERVER_PORT", "8080")
+DAILY_PORT := env_var_or_default("KOWALSKI_DAILY_PORT", "8081")
 DOCKER_IMAGE := "kowalski-server"
-DOCKER_CONTAINER := "kowalski-server"
-DOCKER_DATABASE_URL := "postgresql://kowalski_user:kowalski_password@host.docker.internal:5432/kowalski"
+DOCKER_CONTAINER := env_var_or_default("KOWALSKI_DOCKER_CONTAINER", COMPOSE_PROJECT_NAME + "-server")
+DOCKER_DATABASE_URL := env_var_or_default("DOCKER_DATABASE_URL", "postgresql://" + DATABASE_USER + ":" + DATABASE_PASSWORD + "@" + DOCKER_DATABASE_HOST + ":" + DATABASE_PORT + "/" + DATABASE_NAME)
 
 SCHEME := "Kowalski"
 MACOS_DESTINATION := "platform=macOS"
@@ -86,6 +94,10 @@ prepare-server-ci: install-modules-ci
 
 # Run verification checks including ui tests
 heavy: heavy-tasks
+
+# Generate isolated env files for a linked worktree
+setup-worktree-env:
+    {{ TSX }} .agents/skills/kowalski-git-worktree/scripts/setup-worktree-env.ts
 
 # Compile server
 [working-directory("server")]
