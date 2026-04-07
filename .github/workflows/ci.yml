@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+env:
+  PNPM_VERSION: 10.26.1
+  XCODE_APP_NAME: Xcode_26.3.app
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      server: ${{ steps.detect.outputs.server }}
+      app: ${{ steps.detect.outputs.app }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Determine affected areas
+        id: detect
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+        run: .github/scripts/determine-affected-areas.sh
+
+  server:
+    name: Server checks
+    needs: changes
+    if: needs.changes.outputs.server == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: kowalski
+          POSTGRES_USER: kowalski_user
+          POSTGRES_PASSWORD: kowalski_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U kowalski_user -d kowalski"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v5
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            server/pnpm-lock.yaml
+
+      - name: Set up just
+        uses: extractions/setup-just@v4
+
+      - name: Prepare server for Linux
+        run: just prepare-server-linux
+
+      - name: Run quality checks for server
+        run: just quality-server
+
+      - name: Run server tests
+        run: just test-server
+
+  app:
+    name: App checks
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+
+      - name: Select Xcode version
+        run: |
+          echo "listing available Xcode versions:"
+          ls -d /Applications/Xcode*
+
+          sudo xcode-select --switch /Applications/$XCODE_APP_NAME/Contents/Developer
+
+      - name: Set up just
+        uses: extractions/setup-just@v4
+
+      - name: Bootstrap app
+        run: just bootstrap-app
+
+      - name: Run quality checks for app
+        run: just quality-app
+
+      - name: Run app tests
+        run: just test-app-ci

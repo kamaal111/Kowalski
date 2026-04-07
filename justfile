@@ -71,6 +71,19 @@ docker-run-server tag=DOCKER_IMAGE host_port=SERVER_PORT: start-services
 # Run all verification checks
 ready: download-spec _ready-tasks
 
+# Run all verification checks for the server
+[parallel]
+ready-server: quality-server test-server
+
+# Run quality checks for server
+[parallel]
+quality-server: lint-server format-check-server typecheck-server
+
+# Prepare server for Linux
+[linux]
+[parallel]
+prepare-server-linux: install-zsh install-modules-ci
+
 # Run verification checks including ui tests
 heavy: download-spec heavy-tasks
 
@@ -224,24 +237,40 @@ test: test-server test-app
 # Run app tests (excluding UI tests)
 [working-directory("app")]
 test-app:
-    set -o pipefail && xcodebuild test -scheme {{ SCHEME }} \
-        -destination {{ MACOS_DESTINATION }} \
-        -skip-testing:KowalskiUITests | xcpretty
+    xcodebuild test -scheme {{ SCHEME }} -destination {{ MACOS_DESTINATION }} \
+        -skip-testing:KowalskiUITests
+
+# Run verification checks in CI for app
+[parallel]
+ready-app-ci: quality-app test-app-ci
+
+# Run quality checks for app
+[parallel]
+quality-app: lint-app format-check-app
+
+# Run app tests in CI
+[working-directory("app")]
+test-app-ci:
+    xcodebuild test -scheme {{ SCHEME }} -destination {{ MACOS_DESTINATION }} \
+        -skipPackagePluginValidation \
+        CODE_SIGNING_ALLOWED=NO \
+        CODE_SIGNING_REQUIRED=NO \
+        CODE_SIGN_IDENTITY=""
 
 # Run app UI tests (only when explicitly requested)
 [working-directory("app")]
 test-ui:
-    set -o pipefail && xcodebuild test -scheme {{ SCHEME }} \
-        -destination {{ MACOS_DESTINATION }} \
-        -only-testing:KowalskiUITests | xcpretty
+    xcodebuild test -scheme {{ SCHEME }} -destination {{ MACOS_DESTINATION }} \
+        -only-testing:KowalskiUITests
 
 # Run app UI tests and unit tests
 [working-directory("app")]
-test-app-heavy: test-app test-ui
+test-app-heavy:
+    xcodebuild test -scheme {{ SCHEME }} -destination {{ MACOS_DESTINATION }}
 
 # Run server tests
 [working-directory("server")]
-test-server: prepare-server start-services
+test-server:
     {{ PNR }} test
 
 # Run all tests
@@ -264,10 +293,18 @@ prepare: install-modules prepare-server
 prepare-server: install-modules-server
 
 # Bootstrap project
-bootstrap: prepare bootstrap-server
+bootstrap: prepare bootstrap-server bootstrap-app
 
 # Bootstrap server
 bootstrap-server: prepare-server
+
+# Bootstrap app
+bootstrap-app: install-brew-packages
+
+[private]
+install-brew-packages:
+    brew update
+    brew bundle
 
 [private]
 [parallel]
@@ -285,9 +322,21 @@ install-modules:
     echo "Y" | {{ PN }} i
 
 [private]
+[linux]
+install-modules-ci:
+    pnpm install --frozen-lockfile
+    pnpm --dir server install --frozen-lockfile
+
+[private]
 [working-directory("server")]
 install-modules-server:
     #!/usr/bin/env zsh
 
     . ~/.zshrc || true
     echo "Y" | {{ PN }} i
+
+[private]
+[linux]
+install-zsh:
+    sudo apt-get update
+    sudo apt-get install -y zsh
