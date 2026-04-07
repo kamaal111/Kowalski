@@ -14,7 +14,6 @@ import {
 } from '@/logging';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '../../..');
-const OXLINT_BINARY = path.join(REPO_ROOT, 'node_modules/oxlint/bin/oxlint');
 const OXLINT_CONFIG = path.join(REPO_ROOT, '.oxlintrc.json');
 
 describe('Logging policy', () => {
@@ -104,7 +103,10 @@ function parseJsonLogLine(line: string): unknown {
 }
 
 function runOxlint(filePath: string) {
-  return childProcess.spawnSync(OXLINT_BINARY, ['-c', OXLINT_CONFIG, filePath], { cwd: REPO_ROOT, encoding: 'utf8' });
+  return childProcess.spawnSync('pnpm', ['exec', 'oxlint', '-c', OXLINT_CONFIG, filePath], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+  });
 }
 
 function getLintOutput(result: { stdout: string; stderr: string }): string {
