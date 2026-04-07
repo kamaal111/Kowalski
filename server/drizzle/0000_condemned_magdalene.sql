@@ -96,11 +96,11 @@ CREATE TABLE "portfolio_transaction" (
 CREATE TABLE "stock_info" (
 	"id" text PRIMARY KEY NOT NULL,
 	"currency" char(3) NOT NULL,
-	"timestamp" timestamp NOT NULL,
+	"date" date NOT NULL,
 	"rate" numeric(20, 10) NOT NULL,
 	"ticker_id" text NOT NULL,
-	CONSTRAINT "stock_info_ticker_id_timestamp_unique" UNIQUE("ticker_id","timestamp"),
-	CONSTRAINT "entry" UNIQUE("ticker_id","timestamp")
+	CONSTRAINT "stock_info_ticker_id_date_unique" UNIQUE("ticker_id","date"),
+	CONSTRAINT "entry" UNIQUE("ticker_id","date")
 );
 --> statement-breakpoint
 CREATE TABLE "stock_ticker" (

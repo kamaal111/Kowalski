@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
 
 import type { Database } from '@/db';
-import { exchangeRates, portfolio, portfolioTransaction, stockTicker } from '@/db/schema';
+import { exchangeRates, portfolio, portfolioTransaction, stockInfo, stockTicker } from '@/db/schema';
 import { dateOnlyStringToISO8601String } from '@/utils/dates';
 import { createSyntheticTickerId, createSyntheticTickerIsin } from '@/utils/tickers';
 import { CreateEntryResponseSchema } from '../schemas/responses';
@@ -85,6 +85,29 @@ export async function seedExchangeRate(
     base: item.base,
     date: item.date,
     rates: item.rates,
+  });
+}
+
+export async function seedStockInfo(
+  db: Database,
+  item: { tickerId: string; currency: string; date: string; price: number },
+) {
+  const ticker = await db
+    .select({ id: stockTicker.id })
+    .from(stockTicker)
+    .where(eq(stockTicker.id, item.tickerId))
+    .limit(1);
+
+  if (ticker[0] == null) {
+    throw new Error(`Missing ticker for stock info seed: ${item.tickerId}`);
+  }
+
+  await db.insert(stockInfo).values({
+    id: `${item.tickerId}:${item.date}`,
+    tickerId: item.tickerId,
+    currency: item.currency,
+    date: item.date,
+    close: item.price.toString(),
   });
 }
 

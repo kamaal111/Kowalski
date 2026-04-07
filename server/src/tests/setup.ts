@@ -1,40 +1,17 @@
-import { vi } from 'vitest';
+import { beforeEach, vi } from 'vitest';
 
 import { initializeTestLogs } from './logs';
-
-const QUOTES = [
-  {
-    symbol: 'AAPL',
-    shortname: 'Apple Inc.',
-    longname: 'Apple Inc.',
-    exchange: 'NMS',
-    isin: 'US0378331005',
-    quoteType: 'EQUITY',
-    isYahooFinance: true,
-  },
-  {
-    symbol: 'MSFT',
-    shortname: 'Microsoft Corporation',
-    longname: 'Microsoft Corporation',
-    exchange: 'NMS',
-    quoteType: 'EQUITY',
-    isYahooFinance: true,
-  },
-];
+import { resetYahooFinanceMocks } from './mocks/yahoo-finance';
 
 initializeTestLogs();
+beforeEach(() => {
+  resetYahooFinanceMocks();
+});
 
-vi.mock('yahoo-finance2', () => {
+vi.mock('yahoo-finance2', async () => {
+  const module = await import('./mocks/yahoo-finance');
+
   return {
-    default: class YahooFinance {
-      search = vi.fn().mockImplementation(async (query: string) => {
-        return Promise.resolve({ quotes: QUOTES.filter(quote => quote.symbol.includes(query)) });
-      });
-      quote = vi.fn().mockResolvedValue({
-        symbol: 'AAPL',
-        regularMarketPrice: 150.0,
-        currency: 'USD',
-      });
-    },
+    default: module.default,
   };
 });

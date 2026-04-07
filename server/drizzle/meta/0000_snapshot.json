@@ -1,5 +1,5 @@
 {
-  "id": "3fa0d02b-1e2f-4aee-8278-b75f5bf56a85",
+  "id": "01a281ff-7ce2-4e6a-a525-18dd39342d41",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -425,9 +425,9 @@
           "primaryKey": false,
           "notNull": true
         },
-        "timestamp": {
-          "name": "timestamp",
-          "type": "timestamp",
+        "date": {
+          "name": "date",
+          "type": "date",
           "primaryKey": false,
           "notNull": true
         },
@@ -462,12 +462,12 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "stock_info_ticker_id_timestamp_unique": {
-          "name": "stock_info_ticker_id_timestamp_unique",
+        "stock_info_ticker_id_date_unique": {
+          "name": "stock_info_ticker_id_date_unique",
           "nullsNotDistinct": false,
           "columns": [
             "ticker_id",
-            "timestamp"
+            "date"
           ]
         },
         "entry": {
@@ -475,7 +475,7 @@
           "nullsNotDistinct": false,
           "columns": [
             "ticker_id",
-            "timestamp"
+            "date"
           ]
         }
       },

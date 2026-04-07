@@ -1,7 +1,6 @@
 import { createRoute } from '@hono/zod-openapi';
 
 import { OPENAPI_TAG } from '../constants';
-import { requireLoggedInSessionMiddleware } from '@/auth/middleware';
 import { AuthenticationHeaders } from '@/schemas/headers';
 import { ErrorResponseSchema, ValidationErrorResponseSchema } from '@/schemas/errors';
 import { STATUS_CODES } from '@/constants/http';
@@ -15,7 +14,6 @@ const updateEntryRoute = createRoute({
   path: '/entries/{entryId}',
   tags: [OPENAPI_TAG],
   summary: 'Update portfolio entry',
-  middleware: [requireLoggedInSessionMiddleware],
   description:
     'Update an existing portfolio entry for the signed-in user. Replaces the stock details, amount, price, transaction type, and transaction date for the selected entry.',
   request: {
