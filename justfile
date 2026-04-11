@@ -80,10 +80,9 @@ ready-server: quality-server test-server
 [parallel]
 quality-server: check-spec lint-server format-check-server typecheck-server
 
-# Prepare server for Linux
+# Prepare server for Linux CI
 [linux]
-[parallel]
-prepare-server-linux: install-zsh install-modules-ci
+prepare-server-ci: install-modules-ci
 
 # Run verification checks including ui tests
 heavy: heavy-tasks
@@ -142,14 +141,14 @@ make-auth-tables: prepare-server
 # Generate OpenAPI specification
 [working-directory("server")]
 download-spec:
-    #!/usr/bin/env zsh
+    #!/usr/bin/env bash
 
     echo "🚀 Generating OpenAPI spec to {{ SERVER_RELATIVE_OUTPUT_SCHEMA_FILEPATH }}..."
     {{ TSX }} scripts/download-openapi-spec.ts {{ SERVER_RELATIVE_OUTPUT_SCHEMA_FILEPATH }}
 
 # Verify the committed OpenAPI specification is up to date
 check-spec: download-spec
-    #!/usr/bin/env zsh
+    #!/usr/bin/env bash
 
     if ! git diff --quiet --exit-code -- "{{ OUTPUT_SCHEMA_FILEPATH }}"
     then
@@ -300,7 +299,6 @@ install-modules:
     echo "Y" | {{ PN }} i
 
 [private]
-[linux]
 install-modules-ci:
     pnpm install --frozen-lockfile
     pnpm --dir server install --frozen-lockfile
@@ -312,9 +310,3 @@ install-modules-server:
 
     . ~/.zshrc || true
     echo "Y" | {{ PN }} i
-
-[private]
-[linux]
-install-zsh:
-    sudo apt-get update
-    sudo apt-get install -y zsh

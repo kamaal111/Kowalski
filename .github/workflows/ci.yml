@@ -80,8 +80,8 @@ jobs:
       - name: Set up just
         uses: extractions/setup-just@v4
 
-      - name: Prepare server for Linux
-        run: just prepare-server-linux
+      - name: Prepare server
+        run: just prepare-server-ci
 
       - name: Run quality checks for server
         run: just quality-server
