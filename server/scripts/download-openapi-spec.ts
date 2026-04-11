@@ -3,45 +3,28 @@ import fs from 'node:fs/promises';
 import * as z from 'zod';
 import { asserts } from '@kamaalio/kamaal';
 
+import { ensureSpecGenerationEnv } from '../src/api/spec-generation-env';
+
 const ArgsSchema = z.tuple([
   z
     .string()
     .nonempty()
     .refine(path => path.endsWith('.yaml'), 'Output file must have .yaml extension'),
-  z.url(),
 ]);
 
-async function downloadOpenAPISpec(serverUrl: string, outputFile: string) {
-  const specUrl = `${serverUrl}/spec.yaml`;
-  console.log(`🔄 Downloading OpenAPI spec from: ${specUrl}`);
+async function downloadOpenAPISpec(outputFile: string) {
+  ensureSpecGenerationEnv();
+  const { generateOpenAPISpecYaml } = await import('../src/app');
 
-  let response: Response;
-  try {
-    response = await fetch(specUrl);
-  } catch (error) {
-    asserts.invariant(error instanceof Error);
-    console.error(`❌ Failed to download OpenAPI spec:`, error.message);
-    if ('code' in error && error.code === 'ECONNREFUSED') {
-      console.error(`💡 Make sure the server is running on ${serverUrl}`);
-      console.error(`   You can start it with: npm run dev`);
-    }
-
-    process.exit(1);
-  }
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
-
-  const rawData = await response.text();
+  console.log('🔄 Generating OpenAPI spec from the server app...');
+  const rawData = await generateOpenAPISpecYaml();
   await fs.writeFile(outputFile, rawData, 'utf8');
-  console.log(`✅ OpenAPI spec successfully downloaded to: ${outputFile}`);
+  console.log(`✅ OpenAPI spec successfully generated at: ${outputFile}`);
 }
 
 let outputFile: string;
-let serverUrl: string;
 try {
-  [outputFile, serverUrl] = ArgsSchema.parse(process.argv.slice(2));
+  [outputFile] = ArgsSchema.parse(process.argv.slice(2));
 } catch (error) {
   console.log('🐸🐸🐸 error', error);
   asserts.invariant(error instanceof z.ZodError);
@@ -51,8 +34,8 @@ try {
     const argName = issue.path.length > 0 ? `Argument ${Number(issue.path[0]) + 1}` : 'Arguments';
     console.error(`   ${argName}: ${issue.message}`);
   });
-  console.error('Usage: tsx scripts/download-openapi-spec.ts <outputFile> <serverUrl>');
+  console.error('Usage: tsx scripts/download-openapi-spec.ts <outputFile>');
   process.exit(1);
 }
 
-await downloadOpenAPISpec(serverUrl, outputFile);
+await downloadOpenAPISpec(outputFile);

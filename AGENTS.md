@@ -192,8 +192,8 @@ BETTER_AUTH_URL=http://localhost:8080
   - Run `just download-spec` after API changes
   - Rebuild the affected Swift package or client with `swift build`
 - **Agent-specific OpenAPI caution**
-  - `just download-spec` can auto-start the server if nothing is running
-  - Agents should not rely on that auto-start path unless the user explicitly asked for server startup
+  - `just download-spec` generates the spec directly from the server app without starting a server
+  - Agents should keep spec generation on that in-process path instead of starting the server just to fetch `/spec.yaml`
 
 ## Key Architectural Patterns
 
