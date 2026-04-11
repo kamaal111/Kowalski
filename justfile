@@ -18,6 +18,7 @@ SCHEME := "Kowalski"
 MACOS_DESTINATION := "platform=macOS"
 
 OUTPUT_SCHEMA_FILEPATH := "app/KowalskiClient/Sources/KowalskiClient/openapi.yaml"
+SERVER_RELATIVE_OUTPUT_SCHEMA_FILEPATH := ".." / OUTPUT_SCHEMA_FILEPATH
 AUTH_CONFIG := "src/auth/better-auth.ts"
 AUTH_SCHEMA := "src/db/schema/better-auth.ts"
 
@@ -69,7 +70,7 @@ docker-run-server tag=DOCKER_IMAGE host_port=SERVER_PORT: start-services
         -e DATABASE_URL={{ DOCKER_DATABASE_URL }} {{ tag }}
 
 # Run all verification checks
-ready: download-spec _ready-tasks
+ready: _ready-tasks
 
 # Run all verification checks for the server
 [parallel]
@@ -77,7 +78,7 @@ ready-server: quality-server test-server
 
 # Run quality checks for server
 [parallel]
-quality-server: lint-server format-check-server typecheck-server
+quality-server: check-spec lint-server format-check-server typecheck-server
 
 # Prepare server for Linux
 [linux]
@@ -85,7 +86,7 @@ quality-server: lint-server format-check-server typecheck-server
 prepare-server-linux: install-zsh install-modules-ci
 
 # Run verification checks including ui tests
-heavy: download-spec heavy-tasks
+heavy: heavy-tasks
 
 # Compile server
 [working-directory("server")]
@@ -138,50 +139,27 @@ tail-db:
 make-auth-tables: prepare-server
     npx @better-auth/cli generate --config {{ AUTH_CONFIG }} --output {{ AUTH_SCHEMA }} --yes
 
-# Download OpenAPI specification
+# Generate OpenAPI specification
 [working-directory("server")]
 download-spec:
     #!/usr/bin/env zsh
 
-    OUTPUT="../{{ OUTPUT_SCHEMA_FILEPATH }}"
-    SERVER_URL="http://localhost:{{ SERVER_PORT }}"
+    echo "🚀 Generating OpenAPI spec to {{ SERVER_RELATIVE_OUTPUT_SCHEMA_FILEPATH }}..."
+    {{ TSX }} scripts/download-openapi-spec.ts {{ SERVER_RELATIVE_OUTPUT_SCHEMA_FILEPATH }}
 
-    echo "🚀 Auto-downloading OpenAPI spec to $OUTPUT..."
+# Verify the committed OpenAPI specification is up to date
+check-spec: download-spec
+    #!/usr/bin/env zsh
 
-    # Check if server is already running
-    if curl -s --fail --connect-timeout 2 "$SERVER_URL/spec.json" > /dev/null 2>&1
+    if ! git diff --quiet --exit-code -- "{{ OUTPUT_SCHEMA_FILEPATH }}"
     then
-        echo "✅ Server is already running"
-        {{ TSX }} scripts/download-openapi-spec.ts "$OUTPUT" "$SERVER_URL"
-    else
-        echo "🔄 Server not running, starting development server..."
-        echo "   This will start the server in the background and download the spec"
-
-        just run-server &
-
-        echo "⏳ Waiting for server to start..."
-        for i in {1..30}; do
-            if curl -s --fail --connect-timeout 2 "$SERVER_URL/spec.json" > /dev/null 2>&1
-            then
-                echo "✅ Server is ready!"
-                break
-            fi
-            if [ $i -eq 30 ]
-            then
-                echo "❌ Server failed to start within 30 seconds"
-                kill $(lsof -t -i:{{ SERVER_PORT }}) || true
-                exit 1
-            fi
-            echo "   Attempt $i/30..."
-            sleep 1
-        done
-
-        npx tsx scripts/download-openapi-spec.ts "$OUTPUT" "$SERVER_URL"
-
-        echo "🛑 Stopping development server..."
-        kill $(lsof -t -i:{{ SERVER_PORT }}) || true
-        echo "✅ Done! OpenAPI spec saved to $OUTPUT"
+        echo ""
+        echo "❌ OpenAPI spec is out of date. Run \`just download-spec\` and commit the updated file."
+        git --no-pager diff -- "{{ OUTPUT_SCHEMA_FILEPATH }}"
+        exit 1
     fi
+
+    echo "✅ OpenAPI spec is up to date."
 
 # Lint the project
 [parallel]
@@ -279,7 +257,7 @@ test-heavy: test-server test-app-heavy
 
 # Run quality checks
 [parallel]
-quality: lint format-check typecheck
+quality: check-spec lint format-check typecheck
 
 # Open app in Xcode
 [working-directory("app")]

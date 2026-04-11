@@ -13,11 +13,14 @@ import { handleServerError } from '@/middleware/logging';
 export type OpenAPIRouter = OpenAPIHono<HonoEnvironment>;
 
 const SPEC_NAME = '/spec';
-const SPEC_SOURCE_OF_TRUTH_URL = `${SPEC_NAME}.json`;
+export const OPENAPI_JSON_SPEC_PATH = `${SPEC_NAME}.json`;
+export const OPENAPI_YAML_SPEC_PATH = `${SPEC_NAME}.yaml`;
+export const OPENAPI_DEFAULT_SERVER_URL = 'http://127.0.0.1:8080';
+const SPEC_SOURCE_OF_TRUTH_URL = OPENAPI_JSON_SPEC_PATH;
 const OPENAPI_INFO = {
   openapi: '3.1.1',
   info: { version: '1.0.0', title: 'Kowalski API' },
-  servers: [{ url: 'http://127.0.0.1:8080' }],
+  servers: [{ url: OPENAPI_DEFAULT_SERVER_URL }],
   components: {
     securitySchemes: {
       bearerAuth: {
@@ -85,7 +88,7 @@ function withYamlSpec<E extends Env = Env, S extends Schema = BlankSchema, BaseP
   options: { url: string },
 ) {
   return $(
-    app.get(`${SPEC_NAME}.yaml`, async c => {
+    app.get(OPENAPI_YAML_SPEC_PATH, async c => {
       const origin = new URL(c.req.url).origin;
       const requestInit = new Request(`${origin}${options.url}`, {
         headers: { Accept: 'application/json' },

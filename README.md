@@ -92,7 +92,7 @@ We use `just` to manage project tasks.
 | `just stop-services`   | Stop Docker containers                             |
 | `just migrate`         | Run pending database migrations                    |
 | `just make-migrations` | Generate new migrations from schema changes        |
-| `just download-spec`   | Download OpenAPI spec and update Swift client      |
+| `just download-spec`   | Generate OpenAPI spec and update Swift client      |
 | `just test`            | Run server and client tests                        |
 | `just quality`         | Run linting, formatting, and type checking         |
 | `just ready`           | Run all checks before committing (quality + tests) |
@@ -122,7 +122,7 @@ We use `just` to manage project tasks.
 
 2. **API Changes**:
    - Update route definitions in `server/src/`.
-   - Run `just download-spec` to update the Swift client.
+   - Run `just download-spec` to generate the updated Swift client spec.
    - Rebuild the iOS app.
 
 3. **Code Quality**:

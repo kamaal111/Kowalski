@@ -1,6 +1,6 @@
 import { test } from 'vitest';
 
-import { createApp } from '@';
+import { createApp } from '@/app';
 import { createTestDatabase, createTestUserAndSession } from './utils';
 import { createTestRequestId, getLogsForRequestId, withRequestId } from './logs';
 
