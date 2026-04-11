@@ -1,6 +1,9 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript", "unicorn"],
+  "options": {
+    "typeAware": true
+  },
   "categories": {
     "correctness": "off"
   },
@@ -9,6 +12,7 @@
   },
   "ignorePatterns": ["**/dist/**", "**/node_modules/**", "**/*.swift"],
   "rules": {
+    "typescript/no-deprecated": "error",
     "no-array-constructor": "error",
     "no-unused-expressions": "error",
     "no-unused-vars": "error",

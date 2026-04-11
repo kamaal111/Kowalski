@@ -12,7 +12,6 @@
     "jsxImportSource": "hono/jsx",
     "outDir": "./dist",
     "composite": true,
-    "baseUrl": ".",
     "paths": {
       "@": ["./src/index.ts"],
       "@/*": ["./src/*"]
