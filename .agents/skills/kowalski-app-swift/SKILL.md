@@ -67,6 +67,7 @@ Model new work after files such as:
 
 - Prefer one condition per `guard` line for readability.
 - Prefer explicit async flows over hidden side effects.
+- Prefer enums over repeated raw strings for fixed fields, keys, and identifiers; derive lists like CSV headers from `CaseIterable` enums when possible.
 - Keep localization consistent with nearby code.
 - Use `NSLocalizedString(..., bundle: .module, comment: "")` inside Swift packages that ship their own resources.
 - Do not manually edit `.xcstrings` files. Add or update localization calls in Swift and let Xcode manage the catalog.

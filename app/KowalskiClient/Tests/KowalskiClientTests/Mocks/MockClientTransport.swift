@@ -13,6 +13,7 @@ import OpenAPIRuntime
 final class MockClientTransport: ClientTransport, @unchecked Sendable {
     private let queuedResponses: [QueuedResponse]
     private(set) var capturedRequests: [HTTPRequest] = []
+    private(set) var capturedBodies: [Data?] = []
     private var nextResponseIndex = 0
 
     init(queuedResponses: [QueuedResponse]) {
@@ -21,11 +22,16 @@ final class MockClientTransport: ClientTransport, @unchecked Sendable {
 
     func send(
         _ request: HTTPRequest,
-        body _: HTTPBody?,
+        body: HTTPBody?,
         baseURL _: URL,
         operationID _: String,
     ) async throws -> (HTTPResponse, HTTPBody?) {
         capturedRequests.append(request)
+        if let body {
+            try await capturedBodies.append(Data(collecting: body, upTo: Int.max))
+        } else {
+            capturedBodies.append(nil)
+        }
 
         let responseIndex = nextResponseIndex
         nextResponseIndex += 1

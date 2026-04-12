@@ -46,6 +46,12 @@
     "Failed to add transaction" : {
 
     },
+    "Failed to export transactions" : {
+
+    },
+    "Failed to import transactions" : {
+
+    },
     "Failed to load portfolio entries" : {
 
     },
@@ -104,6 +110,9 @@
 
     },
     "Symbol or ISIN" : {
+
+    },
+    "The CSV file is missing required transaction columns." : {
 
     },
     "Transaction" : {

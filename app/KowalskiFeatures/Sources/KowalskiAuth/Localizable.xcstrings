@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Choose File…" : {
+
+    },
     "Choose how Kowalski behaves by default." : {
 
     },
@@ -10,10 +13,31 @@
     "Continue" : {
 
     },
+    "Create a CSV backup of your portfolio transactions." : {
+
+    },
+    "CSV template downloaded." : {
+
+    },
+    "Data" : {
+
+    },
     "Don't have an account yet?" : {
 
     },
+    "Download CSV Template" : {
+
+    },
     "Email" : {
+
+    },
+    "Export" : {
+
+    },
+    "Export Transactions" : {
+
+    },
+    "Export your transactions to CSV or import a backup." : {
 
     },
     "Failed to log in." : {
@@ -26,6 +50,12 @@
 
     },
     "General" : {
+
+    },
+    "Import" : {
+
+    },
+    "Import Transactions" : {
 
     },
     "Invalid credentials provided." : {
@@ -52,10 +82,19 @@
     "Preferred Currency" : {
 
     },
+    "Restore transactions from a CSV export or template file." : {
+
+    },
     "Sign In" : {
 
     },
     "Sign Up" : {
+
+    },
+    "Transactions exported." : {
+
+    },
+    "Transactions imported." : {
 
     },
     "Used as the default currency for new transactions." : {

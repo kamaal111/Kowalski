@@ -502,6 +502,60 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /app-api/portfolio/entries/bulk:
+    post:
+      tags:
+        - Portfolio
+      summary: Bulk create portfolio entries
+      description: >-
+        Create multiple portfolio entries in a single request. Entries whose
+        client-supplied ids already exist are skipped so repeated imports remain
+        idempotent.
+      parameters:
+        - schema:
+            type: string
+            description: Bearer token for authentication
+            example: Bearer f21wcpz7Aokmlh2MB632MZpTgfruPc62
+          required: true
+          description: Bearer token for authentication
+          name: authorization
+          in: header
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkCreateEntriesPayload'
+      responses:
+        '201':
+          description: Portfolio entries created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkCreateEntriesResponse'
+        '400':
+          description: Invalid bulk portfolio entry payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Bulk portfolio entry persistence failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /app-api/portfolio/entries/{entryId}:
     put:
       tags:
@@ -1003,14 +1057,7 @@ components:
           description: Timestamp when the entry was last updated
           example: '2025-12-20T12:00:00.000Z'
         preferred_currency_purchase_price:
-          allOf:
-            - $ref: '#/components/schemas/Money'
-            - description: >-
-                Entry purchase price converted into the signed-in user's
-                preferred currency, or null when no preferred currency is set.
-              example:
-                currency: EUR
-                value: 138.07
+          $ref: '#/components/schemas/PreferredCurrencyPurchasePrice'
       required:
         - id
         - stock
@@ -1068,6 +1115,16 @@ components:
       example:
         currency: USD
         value: 150.5
+    PreferredCurrencyPurchasePrice:
+      anyOf:
+        - $ref: '#/components/schemas/Money'
+        - {}
+      description: >-
+        Entry purchase price converted into the signed-in user's preferred
+        currency, or null when no preferred currency is set.
+      example:
+        currency: EUR
+        value: 138.07
     PortfolioOverviewResponse:
       type: object
       properties:
@@ -1177,6 +1234,125 @@ components:
       title: Create Portfolio Entry Payload
       description: Request payload for creating a new portfolio entry
       example:
+        stock:
+          symbol: AAPL
+          exchange: NMS
+          name: Apple Inc.
+          isin: US0378331005
+          sector: Technology
+          industry: Consumer Electronics
+          exchange_dispatch: NASDAQ
+        amount: 10
+        purchase_price:
+          currency: USD
+          value: 150.5
+        transaction_type: buy
+        transaction_date: '2025-12-20T10:30:00.000Z'
+    BulkCreateEntriesResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/CreateEntryResponse'
+      title: Bulk Create Portfolio Entries Response
+      description: >-
+        Response containing the portfolio entries created by a bulk create
+        request
+      example:
+        - id: 550e8400-e29b-41d4-a716-446655440000
+          stock:
+            symbol: AAPL
+            exchange: NMS
+            name: Apple Inc.
+            isin: US0378331005
+            sector: Technology
+            industry: Consumer Electronics
+            exchange_dispatch: NASDAQ
+          amount: 10
+          purchase_price:
+            currency: USD
+            value: 150.5
+          preferred_currency_purchase_price:
+            currency: EUR
+            value: 138.07
+          transaction_type: buy
+          transaction_date: '2025-12-20T00:00:00.000Z'
+          created_at: '2025-12-20T12:00:00.000Z'
+          updated_at: '2025-12-20T12:00:00.000Z'
+    BulkCreateEntriesPayload:
+      type: object
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/BulkCreateEntryItemPayload'
+          description: Portfolio entries to create in a single request
+      required:
+        - entries
+      title: Bulk Create Portfolio Entries Payload
+      description: >-
+        Request payload for creating multiple portfolio entries in a single
+        request
+      example:
+        entries:
+          - id: 550e8400-e29b-41d4-a716-446655440000
+            stock:
+              symbol: AAPL
+              exchange: NMS
+              name: Apple Inc.
+              isin: US0378331005
+              sector: Technology
+              industry: Consumer Electronics
+              exchange_dispatch: NASDAQ
+            amount: 10
+            purchase_price:
+              currency: USD
+              value: 150.5
+            transaction_type: buy
+            transaction_date: '2025-12-20T10:30:00.000Z'
+    BulkCreateEntryItemPayload:
+      type: object
+      properties:
+        stock:
+          $ref: '#/components/schemas/StocksSearchQuoteItem'
+        amount:
+          type: number
+          minimum: 0
+          exclusiveMinimum: 0
+          description: Number of shares/units purchased or sold (must be greater than zero)
+          example: 10
+        purchase_price:
+          $ref: '#/components/schemas/Money'
+        transaction_type:
+          type: string
+          enum:
+            - buy
+            - sell
+            - split
+          description: 'Type of transaction: buy, sell, or split'
+          example: buy
+        transaction_date:
+          type: string
+          format: date-time
+          description: Date and time when the transaction occurred
+          example: '2025-12-20T10:30:00.000Z'
+        id:
+          type: string
+          format: uuid
+          description: >-
+            Optional client-supplied entry identifier used for idempotent
+            imports
+          example: 550e8400-e29b-41d4-a716-446655440000
+      required:
+        - stock
+        - amount
+        - purchase_price
+        - transaction_type
+        - transaction_date
+      title: Bulk Create Portfolio Entry Item Payload
+      description: >-
+        Portfolio entry payload for bulk create requests with an optional
+        client-supplied id
+      example:
+        id: 550e8400-e29b-41d4-a716-446655440000
         stock:
           symbol: AAPL
           exchange: NMS

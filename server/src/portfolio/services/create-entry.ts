@@ -14,13 +14,13 @@ import { getSessionWhereSessionIsRequired } from '@/auth';
 
 const DEFAULT_PORTFOLIO_NAME = 'Default Portfolio';
 
-async function createEntry(c: HonoContext, payload: CreateEntryPayload) {
+async function createEntry(c: HonoContext, payload: CreateEntryPayload, options: { entryId?: string } = {}) {
   const [defaultPortfolio, stockTicker] = await Promise.all([
     getOrCreateDefaultPortfolio(c),
     resolvePortfolioStockTicker(c, payload),
   ]);
   const transaction = await createPortfolioTransaction(c, {
-    id: crypto.randomUUID(),
+    id: options.entryId ?? crypto.randomUUID(),
     transactionType: payload.transaction_type,
     transactionDate: getTransactionDateForStorage(payload.transaction_date),
     amount: payload.amount.toString(),
@@ -39,7 +39,7 @@ async function createEntry(c: HonoContext, payload: CreateEntryPayload) {
   };
 }
 
-async function getOrCreateDefaultPortfolio(c: HonoContext) {
+export async function getOrCreateDefaultPortfolio(c: HonoContext) {
   const existingPortfolio = await findDefaultPortfolioByUserId(c);
   if (existingPortfolio != null) {
     return existingPortfolio;
@@ -57,7 +57,7 @@ async function getOrCreateDefaultPortfolio(c: HonoContext) {
   return createdPortfolio;
 }
 
-function getTransactionDateForStorage(transactionDate: string) {
+export function getTransactionDateForStorage(transactionDate: string) {
   return transactionDate.slice(0, 10);
 }
 

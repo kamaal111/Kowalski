@@ -70,6 +70,9 @@ Model new work after files such as:
 - Prefer repository-local input and output types derived from `table.$inferInsert` and `table.$inferSelect`.
 - Check `returning(...)` results explicitly and throw domain exceptions when no row comes back.
 - Keep persistence shape concerns in the repository layer and business orchestration in the service layer.
+- For bulk database writes, collect rows first and issue a single set-based insert or update through the repository layer instead of awaiting per-row writes in a service loop when the behavior is the same.
+- Avoid N+1 reads in bulk flows. Collect related IDs or keys first and fetch the required records in one set-based query, then resolve the batch from that in-memory map.
+- Resolve the authenticated user's owned parent record first and pass that full record through ownership-sensitive flows instead of trusting client-supplied identifiers alone. This keeps downstream helpers able to assert they are operating on the expected owned resource. For example, fetch the user's portfolio first and query transactions through that portfolio record instead of looking up transaction IDs globally.
 - Use helper functions for repeated conversions such as transaction date normalization.
 
 ## Logging Patterns

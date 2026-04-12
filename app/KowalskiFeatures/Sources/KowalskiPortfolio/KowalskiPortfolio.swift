@@ -92,6 +92,57 @@ public final class KowalskiPortfolio {
         return .failure(.unknown)
     }
 
+    public func exportTransactions() async -> Result<URL, ExportTransactionErrors> {
+        switch PortfolioTransactionsCSV.export(entries: entries) {
+        case let .success(url): .success(url)
+        case .failure: .failure(.unknown)
+        }
+    }
+
+    public func downloadTransactionsTemplate() async -> Result<URL, ExportTransactionErrors> {
+        switch PortfolioTransactionsCSV.exportTemplate() {
+        case let .success(url): .success(url)
+        case .failure: .failure(.unknown)
+        }
+    }
+
+    public func importTransactions(from url: URL) async -> Result<Void, ImportTransactionErrors> {
+        let parsedCSV: PortfolioTransactionsCSVImportResult
+        switch PortfolioTransactionsCSV.import(from: url) {
+        case let .success(success):
+            parsedCSV = success
+        case let .failure(error):
+            switch error {
+            case .invalidFormat:
+                return .failure(.invalidFormat)
+            case .readFailed, .writeFailed:
+                break
+            }
+
+            return .failure(.unknown)
+        }
+
+        let bulkCreateResult = await client.portfolio.bulkCreateEntries(entries: parsedCSV.entries)
+        let importedEntries: [KowalskiPortfolioClientEntryResponse]
+        switch bulkCreateResult {
+        case let .failure(failure):
+            logger.error(label: "Failed to import transactions from CSV", error: failure)
+            return .failure(.unknown)
+        case let .success(success):
+            importedEntries = success
+        }
+
+        let refreshOverviewResult = await refreshOverview()
+        switch refreshOverviewResult {
+        case let .failure(failure):
+            logger.error(label: "Failed to refresh portfolio overview after import", error: failure)
+            return .failure(.unknown)
+        case .success:
+            logger.info("Imported \(importedEntries.count) transactions from CSV")
+            return .success(())
+        }
+    }
+
     @MainActor
     func searchStocks(query: String) async -> Result<[Stock], Error> {
         let result = await client.stocks.search(query: query)
@@ -335,6 +386,31 @@ enum UpdateTransactionErrors: Error, Equatable, LocalizedError {
                 validations,
                 fallback: NSLocalizedString("Invalid information provided", comment: ""),
             )
+        }
+    }
+}
+
+public enum ExportTransactionErrors: Error, Equatable, LocalizedError {
+    case unknown
+
+    public var errorDescription: String? {
+        switch self {
+        case .unknown:
+            NSLocalizedString("Failed to export transactions", comment: "")
+        }
+    }
+}
+
+public enum ImportTransactionErrors: Error, Equatable, LocalizedError {
+    case invalidFormat
+    case unknown
+
+    public var errorDescription: String? {
+        switch self {
+        case .invalidFormat:
+            NSLocalizedString("The CSV file is missing required transaction columns.", comment: "")
+        case .unknown:
+            NSLocalizedString("Failed to import transactions", comment: "")
         }
     }
 }

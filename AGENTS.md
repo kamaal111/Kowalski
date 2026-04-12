@@ -113,6 +113,7 @@
   - Never use deprecated APIs when Oxlint or TypeScript flags a modern replacement
   - Centralize reusable constants in `server/src/constants/`
   - For OpenAPI-backed Hono handlers, type `HonoContext` with validated `out` shapes so `c.req.valid(...)` is strongly typed without casts
+  - Avoid N+1 queries in bulk flows; collect related identifiers first and fetch needed records with one set-based query before looping
 - **Type safety**
   - Do not cast values to force them through the type system
   - Validate unknown data at boundaries with Zod
@@ -124,6 +125,7 @@
   - Prefer `do-catch` with logging over `try?`
   - Use `async/await` with explicit error handling
   - Prefer one condition per `guard` line for readability
+  - Prefer enums over repeated raw strings for fixed fields, keys, and identifiers; derive lists like CSV headers from `CaseIterable` enums when possible
 - **Localization**
   - Use `NSLocalizedString` with the correct `.module` bundle when localizing Swift packages
   - Do not hardcode user-facing text if the surrounding module already localizes it
@@ -209,6 +211,7 @@ BETTER_AUTH_URL=http://localhost:8080
   - OpenAPI-first route definitions
   - Middleware order includes request IDs, compression, secure headers, logging, and context injection
   - Database and auth clients are injected via middleware/context
+  - For bulk database writes, collect rows and perform a single set-based insert or update through the repository layer instead of looping single-row writes from a service when the behavior is the same
   - Errors are normalized through custom exceptions and centralized handlers
 - **App**
   - Feature-first Swift packages

@@ -9,6 +9,7 @@ import Foundation
 @testable import KowalskiClient
 import KowalskiFeaturesConfig
 @testable import KowalskiPortfolio
+import KowalskiUtils
 import Testing
 
 @MainActor
@@ -594,6 +595,248 @@ struct KowalskiPortfolioTests {
     }
 
     @Test
+    func `Export transactions should write the expected header row`() async throws {
+        let entry = makePortfolioEntryResponse(amount: 10)
+        let portfolio = KowalskiPortfolio.testing(
+            client: .testing(
+                portfolio: MockPortfolioClient(
+                    overviewResult: .success(
+                        makePortfolioOverviewResponse(
+                            transactions: [entry],
+                            currentValues: ["AAPL": KowalskiClientMoney(currency: "USD", value: 185.45)],
+                        ),
+                    ),
+                ),
+            ),
+        )
+        try await portfolio.fetchOverview().get()
+
+        let url = try await portfolio.exportTransactions().get()
+        let lines = try readLines(from: url)
+
+        #expect(
+            lines.first ==
+                "id,symbol,exchange,name,isin,sector,industry,exchange_dispatch,amount,purchase_price_currency,purchase_price_value,transaction_type,transaction_date",
+        )
+    }
+
+    @Test
+    func `Export transactions should encode all fields including the id`() async throws {
+        let entry = makePortfolioEntryResponse(
+            stock: makeTeslaStockResponse(),
+            amount: 7,
+            purchasePrice: KowalskiClientMoney(currency: "USD", value: 210.25),
+            transactionType: .sell,
+        )
+        let portfolio = KowalskiPortfolio.testing(
+            client: .testing(
+                portfolio: MockPortfolioClient(
+                    overviewResult: .success(
+                        makePortfolioOverviewResponse(
+                            transactions: [entry],
+                            currentValues: ["TSLA": KowalskiClientMoney(currency: "USD", value: 420.5)],
+                        ),
+                    ),
+                ),
+            ),
+        )
+        try await portfolio.fetchOverview().get()
+
+        let url = try await portfolio.exportTransactions().get()
+        let lines = try readLines(from: url)
+        let dataRow = try #require(lines.dropFirst().first)
+
+        #expect(dataRow.contains(entry.id))
+        #expect(dataRow.contains("TSLA"))
+        #expect(dataRow.contains("\"Tesla, Inc.\""))
+        #expect(dataRow.contains("7.0"))
+        #expect(dataRow.contains("sell"))
+    }
+
+    @Test
+    func `Export transactions with no entries should produce a headers-only file`() async throws {
+        let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: MockPortfolioClient()))
+
+        let url = try await portfolio.exportTransactions().get()
+        let lines = try readLines(from: url)
+
+        #expect(lines.count == 1)
+    }
+
+    @Test
+    func `Download transactions template should produce a headers-only file`() async throws {
+        let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: MockPortfolioClient()))
+
+        let url = try await portfolio.downloadTransactionsTemplate().get()
+        let lines = try readLines(from: url)
+
+        #expect(
+            lines ==
+                [
+                    "id,symbol,exchange,name,isin,sector,industry,exchange_dispatch,amount,purchase_price_currency,purchase_price_value,transaction_type,transaction_date",
+                ],
+        )
+    }
+
+    @Test
+    func `Import transactions should read security scoped URLs while the resource is active`() throws {
+        let csvURL = try makeCSVFile(
+            contents: """
+            id,symbol,exchange,name,isin,sector,industry,exchange_dispatch,amount,purchase_price_currency,purchase_price_value,transaction_type,transaction_date
+            550e8400-e29b-41d4-a716-446655440000,AAPL,NMS,Apple Inc.,US0378331005,Technology,Consumer Electronics,NASDAQ,10,USD,150.5,buy,2025-12-20T00:00:00.000Z
+            """,
+        )
+        let securityScopedURL = TrackingSecurityScopedURL(url: csvURL)
+
+        let contents = try SecurityScopedFileAccess.readString(from: securityScopedURL)
+
+        #expect(contents.contains("AAPL"))
+        #expect(securityScopedURL.startAccessCallCount == 1)
+        #expect(securityScopedURL.stopAccessCallCount == 1)
+    }
+
+    @Test
+    func `Import transactions CSV should return invalidFormat when required columns are missing`() throws {
+        let csvURL = try makeCSVFile(
+            contents: """
+            symbol,exchange,name
+            AAPL,NMS,Apple Inc.
+            """,
+        )
+
+        try #require(throws: PortfolioTransactionsCSVError.invalidFormat) {
+            try PortfolioTransactionsCSV.import(from: csvURL).get()
+        }
+    }
+
+    @Test
+    func `Import transactions CSV should preserve quoted newlines and escaped quotes`() throws {
+        let csvURL = try makeCSVFile(
+            contents: """
+            id,symbol,exchange,name,isin,sector,industry,exchange_dispatch,amount,purchase_price_currency,purchase_price_value,transaction_type,transaction_date
+            550e8400-e29b-41d4-a716-446655440000,BRK.B,NYQ,"Berkshire Hathaway
+            Class ""B""\",US0846707026,Financial Services,Insurance,NYSE,3,USD,490.75,buy,2025-12-20T00:00:00.000Z
+            """,
+        )
+
+        let parsedCSV = try PortfolioTransactionsCSV.import(from: csvURL).get()
+        let importedEntry = try #require(parsedCSV.entries.first)
+
+        #expect(parsedCSV.entries.count == 1)
+        #expect(parsedCSV.malformedRowNumbers.isEmpty)
+        #expect(importedEntry.stock.symbol == "BRK.B")
+        #expect(importedEntry.stock.name == "Berkshire Hathaway\nClass \"B\"")
+        #expect(importedEntry.purchasePrice.value == 490.75)
+    }
+
+    @Test
+    func `Import transactions CSV should skip malformed rows and report their row numbers`() throws {
+        let csvURL = try makeCSVFile(
+            contents: """
+            id,symbol,exchange,name,isin,sector,industry,exchange_dispatch,amount,purchase_price_currency,purchase_price_value,transaction_type,transaction_date
+            550e8400-e29b-41d4-a716-446655440000,AAPL,NMS,Apple Inc.,US0378331005,Technology,Consumer Electronics,NASDAQ,10,USD,150.5,buy,2025-12-20T00:00:00.000Z
+            550e8400-e29b-41d4-a716-446655440001,TSLA,NMS,Tesla Inc.,US88160R1014,Consumer Cyclical,Auto Manufacturers,NASDAQ,INVALID,USD,210.25,sell,2025-12-21T00:00:00.000Z
+            550e8400-e29b-41d4-a716-446655440002,MSFT,NMS,Microsoft Corp.,US5949181045,Technology,Software,NASDAQ,5,USD,320.1,buy,2025-12-22T00:00:00.000Z
+            """,
+        )
+
+        let parsedCSV = try PortfolioTransactionsCSV.import(from: csvURL).get()
+
+        #expect(parsedCSV.entries.count == 2)
+        #expect(parsedCSV.entries.map(\.stock.symbol) == ["AAPL", "MSFT"])
+        #expect(parsedCSV.malformedRowNumbers == [3])
+    }
+
+    @Test
+    func `Import transactions CSV should treat unterminated quoted fields as malformed rows`() throws {
+        let csvURL = try makeCSVFile(
+            contents: """
+            id,symbol,exchange,name,isin,sector,industry,exchange_dispatch,amount,purchase_price_currency,purchase_price_value,transaction_type,transaction_date
+            550e8400-e29b-41d4-a716-446655440000,AAPL,NMS,"Apple Inc.,US0378331005,Technology,Consumer Electronics,NASDAQ,10,USD,150.5,buy,2025-12-20T00:00:00.000Z
+            """,
+        )
+
+        let parsedCSV = try PortfolioTransactionsCSV.import(from: csvURL).get()
+
+        #expect(parsedCSV.entries.isEmpty)
+        #expect(parsedCSV.malformedRowNumbers == [2])
+    }
+
+    @Test
+    func `Import transactions should call bulkCreateEntries with the parsed payload`() async throws {
+        let portfolioClient = MockPortfolioClient(
+            bulkCreateEntriesResult: .success([]),
+            overviewResult: .success(makePortfolioOverviewResponse(transactions: [], currentValues: [:])),
+        )
+        let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
+        let csvURL = try makeCSVFile(
+            contents: """
+            id,symbol,exchange,name,isin,sector,industry,exchange_dispatch,amount,purchase_price_currency,purchase_price_value,transaction_type,transaction_date
+            550e8400-e29b-41d4-a716-446655440000,AAPL,NMS,Apple Inc.,US0378331005,Technology,Consumer Electronics,NASDAQ,10,USD,150.5,buy,2025-12-20T00:00:00.000Z
+            550e8400-e29b-41d4-a716-446655440001,TSLA,NMS,"Tesla, Inc.",US88160R1014,Consumer Cyclical,Auto Manufacturers,NASDAQ,7,USD,210.25,sell,2025-12-21T00:00:00.000Z
+            """,
+        )
+
+        try await portfolio.importTransactions(from: csvURL).get()
+
+        let capturedEntries = try #require(await portfolioClient.bulkCreateEntriesPayloads.first)
+        #expect(capturedEntries.count == 2)
+        #expect(capturedEntries[0].id == "550e8400-e29b-41d4-a716-446655440000")
+        #expect(capturedEntries[0].stock.symbol == "AAPL")
+        #expect(capturedEntries[0].amount == 10)
+        #expect(capturedEntries[0].transactionType == .buy)
+        #expect(capturedEntries[1].id == "550e8400-e29b-41d4-a716-446655440001")
+        #expect(capturedEntries[1].stock.name == "Tesla, Inc.")
+        #expect(capturedEntries[1].purchasePrice.value == 210.25)
+        #expect(capturedEntries[1].transactionType == .sell)
+    }
+
+    @Test
+    func `Import transactions should refresh the overview after success`() async throws {
+        let refreshedEntry = makePortfolioEntryResponse(amount: 12)
+        let portfolioClient = MockPortfolioClient(
+            bulkCreateEntriesResult: .success([refreshedEntry]),
+            overviewResult: .success(
+                makePortfolioOverviewResponse(
+                    transactions: [refreshedEntry],
+                    currentValues: ["AAPL": KowalskiClientMoney(currency: "USD", value: 200)],
+                ),
+            ),
+        )
+        let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
+        let csvURL = try makeCSVFile(
+            contents: """
+            id,symbol,exchange,name,isin,sector,industry,exchange_dispatch,amount,purchase_price_currency,purchase_price_value,transaction_type,transaction_date
+            550e8400-e29b-41d4-a716-446655440000,AAPL,NMS,Apple Inc.,US0378331005,Technology,Consumer Electronics,NASDAQ,12,USD,150.5,buy,2025-12-20T00:00:00.000Z
+            """,
+        )
+
+        try await portfolio.importTransactions(from: csvURL).get()
+
+        #expect(portfolio.entries.map(\.amount) == [12])
+        #expect(await portfolioClient.bulkCreateEntriesCallCount == 1)
+        #expect(await portfolioClient.getOverviewCallCount == 1)
+    }
+
+    @Test
+    func `Import transactions should fail fast when the CSV header is missing required columns`() async throws {
+        let portfolioClient = MockPortfolioClient()
+        let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
+        let csvURL = try makeCSVFile(
+            contents: """
+            symbol,exchange,name
+            AAPL,NMS,Apple Inc.
+            """,
+        )
+
+        try await #require(throws: ImportTransactionErrors.invalidFormat) {
+            try await portfolio.importTransactions(from: csvURL).get()
+        }
+
+        #expect(await portfolioClient.bulkCreateEntriesCallCount == 0)
+    }
+
+    @Test
     func `Paired create form values should use the opposite transaction type`() throws {
         let buyEntry = makePortfolioEntry(
             stock: makeAppleStock(),
@@ -672,13 +915,19 @@ struct KowalskiPortfolioTests {
 
 private actor MockPortfolioClient: KowalskiPortfolioClient {
     private(set) var createEntryCallCount = 0
+    private(set) var bulkCreateEntriesCallCount = 0
     private(set) var updateEntryCallCount = 0
     private(set) var listEntriesCallCount = 0
     private(set) var getOverviewCallCount = 0
+    private(set) var bulkCreateEntriesPayloads: [[KowalskiPortfolioBulkCreateEntryItemPayload]] = []
 
     private let createEntryResult: Result<
         KowalskiPortfolioClientEntryResponse,
         KowalskiPortfolioClientCreateEntryErrors,
+    >
+    private let bulkCreateEntriesResult: Result<
+        [KowalskiPortfolioClientEntryResponse],
+        KowalskiPortfolioClientBulkCreateEntriesErrors,
     >
     private let updateEntryResult: Result<
         KowalskiPortfolioClientEntryResponse,
@@ -696,6 +945,10 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
     init(
         createEntryResult: Result<KowalskiPortfolioClientEntryResponse, KowalskiPortfolioClientCreateEntryErrors> =
             .success(makePortfolioEntryResponse(amount: 10)),
+        bulkCreateEntriesResult: Result<
+            [KowalskiPortfolioClientEntryResponse],
+            KowalskiPortfolioClientBulkCreateEntriesErrors,
+        > = .success([]),
         updateEntryResult: Result<KowalskiPortfolioClientEntryResponse, KowalskiPortfolioClientUpdateEntryErrors> =
             .success(makePortfolioEntryResponse(amount: 10)),
         listEntriesResult: Result<[KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientListEntriesErrors> =
@@ -706,6 +959,7 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
         overviewResults: [Result<KowalskiPortfolioOverviewResponse, KowalskiPortfolioClientOverviewErrors>] = [],
     ) {
         self.createEntryResult = createEntryResult
+        self.bulkCreateEntriesResult = bulkCreateEntriesResult
         self.updateEntryResult = updateEntryResult
         self.listEntriesResult = listEntriesResult
         self.overviewResults = overviewResults.isEmpty ? [overviewResult] : overviewResults
@@ -729,6 +983,15 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
         }
 
         return overviewResults.removeFirst()
+    }
+
+    func bulkCreateEntries(
+        entries: [KowalskiPortfolioBulkCreateEntryItemPayload],
+    ) async -> Result<[KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientBulkCreateEntriesErrors> {
+        bulkCreateEntriesCallCount += 1
+        bulkCreateEntriesPayloads.append(entries)
+
+        return bulkCreateEntriesResult
     }
 
     func createEntry(
@@ -836,6 +1099,42 @@ private func makePortfolioEntry(stock: Stock, amount: Double, transactionType: T
         purchasePrice: Money(currency: .USD, value: 150.5),
         transactionType: transactionType,
     )
+}
+
+private func readLines(from url: URL) throws -> [String] {
+    try String(contentsOf: url, encoding: .utf8)
+        .split(separator: "\n", omittingEmptySubsequences: true)
+        .map(String.init)
+}
+
+private func makeCSVFile(contents: String) throws -> URL {
+    let url = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString)
+        .appendingPathExtension("csv")
+    try contents.write(to: url, atomically: true, encoding: .utf8)
+
+    return url
+}
+
+private final class TrackingSecurityScopedURL: SecurityScopedFileURL {
+    let fileURL: URL
+
+    private(set) var startAccessCallCount = 0
+    private(set) var stopAccessCallCount = 0
+
+    init(url: URL) {
+        fileURL = url
+    }
+
+    func startAccessingSecurityScopedResource() -> Bool {
+        startAccessCallCount += 1
+
+        return true
+    }
+
+    func stopAccessingSecurityScopedResource() {
+        stopAccessCallCount += 1
+    }
 }
 
 private func makePortfolioEntry(
