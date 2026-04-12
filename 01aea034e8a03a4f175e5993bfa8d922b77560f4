@@ -1,0 +1,31 @@
+.agents/plans/import-export.md
+  5807cdc25419d062 4,8,16,21,27,38,40,48,57,59,67,73,75,84,91,95,100
+app/KowalskiFeatures/Sources/KowalskiPortfolio/KowalskiPortfolio.swift
+  5807cdc25419d062 28-29,113,117-118,164-201,219-226
+app/KowalskiFeatures/Tests/KowalskiPortfolioTests/KowalskiPortfolioTests.swift
+  5807cdc25419d062 208-317,346-347,381,388,392-394,402-433,435-447,452-453,487-516
+.agents/plans/all-time-profit.md
+  5807cdc25419d062 4,6,11,19,25,43,50,52,67-73,75-76,81
+app/KowalskiFeatures/Sources/KowalskiPortfolio/KowalskiPortfolioScreen.swift
+  5807cdc25419d062 105-125,134-147,166-175,178-192,200-220,222-224
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "01aea034e8a03a4f175e5993bfa8d922b77560f4",
+  "prompts": {
+    "5807cdc25419d062": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d821f-5316-7cd3-a31b-a40285300e69",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Kamaal Farah",
+      "messages": [],
+      "total_additions": 379,
+      "total_deletions": 27,
+      "accepted_lines": 379,
+      "overriden_lines": 0
+    }
+  }
+}
