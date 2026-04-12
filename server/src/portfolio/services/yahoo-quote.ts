@@ -1,12 +1,10 @@
-import YahooFinance from 'yahoo-finance2';
 import type { QuoteResponseArray } from 'yahoo-finance2/modules/quote';
 import z from 'zod';
 
 import type { HonoContext } from '@/api/contexts';
 import { logError, logWarn } from '@/logging';
 import { withRequestLogger } from '@/logging/http';
-
-const yahooFinance = new YahooFinance();
+import yahooFinance from '@/utils/yahoo-finance';
 
 const YahooQuoteSchema = z
   .object({
