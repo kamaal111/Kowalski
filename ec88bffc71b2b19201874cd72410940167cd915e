@@ -1,0 +1,65 @@
+app/KowalskiClient/Sources/KowalskiClient/KowalskiPortfolioClient.swift
+  bbc470255f62ae52 17-19,122-156,278-313,448-470
+app/KowalskiFeatures/Sources/KowalskiPortfolio/KowalskiPortfolio.swift
+  bbc470255f62ae52 91-184,380-400
+server/src/portfolio/services/create-entry.ts
+  bbc470255f62ae52 17,23,42,60
+app/KowalskiApp/Sources/KowalskiApp/KowalskiScene.swift
+  bbc470255f62ae52 28-40
+server/src/portfolio/schemas/responses.ts
+  bbc470255f62ae52 28-30,34-35,37,91-95
+server/src/portfolio/routes/bulk-create-entries.ts
+  bbc470255f62ae52 1-72
+server/src/portfolio/schemas/payloads.ts
+  bbc470255f62ae52 63-126
+server/src/portfolio/handlers/bulk-create-entries.ts
+  bbc470255f62ae52 1-51
+server/src/portfolio/tests/bulk-create-entries.integration.test.ts
+  bbc470255f62ae52 1-325
+app/KowalskiClient/Tests/KowalskiClientTests/Mocks/MockClientTransport.swift
+  bbc470255f62ae52 16,25,30-34
+app/KowalskiClient/Sources/KowalskiClient/openapi.yaml
+  bbc470255f62ae52 505-558,1060,1118-1127,1251-1353,1355
+server/src/portfolio/services/bulk-create-entries.ts
+  bbc470255f62ae52 1-37
+app/KowalskiClient/Sources/KowalskiClient/Payloads/KowalskiPortfolioBulkCreateEntryItemPayload.swift
+  bbc470255f62ae52 1-42
+.agents/plans/import-export.md
+  bbc470255f62ae52 4,8,16,21,27,38,40,48,57,59,67,73,75,84,91,95,100
+app/KowalskiFeatures/Tests/KowalskiPortfolioTests/KowalskiPortfolioTests.swift
+  bbc470255f62ae52 366-507,587,591,597-600,617-620,631,657-663,773-785
+app/KowalskiFeatures/Sources/KowalskiAuth/KowalskiAuthSettingsView.swift
+  bbc470255f62ae52 8-10,15,17-18,27-28,31-43,53-54,70-75,77-79,84,104-105,151-227,231-232,280-330,333-358,364-375,383,392
+.agents/plans/all-time-profit.md
+  bbc470255f62ae52 4,6,11,19,25,43,50,52,67-73,75-76,81
+app/KowalskiClient/Sources/KowalskiClient/Internals/Mappers/KowalskiPortfolioMapper.swift
+  bbc470255f62ae52 40-62,75-76,134,136,138
+app/KowalskiClient/Tests/KowalskiClientTests/KowalskiPortfolioClientTests.swift
+  bbc470255f62ae52 62-168,266-278,326-402
+server/src/portfolio/repositories/create-entry.ts
+  bbc470255f62ae52 1,17,59-71
+server/src/portfolio/routes/index.ts
+  bbc470255f62ae52 6,10,27-28
+app/KowalskiFeatures/Sources/KowalskiPortfolio/Internals/PortfolioTransactionsCSV.swift
+  bbc470255f62ae52 1-301
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "ec88bffc71b2b19201874cd72410940167cd915e",
+  "prompts": {
+    "bbc470255f62ae52": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019d821e-ec6c-70e0-b278-179518b22944",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Kamaal Farah",
+      "messages": [],
+      "total_additions": 3852,
+      "total_deletions": 158,
+      "accepted_lines": 3735,
+      "overriden_lines": 0
+    }
+  }
+}
