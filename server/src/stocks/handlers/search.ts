@@ -1,5 +1,3 @@
-import YahooFinance from 'yahoo-finance2';
-
 import type { HonoContext } from '../../api/contexts';
 import type { StocksSearchQuery } from '../schemas/search';
 import { STATUS_CODES } from '../../constants/http';
@@ -8,8 +6,7 @@ import { ONE_MINUTE_IN_MILLISECONDS } from '../../constants/common';
 import { withCache } from '../../middleware/cache';
 import { logInfo } from '@/logging';
 import { withRequestLogger } from '@/logging/http';
-
-const yahooFinance = new YahooFinance();
+import yahooFinance from '@/utils/yahoo-finance';
 
 async function searchHandlerImpl(c: HonoContext<string, { out: { query: StocksSearchQuery } }>) {
   const params = c.req.valid('query');
