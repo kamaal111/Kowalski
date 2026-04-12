@@ -189,6 +189,59 @@ describe('Update Portfolio Entry Route', () => {
   );
 
   integrationTest(
+    'returns an internal server error when updating an entry needs FX data that is missing',
+    async ({ app, db, sessionToken, userId, getLogsForRequestId, withRequestId }) => {
+      await db.insert(userPreferences).values({ userId, preferredCurrency: 'EUR' });
+      const existingEntry = await seedPortfolioEntry(db, {
+        userId,
+        stock: {
+          symbol: 'AAPL',
+          exchange: 'NMS',
+          name: 'Apple Inc.',
+        },
+        amount: 10,
+        purchasePrice: { currency: 'USD', value: 150.5 },
+        transactionType: 'buy',
+        transactionDate: '2025-12-20T10:30:00.000Z',
+      });
+
+      const request = withRequestId(createUpdateEntryRequestHeaders(sessionToken));
+      const response = await sendUpdateEntryRequest(
+        app,
+        existingEntry.id,
+        {
+          payload: {
+            ...createValidUpdateEntryPayload(),
+            purchase_price: {
+              currency: 'USD',
+              value: 110,
+            },
+          },
+        },
+        request.headers,
+      );
+      const body = await expectInternalServerErrorResponse(response);
+      const logs = getLogsForRequestId(request.requestId);
+
+      expect(body).toEqual({
+        message: 'Failed to resolve foreign exchange rates',
+        code: 'EXCHANGE_RATE_RESOLUTION_FAILED',
+      });
+      expect(logs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            event: 'request.error',
+            request_id: request.requestId,
+            route: UPDATE_ENTRY_ROUTE,
+            status_code: 500,
+            error_code: 'EXCHANGE_RATE_RESOLUTION_FAILED',
+          }),
+        ]),
+      );
+    },
+  );
+
+  integrationTest(
     'updates a portfolio entry to a different stock ticker',
     async ({ app, db, sessionToken, userId }) => {
       const existingEntry = await seedPortfolioEntry(db, {
@@ -367,6 +420,12 @@ async function expectValidationErrorResponse(response: Response) {
 
 async function expectNotFoundErrorResponse(response: Response) {
   expect(response.status).toBe(404);
+
+  return ErrorResponseSchema.parse(await response.json());
+}
+
+async function expectInternalServerErrorResponse(response: Response) {
+  expect(response.status).toBe(500);
 
   return ErrorResponseSchema.parse(await response.json());
 }

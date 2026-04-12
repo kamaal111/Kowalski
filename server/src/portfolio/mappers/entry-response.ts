@@ -1,6 +1,6 @@
 import { dateOnlyStringToISO8601String } from '@/utils/dates';
 import { toISO8601String } from '@/utils/strings';
-import type { CreateEntryResponse } from '../schemas/responses';
+import { CreateEntryResponseSchema, type CreateEntryResponse } from '../schemas/responses';
 import { assertToFloat } from '@/utils/numbers';
 import type { PersistedPortfolioEntry } from '../repositories/list-entries';
 
@@ -18,7 +18,7 @@ interface PortfolioEntryResponseInput {
 }
 
 export function mapPortfolioEntryToResponse(input: PortfolioEntryResponseInput): CreateEntryResponse {
-  return {
+  return CreateEntryResponseSchema.parse({
     id: input.id,
     stock: input.stock,
     amount: assertToFloat(input.amount),
@@ -31,7 +31,7 @@ export function mapPortfolioEntryToResponse(input: PortfolioEntryResponseInput):
     transaction_date: dateOnlyStringToISO8601String(input.transactionDate),
     created_at: toISO8601String(input.createdAt),
     updated_at: toISO8601String(input.updatedAt),
-  };
+  });
 }
 
 export function mapPersistedPortfolioEntryToResponse({

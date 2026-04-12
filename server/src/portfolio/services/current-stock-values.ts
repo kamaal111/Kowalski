@@ -11,7 +11,7 @@ import {
   type PersistedStockPrice,
 } from '../repositories/stock-prices';
 import { type CurrentValue } from '../schemas/responses';
-import { StockPriceFetchFailed } from '../exceptions';
+import { ExchangeRateResolutionFailed, StockPriceFetchFailed } from '../exceptions';
 import { fetchYahooQuotes } from './yahoo-quote';
 
 export async function getCurrentStockValues(
@@ -76,8 +76,11 @@ export async function getCurrentStockValues(
 
   const session = getSessionWhereSessionIsRequired(c);
   const preferredCurrency = session.user.preferred_currency;
-  const exchangeRateSnapshot =
-    preferredCurrency == null ? undefined : await findLatestExchangeRateSnapshotByBase(c, preferredCurrency);
+  const exchangeRateSnapshot = await resolveExchangeRateSnapshotForPreferredCurrency(
+    c,
+    preferredCurrency,
+    resolvedPrices.values(),
+  );
   const currentValues = Object.fromEntries(
     uniqueEntries.map(entry => {
       const resolvedPrice = resolvedPrices.get(entry.tickerId);
@@ -89,6 +92,7 @@ export async function getCurrentStockValues(
       return [
         entry.stockSymbol,
         convertStockPriceToPreferredCurrency({
+          c,
           price: resolvedPrice,
           preferredCurrency,
           exchangeRateSnapshot,
@@ -120,10 +124,12 @@ function getUniquePortfolioEntries(entries: PersistedPortfolioEntry[]) {
 }
 
 function convertStockPriceToPreferredCurrency({
+  c,
   price,
   preferredCurrency,
   exchangeRateSnapshot,
 }: {
+  c: HonoContext;
   price: PersistedStockPrice;
   preferredCurrency: string | null;
   exchangeRateSnapshot: PersistedExchangeRateSnapshot | undefined;
@@ -136,22 +142,41 @@ function convertStockPriceToPreferredCurrency({
   }
 
   if (exchangeRateSnapshot == null) {
-    return {
-      currency: price.currency,
-      value: price.close,
-    };
+    throw new ExchangeRateResolutionFailed(c);
   }
 
   const conversionRate = exchangeRateSnapshot.rates[price.currency];
   if (typeof conversionRate !== 'number' || !Number.isFinite(conversionRate) || conversionRate <= 0) {
-    return {
-      currency: price.currency,
-      value: price.close,
-    };
+    throw new ExchangeRateResolutionFailed(c);
   }
 
   return {
     currency: preferredCurrency,
     value: price.close / conversionRate,
   };
+}
+
+async function resolveExchangeRateSnapshotForPreferredCurrency(
+  c: HonoContext,
+  preferredCurrency: string | null,
+  resolvedPrices: Iterable<PersistedStockPrice>,
+) {
+  if (preferredCurrency == null) {
+    return undefined;
+  }
+
+  for (const resolvedPrice of resolvedPrices) {
+    if (resolvedPrice.currency === preferredCurrency) {
+      continue;
+    }
+
+    const exchangeRateSnapshot = await findLatestExchangeRateSnapshotByBase(c, preferredCurrency);
+    if (exchangeRateSnapshot == null) {
+      throw new ExchangeRateResolutionFailed(c);
+    }
+
+    return exchangeRateSnapshot;
+  }
+
+  return undefined;
 }

@@ -49,6 +49,7 @@ Prefer the repository's command runner when one exists, such as `just`, `make`, 
 - Use **integration tests** when behavior depends on boundaries between modules, persistence, routing, or dependency wiring.
 - Use **end-to-end tests** when the user flow cannot be validated well at a lower level.
 - Cover the **happy path**, important **edge cases**, **error paths**, and any **regression scenario** that motivated the change.
+- When a handler could otherwise return a misleading success payload, add regression coverage for the failure path and assert the explicit status code and error payload instead of only testing the happy path.
 
 ### Reliability
 
@@ -77,6 +78,7 @@ Prefer the repository's command runner when one exists, such as `just`, `make`, 
 - Reuse the repository's existing app-construction, dependency-injection, or service-factory patterns when available.
 - Reuse shared helpers for authentication, database setup, fixtures, and teardown.
 - Assert response status, payload shape, side effects, and authorization behavior.
+- Assert clear server failures for missing prerequisite data when the contract would otherwise look valid but be semantically wrong.
 - Validate setup operations before using their outputs in later assertions.
 - Keep test data minimal but representative of real behavior.
 

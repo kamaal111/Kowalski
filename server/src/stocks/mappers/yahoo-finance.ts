@@ -1,8 +1,14 @@
-import * as z from 'zod';
-import type { SearchResult } from 'yahoo-finance2/modules/search';
-import { arrays, asserts } from '@kamaalio/kamaal';
+import assert from 'node:assert/strict';
 
-import type { StocksSearchQuoteItemResponse, StocksSearchResponse } from '../schemas/search';
+import z from 'zod';
+import type { SearchResult } from 'yahoo-finance2/modules/search';
+import { arrays } from '@kamaalio/kamaal';
+
+import {
+  StocksSearchResponseSchema,
+  type StocksSearchQuoteItemResponse,
+  type StocksSearchResponse,
+} from '../schemas/search';
 
 type YahooSearchType = SearchResult['quotes'][number];
 
@@ -17,7 +23,7 @@ const SearchQuoteIsinShape = z
 export function mapYahooFinanceSearchQuoteToEquitySearchResponse(results: SearchResult): StocksSearchResponse {
   const quotes = arrays.compactMap(results.quotes, mapYahooFinanceQuoteToResponseQuote);
 
-  return { count: quotes.length, quotes };
+  return StocksSearchResponseSchema.parse({ count: quotes.length, quotes });
 }
 
 function mapYahooFinanceQuoteToResponseQuote(quote: YahooSearchType): StocksSearchQuoteItemResponse | null {
@@ -51,7 +57,7 @@ function getQuoteName(quote: YahooSearchType): string | null {
   if (!quote.longname && !quote.shortname) return null;
 
   const name = quote.longname ?? quote.shortname;
-  asserts.invariant(typeof name === 'string');
+  assert(typeof name === 'string');
 
   return name;
 }
