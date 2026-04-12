@@ -11,5 +11,7 @@
       "name": "root",
     },
   ],
-  "settings": {},
+  "settings": {
+    "cSpell.words": ["Forex"],
+  },
 }

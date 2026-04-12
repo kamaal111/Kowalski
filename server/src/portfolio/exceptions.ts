@@ -10,6 +10,7 @@ const ERROR_CODES = {
   PORTFOLIO_ENTRY_CREATE_FAILED: 'PORTFOLIO_ENTRY_CREATE_FAILED',
   PORTFOLIO_ENTRY_UPDATE_FAILED: 'PORTFOLIO_ENTRY_UPDATE_FAILED',
   STOCK_PRICE_FETCH_FAILED: 'STOCK_PRICE_FETCH_FAILED',
+  EXCHANGE_RATE_RESOLUTION_FAILED: 'EXCHANGE_RATE_RESOLUTION_FAILED',
 } as const;
 
 const CODE_TO_STATUS: Record<ErrorCode, StatusCode> = {
@@ -18,6 +19,7 @@ const CODE_TO_STATUS: Record<ErrorCode, StatusCode> = {
   PORTFOLIO_ENTRY_CREATE_FAILED: STATUS_CODES.INTERNAL_SERVER_ERROR,
   PORTFOLIO_ENTRY_UPDATE_FAILED: STATUS_CODES.INTERNAL_SERVER_ERROR,
   STOCK_PRICE_FETCH_FAILED: STATUS_CODES.INTERNAL_SERVER_ERROR,
+  EXCHANGE_RATE_RESOLUTION_FAILED: STATUS_CODES.INTERNAL_SERVER_ERROR,
 };
 
 const CODE_TO_MESSAGE: Record<ErrorCode, string> = {
@@ -26,6 +28,7 @@ const CODE_TO_MESSAGE: Record<ErrorCode, string> = {
   PORTFOLIO_ENTRY_CREATE_FAILED: 'Failed to create portfolio entry',
   PORTFOLIO_ENTRY_UPDATE_FAILED: 'Failed to update portfolio entry',
   STOCK_PRICE_FETCH_FAILED: 'Failed to resolve current stock prices',
+  EXCHANGE_RATE_RESOLUTION_FAILED: 'Failed to resolve foreign exchange rates',
 };
 
 class PortfolioException extends APIException {
@@ -61,5 +64,11 @@ export class PortfolioEntryUpdateFailed extends PortfolioException {
 export class StockPriceFetchFailed extends PortfolioException {
   constructor(c: HonoContext) {
     super(c, { code: ERROR_CODES.STOCK_PRICE_FETCH_FAILED });
+  }
+}
+
+export class ExchangeRateResolutionFailed extends PortfolioException {
+  constructor(c: HonoContext) {
+    super(c, { code: ERROR_CODES.EXCHANGE_RATE_RESOLUTION_FAILED });
   }
 }

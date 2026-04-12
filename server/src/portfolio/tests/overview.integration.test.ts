@@ -196,6 +196,103 @@ describe('Portfolio Overview Route', () => {
   );
 
   integrationTest(
+    'returns an internal server error when preferred-currency current values need FX data that is missing',
+    async ({ app, db, sessionToken, userId, getLogsForRequestId, withRequestId }) => {
+      await db.insert(schema.userPreferences).values({ userId, preferredCurrency: 'EUR' });
+      await seedPortfolioEntry(db, {
+        userId,
+        stock: {
+          symbol: 'AAPL',
+          exchange: 'NMS',
+          name: 'Apple Inc.',
+        },
+        amount: 1,
+        purchasePrice: { currency: 'USD', value: 110 },
+        transactionType: 'buy',
+        transactionDate: '2025-12-20T10:30:00.000Z',
+      });
+      await seedStockInfo(db, {
+        tickerId: createSyntheticTickerId('NMS', 'AAPL'),
+        currency: 'USD',
+        date: new Date().toISOString().slice(0, 10),
+        price: 110,
+      });
+
+      const request = withRequestId(createOverviewRequestHeaders(sessionToken));
+      const response = await sendOverviewRequest(app, {}, request.headers);
+      const body = await expectInternalServerErrorResponse(response);
+      const logs = getLogsForRequestId(request.requestId);
+
+      expect(body).toEqual({
+        message: 'Failed to resolve foreign exchange rates',
+        code: 'EXCHANGE_RATE_RESOLUTION_FAILED',
+      });
+      expect(logs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            event: 'request.error',
+            request_id: request.requestId,
+            route: OVERVIEW_PATH,
+            status_code: 500,
+            error_code: 'EXCHANGE_RATE_RESOLUTION_FAILED',
+          }),
+        ]),
+      );
+    },
+  );
+
+  integrationTest(
+    'returns an internal server error when the FX snapshot is missing a required currency conversion',
+    async ({ app, db, sessionToken, userId, getLogsForRequestId, withRequestId }) => {
+      await db.insert(schema.userPreferences).values({ userId, preferredCurrency: 'EUR' });
+      await seedExchangeRate(db, {
+        base: 'EUR',
+        date: '2026-03-29',
+        rates: { GBP: 0.8 },
+      });
+      await seedPortfolioEntry(db, {
+        userId,
+        stock: {
+          symbol: 'AAPL',
+          exchange: 'NMS',
+          name: 'Apple Inc.',
+        },
+        amount: 1,
+        purchasePrice: { currency: 'USD', value: 110 },
+        transactionType: 'buy',
+        transactionDate: '2025-12-20T10:30:00.000Z',
+      });
+      await seedStockInfo(db, {
+        tickerId: createSyntheticTickerId('NMS', 'AAPL'),
+        currency: 'USD',
+        date: new Date().toISOString().slice(0, 10),
+        price: 110,
+      });
+
+      const request = withRequestId(createOverviewRequestHeaders(sessionToken));
+      const response = await sendOverviewRequest(app, {}, request.headers);
+      const body = await expectInternalServerErrorResponse(response);
+      const logs = getLogsForRequestId(request.requestId);
+
+      expect(body).toEqual({
+        message: 'Failed to resolve foreign exchange rates',
+        code: 'EXCHANGE_RATE_RESOLUTION_FAILED',
+      });
+      expect(logs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            event: 'request.error',
+            request_id: request.requestId,
+            route: OVERVIEW_PATH,
+            status_code: 500,
+            error_code: 'EXCHANGE_RATE_RESOLUTION_FAILED',
+          }),
+        ]),
+      );
+    },
+  );
+
+  integrationTest(
     'falls back to the latest stored price when Yahoo does not resolve a missing daily quote',
     async ({ app, db, sessionToken, userId }) => {
       await seedPortfolioEntry(db, {

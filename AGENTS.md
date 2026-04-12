@@ -67,6 +67,10 @@
 - **ALWAYS validate unknown or external data**
   - Use Zod `.parse()` or `.safeParse()` for database rows, request payloads, and external API responses
   - Treat validation gaps as real bugs, not typing inconveniences
+- **NEVER hide required dependency failures behind misleading success responses**
+  - If an endpoint depends on data such as foreign exchange rates, cached prices, or other derived records to produce the response the app actually relies on, fail with a clear `5xx` and error code when that dependency is missing or unusable
+  - Do not silently fall back to placeholder values, alternate currencies, partial payloads, or `null` just to keep a `200` response alive unless that degraded state is explicitly documented and intentionally supported by the contract
+  - Prefer surfacing the bug clearly over making the response look superficially valid while violating downstream assumptions
 - **ALWAYS use the shared Pino logger for server logging**
   - Use the shared logger entrypoint for `server/src/**` request middleware, handlers, error handling, and startup/shutdown
   - Never introduce `console.*` in `server/src/**`; Oxlint treats it as an error
@@ -189,6 +193,7 @@ BETTER_AUTH_URL=http://localhost:8080
 - **OpenAPI-first server design**
   - Define routes with `@hono/zod-openapi`
   - Keep request and response schemas in Zod and attach OpenAPI metadata
+  - Parse response payloads against the documented schema before returning them when the handler performs non-trivial mapping or aggregation
   - Regenerate the Swift client inputs after schema changes
 - **Spec workflow**
   - Update server route schemas first

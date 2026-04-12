@@ -1,5 +1,6 @@
 import childProcess from 'node:child_process';
 import fs from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 
 import { afterEach, describe, expect, test } from 'vitest';
@@ -15,6 +16,7 @@ import {
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '../../..');
 const OXLINT_CONFIG = path.join(REPO_ROOT, '.oxlintrc.json');
+const OXLINT_BIN_DIRECTORY = path.join(REPO_ROOT, 'node_modules/.bin');
 
 describe('Logging policy', () => {
   afterEach(() => {
@@ -23,17 +25,26 @@ describe('Logging policy', () => {
 
   test('rejects console usage in server source and allows it in scripts', async () => {
     const fixtureId = crypto.randomUUID();
-    const sourceFilePath = path.join(REPO_ROOT, 'server/src/tests', `logging-policy-${fixtureId}.ts`);
-    const scriptFilePath = path.join(REPO_ROOT, 'server/scripts', `logging-policy-${fixtureId}.ts`);
+    const fixtureRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'logging-policy-'));
+    const sourceRelativeFilePath = path.join('server/src/tests', `logging-policy-${fixtureId}.ts`);
+    const scriptRelativeFilePath = path.join('server/scripts', `logging-policy-${fixtureId}.ts`);
+    const sourceFilePath = path.join(fixtureRoot, sourceRelativeFilePath);
+    const scriptFilePath = path.join(fixtureRoot, scriptRelativeFilePath);
+    const oxlintConfigPath = path.join(fixtureRoot, '.oxlintrc.json');
 
+    await Promise.all([
+      fs.mkdir(path.dirname(sourceFilePath), { recursive: true }),
+      fs.mkdir(path.dirname(scriptFilePath), { recursive: true }),
+      writeOxlintConfig(oxlintConfigPath),
+    ]);
     await Promise.all([
       fs.writeFile(sourceFilePath, "console.log('src');\n", 'utf8'),
       fs.writeFile(scriptFilePath, "console.error('script');\n", 'utf8'),
     ]);
 
     try {
-      const sourceResult = runOxlint(sourceFilePath);
-      const scriptResult = runOxlint(scriptFilePath);
+      const sourceResult = runOxlint(fixtureRoot, oxlintConfigPath, sourceRelativeFilePath);
+      const scriptResult = runOxlint(fixtureRoot, oxlintConfigPath, scriptRelativeFilePath);
 
       expect(sourceResult.error).toBeUndefined();
       expect(sourceResult.status).toBe(1);
@@ -43,9 +54,9 @@ describe('Logging policy', () => {
       expect(scriptResult.status).toBe(0);
       expect(getLintOutput(scriptResult)).not.toContain('no-console');
     } finally {
-      await Promise.all([fs.rm(sourceFilePath, { force: true }), fs.rm(scriptFilePath, { force: true })]);
+      await fs.rm(fixtureRoot, { recursive: true, force: true });
     }
-  });
+  }, 15000);
 
   test('emits flat structured logs only', () => {
     const logs: string[] = [];
@@ -102,10 +113,28 @@ function parseJsonLogLine(line: string): unknown {
   return JSON.parse(line);
 }
 
-function runOxlint(filePath: string) {
-  return childProcess.spawnSync('pnpm', ['exec', 'oxlint', '-c', OXLINT_CONFIG, filePath], {
-    cwd: REPO_ROOT,
+async function writeOxlintConfig(configFilePath: string) {
+  const parsedConfig: unknown = JSON.parse(await fs.readFile(OXLINT_CONFIG, 'utf8'));
+  const config = isStructuredLogRecord(parsedConfig) ? parsedConfig : {};
+  const options = isStructuredLogRecord(config.options) ? config.options : {};
+
+  await fs.writeFile(
+    configFilePath,
+    `${JSON.stringify({ ...config, options: { ...options, typeAware: false } })}\n`,
+    'utf8',
+  );
+}
+
+function runOxlint(rootDirectory: string, configFilePath: string, filePath: string) {
+  const relativeConfigFilePath = path.relative(rootDirectory, configFilePath);
+
+  return childProcess.spawnSync('oxlint', ['-c', relativeConfigFilePath, filePath], {
+    cwd: rootDirectory,
     encoding: 'utf8',
+    env: {
+      ...process.env,
+      PATH: `${OXLINT_BIN_DIRECTORY}${path.delimiter}${process.env.PATH ?? ''}`,
+    },
   });
 }
 

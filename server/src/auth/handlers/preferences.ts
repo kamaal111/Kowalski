@@ -1,13 +1,17 @@
+import type { TypedResponse } from 'hono';
+
 import type { HonoContext } from '../../api/contexts';
 import { STATUS_CODES } from '../../constants/http';
 import { withRequestLogger } from '@/logging/http';
 import { upsertUserPreferredCurrency } from '../repositories/preferences';
 import { getSessionWhereSessionIsRequired } from '../utils/session';
 import { logInfo } from '@/logging';
-import type { SessionResponse } from '../schemas/responses';
+import { SessionResponseSchema, type SessionResponse } from '../schemas/responses';
 import type { UpdatePreferencesPayload } from '../schemas/payloads';
 
-async function preferencesHandler(c: HonoContext<string, { out: { json: UpdatePreferencesPayload } }>) {
+async function preferencesHandler(
+  c: HonoContext<string, { out: { json: UpdatePreferencesPayload } }>,
+): Promise<TypedResponse<SessionResponse, typeof STATUS_CODES.OK>> {
   const session = getSessionWhereSessionIsRequired(c);
 
   const payload = c.req.valid('json');
@@ -18,13 +22,10 @@ async function preferencesHandler(c: HonoContext<string, { out: { json: UpdatePr
     preferredCurrency: updatedPreferredCurrency,
   });
 
-  const response = {
+  const response = SessionResponseSchema.parse({
     ...session,
-    user: {
-      ...session.user,
-      preferred_currency: updatedPreferredCurrency,
-    },
-  } satisfies SessionResponse;
+    user: { ...session.user, preferred_currency: updatedPreferredCurrency },
+  });
 
   logInfo(withRequestLogger(c, { component: 'auth' }), {
     event: 'auth.preferences.updated',

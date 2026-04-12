@@ -23,6 +23,7 @@ Follow this skill to match the server's existing architecture instead of inventi
 - Avoid `as` casts, suppression comments, and lint bypasses. Fix the type or validate the data instead.
 - Reuse shared constants from `server/src/constants/` and shared schemas from `server/src/schemas/` when they fit.
 - Use integration tests for route and persistence behavior unless the change is truly isolated.
+- Fail loudly when required dependency data is missing or unusable. If an endpoint cannot produce the response semantics the app depends on, throw a typed domain exception and return a clear `5xx` instead of silently degrading to placeholder values, alternate currencies, partial payloads, or undocumented nullability.
 
 ## Architectural Shape
 
@@ -53,6 +54,7 @@ Model new work after files such as:
 - Export inferred payload types when handlers need them for `HonoContext` typing, and treat missing handler types as a typing problem to fix rather than a reason to cast `c.req.valid(...)`.
 - Use `.parse(...)` for values that must be correct and `.safeParse(...)` when a graceful branch is required.
 - Treat response mapping as a validation boundary too. The handlers in portfolio routes parse the response shape right before `c.json(...)`.
+- When a response combines multiple data sources, treat missing prerequisite records such as FX snapshots, cached prices, or derived aggregates as server errors unless the degraded state is explicitly documented in the contract.
 
 ## Middleware, Context, and Auth Patterns
 

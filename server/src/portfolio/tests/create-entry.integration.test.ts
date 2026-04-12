@@ -129,6 +129,47 @@ describe('Create Portfolio Entry Route', () => {
   );
 
   integrationTest(
+    'returns an internal server error when creating an entry needs FX data that is missing',
+    async ({ app, db, sessionToken, userId, getLogsForRequestId, withRequestId }) => {
+      await db.insert(userPreferences).values({ userId, preferredCurrency: 'EUR' });
+
+      const request = withRequestId(createCreateEntryRequestHeaders(sessionToken));
+      const response = await sendCreateEntryRequest(
+        app,
+        {
+          payload: {
+            ...createValidCreateEntryPayload(),
+            purchase_price: {
+              currency: 'USD',
+              value: 110,
+            },
+          },
+        },
+        CREATE_ENTRY_PATH,
+        request.headers,
+      );
+      const body = await expectInternalServerErrorResponse(response);
+      const logs = getLogsForRequestId(request.requestId);
+
+      expect(body).toEqual({
+        message: 'Failed to resolve foreign exchange rates',
+        code: 'EXCHANGE_RATE_RESOLUTION_FAILED',
+      });
+      expect(logs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            event: 'request.error',
+            request_id: request.requestId,
+            route: CREATE_ENTRY_PATH,
+            status_code: 500,
+            error_code: 'EXCHANGE_RATE_RESOLUTION_FAILED',
+          }),
+        ]),
+      );
+    },
+  );
+
+  integrationTest(
     'reuses the default portfolio and stock ticker for repeated creates',
     async ({ app, db, sessionToken }) => {
       await sendCreateEntryRequest(app, {
@@ -346,6 +387,12 @@ async function expectSuccessfulCreateEntryResponse(response: Response) {
 
 async function expectNotFoundErrorResponse(response: Response) {
   expect(response.status).toBe(404);
+
+  return ErrorResponseSchema.parse(await response.json());
+}
+
+async function expectInternalServerErrorResponse(response: Response) {
+  expect(response.status).toBe(500);
 
   return ErrorResponseSchema.parse(await response.json());
 }

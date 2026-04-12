@@ -1,3 +1,5 @@
+import type { TypedResponse } from 'hono';
+
 import { STATUS_CODES } from '@/constants/http';
 import { createSyntheticTickerId } from '@/utils/tickers';
 import updatePortfolioEntry from '../services/update-entry';
@@ -8,10 +10,11 @@ import type { HonoContext } from '@/api/contexts';
 import type { CreateEntryPayload } from '../schemas/payloads';
 import type { PortfolioEntryPathParams } from '../schemas/params';
 import { mapPortfolioEntryToResponse } from '../mappers/entry-response';
+import type { CreateEntryResponse } from '../schemas/responses';
 
 async function updateEntry(
   c: HonoContext<string, { out: { json: CreateEntryPayload; param: PortfolioEntryPathParams } }>,
-) {
+): Promise<TypedResponse<CreateEntryResponse, typeof STATUS_CODES.OK>> {
   const params = c.req.valid('param');
   const payload = c.req.valid('json');
   const updatedEntry = await updatePortfolioEntry(c, params.entryId, payload);

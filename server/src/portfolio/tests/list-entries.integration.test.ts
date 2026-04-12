@@ -215,8 +215,48 @@ describe('List Portfolio Entries Route', () => {
   );
 
   integrationTest(
-    'returns null preferred_currency_purchase_price when no usable FX rate exists',
-    async ({ app, db, sessionToken, userId }) => {
+    'returns an internal server error when preferred-currency purchase prices need FX data that is missing',
+    async ({ app, db, sessionToken, userId, getLogsForRequestId, withRequestId }) => {
+      await db.insert(schema.userPreferences).values({ userId, preferredCurrency: 'EUR' });
+      await seedPortfolioEntry(db, {
+        userId,
+        stock: {
+          symbol: 'AAPL',
+          exchange: 'NMS',
+          name: 'Apple Inc.',
+        },
+        amount: 1,
+        purchasePrice: { currency: 'USD', value: 110 },
+        transactionType: 'buy',
+        transactionDate: '2025-12-20T10:30:00.000Z',
+      });
+
+      const request = withRequestId(createListEntriesRequestHeaders(sessionToken));
+      const response = await sendListEntriesRequest(app, {}, request.headers);
+      const body = await expectInternalServerErrorResponse(response);
+      const logs = getLogsForRequestId(request.requestId);
+
+      expect(body).toEqual({
+        message: 'Failed to resolve foreign exchange rates',
+        code: 'EXCHANGE_RATE_RESOLUTION_FAILED',
+      });
+      expect(logs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            event: 'request.error',
+            request_id: request.requestId,
+            route: LIST_ENTRIES_PATH,
+            status_code: 500,
+            error_code: 'EXCHANGE_RATE_RESOLUTION_FAILED',
+          }),
+        ]),
+      );
+    },
+  );
+
+  integrationTest(
+    'returns an internal server error when the FX snapshot is missing a required purchase-price conversion',
+    async ({ app, db, sessionToken, userId, getLogsForRequestId, withRequestId }) => {
       await db.insert(schema.userPreferences).values({ userId, preferredCurrency: 'EUR' });
       await seedExchangeRate(db, {
         base: 'EUR',
@@ -236,10 +276,26 @@ describe('List Portfolio Entries Route', () => {
         transactionDate: '2025-12-20T10:30:00.000Z',
       });
 
-      const response = await sendListEntriesRequest(app, { sessionToken });
-      const body = await expectSuccessfulListEntriesResponse(response);
+      const request = withRequestId(createListEntriesRequestHeaders(sessionToken));
+      const response = await sendListEntriesRequest(app, {}, request.headers);
+      const body = await expectInternalServerErrorResponse(response);
+      const logs = getLogsForRequestId(request.requestId);
 
-      expect(body[0]?.preferred_currency_purchase_price).toBeNull();
+      expect(body).toEqual({
+        message: 'Failed to resolve foreign exchange rates',
+        code: 'EXCHANGE_RATE_RESOLUTION_FAILED',
+      });
+      expect(logs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            event: 'request.error',
+            request_id: request.requestId,
+            route: LIST_ENTRIES_PATH,
+            status_code: 500,
+            error_code: 'EXCHANGE_RATE_RESOLUTION_FAILED',
+          }),
+        ]),
+      );
     },
   );
 

@@ -28,13 +28,13 @@ export type CreateEntryResponse = z.infer<typeof CreateEntryResponseSchema>;
 export const CreateEntryResponseSchema = PortfolioEntryResponseObjectSchema.extend({
   preferred_currency_purchase_price: MoneySchema.nullable().openapi({
     description:
-      "Entry purchase price converted into the signed-in user's preferred currency, or null when unavailable.",
+      "Entry purchase price converted into the signed-in user's preferred currency, or null when no preferred currency is set.",
     example: { currency: 'EUR', value: 138.07 },
   }),
 }).openapi('CreateEntryResponse', {
   title: 'Create Portfolio Entry Response',
   description:
-    "Persisted portfolio entry enriched with the signed-in user's preferred-currency purchase price when available.",
+    "Persisted portfolio entry enriched with the signed-in user's preferred-currency purchase price when a preferred currency is configured.",
   example: {
     id: '550e8400-e29b-41d4-a716-446655440000',
     stock: {
@@ -88,7 +88,8 @@ export type CurrentValue = z.infer<typeof CurrentValueSchema>;
 
 export const CurrentValueSchema = MoneySchema.openapi('CurrentValue', {
   title: 'Current Portfolio Value',
-  description: 'Current stock price in either the preferred or native quote currency.',
+  description:
+    "Current stock price in the signed-in user's preferred currency when conversion is required, or the native quote currency when no conversion is needed.",
   example: { currency: 'EUR', value: 185.45 },
 });
 
