@@ -12,7 +12,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/apple/swift-openapi-urlsession", .upToNextMajor(from: "1.2.0")),
         .package(url: "https://github.com/apple/swift-openapi-runtime", .upToNextMajor(from: "1.11.0")),
-        .package(url: "https://github.com/apple/swift-openapi-generator", .upToNextMajor(from: "1.11.0")),
+        .package(url: "https://github.com/apple/swift-openapi-generator", .upToNextMajor(from: "1.11.1")),
         .package(url: "https://github.com/apple/swift-http-types", .upToNextMajor(from: "1.5.1")),
         .package(url: "https://github.com/Kamaalio/KamaalSwift", .upToNextMajor(from: "3.5.0")),
         .package(url: "https://github.com/kamaal111/ForexKit", .upToNextMajor(from: "5.0.0")),
