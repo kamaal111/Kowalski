@@ -37,6 +37,29 @@ struct KowalskiPortfolioMapper {
         )
     }
 
+    func mapBulkCreateEntryItemPayloadToApi(
+        _ payload: KowalskiPortfolioBulkCreateEntryItemPayload,
+    ) -> Components.Schemas.BulkCreateEntryItemPayload {
+        let stock = stocksMapper.mapStockItemToApi(payload.stock)
+        let transactionType: Components.Schemas.BulkCreateEntryItemPayload.TransactionTypePayload =
+            switch payload.transactionType {
+            case .buy: .buy
+            case .sell: .sell
+            case .split: .split
+            }
+        return Components.Schemas.BulkCreateEntryItemPayload(
+            stock: stock,
+            amount: payload.amount,
+            purchasePrice: Components.Schemas.Money(
+                currency: payload.purchasePrice.currency,
+                value: payload.purchasePrice.value,
+            ),
+            transactionType: transactionType,
+            transactionDate: payload.transactionDate,
+            id: payload.id,
+        )
+    }
+
     func mapCreateEntryApiResponseToClient(
         _ response: Components.Schemas.CreateEntryResponse,
     ) -> KowalskiPortfolioClientEntryResponse {
@@ -45,6 +68,12 @@ struct KowalskiPortfolioMapper {
 
     func mapListEntriesApiResponseToClient(
         _ response: Components.Schemas.ListEntriesResponse,
+    ) -> [KowalskiPortfolioClientEntryResponse] {
+        response.map(mapEntryApiResponseToClient)
+    }
+
+    func mapBulkCreateEntriesApiResponseToClient(
+        _ response: Components.Schemas.BulkCreateEntriesResponse,
     ) -> [KowalskiPortfolioClientEntryResponse] {
         response.map(mapEntryApiResponseToClient)
     }
@@ -102,14 +131,10 @@ struct KowalskiPortfolioMapper {
     }
 
     private func mapPreferredCurrencyPurchasePrice(
-        _ response: Components.Schemas.CreateEntryResponse.PreferredCurrencyPurchasePricePayload,
+        _ response: Components.Schemas.PreferredCurrencyPurchasePrice,
     ) -> KowalskiClientMoney? {
-        // The OpenAPI generator models `Money | null` as a wrapper containing both the decoded `Money`
-        // and a generic `OpenAPIValueContainer`. When the payload is actually `null`, `value1` isn't
-        // meaningful, so we have to inspect the generic container to distinguish "real money object"
-        // from "JSON null" before mapping the money value.
-        guard response.value2.value != nil else { return nil }
+        guard let money = response.value1 else { return nil }
 
-        return mapMoney(response.value1)
+        return mapMoney(money)
     }
 }

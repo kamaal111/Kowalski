@@ -3,9 +3,11 @@ import { allowedModes } from '@/api/middleware';
 import { openAPIRouterFactory } from '@/api/open-api';
 import { requireLoggedInSessionMiddleware } from '@/auth';
 import createEntryRoute from './create-entry';
+import bulkCreateEntriesRoute from './bulk-create-entries';
 import listEntriesRoute from './list-entries';
 import overviewRoute from './overview';
 import updateEntryRoute from './update-entry';
+import bulkCreateEntries from '../handlers/bulk-create-entries';
 import createEntry from '../handlers/create-entry';
 import listEntries from '../handlers/list-entries';
 import overview from '../handlers/overview';
@@ -22,6 +24,8 @@ portfolioApi
   .openapi(overviewRoute, overview)
   // POST: /entries
   .openapi(createEntryRoute, createEntry)
+  // POST: /entries/bulk
+  .openapi(bulkCreateEntriesRoute, bulkCreateEntries)
   // PUT: /entries/{entryId}
   .openapi(updateEntryRoute, updateEntry);
 

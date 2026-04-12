@@ -60,3 +60,67 @@ export const CreateEntryPayloadSchema = z
       transaction_date: '2025-12-20T10:30:00.000Z',
     },
   });
+
+export type BulkCreateEntryItemPayload = z.infer<typeof BulkCreateEntryItemPayloadSchema>;
+
+export const BulkCreateEntryItemPayloadSchema = z
+  .object({
+    ...CreateEntryPayloadSchema.shape,
+    id: z.uuid().optional().openapi({
+      description: 'Optional client-supplied entry identifier used for idempotent imports',
+      example: '550e8400-e29b-41d4-a716-446655440000',
+    }),
+  })
+  .openapi('BulkCreateEntryItemPayload', {
+    title: 'Bulk Create Portfolio Entry Item Payload',
+    description: 'Portfolio entry payload for bulk create requests with an optional client-supplied id',
+    example: {
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      stock: {
+        symbol: 'AAPL',
+        exchange: 'NMS',
+        name: 'Apple Inc.',
+        isin: 'US0378331005',
+        sector: 'Technology',
+        industry: 'Consumer Electronics',
+        exchange_dispatch: 'NASDAQ',
+      },
+      amount: 10,
+      purchase_price: { currency: 'USD', value: 150.5 },
+      transaction_type: 'buy',
+      transaction_date: '2025-12-20T10:30:00.000Z',
+    },
+  });
+
+export type BulkCreateEntriesPayload = z.infer<typeof BulkCreateEntriesPayloadSchema>;
+
+export const BulkCreateEntriesPayloadSchema = z
+  .object({
+    entries: z.array(BulkCreateEntryItemPayloadSchema).openapi({
+      description: 'Portfolio entries to create in a single request',
+    }),
+  })
+  .openapi('BulkCreateEntriesPayload', {
+    title: 'Bulk Create Portfolio Entries Payload',
+    description: 'Request payload for creating multiple portfolio entries in a single request',
+    example: {
+      entries: [
+        {
+          id: '550e8400-e29b-41d4-a716-446655440000',
+          stock: {
+            symbol: 'AAPL',
+            exchange: 'NMS',
+            name: 'Apple Inc.',
+            isin: 'US0378331005',
+            sector: 'Technology',
+            industry: 'Consumer Electronics',
+            exchange_dispatch: 'NASDAQ',
+          },
+          amount: 10,
+          purchase_price: { currency: 'USD', value: 150.5 },
+          transaction_type: 'buy',
+          transaction_date: '2025-12-20T10:30:00.000Z',
+        },
+      ],
+    },
+  });

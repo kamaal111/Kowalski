@@ -25,8 +25,19 @@ public struct KowalskiScene: Scene {
             .kowalskiPortfolio(portfolio)
         }
         Settings {
-            KowalskiAuthSettingsView()
-                .environment(auth)
+            KowalskiAuthSettingsView(
+                onExportTransactions: {
+                    await portfolio.exportTransactions().mapError { error in error as any Error }
+                },
+                onImportTransactions: { url in
+                    await portfolio.importTransactions(from: url).mapError { error in error as any Error }
+                },
+                onDownloadTransactionsTemplate: {
+                    await portfolio.downloadTransactionsTemplate().mapError { error in error as any Error }
+                },
+            )
+            .environment(auth)
+            .kowalskiPortfolio(portfolio)
         }
     }
 }

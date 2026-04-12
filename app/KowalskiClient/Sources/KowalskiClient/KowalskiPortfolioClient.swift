@@ -14,6 +14,9 @@ import OpenAPIRuntime
 public protocol KowalskiPortfolioClient: Sendable {
     func listEntries() async -> Result<[KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientListEntriesErrors>
     func getOverview() async -> Result<KowalskiPortfolioOverviewResponse, KowalskiPortfolioClientOverviewErrors>
+    func bulkCreateEntries(
+        entries: [KowalskiPortfolioBulkCreateEntryItemPayload],
+    ) async -> Result<[KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientBulkCreateEntriesErrors>
     func createEntry(
         payload: KowalskiPortfolioCreateEntryPayload,
     ) async -> Result<KowalskiPortfolioClientEntryResponse, KowalskiPortfolioClientCreateEntryErrors>
@@ -111,6 +114,41 @@ public enum KowalskiPortfolioClientCreateEntryErrors: Error, Equatable {
 
     case unknown(statusCode: Int, payload: OpenAPIRuntime.UndocumentedPayload?, context: Error?)
     case badRequest(errorCode: String?, validations: [KowalskiClientValidationIssue])
+    case unauthorized
+    case notFound
+    case internalServerError
+}
+
+public enum KowalskiPortfolioClientBulkCreateEntriesErrors: Error, Equatable {
+    public static func == (
+        lhs: KowalskiPortfolioClientBulkCreateEntriesErrors,
+        rhs: KowalskiPortfolioClientBulkCreateEntriesErrors,
+    ) -> Bool {
+        switch lhs {
+        case let .unknown(lhsStatusCode, lhsPayload, lhsContext):
+            if case let .unknown(rhsStatusCode, rhsPayload, rhsContext) = rhs {
+                return lhsStatusCode == rhsStatusCode &&
+                    lhsPayload == rhsPayload &&
+                    lhsContext?.localizedDescription == rhsContext?.localizedDescription
+            }
+        case .unauthorized:
+            if case .unauthorized = rhs {
+                return true
+            }
+        case .notFound:
+            if case .notFound = rhs {
+                return true
+            }
+        case .internalServerError:
+            if case .internalServerError = rhs {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    case unknown(statusCode: Int, payload: OpenAPIRuntime.UndocumentedPayload?, context: Error?)
     case unauthorized
     case notFound
     case internalServerError
@@ -235,6 +273,44 @@ struct KowalskiPortfolioClientImpl: KowalskiPortfolioClient {
         }
 
         return .success(mapper.mapOverviewApiResponseToClient(jsonResponse))
+    }
+
+    func bulkCreateEntries(
+        entries: [KowalskiPortfolioBulkCreateEntryItemPayload],
+    ) async -> Result<[KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientBulkCreateEntriesErrors> {
+        let apiPayload = Components.Schemas.BulkCreateEntriesPayload(
+            entries: entries.map(mapper.mapBulkCreateEntryItemPayloadToApi),
+        )
+        let response: Operations.PostAppApiPortfolioEntriesBulk.Output
+        do {
+            response = try await client.postAppApiPortfolioEntriesBulk(.init(body: .json(apiPayload)))
+        } catch {
+            return .failure(.unknown(statusCode: 503, payload: nil, context: error))
+        }
+
+        let createdResponse: Operations.PostAppApiPortfolioEntriesBulk.Output.Created
+        switch response {
+        case .unauthorized:
+            return .failure(.unauthorized)
+        case .notFound:
+            return .failure(.notFound)
+        case .internalServerError:
+            return .failure(.internalServerError)
+        case let .undocumented(statusCode, payload):
+            return .failure(.unknown(statusCode: statusCode, payload: payload, context: nil))
+        case let .created(created):
+            createdResponse = created
+        case .badRequest:
+            return .failure(.unknown(statusCode: 400, payload: nil, context: nil))
+        }
+        let jsonResponse: Components.Schemas.BulkCreateEntriesResponse
+        do {
+            jsonResponse = try createdResponse.body.json
+        } catch {
+            return .failure(.unknown(statusCode: 500, payload: nil, context: error))
+        }
+
+        return .success(mapper.mapBulkCreateEntriesApiResponseToClient(jsonResponse))
     }
 
     func createEntry(
@@ -367,6 +443,31 @@ actor KowalskiPortfolioClientPreview: KowalskiPortfolioClient {
                 currentValues: overviewCurrentValues,
             ),
         )
+    }
+
+    func bulkCreateEntries(
+        entries: [KowalskiPortfolioBulkCreateEntryItemPayload],
+    ) async -> Result<[KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientBulkCreateEntriesErrors> {
+        let createdEntries = entries.map { entry in
+            let previewEntry = makePreviewEntry(
+                payload: KowalskiPortfolioCreateEntryPayload(
+                    stock: entry.stock,
+                    amount: entry.amount,
+                    purchasePrice: entry.purchasePrice,
+                    transactionType: entry.transactionType,
+                    transactionDate: entry.transactionDate,
+                ),
+                entryId: entry.id ?? UUID().uuidString,
+                createdAt: .now,
+                updatedAt: .now,
+            )
+            overviewCurrentValues[entry.stock.symbol] = entry.purchasePrice
+
+            return previewEntry
+        }
+        self.entries.append(contentsOf: createdEntries)
+
+        return .success(createdEntries)
     }
 
     func createEntry(

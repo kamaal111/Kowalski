@@ -25,12 +25,16 @@ const PortfolioEntryResponseObjectSchema = z.object({
 
 export type CreateEntryResponse = z.infer<typeof CreateEntryResponseSchema>;
 
-export const CreateEntryResponseSchema = PortfolioEntryResponseObjectSchema.extend({
-  preferred_currency_purchase_price: MoneySchema.nullable().openapi({
+const PreferredCurrencyPurchasePriceSchema = z
+  .union([MoneySchema, z.null()])
+  .openapi('PreferredCurrencyPurchasePrice', {
     description:
       "Entry purchase price converted into the signed-in user's preferred currency, or null when no preferred currency is set.",
     example: { currency: 'EUR', value: 138.07 },
-  }),
+  });
+
+export const CreateEntryResponseSchema = PortfolioEntryResponseObjectSchema.extend({
+  preferred_currency_purchase_price: PreferredCurrencyPurchasePriceSchema,
 }).openapi('CreateEntryResponse', {
   title: 'Create Portfolio Entry Response',
   description:
@@ -61,6 +65,34 @@ export type ListEntriesResponse = z.infer<typeof ListEntriesResponseSchema>;
 export const ListEntriesResponseSchema = z.array(CreateEntryResponseSchema).openapi('ListEntriesResponse', {
   title: 'List Portfolio Entries Response',
   description: 'Response containing persisted portfolio entries for the signed-in user',
+  example: [
+    {
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      stock: {
+        symbol: 'AAPL',
+        exchange: 'NMS',
+        name: 'Apple Inc.',
+        isin: 'US0378331005',
+        sector: 'Technology',
+        industry: 'Consumer Electronics',
+        exchange_dispatch: 'NASDAQ',
+      },
+      amount: 10,
+      purchase_price: { currency: 'USD', value: 150.5 },
+      preferred_currency_purchase_price: { currency: 'EUR', value: 138.07 },
+      transaction_type: 'buy',
+      transaction_date: '2025-12-20T00:00:00.000Z',
+      created_at: '2025-12-20T12:00:00.000Z',
+      updated_at: '2025-12-20T12:00:00.000Z',
+    },
+  ],
+});
+
+export type BulkCreateEntriesResponse = z.infer<typeof BulkCreateEntriesResponseSchema>;
+
+export const BulkCreateEntriesResponseSchema = z.array(CreateEntryResponseSchema).openapi('BulkCreateEntriesResponse', {
+  title: 'Bulk Create Portfolio Entries Response',
+  description: 'Response containing the portfolio entries created by a bulk create request',
   example: [
     {
       id: '550e8400-e29b-41d4-a716-446655440000',
