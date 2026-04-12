@@ -35,6 +35,7 @@ Follow this skill to keep app work aligned with the repository's feature-first p
 - Create environment-aware factories such as `default()`, `preview(...)`, `forEnvironment()`, and `testing(...)` when the module already uses them.
 - Keep mutable UI state inside the owning feature model or view, not split across redundant wrappers.
 - Refresh feature state after successful mutations when the existing feature already follows that pattern.
+- **Minimise stored state.** When multiple values share the same lifecycle, combine them into a single stored property (a struct or named tuple) and expose derived values as computed properties. Never introduce a second `private(set) var` just to hold a value that can be computed from an already-stored one.
 
 ## View and Feature Patterns
 

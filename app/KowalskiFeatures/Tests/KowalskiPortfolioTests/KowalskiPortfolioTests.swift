@@ -74,7 +74,7 @@ struct KowalskiPortfolioTests {
         try await portfolio.storeTransaction(makeTransactionPayload(amount: 10)).get()
 
         #expect(portfolio.entries.map(\.stock.name) == ["Apple Inc."])
-        #expect(portfolio.netWorth == 1854.5)
+        #expect(portfolio.netWorth?.value == 1854.5)
         #expect(await portfolioClient.createEntryCallCount == 1)
         #expect(await portfolioClient.getOverviewCallCount == 1)
         #expect(await portfolioClient.listEntriesCallCount == 0)
@@ -134,7 +134,7 @@ struct KowalskiPortfolioTests {
         #expect(refreshedEntry.id == initialEntry.id)
         #expect(refreshedEntry.amount == 15)
         #expect(portfolio.entries.map(\.amount) == [15])
-        #expect(portfolio.netWorth == 3000)
+        #expect(portfolio.netWorth?.value == 3000)
         #expect(await portfolioClient.updateEntryCallCount == 1)
         #expect(await portfolioClient.getOverviewCallCount == 1)
         #expect(await portfolioClient.listEntriesCallCount == 0)
@@ -200,8 +200,119 @@ struct KowalskiPortfolioTests {
         try await portfolio.fetchOverview().get()
 
         #expect(portfolio.entries.count == 3)
-        #expect(portfolio.netWorth == 420)
+        #expect(portfolio.netWorth?.value == 420)
         #expect(await portfolioClient.getOverviewCallCount == 1)
+    }
+
+    @Test
+    func `Overview fetch should compute a profit when current value exceeds purchase cost`() async throws {
+        let overview = makePortfolioOverviewResponse(
+            transactions: [
+                makePortfolioEntryResponse(
+                    stock: makeAppleStockResponse(),
+                    amount: 10,
+                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    transactionType: .buy,
+                ),
+            ],
+            currentValues: [
+                "AAPL": KowalskiClientMoney(currency: "USD", value: 150),
+            ],
+        )
+        let portfolio = KowalskiPortfolio.testing(
+            client: .testing(portfolio: MockPortfolioClient(overviewResult: .success(overview))),
+        )
+
+        try await portfolio.fetchOverview().get()
+
+        #expect(portfolio.netWorth?.value == 1500)
+        #expect(portfolio.allTimeProfit?.currency == .USD)
+        #expect(portfolio.allTimeProfit?.value == 500)
+        #expect(portfolio.allTimeProfitPercentage == 50)
+    }
+
+    @Test
+    func `Overview fetch should compute a loss when current value is below purchase cost`() async throws {
+        let overview = makePortfolioOverviewResponse(
+            transactions: [
+                makePortfolioEntryResponse(
+                    stock: makeAppleStockResponse(),
+                    amount: 5,
+                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 200),
+                    transactionType: .buy,
+                ),
+            ],
+            currentValues: [
+                "AAPL": KowalskiClientMoney(currency: "USD", value: 100),
+            ],
+        )
+        let portfolio = KowalskiPortfolio.testing(
+            client: .testing(portfolio: MockPortfolioClient(overviewResult: .success(overview))),
+        )
+
+        try await portfolio.fetchOverview().get()
+
+        #expect(portfolio.netWorth?.value == 500)
+        #expect(portfolio.allTimeProfit?.value == -500)
+        #expect(portfolio.allTimeProfitPercentage == -50)
+    }
+
+    @Test
+    func `Overview fetch should report zero profit when current value equals purchase cost`() async throws {
+        let overview = makePortfolioOverviewResponse(
+            transactions: [
+                makePortfolioEntryResponse(
+                    stock: makeAppleStockResponse(),
+                    amount: 4,
+                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    transactionType: .buy,
+                ),
+            ],
+            currentValues: [
+                "AAPL": KowalskiClientMoney(currency: "USD", value: 100),
+            ],
+        )
+        let portfolio = KowalskiPortfolio.testing(
+            client: .testing(portfolio: MockPortfolioClient(overviewResult: .success(overview))),
+        )
+
+        try await portfolio.fetchOverview().get()
+
+        #expect(portfolio.netWorth?.value == 400)
+        #expect(portfolio.allTimeProfit?.value == 0)
+        #expect(portfolio.allTimeProfitPercentage == 0)
+    }
+
+    @Test
+    func `Overview fetch should reduce cost basis by sell proceeds when computing profit`() async throws {
+        let overview = makePortfolioOverviewResponse(
+            transactions: [
+                makePortfolioEntryResponse(
+                    stock: makeAppleStockResponse(),
+                    amount: 10,
+                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    transactionType: .buy,
+                ),
+                makePortfolioEntryResponse(
+                    stock: makeAppleStockResponse(),
+                    amount: 2,
+                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    transactionType: .sell,
+                ),
+            ],
+            currentValues: [
+                "AAPL": KowalskiClientMoney(currency: "USD", value: 150),
+            ],
+        )
+        let portfolio = KowalskiPortfolio.testing(
+            client: .testing(portfolio: MockPortfolioClient(overviewResult: .success(overview))),
+        )
+
+        try await portfolio.fetchOverview().get()
+
+        #expect(portfolio.netWorth?.value == 1200)
+        #expect(portfolio.allTimeProfit?.value == 400)
+        #expect(portfolio.allTimeProfitPercentage == 50)
     }
 
     @Test
@@ -231,7 +342,9 @@ struct KowalskiPortfolioTests {
 
         try await portfolio.fetchOverview().get()
 
-        #expect(portfolio.netWorth == 50)
+        #expect(portfolio.netWorth?.value == 50)
+        #expect(portfolio.allTimeProfit?.value == -150)
+        #expect(portfolio.allTimeProfitPercentage == -75)
     }
 
     @Test
@@ -261,12 +374,54 @@ struct KowalskiPortfolioTests {
 
         try await portfolio.fetchOverview().get()
 
-        #expect(portfolio.netWorth == 0)
+        #expect(portfolio.netWorth?.value == 0)
     }
 
     @Test
-    func `Overview fetch should clear net worth when a held symbol is missing from current values`() async throws {
+    func `Overview fetch should use preferred currency purchase price for cost basis when available`() async throws {
         let overview = makePortfolioOverviewResponse(
+            transactions: [
+                makePortfolioEntryResponse(
+                    stock: makeAppleStockResponse(),
+                    amount: 1,
+                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    preferredCurrencyPurchasePrice: KowalskiClientMoney(currency: "EUR", value: 90),
+                    transactionType: .buy,
+                ),
+            ],
+            currentValues: [
+                "AAPL": KowalskiClientMoney(currency: "EUR", value: 120),
+            ],
+        )
+        let portfolio = KowalskiPortfolio.testing(
+            client: .testing(portfolio: MockPortfolioClient(overviewResult: .success(overview))),
+        )
+
+        try await portfolio.fetchOverview().get()
+
+        #expect(portfolio.netWorth?.value == 120)
+        #expect(portfolio.allTimeProfit?.currency == .EUR)
+        #expect(portfolio.allTimeProfit?.value == 30)
+        let allTimeProfitPercentage = try #require(portfolio.allTimeProfitPercentage)
+        #expect(abs(allTimeProfitPercentage - 33.333333333333336) < 0.000001)
+    }
+
+    @Test
+    func `Overview fetch should clear all time profit when net worth is unavailable`() async throws {
+        let populatedOverview = makePortfolioOverviewResponse(
+            transactions: [
+                makePortfolioEntryResponse(
+                    stock: makeAppleStockResponse(),
+                    amount: 1,
+                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    transactionType: .buy,
+                ),
+            ],
+            currentValues: [
+                "AAPL": KowalskiClientMoney(currency: "USD", value: 150),
+            ],
+        )
+        let unavailableOverview = makePortfolioOverviewResponse(
             transactions: [
                 makePortfolioEntryResponse(
                     stock: makeAppleStockResponse(),
@@ -277,13 +432,25 @@ struct KowalskiPortfolioTests {
             ],
             currentValues: [:],
         )
-        let portfolio = KowalskiPortfolio.testing(
-            client: .testing(portfolio: MockPortfolioClient(overviewResult: .success(overview))),
+        let portfolioClient = MockPortfolioClient(
+            overviewResults: [
+                .success(populatedOverview),
+                .success(unavailableOverview),
+            ],
         )
+        let portfolio = KowalskiPortfolio.testing(
+            client: .testing(portfolio: portfolioClient),
+        )
+
+        try await portfolio.fetchOverview().get()
+        #expect(portfolio.netWorth?.value == 150)
+        #expect(portfolio.allTimeProfit?.value == 50)
 
         try await portfolio.fetchOverview().get()
 
         #expect(portfolio.netWorth == nil)
+        #expect(portfolio.allTimeProfit == nil)
+        #expect(portfolio.allTimeProfitPercentage == nil)
     }
 
     @Test
@@ -315,6 +482,70 @@ struct KowalskiPortfolioTests {
         try await portfolio.fetchOverview().get()
 
         #expect(portfolio.netWorth == nil)
+    }
+
+    @Test
+    func `Overview fetch should report nil profit percentage when cost basis is zero`() async throws {
+        let overview = makePortfolioOverviewResponse(
+            transactions: [
+                makePortfolioEntryResponse(
+                    stock: makeAppleStockResponse(),
+                    amount: 1,
+                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    transactionType: .buy,
+                ),
+                makePortfolioEntryResponse(
+                    stock: makeAppleStockResponse(),
+                    amount: 1,
+                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    transactionType: .sell,
+                ),
+            ],
+            currentValues: [
+                "AAPL": KowalskiClientMoney(currency: "USD", value: 200),
+            ],
+        )
+        let portfolio = KowalskiPortfolio.testing(
+            client: .testing(portfolio: MockPortfolioClient(overviewResult: .success(overview))),
+        )
+
+        try await portfolio.fetchOverview().get()
+
+        #expect(portfolio.netWorth?.value == 0)
+        #expect(portfolio.allTimeProfit == nil)
+        #expect(portfolio.allTimeProfitPercentage == nil)
+    }
+
+    @Test
+    func `Overview fetch should report nil profit when all holdings have been sold`() async throws {
+        let overview = makePortfolioOverviewResponse(
+            transactions: [
+                makePortfolioEntryResponse(
+                    stock: makeAppleStockResponse(),
+                    amount: 1,
+                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    transactionType: .buy,
+                ),
+                makePortfolioEntryResponse(
+                    stock: makeAppleStockResponse(),
+                    amount: 1,
+                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 118.73),
+                    transactionType: .sell,
+                ),
+            ],
+            currentValues: [
+                "AAPL": KowalskiClientMoney(currency: "USD", value: 200),
+            ],
+        )
+        let portfolio = KowalskiPortfolio.testing(
+            client: .testing(portfolio: MockPortfolioClient(overviewResult: .success(overview))),
+        )
+
+        try await portfolio.fetchOverview().get()
+
+        #expect(portfolio.netWorth?.value == 0)
+        #expect(portfolio.allTimeProfit == nil)
+        #expect(portfolio.allTimeProfitPercentage == nil)
     }
 
     @Test
@@ -354,11 +585,11 @@ struct KowalskiPortfolioTests {
         let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
 
         try await portfolio.fetchOverview().get()
-        #expect(portfolio.netWorth == 200)
+        #expect(portfolio.netWorth?.value == 200)
 
         try await portfolio.fetchOverview().get()
 
-        #expect(portfolio.netWorth == 160)
+        #expect(portfolio.netWorth?.value == 160)
         #expect(await portfolioClient.getOverviewCallCount == 2)
     }
 
