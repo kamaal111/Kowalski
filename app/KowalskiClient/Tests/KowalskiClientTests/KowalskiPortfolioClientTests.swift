@@ -106,6 +106,28 @@ struct KowalskiPortfolioClientTests {
         #expect(entries.first?.preferredCurrencyPurchasePrice?.currency == "EUR")
         #expect(entries.first?.preferredCurrencyPurchasePrice?.value == 138.07)
     }
+
+    @Test
+    func `Get overview should decode transactions and current values`() async throws {
+        let transport = MockClientTransport(
+            queuedResponses: [
+                QueuedResponse(status: .ok, body: makeOverviewResponseBody()),
+            ],
+        )
+        let client = try makeGeneratedClient(transport: transport)
+        let portfolioClient = KowalskiPortfolioClientFactory.default(client: client)
+
+        let overview = try await portfolioClient.getOverview().get()
+
+        #expect(overview.transactions.count == 1)
+        #expect(overview.transactions.first?.stock.symbol == "AAPL")
+        #expect(overview.currentValues["AAPL"]?.currency == "EUR")
+        #expect(overview.currentValues["AAPL"]?.value == 185.45)
+
+        let request = try #require(transport.capturedRequests.first)
+        #expect(request.path == "/app-api/portfolio/overview")
+        #expect(request.method == .get)
+    }
 }
 
 private func makeGeneratedClient(transport: some ClientTransport) throws -> Client {
@@ -130,5 +152,47 @@ private func makeCreateEntryPayload() -> KowalskiPortfolioCreateEntryPayload {
         purchasePrice: KowalskiClientMoney(currency: "USD", value: 150.5),
         transactionType: .buy,
         transactionDate: Date(timeIntervalSince1970: 1_766_246_840),
+    )
+}
+
+private func makeOverviewResponseBody() -> Data {
+    Data(
+        """
+        {
+          "transactions": [
+            {
+              "id": "cd81dbd7-3efa-42b3-8127-c1589279542f",
+              "created_at": "2025-12-20T12:00:00Z",
+              "updated_at": "2025-12-20T12:00:00Z",
+              "stock": {
+                "symbol": "AAPL",
+                "exchange": "NMS",
+                "name": "Apple Inc.",
+                "isin": "US0378331005",
+                "sector": "Technology",
+                "industry": "Consumer Electronics",
+                "exchange_dispatch": "NASDAQ"
+              },
+              "amount": 10,
+              "purchase_price": {
+                "currency": "USD",
+                "value": 150.5
+              },
+              "preferred_currency_purchase_price": {
+                "currency": "EUR",
+                "value": 138.07
+              },
+              "transaction_type": "buy",
+              "transaction_date": "2025-12-20T10:30:00Z"
+            }
+          ],
+          "current_values": {
+            "AAPL": {
+              "currency": "EUR",
+              "value": 185.45
+            }
+          }
+        }
+        """.utf8,
     )
 }

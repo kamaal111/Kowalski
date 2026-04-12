@@ -13,6 +13,7 @@ import OpenAPIRuntime
 
 public protocol KowalskiPortfolioClient: Sendable {
     func listEntries() async -> Result<[KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientListEntriesErrors>
+    func getOverview() async -> Result<KowalskiPortfolioOverviewResponse, KowalskiPortfolioClientOverviewErrors>
     func createEntry(
         payload: KowalskiPortfolioCreateEntryPayload,
     ) async -> Result<KowalskiPortfolioClientEntryResponse, KowalskiPortfolioClientCreateEntryErrors>
@@ -69,7 +70,7 @@ struct KowalskiPortfolioClientFactory {
     }
 
     static func listEntriesFailingPreview() -> KowalskiPortfolioClient {
-        KowalskiPortfolioClientPreview(listFailure: .unknown(statusCode: 500, payload: nil, context: nil))
+        KowalskiPortfolioClientPreview(overviewFailure: .unknown(statusCode: 500, payload: nil, context: nil))
     }
 }
 
@@ -160,6 +161,11 @@ public enum KowalskiPortfolioClientListEntriesErrors: Error {
     case unauthorized
 }
 
+public enum KowalskiPortfolioClientOverviewErrors: Error {
+    case unknown(statusCode: Int, payload: OpenAPIRuntime.UndocumentedPayload?, context: Error?)
+    case unauthorized
+}
+
 // MARK: Implementation
 
 struct KowalskiPortfolioClientImpl: KowalskiPortfolioClient {
@@ -200,6 +206,35 @@ struct KowalskiPortfolioClientImpl: KowalskiPortfolioClient {
         }
 
         return .success(mapper.mapListEntriesApiResponseToClient(jsonResponse))
+    }
+
+    func getOverview() async -> Result<KowalskiPortfolioOverviewResponse, KowalskiPortfolioClientOverviewErrors> {
+        let response: Operations.GetAppApiPortfolioOverview.Output
+        do {
+            response = try await client.getAppApiPortfolioOverview()
+        } catch {
+            return .failure(.unknown(statusCode: 503, payload: nil, context: error))
+        }
+
+        let okResponse: Operations.GetAppApiPortfolioOverview.Output.Ok
+        switch response {
+        case .unauthorized, .notFound:
+            return .failure(.unauthorized)
+        case .internalServerError:
+            return .failure(.unknown(statusCode: 500, payload: nil, context: nil))
+        case let .undocumented(statusCode, payload):
+            return .failure(.unknown(statusCode: statusCode, payload: payload, context: nil))
+        case let .ok(ok):
+            okResponse = ok
+        }
+        let jsonResponse: Components.Schemas.PortfolioOverviewResponse
+        do {
+            jsonResponse = try okResponse.body.json
+        } catch {
+            return .failure(.unknown(statusCode: 500, payload: nil, context: error))
+        }
+
+        return .success(mapper.mapOverviewApiResponseToClient(jsonResponse))
     }
 
     func createEntry(
@@ -291,17 +326,23 @@ actor KowalskiPortfolioClientPreview: KowalskiPortfolioClient {
     private var createResults: [PortfolioClientPreviewCreateResult]
     private let updateFailure: KowalskiPortfolioClientUpdateEntryErrors?
     private let listFailure: KowalskiPortfolioClientListEntriesErrors?
+    private let overviewFailure: KowalskiPortfolioClientOverviewErrors?
+    private var overviewCurrentValues: [String: KowalskiClientMoney]
 
     fileprivate init(
         entries: [KowalskiPortfolioClientEntryResponse] = [],
         createResults: [PortfolioClientPreviewCreateResult] = [],
         updateFailure: KowalskiPortfolioClientUpdateEntryErrors? = nil,
         listFailure: KowalskiPortfolioClientListEntriesErrors? = nil,
+        overviewFailure: KowalskiPortfolioClientOverviewErrors? = nil,
+        overviewCurrentValues: [String: KowalskiClientMoney] = makePreviewCurrentValues(),
     ) {
         self.entries = entries
         self.createResults = createResults
         self.updateFailure = updateFailure
         self.listFailure = listFailure
+        self.overviewFailure = overviewFailure
+        self.overviewCurrentValues = overviewCurrentValues
     }
 
     func listEntries() async -> Result<
@@ -313,6 +354,19 @@ actor KowalskiPortfolioClientPreview: KowalskiPortfolioClient {
         }
 
         return .success(sortedEntries())
+    }
+
+    func getOverview() async -> Result<KowalskiPortfolioOverviewResponse, KowalskiPortfolioClientOverviewErrors> {
+        if let overviewFailure {
+            return .failure(overviewFailure)
+        }
+
+        return .success(
+            KowalskiPortfolioOverviewResponse(
+                transactions: sortedEntries(),
+                currentValues: overviewCurrentValues,
+            ),
+        )
     }
 
     func createEntry(
@@ -335,6 +389,7 @@ actor KowalskiPortfolioClientPreview: KowalskiPortfolioClient {
             updatedAt: .now,
         )
         entries.append(entry)
+        overviewCurrentValues[payload.stock.symbol] = payload.purchasePrice
 
         return .success(entry)
     }
@@ -357,6 +412,7 @@ actor KowalskiPortfolioClientPreview: KowalskiPortfolioClient {
             updatedAt: .now,
         )
         entries[index] = updatedEntry
+        overviewCurrentValues[payload.stock.symbol] = payload.purchasePrice
 
         return .success(updatedEntry)
     }
@@ -483,6 +539,14 @@ private func makePreviewCreatePayload(
         transactionType: transactionType,
         transactionDate: transactionDate,
     )
+}
+
+private func makePreviewCurrentValues() -> [String: KowalskiClientMoney] {
+    [
+        "AAPL": KowalskiClientMoney(currency: "USD", value: 185.45),
+        "TSLA": KowalskiClientMoney(currency: "USD", value: 420.5),
+        "NVDA": KowalskiClientMoney(currency: "USD", value: 135),
+    ]
 }
 
 private func makePreviewValidationIssue() -> KowalskiClientValidationIssue {

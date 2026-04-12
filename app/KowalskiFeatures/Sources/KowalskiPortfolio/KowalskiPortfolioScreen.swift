@@ -5,6 +5,7 @@
 //  Created by Kamaal M Farah on 11/1/25.
 //
 
+import ForexKit
 import KamaalUI
 import KowalskiAuth
 import KowalskiDesignSystem
@@ -50,13 +51,13 @@ public struct KowalskiPortfolioScreen: View {
             guard !hasLoadedEntries else { return }
 
             hasLoadedEntries = true
-            await handleFetchEntries()
+            await handleFetchOverview()
         }
-        .onChange(of: auth.effectiveCurrency) { _, preferredCurrency in
+        .onChange(of: auth.effectiveCurrency) { _, _ in
             guard hasLoadedEntries else { return }
 
             Task {
-                await portfolio.fetchNetWorth(preferredCurrency: preferredCurrency)
+                await handleFetchOverview()
             }
         }
         .toastView(toast: $toast)
@@ -104,12 +105,12 @@ public struct KowalskiPortfolioScreen: View {
         VStack(alignment: .leading, spacing: KowalskiSizes.small.rawValue) {
             Text("Net Worth")
                 .font(.headline)
-            if portfolio.isLoadingNetWorth {
+            if portfolio.isLoading, !portfolio.entries.isEmpty, portfolio.netWorth == nil {
                 ProgressView("Loading net worth")
             } else if let netWorth = portfolio.netWorth {
-                Text(netWorth, format: .currency(code: auth.effectiveCurrency.rawValue))
+                Text(netWorth, format: .currency(code: displayedNetWorthCurrency.rawValue))
                     .font(.largeTitle.weight(.semibold))
-                Text(auth.effectiveCurrency.localized)
+                Text(displayedNetWorthCurrency.localized)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
@@ -136,15 +137,16 @@ public struct KowalskiPortfolioScreen: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
     }
 
+    private var displayedNetWorthCurrency: Currencies {
+        portfolio.netWorthCurrency ?? auth.effectiveCurrency
+    }
+
     @MainActor
-    private func handleFetchEntries() async {
-        let result = await portfolio.fetchEntries()
+    private func handleFetchOverview() async {
+        let result = await portfolio.fetchOverview()
         if case .failure = result {
             toast = .error(message: NSLocalizedString("Failed to load portfolio entries", comment: ""))
-            return
         }
-
-        await portfolio.fetchNetWorth(preferredCurrency: auth.effectiveCurrency)
     }
 }
 

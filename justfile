@@ -36,7 +36,7 @@ default:
 
 # Run dev server
 [working-directory("server")]
-dev-server: prepare-server start-services migrate
+dev-server: prepare-server start-services migrate fetch-daily-currencies
     #!/usr/bin/env zsh
 
     export DEBUG="true"
@@ -111,7 +111,7 @@ migrate: prepare-server
 
 # Fetch daily currencies unless today's snapshot is already stored
 [working-directory("server")]
-fetch-daily-currencies: start-services migrate
+fetch-daily-currencies:
     {{ TSX }} scripts/fetch-daily-currencies.ts
 
 # Generate migrations

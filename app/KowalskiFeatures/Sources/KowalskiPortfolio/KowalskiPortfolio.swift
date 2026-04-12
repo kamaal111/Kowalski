@@ -20,12 +20,11 @@ private let logger = KamaalLogger(from: KowalskiPortfolio.self, failOnError: tru
 public final class KowalskiPortfolio {
     private let client: KowalskiClient
     private let mapper = KowalskiPortfolioMappers()
-    private var lastPreferredCurrency: Currencies?
 
     private(set) var entries: [PortfolioEntry] = []
     private(set) var isLoading = false
     private(set) var netWorth: Double?
-    private(set) var isLoadingNetWorth = false
+    private(set) var netWorthCurrency: Currencies?
 
     private init(client: KowalskiClient) {
         self.client = client
@@ -46,10 +45,10 @@ public final class KowalskiPortfolio {
         case .success: break
         }
 
-        let fetchEntriesResult = await refreshEntries()
-        switch fetchEntriesResult {
+        let fetchOverviewResult = await refreshOverview()
+        switch fetchOverviewResult {
         case let .failure(failure):
-            logger.error(label: "Failed to refresh entries after create", error: failure)
+            logger.error(label: "Failed to refresh portfolio overview after create", error: failure)
         case .success: break
         }
 
@@ -73,10 +72,10 @@ public final class KowalskiPortfolio {
         case .success: break
         }
 
-        let fetchEntriesResult = await refreshEntries()
-        switch fetchEntriesResult {
+        let fetchOverviewResult = await refreshOverview()
+        switch fetchOverviewResult {
         case let .failure(failure):
-            logger.error(label: "Failed to refresh entries after update", error: failure)
+            logger.error(label: "Failed to refresh portfolio overview after update", error: failure)
         case .success:
             guard let updatedEntry = entries.find(by: \.id, is: entryId) else {
                 logger.error("Updated entry missing from refreshed entries")
@@ -97,89 +96,67 @@ public final class KowalskiPortfolio {
             .mapError { error in error as Error }
     }
 
-    func fetchEntries() async -> Result<Void, Error> {
+    func fetchOverview() async -> Result<Void, Error> {
         await withLoading {
-            let result = await client.portfolio.listEntries()
+            let result = await client.portfolio.getOverview()
+                .map(mapper.mapOverviewResponse)
+            let overviewState: PortfolioOverviewState
             switch result {
             case let .failure(error): return .failure(error)
-            case let .success(entries):
-                setEntries(mapper.mapPortfolioEntries(entries))
+            case let .success(success):
+                overviewState = success
             }
+
+            let netWorth = computeNetWorth(for: overviewState.entries, currentValues: overviewState.currentValues)
+            setEntries(overviewState.entries)
+            setNetWorth(netWorth?.value)
+            setNetWorthCurrency(netWorth?.currency)
 
             return .success(())
         }
     }
 
-    func fetchNetWorth(preferredCurrency: Currencies) async {
-        let preferredCurrencyDidChange =
-            lastPreferredCurrency != nil && lastPreferredCurrency != preferredCurrency && !entries.isEmpty
-        setLastPreferredCurrency(preferredCurrency)
-
-        if preferredCurrencyDidChange {
-            let refreshEntriesResult = await fetchEntries()
-            switch refreshEntriesResult {
-            case let .failure(failure):
-                logger.error(label: "Failed to refresh entries after preferred currency changed", error: failure)
-                setNetWorth(nil)
-                return
-            case .success:
-                break
+    private func computeNetWorth(for entries: [PortfolioEntry], currentValues: [String: Money]) -> Money? {
+        let holdings = entries.reduce([String: Double]()) { holdings, entry in
+            let amountDelta: Double = switch entry.transactionType {
+            case .purchase: entry.amount
+            case .sell: -entry.amount
+            case .split: entry.amount
             }
+
+            var holdings = holdings
+            holdings[entry.stock.symbol, default: 0] += amountDelta
+
+            return holdings
         }
+        guard !holdings.isEmpty else { return Money(currency: .USD, value: 0) }
 
-        await withLoadingNetWorth {
-            let valuedEntries = entries.filter { $0.transactionType != .split }
-            guard !valuedEntries.isEmpty else {
-                setNetWorth(0)
-                return
-            }
-
-            guard let netWorth = computeNetWorth(for: valuedEntries, in: preferredCurrency) else {
-                logger.warning("Failed to compute net worth from preferred-currency entry values")
-                setNetWorth(nil)
-                return
-            }
-
-            setNetWorth(netWorth)
-        }
-    }
-
-    private func computeNetWorth(
-        for entries: [PortfolioEntry],
-        in preferredCurrency: Currencies,
-    ) -> Double? {
+        let fallbackCurrency = currentValues.first?.value.currency ?? .USD
         var runningTotal = 0.0
-        for entry in entries {
-            guard let preferredCurrencyPurchasePrice = entry.preferredCurrencyPurchasePrice else {
-                logger.warning("Missing preferred-currency purchase price required for net worth calculation")
+        var netWorthCurrency: Currencies?
+        for (symbol, quantity) in holdings {
+            guard quantity != 0 else { continue }
+            guard let currentValue = currentValues[symbol] else {
+                logger.warning("Missing current value required for net worth calculation")
                 return nil
             }
-            guard preferredCurrencyPurchasePrice.currency == preferredCurrency else {
-                logger.warning("Preferred-currency purchase price should match the requested preferred currency")
+            if let netWorthCurrency, netWorthCurrency != currentValue.currency {
+                logger.warning("Current stock values should use a consistent currency")
                 return nil
             }
-
-            let signedAmount: Double = switch entry.transactionType {
-            case .purchase:
-                entry.amount * preferredCurrencyPurchasePrice.value
-            case .sell:
-                -(entry.amount * preferredCurrencyPurchasePrice.value)
-            case .split:
-                0
+            if netWorthCurrency == nil {
+                netWorthCurrency = currentValue.currency
             }
 
-            runningTotal += signedAmount
+            runningTotal += quantity * currentValue.value
         }
 
-        return runningTotal
+        guard let netWorthCurrency else { return Money(currency: fallbackCurrency, value: 0) }
+
+        return Money(currency: netWorthCurrency, value: runningTotal)
     }
 
     // MARK: Helpers
-
-    @MainActor
-    private func setLastPreferredCurrency(_ preferredCurrency: Currencies) {
-        lastPreferredCurrency = preferredCurrency
-    }
 
     @MainActor
     private func setEntries(_ newEntries: [PortfolioEntry]) {
@@ -191,14 +168,13 @@ public final class KowalskiPortfolio {
         netWorth = newNetWorth
     }
 
-    private func refreshEntries() async -> Result<Void, Error> {
-        let result = await fetchEntries()
-        guard case .success = result else { return result }
-        if let lastPreferredCurrency {
-            await fetchNetWorth(preferredCurrency: lastPreferredCurrency)
-        }
+    @MainActor
+    private func setNetWorthCurrency(_ newNetWorthCurrency: Currencies?) {
+        netWorthCurrency = newNetWorthCurrency
+    }
 
-        return result
+    private func refreshOverview() async -> Result<Void, Error> {
+        await fetchOverview()
     }
 
     @MainActor
@@ -206,15 +182,6 @@ public final class KowalskiPortfolio {
         isLoading = true
         let result = await block()
         isLoading = false
-
-        return result
-    }
-
-    @MainActor
-    private func withLoadingNetWorth<T>(_ block: () async -> T) async -> T {
-        isLoadingNetWorth = true
-        let result = await block()
-        isLoadingNetWorth = false
 
         return result
     }
