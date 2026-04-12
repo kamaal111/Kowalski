@@ -391,12 +391,14 @@ struct KowalskiPortfolioTests {
         #expect(sellFormValues.selectedStock?.isin == "US0378331005")
         #expect(sellFormValues.amount == "10")
         #expect(sellFormValues.transactionType == .sell)
+        #expect(sellFormValues.purchasePriceCurrency == buyEntry.purchasePrice.currency)
 
         #expect(buyFormValues.selectedStock?.symbol == "TSLA")
         #expect(buyFormValues.selectedStock?.name == "Tesla, Inc.")
         #expect(buyFormValues.selectedStock?.isin == "US88160R1014")
         #expect(buyFormValues.amount == "7")
         #expect(buyFormValues.transactionType == .purchase)
+        #expect(buyFormValues.purchasePriceCurrency == sellEntry.purchasePrice.currency)
     }
 
     @Test
@@ -417,20 +419,20 @@ struct KowalskiPortfolioTests {
     }
 
     @Test
-    func `Paired create should use the given preferred currency for purchase price`() {
+    func `Paired create should use the source entry currency for purchase price`() {
         let entry = makePortfolioEntry(
             stock: makeAppleStock(),
             amount: 5,
+            purchasePrice: Money(currency: .EUR, value: 130),
             transactionType: .purchase,
         )
 
         let formValues = KowalskiPortfolioTransactionFormValues.pairedCreate(
             from: entry,
             transactionType: .sell,
-            preferredCurrency: .GBP,
         )
 
-        #expect(formValues.purchasePriceCurrency == .GBP)
+        #expect(formValues.purchasePriceCurrency == .EUR)
         #expect(formValues.selectedStock?.symbol == "AAPL")
         #expect(formValues.amount == "5")
         #expect(formValues.transactionType == .sell)

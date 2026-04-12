@@ -302,14 +302,13 @@ struct KowalskiPortfolioTransactionFormValues {
     static func pairedCreate(
         from entry: PortfolioEntry,
         transactionType: TransactionType,
-        preferredCurrency: Currencies = KowalskiFeatureDefaults.fallbackCurrency,
     ) -> Self {
-        let emptyValues = empty(preferredCurrency: preferredCurrency)
+        let emptyValues = empty()
 
         return Self(
             selectedStock: entry.stock,
             amount: formattedNumber(entry.amount),
-            purchasePriceCurrency: emptyValues.purchasePriceCurrency,
+            purchasePriceCurrency: entry.purchasePrice.currency,
             purchasePriceValue: emptyValues.purchasePriceValue,
             transactionType: transactionType,
             transactionDate: emptyValues.transactionDate,
