@@ -1,5 +1,5 @@
 {
-  "originHash" : "e560b646691944f489c91127c73724b14d057fa477c0e2d5f8697846115a0451",
+  "originHash" : "3ac02a5725cb9713462a89eb27ad23186a3da3ab51b3cd8aae8a44db09b18543",
   "pins" : [
     {
       "identity" : "confettiswiftui",
@@ -87,8 +87,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-openapi-generator",
       "state" : {
-        "revision" : "9ed831359a7b45b6a611610847daca47c3850337",
-        "version" : "1.11.0"
+        "revision" : "73997cc62c2193d5046e431c9d546119dda14502",
+        "version" : "1.11.1"
       }
     },
     {
