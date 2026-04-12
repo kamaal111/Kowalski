@@ -102,27 +102,49 @@ public struct KowalskiPortfolioScreen: View {
     }
 
     private var netWorthCard: some View {
-        VStack(alignment: .leading, spacing: KowalskiSizes.small.rawValue) {
-            Text("Net Worth")
-                .font(.headline)
-            if portfolio.isLoading, !portfolio.entries.isEmpty, portfolio.netWorth == nil {
-                ProgressView("Loading net worth")
-            } else if let netWorth = portfolio.netWorth {
-                Text(netWorth, format: .currency(code: displayedNetWorthCurrency.rawValue))
-                    .font(.largeTitle.weight(.semibold))
-                Text(displayedNetWorthCurrency.localized)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            } else {
-                Text("Net worth unavailable")
-                    .foregroundStyle(.secondary)
+        HStack(alignment: .top, spacing: KowalskiSizes.medium.rawValue) {
+            VStack(alignment: .leading, spacing: KowalskiSizes.small.rawValue) {
+                Text("Holdings Net Worth")
+                    .font(.headline)
+                if portfolio.isLoading, !portfolio.entries.isEmpty, portfolio.netWorth == nil {
+                    ProgressView("Loading net worth")
+                } else if let netWorth = portfolio.netWorth?.value {
+                    Text(netWorth, format: .currency(code: displayedNetWorthCurrency.rawValue))
+                        .font(.largeTitle.weight(.semibold))
+                    Text(displayedNetWorthCurrency.localized)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Net worth unavailable")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            if portfolio.allTimeProfit != nil {
+                profitView
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, .medium)
         .padding(.vertical, .medium)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
         .padding(.all, .medium)
+    }
+
+    private var profitView: some View {
+        VStack(alignment: .trailing, spacing: KowalskiSizes.extraSmall.rawValue) {
+            Text("All-Time Profit")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(formattedAllTimeProfit)
+                .font(.headline.weight(.semibold))
+            if let formattedAllTimeProfitPercentage {
+                Text(formattedAllTimeProfitPercentage)
+                    .font(.caption)
+            }
+        }
+        .foregroundStyle(allTimeProfitColor)
+        .multilineTextAlignment(.trailing)
     }
 
     private var emptyState: some View {
@@ -138,7 +160,34 @@ public struct KowalskiPortfolioScreen: View {
     }
 
     private var displayedNetWorthCurrency: Currencies {
-        portfolio.netWorthCurrency ?? auth.effectiveCurrency
+        portfolio.netWorth?.currency ?? auth.effectiveCurrency
+    }
+
+    private var allTimeProfitColor: Color {
+        guard let allTimeProfit = portfolio.allTimeProfit else { return .secondary }
+        if allTimeProfit.value > 0 {
+            return .green
+        }
+        if allTimeProfit.value < 0 {
+            return .red
+        }
+
+        return .secondary
+    }
+
+    private var formattedAllTimeProfit: String {
+        guard let allTimeProfit = portfolio.allTimeProfit else { return "" }
+
+        return formattedSignedCurrency(
+            value: allTimeProfit.value,
+            currency: allTimeProfit.currency,
+        )
+    }
+
+    private var formattedAllTimeProfitPercentage: String? {
+        guard let allTimeProfitPercentage = portfolio.allTimeProfitPercentage else { return nil }
+
+        return "(\(formattedSignedPercent(allTimeProfitPercentage)))"
     }
 
     @MainActor
@@ -147,6 +196,32 @@ public struct KowalskiPortfolioScreen: View {
         if case .failure = result {
             toast = .error(message: NSLocalizedString("Failed to load portfolio entries", comment: ""))
         }
+    }
+
+    private func formattedSignedCurrency(value: Double, currency: Currencies) -> String {
+        let sign = if value > 0 {
+            "+"
+        } else if value < 0 {
+            "-"
+        } else {
+            ""
+        }
+        let formattedValue = abs(value).formatted(.currency(code: currency.rawValue))
+
+        return "\(sign)\(formattedValue)"
+    }
+
+    private func formattedSignedPercent(_ value: Double) -> String {
+        let sign = if value > 0 {
+            "+"
+        } else if value < 0 {
+            "-"
+        } else {
+            ""
+        }
+        let formattedValue = (abs(value) / 100).formatted(.percent.precision(.fractionLength(0 ... 1)))
+
+        return "\(sign)\(formattedValue)"
     }
 }
 

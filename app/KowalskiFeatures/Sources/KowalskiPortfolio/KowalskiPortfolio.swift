@@ -23,8 +23,12 @@ public final class KowalskiPortfolio {
 
     private(set) var entries: [PortfolioEntry] = []
     private(set) var isLoading = false
-    private(set) var netWorth: Double?
-    private(set) var netWorthCurrency: Currencies?
+    private(set) var netWorth: Money?
+    private(set) var allTimeProfit: AllTimeProfit?
+
+    var allTimeProfitPercentage: Double? {
+        allTimeProfit?.percentage
+    }
 
     private init(client: KowalskiClient) {
         self.client = client
@@ -108,9 +112,10 @@ public final class KowalskiPortfolio {
             }
 
             let netWorth = computeNetWorth(for: overviewState.entries, currentValues: overviewState.currentValues)
+            let profitResult = computeAllTimeProfit(for: overviewState.entries, netWorth: netWorth)
             setEntries(overviewState.entries)
-            setNetWorth(netWorth?.value)
-            setNetWorthCurrency(netWorth?.currency)
+            setNetWorth(netWorth)
+            setAllTimeProfit(profitResult)
 
             return .success(())
         }
@@ -156,6 +161,57 @@ public final class KowalskiPortfolio {
         return Money(currency: netWorthCurrency, value: runningTotal)
     }
 
+    private func computeAllTimeProfit(
+        for entries: [PortfolioEntry],
+        netWorth: Money?,
+    ) -> AllTimeProfit? {
+        guard let netWorth else { return nil }
+
+        let netHoldings = entries.reduce([String: Double]()) { acc, entry in
+            let amountDelta: Double = switch entry.transactionType {
+            case .purchase: entry.amount
+            case .sell: -entry.amount
+            case .split: entry.amount
+            }
+            var result = acc
+            result[entry.stock.symbol, default: 0] += amountDelta
+
+            return result
+        }
+        guard netHoldings.values.contains(where: { $0 != 0 }) else { return nil }
+
+        var costBasis = 0.0
+        for entry in entries {
+            let costBasisMoney = entry.preferredCurrencyPurchasePrice ?? entry.purchasePrice
+            guard costBasisMoney.currency == netWorth.currency else {
+                logger.warning("Portfolio cost basis should use a consistent currency")
+                return nil
+            }
+
+            let costBasisDelta = entry.amount * costBasisMoney.value
+            switch entry.transactionType {
+            case .purchase:
+                costBasis += costBasisDelta
+            case .sell:
+                costBasis -= costBasisDelta
+            case .split:
+                continue
+            }
+        }
+
+        let profitValue = netWorth.value - costBasis
+        let profitPercentage: Double? = if costBasis == 0 {
+            nil
+        } else {
+            (profitValue / costBasis) * 100
+        }
+
+        return AllTimeProfit(
+            profit: Money(currency: netWorth.currency, value: profitValue),
+            percentage: profitPercentage,
+        )
+    }
+
     // MARK: Helpers
 
     @MainActor
@@ -164,13 +220,13 @@ public final class KowalskiPortfolio {
     }
 
     @MainActor
-    private func setNetWorth(_ newNetWorth: Double?) {
+    private func setNetWorth(_ newNetWorth: Money?) {
         netWorth = newNetWorth
     }
 
     @MainActor
-    private func setNetWorthCurrency(_ newNetWorthCurrency: Currencies?) {
-        netWorthCurrency = newNetWorthCurrency
+    private func setAllTimeProfit(_ profit: AllTimeProfit?) {
+        allTimeProfit = profit
     }
 
     private func refreshOverview() async -> Result<Void, Error> {

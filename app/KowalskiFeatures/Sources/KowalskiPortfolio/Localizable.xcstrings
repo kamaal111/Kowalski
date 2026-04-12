@@ -16,6 +16,9 @@
     "Add Transaction" : {
 
     },
+    "All-Time Profit" : {
+
+    },
     "Amount" : {
 
     },
@@ -52,6 +55,9 @@
     "Fix" : {
 
     },
+    "Holdings Net Worth" : {
+
+    },
     "Invalid information provided" : {
 
     },
@@ -65,9 +71,6 @@
 
     },
     "My Portfolio" : {
-
-    },
-    "Net Worth" : {
 
     },
     "Net worth unavailable" : {
