@@ -29,8 +29,6 @@ struct KowalskiPortfolioTests {
                     ],
                 ),
             ),
-            updateEntryResult: .success(makePortfolioEntryResponse(amount: 10)),
-            listEntriesResult: .success([]),
         )
         let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
 
@@ -59,27 +57,33 @@ struct KowalskiPortfolioTests {
     }
 
     @Test
-    func `Store transaction should refresh the list after a successful create`() async throws {
+    func `Store transaction should refresh the overview after a successful create`() async throws {
         let createdEntry = makePortfolioEntryResponse(amount: 10)
+        let overview = makePortfolioOverviewResponse(
+            transactions: [createdEntry],
+            currentValues: [
+                "AAPL": KowalskiClientMoney(currency: "USD", value: 185.45),
+            ],
+        )
         let portfolioClient = MockPortfolioClient(
             createEntryResult: .success(createdEntry),
-            updateEntryResult: .success(createdEntry),
-            listEntriesResult: .success([createdEntry]),
+            overviewResult: .success(overview),
         )
         let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
 
         try await portfolio.storeTransaction(makeTransactionPayload(amount: 10)).get()
 
         #expect(portfolio.entries.map(\.stock.name) == ["Apple Inc."])
+        #expect(portfolio.netWorth == 1854.5)
         #expect(await portfolioClient.createEntryCallCount == 1)
-        #expect(await portfolioClient.listEntriesCallCount == 1)
+        #expect(await portfolioClient.getOverviewCallCount == 1)
+        #expect(await portfolioClient.listEntriesCallCount == 0)
     }
 
     @Test
     func `Update transaction should turn the first validation issue into the message shown to the user`() async throws {
         let existingEntry = makePortfolioEntryResponse(amount: 10)
         let portfolioClient = MockPortfolioClient(
-            createEntryResult: .success(existingEntry),
             updateEntryResult: .failure(
                 .badRequest(
                     errorCode: "INVALID_PAYLOAD",
@@ -92,7 +96,6 @@ struct KowalskiPortfolioTests {
                     ],
                 ),
             ),
-            listEntriesResult: .success([existingEntry]),
         )
         let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
 
@@ -108,13 +111,19 @@ struct KowalskiPortfolioTests {
     }
 
     @Test
-    func `Update transaction should refresh the list and return the updated entry`() async throws {
+    func `Update transaction should refresh the overview and return the updated entry`() async throws {
         let initialEntry = makePortfolioEntryResponse(amount: 10)
         let updatedEntry = makePortfolioEntryResponse(amount: 15)
+        let overview = makePortfolioOverviewResponse(
+            transactions: [updatedEntry],
+            currentValues: [
+                "AAPL": KowalskiClientMoney(currency: "USD", value: 200),
+            ],
+        )
         let portfolioClient = MockPortfolioClient(
             createEntryResult: .success(initialEntry),
             updateEntryResult: .success(updatedEntry),
-            listEntriesResult: .success([updatedEntry]),
+            overviewResult: .success(overview),
         )
         let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
 
@@ -125,8 +134,10 @@ struct KowalskiPortfolioTests {
         #expect(refreshedEntry.id == initialEntry.id)
         #expect(refreshedEntry.amount == 15)
         #expect(portfolio.entries.map(\.amount) == [15])
+        #expect(portfolio.netWorth == 3000)
         #expect(await portfolioClient.updateEntryCallCount == 1)
-        #expect(await portfolioClient.listEntriesCallCount == 1)
+        #expect(await portfolioClient.getOverviewCallCount == 1)
+        #expect(await portfolioClient.listEntriesCallCount == 0)
     }
 
     @Test
@@ -156,167 +167,199 @@ struct KowalskiPortfolioTests {
     }
 
     @Test
-    func `Net worth fetch should sum purchases and subtract sells in the preferred currency`() async throws {
-        let listEntries = [
-            makePortfolioEntryResponse(
-                stock: makeAppleStockResponse(),
-                amount: 2,
-                purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
-                preferredCurrencyPurchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
-                transactionType: .buy,
-            ),
-            makePortfolioEntryResponse(
-                stock: makeTeslaStockResponse(),
-                amount: 1,
-                purchasePrice: KowalskiClientMoney(currency: "USD", value: 40),
-                preferredCurrencyPurchasePrice: KowalskiClientMoney(currency: "USD", value: 40),
-                transactionType: .sell,
-            ),
-        ]
-        let portfolioClient = MockPortfolioClient(
-            createEntryResult: .success(listEntries[0]),
-            updateEntryResult: .success(listEntries[0]),
-            listEntriesResult: .success(listEntries),
+    func `Overview fetch should populate entries and derive current market net worth`() async throws {
+        let overview = makePortfolioOverviewResponse(
+            transactions: [
+                makePortfolioEntryResponse(
+                    stock: makeAppleStockResponse(),
+                    amount: 10,
+                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    transactionType: .buy,
+                ),
+                makePortfolioEntryResponse(
+                    stock: makeAppleStockResponse(),
+                    amount: 2,
+                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 120),
+                    transactionType: .sell,
+                ),
+                makePortfolioEntryResponse(
+                    stock: makeTeslaStockResponse(),
+                    amount: 1,
+                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 300),
+                    transactionType: .buy,
+                ),
+            ],
+            currentValues: [
+                "AAPL": KowalskiClientMoney(currency: "USD", value: 50),
+                "TSLA": KowalskiClientMoney(currency: "USD", value: 20),
+            ],
         )
+        let portfolioClient = MockPortfolioClient(overviewResult: .success(overview))
         let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
 
-        try await portfolio.fetchEntries().get()
-        await portfolio.fetchNetWorth(preferredCurrency: .USD)
+        try await portfolio.fetchOverview().get()
 
-        #expect(portfolio.netWorth == 160)
+        #expect(portfolio.entries.count == 3)
+        #expect(portfolio.netWorth == 420)
+        #expect(await portfolioClient.getOverviewCallCount == 1)
     }
 
     @Test
-    func `Net worth fetch should exclude split transactions`() async throws {
-        let listEntries = [
-            makePortfolioEntryResponse(
-                stock: makeAppleStockResponse(),
-                amount: 2,
-                purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
-                preferredCurrencyPurchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
-                transactionType: .buy,
-            ),
-            makePortfolioEntryResponse(
-                stock: makeTeslaStockResponse(),
-                amount: 10,
-                purchasePrice: KowalskiClientMoney(currency: "EUR", value: 1000),
-                transactionType: .split,
-            ),
-        ]
-        let portfolioClient = MockPortfolioClient(
-            createEntryResult: .success(listEntries[0]),
-            updateEntryResult: .success(listEntries[0]),
-            listEntriesResult: .success(listEntries),
+    func `Overview fetch should adjust holdings for split transactions`() async throws {
+        let overview = makePortfolioOverviewResponse(
+            transactions: [
+                makePortfolioEntryResponse(
+                    stock: makeAppleStockResponse(),
+                    amount: 2,
+                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    transactionType: .buy,
+                ),
+                makePortfolioEntryResponse(
+                    stock: makeAppleStockResponse(),
+                    amount: 3,
+                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 0),
+                    transactionType: .split,
+                ),
+            ],
+            currentValues: [
+                "AAPL": KowalskiClientMoney(currency: "USD", value: 10),
+            ],
         )
-        let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
+        let portfolio = KowalskiPortfolio.testing(
+            client: .testing(portfolio: MockPortfolioClient(overviewResult: .success(overview))),
+        )
 
-        try await portfolio.fetchEntries().get()
-        await portfolio.fetchNetWorth(preferredCurrency: .USD)
+        try await portfolio.fetchOverview().get()
 
-        #expect(portfolio.netWorth == 200)
+        #expect(portfolio.netWorth == 50)
     }
 
     @Test
-    func `Net worth fetch should sum server-provided preferred-currency values for mixed currency entries`(
-    ) async throws {
-        let listEntries = [
-            makePortfolioEntryResponse(
-                stock: makeAppleStockResponse(),
-                amount: 1,
-                purchasePrice: KowalskiClientMoney(currency: "USD", value: 106.66),
-                preferredCurrencyPurchasePrice: KowalskiClientMoney(currency: "EUR", value: 100),
-                transactionType: .buy,
-            ),
-            makePortfolioEntryResponse(
-                stock: makeTeslaStockResponse(),
-                amount: 1,
-                purchasePrice: KowalskiClientMoney(currency: "GBP", value: 88.693),
-                preferredCurrencyPurchasePrice: KowalskiClientMoney(currency: "EUR", value: 100),
-                transactionType: .buy,
-            ),
-            makePortfolioEntryResponse(
-                stock: makeAppleStockResponse(),
-                amount: 1,
-                purchasePrice: KowalskiClientMoney(currency: "USD", value: 53.33),
-                preferredCurrencyPurchasePrice: KowalskiClientMoney(currency: "EUR", value: 50),
-                transactionType: .sell,
-            ),
-        ]
-        let portfolioClient = MockPortfolioClient(
-            createEntryResult: .success(listEntries[0]),
-            updateEntryResult: .success(listEntries[0]),
-            listEntriesResult: .success(listEntries),
+    func `Overview fetch should return zero when holdings net to zero`() async throws {
+        let overview = makePortfolioOverviewResponse(
+            transactions: [
+                makePortfolioEntryResponse(
+                    stock: makeAppleStockResponse(),
+                    amount: 1,
+                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    transactionType: .buy,
+                ),
+                makePortfolioEntryResponse(
+                    stock: makeAppleStockResponse(),
+                    amount: 1,
+                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 110),
+                    transactionType: .sell,
+                ),
+            ],
+            currentValues: [
+                "AAPL": KowalskiClientMoney(currency: "USD", value: 200),
+            ],
         )
-        let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
+        let portfolio = KowalskiPortfolio.testing(
+            client: .testing(portfolio: MockPortfolioClient(overviewResult: .success(overview))),
+        )
 
-        try await portfolio.fetchEntries().get()
-        await portfolio.fetchNetWorth(preferredCurrency: .EUR)
+        try await portfolio.fetchOverview().get()
 
-        let netWorth = try #require(portfolio.netWorth)
-        #expect(abs(netWorth - 150) < 0.0001)
+        #expect(portfolio.netWorth == 0)
     }
 
     @Test
-    func `Net worth fetch should clear net worth when preferred-currency values are missing`() async throws {
-        let listEntries = [
-            makePortfolioEntryResponse(
-                stock: makeAppleStockResponse(),
-                amount: 1,
-                purchasePrice: KowalskiClientMoney(currency: "GBP", value: 75),
-                preferredCurrencyPurchasePrice: nil,
-                transactionType: .buy,
-            ),
-        ]
-        let portfolioClient = MockPortfolioClient(
-            createEntryResult: .success(listEntries[0]),
-            updateEntryResult: .success(listEntries[0]),
-            listEntriesResult: .success(listEntries),
+    func `Overview fetch should clear net worth when a held symbol is missing from current values`() async throws {
+        let overview = makePortfolioOverviewResponse(
+            transactions: [
+                makePortfolioEntryResponse(
+                    stock: makeAppleStockResponse(),
+                    amount: 1,
+                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    transactionType: .buy,
+                ),
+            ],
+            currentValues: [:],
         )
-        let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
+        let portfolio = KowalskiPortfolio.testing(
+            client: .testing(portfolio: MockPortfolioClient(overviewResult: .success(overview))),
+        )
 
-        try await portfolio.fetchEntries().get()
-        await portfolio.fetchNetWorth(preferredCurrency: .EUR)
+        try await portfolio.fetchOverview().get()
 
         #expect(portfolio.netWorth == nil)
     }
 
     @Test
-    func `Net worth fetch should refresh entries when the preferred currency changes`() async throws {
-        let usdEntries = [
-            makePortfolioEntryResponse(
-                stock: makeAppleStockResponse(),
-                amount: 2,
-                purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
-                preferredCurrencyPurchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
-                transactionType: .buy,
-            ),
-        ]
-        let eurEntries = [
-            makePortfolioEntryResponse(
-                stock: makeAppleStockResponse(),
-                amount: 2,
-                purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
-                preferredCurrencyPurchasePrice: KowalskiClientMoney(currency: "EUR", value: 80),
-                transactionType: .buy,
-            ),
-        ]
+    func `Overview fetch should clear net worth when current value currencies are mixed`() async throws {
+        let overview = makePortfolioOverviewResponse(
+            transactions: [
+                makePortfolioEntryResponse(
+                    stock: makeAppleStockResponse(),
+                    amount: 1,
+                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    transactionType: .buy,
+                ),
+                makePortfolioEntryResponse(
+                    stock: makeTeslaStockResponse(),
+                    amount: 1,
+                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    transactionType: .buy,
+                ),
+            ],
+            currentValues: [
+                "AAPL": KowalskiClientMoney(currency: "USD", value: 150),
+                "TSLA": KowalskiClientMoney(currency: "EUR", value: 200),
+            ],
+        )
+        let portfolio = KowalskiPortfolio.testing(
+            client: .testing(portfolio: MockPortfolioClient(overviewResult: .success(overview))),
+        )
+
+        try await portfolio.fetchOverview().get()
+
+        #expect(portfolio.netWorth == nil)
+    }
+
+    @Test
+    func `Overview fetch should update net worth on repeated refreshes`() async throws {
+        let usdOverview = makePortfolioOverviewResponse(
+            transactions: [
+                makePortfolioEntryResponse(
+                    stock: makeAppleStockResponse(),
+                    amount: 2,
+                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    transactionType: .buy,
+                ),
+            ],
+            currentValues: [
+                "AAPL": KowalskiClientMoney(currency: "USD", value: 100),
+            ],
+        )
+        let eurOverview = makePortfolioOverviewResponse(
+            transactions: [
+                makePortfolioEntryResponse(
+                    stock: makeAppleStockResponse(),
+                    amount: 2,
+                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    transactionType: .buy,
+                ),
+            ],
+            currentValues: [
+                "AAPL": KowalskiClientMoney(currency: "EUR", value: 80),
+            ],
+        )
         let portfolioClient = MockPortfolioClient(
-            createEntryResult: .success(usdEntries[0]),
-            updateEntryResult: .success(usdEntries[0]),
-            listEntriesResult: .success(usdEntries),
-            listEntriesResults: [
-                .success(usdEntries),
-                .success(eurEntries),
+            overviewResults: [
+                .success(usdOverview),
+                .success(eurOverview),
             ],
         )
         let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
 
-        try await portfolio.fetchEntries().get()
-        await portfolio.fetchNetWorth(preferredCurrency: .USD)
-        await portfolio.fetchNetWorth(preferredCurrency: .EUR)
+        try await portfolio.fetchOverview().get()
+        #expect(portfolio.netWorth == 200)
+
+        try await portfolio.fetchOverview().get()
 
         #expect(portfolio.netWorth == 160)
-        #expect(await portfolioClient.listEntriesCallCount == 2)
+        #expect(await portfolioClient.getOverviewCallCount == 2)
     }
 
     @Test
@@ -398,6 +441,7 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
     private(set) var createEntryCallCount = 0
     private(set) var updateEntryCallCount = 0
     private(set) var listEntriesCallCount = 0
+    private(set) var getOverviewCallCount = 0
 
     private let createEntryResult: Result<
         KowalskiPortfolioClientEntryResponse,
@@ -407,34 +451,51 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
         KowalskiPortfolioClientEntryResponse,
         KowalskiPortfolioClientUpdateEntryErrors,
     >
-    private var listEntriesResults: [Result<
+    private let listEntriesResult: Result<
         [KowalskiPortfolioClientEntryResponse],
         KowalskiPortfolioClientListEntriesErrors,
+    >
+    private var overviewResults: [Result<
+        KowalskiPortfolioOverviewResponse,
+        KowalskiPortfolioClientOverviewErrors,
     >]
 
     init(
-        createEntryResult: Result<KowalskiPortfolioClientEntryResponse, KowalskiPortfolioClientCreateEntryErrors>,
-        updateEntryResult: Result<KowalskiPortfolioClientEntryResponse, KowalskiPortfolioClientUpdateEntryErrors>,
-        listEntriesResult: Result<[KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientListEntriesErrors>,
-        listEntriesResults: [Result<[KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientListEntriesErrors>] =
-            [],
+        createEntryResult: Result<KowalskiPortfolioClientEntryResponse, KowalskiPortfolioClientCreateEntryErrors> =
+            .success(makePortfolioEntryResponse(amount: 10)),
+        updateEntryResult: Result<KowalskiPortfolioClientEntryResponse, KowalskiPortfolioClientUpdateEntryErrors> =
+            .success(makePortfolioEntryResponse(amount: 10)),
+        listEntriesResult: Result<[KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientListEntriesErrors> =
+            .success([]),
+        overviewResult: Result<KowalskiPortfolioOverviewResponse, KowalskiPortfolioClientOverviewErrors> = .success(
+            makePortfolioOverviewResponse(transactions: [], currentValues: [:]),
+        ),
+        overviewResults: [Result<KowalskiPortfolioOverviewResponse, KowalskiPortfolioClientOverviewErrors>] = [],
     ) {
         self.createEntryResult = createEntryResult
         self.updateEntryResult = updateEntryResult
-        self.listEntriesResults = listEntriesResults.isEmpty ? [listEntriesResult] : listEntriesResults
+        self.listEntriesResult = listEntriesResult
+        self.overviewResults = overviewResults.isEmpty ? [overviewResult] : overviewResults
     }
 
     func listEntries() async
         -> Result<[KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientListEntriesErrors>
     {
         listEntriesCallCount += 1
+        return listEntriesResult
+    }
 
-        guard !listEntriesResults.isEmpty else { return .success([]) }
-        if listEntriesResults.count == 1 {
-            return listEntriesResults[0]
+    func getOverview() async -> Result<KowalskiPortfolioOverviewResponse, KowalskiPortfolioClientOverviewErrors> {
+        getOverviewCallCount += 1
+
+        guard !overviewResults.isEmpty else {
+            return .success(makePortfolioOverviewResponse(transactions: [], currentValues: [:]))
+        }
+        if overviewResults.count == 1 {
+            return overviewResults[0]
         }
 
-        return listEntriesResults.removeFirst()
+        return overviewResults.removeFirst()
     }
 
     func createEntry(
@@ -485,6 +546,16 @@ private func makeTransactionPayload(amount: Double) -> TransactionPayload {
     )
 }
 
+private func makePortfolioOverviewResponse(
+    transactions: [KowalskiPortfolioClientEntryResponse],
+    currentValues: [String: KowalskiClientMoney],
+) -> KowalskiPortfolioOverviewResponse {
+    KowalskiPortfolioOverviewResponse(
+        transactions: transactions,
+        currentValues: currentValues,
+    )
+}
+
 private func makePortfolioEntryResponse(amount: Double) -> KowalskiPortfolioClientEntryResponse {
     makePortfolioEntryResponse(amount: amount, transactionType: .buy)
 }
@@ -497,15 +568,7 @@ private func makePortfolioEntryResponse(
         id: UUID(uuidString: "cd81dbd7-3efa-42b3-8127-c1589279542f")!.uuidString,
         createdAt: Date(timeIntervalSince1970: 1_766_246_840),
         updatedAt: Date(timeIntervalSince1970: 1_766_246_840),
-        stock: KowalskiClientStockItem(
-            symbol: "AAPL",
-            exchange: "NMS",
-            name: "Apple Inc.",
-            isin: "US0378331005",
-            sector: "Technology",
-            industry: "Consumer Electronics",
-            exchangeDispatch: "NASDAQ",
-        ),
+        stock: makeAppleStockResponse(),
         amount: amount,
         purchasePrice: KowalskiClientMoney(currency: "USD", value: 150.5),
         transactionType: transactionType,

@@ -6,10 +6,18 @@
 //
 
 import ForexKit
+import KamaalExtensions
 import KowalskiClient
 import KowalskiFeaturesConfig
 
 struct KowalskiPortfolioMappers {
+    func mapOverviewResponse(_ response: KowalskiPortfolioOverviewResponse) -> PortfolioOverviewState {
+        PortfolioOverviewState(
+            entries: mapPortfolioEntries(response.transactions),
+            currentValues: mapCurrentValues(response.currentValues),
+        )
+    }
+
     func mapPortfolioEntries(_ entries: [KowalskiPortfolioClientEntryResponse]) -> [PortfolioEntry] {
         entries.map(mapPortfolioEntry)
     }
@@ -77,6 +85,10 @@ struct KowalskiPortfolioMappers {
         return Money(currency: currency, value: money.value)
     }
 
+    private func mapCurrentValues(_ currentValues: [String: KowalskiClientMoney]) -> [String: Money] {
+        currentValues.reduce([:]) { $0.merged(with: [$1.key: mapMoney($1.value)]) }
+    }
+
     private func mapStockToKowalskiClientStockItem(_ stock: Stock) -> KowalskiClientStockItem {
         KowalskiClientStockItem(
             symbol: stock.symbol,
@@ -100,4 +112,9 @@ struct KowalskiPortfolioMappers {
             exchangeDispatch: item.exchangeDispatch,
         )
     }
+}
+
+struct PortfolioOverviewState {
+    let entries: [PortfolioEntry]
+    let currentValues: [String: Money]
 }

@@ -5,6 +5,8 @@
 //  Created by Kamaal M Farah on 12/20/25.
 //
 
+import KamaalExtensions
+
 struct KowalskiPortfolioMapper {
     let stocksMapper: KowalskiStocksMapper
 
@@ -47,6 +49,18 @@ struct KowalskiPortfolioMapper {
         response.map(mapEntryApiResponseToClient)
     }
 
+    func mapOverviewApiResponseToClient(
+        _ response: Components.Schemas.PortfolioOverviewResponse,
+    ) -> KowalskiPortfolioOverviewResponse {
+        let currentValues = response.currentValues.additionalProperties
+            .reduce([:]) { $0.merged(with: [$1.key: mapCurrentValue($1.value)]) }
+
+        return KowalskiPortfolioOverviewResponse(
+            transactions: mapListEntriesApiResponseToClient(response.transactions),
+            currentValues: currentValues,
+        )
+    }
+
     func mapEntryApiResponseToClient(
         _ response: Components.Schemas.CreateEntryResponse,
     ) -> KowalskiPortfolioClientEntryResponse {
@@ -64,6 +78,13 @@ struct KowalskiPortfolioMapper {
     }
 
     private func mapMoney(_ response: Components.Schemas.Money) -> KowalskiClientMoney {
+        KowalskiClientMoney(
+            currency: response.currency,
+            value: response.value,
+        )
+    }
+
+    private func mapCurrentValue(_ response: Components.Schemas.CurrentValue) -> KowalskiClientMoney {
         KowalskiClientMoney(
             currency: response.currency,
             value: response.value,
