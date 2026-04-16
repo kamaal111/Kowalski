@@ -1,5 +1,5 @@
 {
-  "originHash" : "1b1a4cf0c0ccf0a522857f4fde6ae418dca9c1f7fdf5648ef5a81f2d58a9710a",
+  "originHash" : "f418b8001d0ba21d87e5a20b2bd917e539aee219d88b2d0b85400e907cb746f0",
   "pins" : [
     {
       "identity" : "confettiswiftui",
@@ -116,15 +116,6 @@
       "state" : {
         "revision" : "f562ac24f250f623bf758f88f17e457106abb741",
         "version" : "0.0.5"
-      }
-    },
-    {
-      "identity" : "swiftcsv",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swiftcsv/SwiftCSV",
-      "state" : {
-        "revision" : "6ab5d0fe9b6ef3c79d717eefa70862df389e74d9",
-        "version" : "0.10.0"
       }
     },
     {

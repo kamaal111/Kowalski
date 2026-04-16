@@ -654,6 +654,60 @@ struct KowalskiPortfolioTests {
     }
 
     @Test
+    func `Export and import transactions should round trip quoted fields and split transaction type`() throws {
+        let entry = makePortfolioEntry(
+            stock: Stock(
+                symbol: "BRK.B",
+                exchange: "NYQ",
+                name: "Berkshire Hathaway\nClass \"B\", Inc.",
+                isin: "US0846707026",
+                sector: "Financial Services",
+                industry: "Insurance",
+                exchangeDispatch: "NYSE",
+            ),
+            amount: 3,
+            purchasePrice: Money(currency: .USD, value: 490.75),
+            transactionType: .split,
+        )
+
+        let url = try PortfolioTransactionsCSV.export(entries: [entry]).get()
+        let parsedCSV = try PortfolioTransactionsCSV.import(from: url).get()
+        let importedEntry = try #require(parsedCSV.entries.first)
+
+        #expect(parsedCSV.entries.count == 1)
+        #expect(parsedCSV.malformedRowNumbers.isEmpty)
+        #expect(importedEntry.stock.symbol == "BRK.B")
+        #expect(importedEntry.stock.name == "Berkshire Hathaway\nClass \"B\", Inc.")
+        #expect(importedEntry.transactionType == .split)
+        #expect(importedEntry.purchasePrice.value == 490.75)
+    }
+
+    @Test
+    func `Export transactions should write blank optional stock fields as empty cells`() throws {
+        let entry = makePortfolioEntry(
+            stock: Stock(
+                symbol: "TST",
+                exchange: "NMS",
+                name: "Test Co",
+                isin: nil,
+                sector: nil,
+                industry: nil,
+                exchangeDispatch: nil,
+            ),
+            amount: 1.5,
+            purchasePrice: Money(currency: .USD, value: 42),
+            transactionType: .purchase,
+        )
+
+        let url = try PortfolioTransactionsCSV.export(entries: [entry]).get()
+        let lines = try readLines(from: url)
+        let dataRow = try #require(lines.dropFirst().first)
+
+        #expect(!dataRow.contains("nil"))
+        #expect(dataRow.contains("Test Co,,,,,1.5"))
+    }
+
+    @Test
     func `Export transactions with no entries should produce a headers-only file`() async throws {
         let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: MockPortfolioClient()))
 
@@ -727,6 +781,74 @@ struct KowalskiPortfolioTests {
         #expect(importedEntry.stock.symbol == "BRK.B")
         #expect(importedEntry.stock.name == "Berkshire Hathaway\nClass \"B\"")
         #expect(importedEntry.purchasePrice.value == 490.75)
+    }
+
+    @Test
+    func `Import transactions CSV should accept timestamps with and without fractional seconds`() throws {
+        let csvURL = try makeCSVFile(
+            contents: """
+            id,symbol,exchange,name,isin,sector,industry,exchange_dispatch,amount,purchase_price_currency,purchase_price_value,transaction_type,transaction_date
+            550e8400-e29b-41d4-a716-446655440000,AAPL,NMS,Apple Inc.,US0378331005,Technology,Consumer Electronics,NASDAQ,10,USD,150.5,buy,2025-12-20T00:00:00Z
+            550e8400-e29b-41d4-a716-446655440001,TSLA,NMS,"Tesla, Inc.",US88160R1014,Consumer Cyclical,Auto Manufacturers,NASDAQ,7,USD,210.25,sell,2025-12-21T00:00:00.000Z
+            """,
+        )
+
+        let parsedCSV = try PortfolioTransactionsCSV.import(from: csvURL).get()
+
+        #expect(parsedCSV.entries.count == 2)
+        #expect(parsedCSV.malformedRowNumbers.isEmpty)
+        #expect(parsedCSV.entries.map(\.transactionType) == [.buy, .sell])
+    }
+
+    @Test
+    func `Import transactions CSV should ignore empty lines between data rows`() throws {
+        let csvURL = try makeCSVFile(
+            contents: """
+            id,symbol,exchange,name,isin,sector,industry,exchange_dispatch,amount,purchase_price_currency,purchase_price_value,transaction_type,transaction_date
+            550e8400-e29b-41d4-a716-446655440000,AAPL,NMS,Apple Inc.,US0378331005,Technology,Consumer Electronics,NASDAQ,10,USD,150.5,buy,2025-12-20T00:00:00.000Z
+
+            550e8400-e29b-41d4-a716-446655440001,TSLA,NMS,"Tesla, Inc.",US88160R1014,Consumer Cyclical,Auto Manufacturers,NASDAQ,7,USD,210.25,sell,2025-12-21T00:00:00.000Z
+            """,
+        )
+
+        let parsedCSV = try PortfolioTransactionsCSV.import(from: csvURL).get()
+
+        #expect(parsedCSV.entries.map(\.stock.symbol) == ["AAPL", "TSLA"])
+        #expect(parsedCSV.malformedRowNumbers.isEmpty)
+    }
+
+    @Test
+    func `Import transactions CSV should trim surrounding whitespace before validation`() throws {
+        let csvURL = try makeCSVFile(
+            contents: """
+            id,symbol,exchange,name,isin,sector,industry,exchange_dispatch,amount,purchase_price_currency,purchase_price_value,transaction_type,transaction_date
+             550e8400-e29b-41d4-a716-446655440000 , AAPL , NMS , Apple Inc. , US0378331005 , Technology , Consumer Electronics , NASDAQ , 10 , USD , 150.5 , buy , 2025-12-20T00:00:00.000Z
+            """,
+        )
+
+        let parsedCSV = try PortfolioTransactionsCSV.import(from: csvURL).get()
+        let importedEntry = try #require(parsedCSV.entries.first)
+
+        #expect(parsedCSV.entries.count == 1)
+        #expect(parsedCSV.malformedRowNumbers.isEmpty)
+        #expect(importedEntry.id == "550e8400-e29b-41d4-a716-446655440000")
+        #expect(importedEntry.stock.symbol == "AAPL")
+        #expect(importedEntry.stock.exchange == "NMS")
+    }
+
+    @Test
+    func `Import transactions CSV should treat required fields with only whitespace as malformed rows`() throws {
+        let csvURL = try makeCSVFile(
+            contents: """
+            id,symbol,exchange,name,isin,sector,industry,exchange_dispatch,amount,purchase_price_currency,purchase_price_value,transaction_type,transaction_date
+            550e8400-e29b-41d4-a716-446655440000,   ,NMS,Apple Inc.,US0378331005,Technology,Consumer Electronics,NASDAQ,10,USD,150.5,buy,2025-12-20T00:00:00.000Z
+            """,
+        )
+
+        let parsedCSV = try PortfolioTransactionsCSV.import(from: csvURL).get()
+
+        #expect(parsedCSV.entries.isEmpty)
+        #expect(parsedCSV.malformedRowNumbers == [2])
     }
 
     @Test
