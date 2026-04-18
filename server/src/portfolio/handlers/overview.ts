@@ -4,14 +4,14 @@ import { STATUS_CODES } from '@/constants/http';
 import { logInfo } from '@/logging';
 import { withRequestLogger } from '@/logging/http';
 import type { HonoContext } from '@/api/contexts';
-import { mapPersistedPortfolioEntryToResponse } from '../mappers/entry-response';
+import { mapResolvedPortfolioEntryToResponse } from '../mappers/entry-response';
 import { PortfolioOverviewResponseSchema, type PortfolioOverviewResponse } from '../schemas/responses';
 import getPortfolioOverview from '../services/overview';
 
 async function overview(c: HonoContext): Promise<TypedResponse<PortfolioOverviewResponse, typeof STATUS_CODES.OK>> {
   const result = await getPortfolioOverview(c);
   const response = PortfolioOverviewResponseSchema.parse({
-    transactions: result.transactions.map(mapPersistedPortfolioEntryToResponse),
+    transactions: result.transactions.map(mapResolvedPortfolioEntryToResponse),
     current_values: result.currentValues,
   });
   logInfo(withRequestLogger(c, { component: 'portfolio' }), {

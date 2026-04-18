@@ -72,8 +72,11 @@ final class KowalskiPortfolioUITests: XCTestCase {
         in app: XCUIApplication,
         expectedScreenTitle: String,
         expectedStockLabel: String,
-        expectedAmount: String,
+        expectedAmountFieldLabel: String = "Amount",
+        expectedAmount: String? = nil,
         expectedTransactionLabel: String,
+        expectedPurchasePriceLabel: String? = nil,
+        expectedAmountPrefix: String? = nil,
     ) {
         let addTransactionButton = app.buttons["Add Transaction"].firstMatch
         XCTAssertTrue(addTransactionButton.waitForExistenceUsingPredicate(timeout: 3))
@@ -82,9 +85,20 @@ final class KowalskiPortfolioUITests: XCTestCase {
         let selectedStockLabel = app.staticTexts[expectedStockLabel].firstMatch
         XCTAssertTrue(selectedStockLabel.waitForExistenceUsingPredicate(timeout: 3))
 
-        let amountField = app.textFields["Amount"].firstMatch
+        let amountField = app.textFields[expectedAmountFieldLabel].firstMatch
         XCTAssertTrue(amountField.waitForExistenceUsingPredicate(timeout: 3))
-        XCTAssertEqual(amountField.value as? String, expectedAmount)
+        if let expectedAmount {
+            XCTAssertEqual(amountField.value as? String, expectedAmount)
+        }
+
+        if let expectedPurchasePriceLabel {
+            XCTAssertTrue(app.staticTexts[expectedPurchasePriceLabel].firstMatch
+                .waitForExistenceUsingPredicate(timeout: 3))
+        }
+
+        if let expectedAmountPrefix {
+            XCTAssertTrue(app.staticTexts[expectedAmountPrefix].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
+        }
 
         let transactionTypePicker = app.popUpButtons["Transaction Type"].firstMatch
         XCTAssertTrue(transactionTypePicker.waitForExistenceUsingPredicate(timeout: 3))
@@ -176,10 +190,37 @@ final class KowalskiPortfolioUITests: XCTestCase {
         continueAfterFailure = false
         let app = launchApp(scenario: .entries)
 
-        XCTContext.runActivity(named: "Apple paired action prefill supports back navigation") { _ in
+        XCTContext.runActivity(named: "Apple split paired action prefill supports back navigation") { _ in
             openTransactionDetail(named: "Apple Inc.", in: app)
+            XCTAssertTrue(app.buttons["Split"].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
             XCTAssertTrue(app.buttons["Sell"].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
             XCTAssertTrue(app.buttons["Edit"].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
+
+            app.buttons["Split"].firstMatch.tap()
+
+            assertPairedTransactionPrefill(
+                in: app,
+                expectedScreenTitle: "Split Transaction",
+                expectedStockLabel: "AAPL - Apple Inc. [ISIN: US0378331005] (NASDAQ)",
+                expectedAmountFieldLabel: "Ratio",
+                expectedTransactionLabel: "Split",
+                expectedPurchasePriceLabel: "Price before split",
+                expectedAmountPrefix: "1/",
+            )
+
+            tapBack(in: app)
+            XCTAssertTrue(app.staticTexts["US0378331005"].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
+            XCTAssertTrue(app.buttons["Split"].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
+            XCTAssertTrue(app.buttons["Sell"].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
+
+            returnToTransactionsList(in: app)
+            XCTAssertTrue(app.buttons["Apple Inc."].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
+        }
+
+        XCTContext.runActivity(named: "Apple sell paired action prefill supports back navigation") { _ in
+            openTransactionDetail(named: "Apple Inc.", in: app)
+            XCTAssertTrue(app.buttons["Split"].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
+            XCTAssertTrue(app.buttons["Sell"].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
 
             app.buttons["Sell"].firstMatch.tap()
 
@@ -193,6 +234,7 @@ final class KowalskiPortfolioUITests: XCTestCase {
 
             tapBack(in: app)
             XCTAssertTrue(app.staticTexts["US0378331005"].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
+            XCTAssertTrue(app.buttons["Split"].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
             XCTAssertTrue(app.buttons["Sell"].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
 
             returnToTransactionsList(in: app)

@@ -173,18 +173,7 @@ public final class KowalskiPortfolio {
     }
 
     private func computeNetWorth(for entries: [PortfolioEntry], currentValues: [String: Money]) -> Money? {
-        let holdings = entries.reduce([String: Double]()) { holdings, entry in
-            let amountDelta: Double = switch entry.transactionType {
-            case .purchase: entry.amount
-            case .sell: -entry.amount
-            case .split: entry.amount
-            }
-
-            var holdings = holdings
-            holdings[entry.stock.symbol, default: 0] += amountDelta
-
-            return holdings
-        }
+        let holdings = computeNetHoldings(for: entries)
         guard !holdings.isEmpty else { return Money(currency: .USD, value: 0) }
 
         let fallbackCurrency = currentValues.first?.value.currency ?? .USD
@@ -218,17 +207,7 @@ public final class KowalskiPortfolio {
     ) -> AllTimeProfit? {
         guard let netWorth else { return nil }
 
-        let netHoldings = entries.reduce([String: Double]()) { acc, entry in
-            let amountDelta: Double = switch entry.transactionType {
-            case .purchase: entry.amount
-            case .sell: -entry.amount
-            case .split: entry.amount
-            }
-            var result = acc
-            result[entry.stock.symbol, default: 0] += amountDelta
-
-            return result
-        }
+        let netHoldings = computeNetHoldings(for: entries)
         guard netHoldings.values.contains(where: { $0 != 0 }) else { return nil }
 
         var costBasis = 0.0
@@ -264,6 +243,21 @@ public final class KowalskiPortfolio {
     }
 
     // MARK: Helpers
+
+    private func computeNetHoldings(for entries: [PortfolioEntry]) -> [String: Double] {
+        entries.reduce([String: Double]()) { holdings, entry in
+            let amountDelta: Double = switch entry.transactionType {
+            case .purchase: entry.amount
+            case .sell: -entry.amount
+            case .split: 0
+            }
+
+            var holdings = holdings
+            holdings[entry.stock.symbol, default: 0] += amountDelta
+
+            return holdings
+        }
+    }
 
     @MainActor
     private func setEntries(_ newEntries: [PortfolioEntry]) {

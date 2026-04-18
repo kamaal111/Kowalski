@@ -69,7 +69,7 @@ struct KowalskiPortfolioMapper {
     func mapListEntriesApiResponseToClient(
         _ response: Components.Schemas.ListEntriesResponse,
     ) -> [KowalskiPortfolioClientEntryResponse] {
-        response.map(mapEntryApiResponseToClient)
+        response.map(mapResolvedEntryApiResponseToClient)
     }
 
     func mapBulkCreateEntriesApiResponseToClient(
@@ -87,6 +87,22 @@ struct KowalskiPortfolioMapper {
         return KowalskiPortfolioOverviewResponse(
             transactions: mapListEntriesApiResponseToClient(response.transactions),
             currentValues: currentValues,
+        )
+    }
+
+    func mapResolvedEntryApiResponseToClient(
+        _ response: Components.Schemas.ResolvedEntryResponse,
+    ) -> KowalskiPortfolioClientEntryResponse {
+        KowalskiPortfolioClientEntryResponse(
+            id: response.id,
+            createdAt: response.createdAt,
+            updatedAt: response.updatedAt,
+            stock: stocksMapper.mapStockItemFromApiToResponse(response.stock),
+            amount: response.amount,
+            purchasePrice: mapMoney(response.purchasePrice),
+            preferredCurrencyPurchasePrice: mapPreferredCurrencyPurchasePrice(response.preferredCurrencyPurchasePrice),
+            transactionType: mapTransactionType(response.transactionType),
+            transactionDate: response.transactionDate,
         )
     }
 
@@ -127,6 +143,15 @@ struct KowalskiPortfolioMapper {
         case .buy: .buy
         case .sell: .sell
         case .split: .split
+        }
+    }
+
+    private func mapTransactionType(
+        _ response: Components.Schemas.ResolvedEntryResponse.TransactionTypePayload,
+    ) -> KowalskiClientPortfolioTransactionTypes {
+        switch response {
+        case .buy: .buy
+        case .sell: .sell
         }
     }
 

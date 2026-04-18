@@ -242,6 +242,7 @@ quality-app: lint-app format-check-app
 test-app-ci:
     xcodebuild test -scheme {{ SCHEME }} -destination {{ MACOS_DESTINATION }} \
         -skipPackagePluginValidation \
+        -resultBundlePath TestResults \
         CODE_SIGNING_ALLOWED=NO \
         CODE_SIGNING_REQUIRED=NO \
         CODE_SIGN_IDENTITY=""

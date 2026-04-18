@@ -56,11 +56,10 @@ struct KowalskiPortfolioTransactionScreen: View {
         .toastView(toast: $toast)
     }
 
-    private var screenTitle: LocalizedStringResource {
+    private var screenTitle: String {
         switch editorConfiguration.fixedTransactionType {
-        case .purchase: "Buy Transaction"
-        case .sell: "Sell Transaction"
-        case .split, nil: "Add Transaction"
+        case let transactionType?: transactionType.screenTitle
+        case nil: NSLocalizedString("Add Transaction", comment: "")
         }
     }
 }

@@ -15,7 +15,7 @@ struct KowalskiPortfolioTransactionDetailScreen: View {
 
     @State private var entry: PortfolioEntry
     @State private var isEditing = false
-    @State private var pairedTransactionScreenIsShown = false
+    @State private var selectedPairedTransactionType: TransactionType?
     @State private var shouldDismissAfterPairedTransaction = false
     @State private var toast: Toast?
 
@@ -35,9 +35,11 @@ struct KowalskiPortfolioTransactionDetailScreen: View {
         .navigationTitle(isEditing ? "Edit Transaction" : "Transaction Details")
         .toolbar {
             ToolbarItemGroup(placement: .automatic) {
-                if !isEditing, let pairedActionTitle = entry.transactionType.pairedActionTitle {
-                    Button(pairedActionTitle) {
-                        pairedTransactionScreenIsShown = true
+                if !isEditing {
+                    ForEach(entry.transactionType.pairedActions, id: \.transactionType) { action in
+                        Button(action.title) {
+                            selectedPairedTransactionType = action.transactionType
+                        }
                     }
                 }
                 Button(isEditing ? "Cancel" : "Edit") {
@@ -45,11 +47,12 @@ struct KowalskiPortfolioTransactionDetailScreen: View {
                 }
             }
         }
-        .navigationDestination(isPresented: $pairedTransactionScreenIsShown) {
-            pairedTransactionView
+        .navigationDestination(item: $selectedPairedTransactionType) { pairedTransactionType in
+            pairedTransactionView(transactionType: pairedTransactionType)
         }
-        .onChange(of: pairedTransactionScreenIsShown) { _, isShown in
-            guard !isShown, shouldDismissAfterPairedTransaction else { return }
+        .onChange(of: selectedPairedTransactionType) { _, selectedPairedTransactionType in
+            guard selectedPairedTransactionType == nil else { return }
+            guard shouldDismissAfterPairedTransaction else { return }
 
             shouldDismissAfterPairedTransaction = false
             dismiss()
@@ -113,17 +116,14 @@ struct KowalskiPortfolioTransactionDetailScreen: View {
         }
     }
 
-    @ViewBuilder
-    private var pairedTransactionView: some View {
-        if let pairedTransactionType = entry.transactionType.pairedTransactionType {
-            KowalskiPortfolioTransactionScreen(
-                initialValues: .pairedCreate(from: entry, transactionType: pairedTransactionType),
-                editorConfiguration: .pairedCreate(transactionType: pairedTransactionType),
-                onTransactionAdd: { _ in
-                    shouldDismissAfterPairedTransaction = true
-                },
-            )
-        }
+    private func pairedTransactionView(transactionType: TransactionType) -> some View {
+        KowalskiPortfolioTransactionScreen(
+            initialValues: .pairedCreate(from: entry, transactionType: transactionType),
+            editorConfiguration: .pairedCreate(transactionType: transactionType),
+            onTransactionAdd: { _ in
+                shouldDismissAfterPairedTransaction = true
+            },
+        )
     }
 
     private var unavailableValue: String {

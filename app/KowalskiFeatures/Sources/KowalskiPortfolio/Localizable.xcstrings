@@ -88,10 +88,16 @@
     "Please select a stock" : {
 
     },
+    "Price before split" : {
+
+    },
     "Purchase" : {
 
     },
     "Purchase price" : {
+
+    },
+    "Ratio" : {
 
     },
     "Save Changes" : {
@@ -104,6 +110,9 @@
 
     },
     "Split" : {
+
+    },
+    "Split Transaction" : {
 
     },
     "Stock" : {
