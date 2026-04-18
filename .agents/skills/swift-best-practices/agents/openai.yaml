@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Swift Best Practices'
+  short_description: 'Reusable Swift and SwiftUI guidance'
+  default_prompt: 'Use $swift-best-practices when changing Swift, SwiftUI, or Swift Package Manager code and you want reusable implementation guidance.'

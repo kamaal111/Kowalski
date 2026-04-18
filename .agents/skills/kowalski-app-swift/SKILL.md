@@ -1,51 +1,35 @@
 ---
 name: kowalski-app-swift
-description: Repository-specific patterns for Kowalski's Swift app stack built with SwiftUI, Observation, Swift Package Manager, and a generated OpenAPI client. Use when changing files under `app/**`, including feature packages, SwiftUI screens, feature models, OpenAPI client wrappers, design-system components, previews, package manifests, or Swift tests.
+description: Repository-specific overlay for Kowalski's Swift app stack built with SwiftUI, Observation, Swift Package Manager, and a generated OpenAPI client. Use with `swift-best-practices` when changing files under `app/**`, including feature packages, SwiftUI screens, feature models, OpenAPI client wrappers, design-system components, previews, package manifests, or Swift tests.
 ---
 
 # Kowalski App Swift
 
 ## Overview
 
-Follow this skill to keep app work aligned with the repository's feature-first package structure, Observation-based state, and Swift Testing conventions. Prefer patterns already used in `KowalskiFeatures`, `KowalskiClient`, `KowalskiDesignSystem`, and `KowalskiApp`.
+Load [swift-best-practices](../swift-best-practices/SKILL.md) first. Use this skill for Kowalski's package layout, helper names, concrete example files, and repo-specific verification details.
 
-## Start Here
+## Follow Kowalski's Package Shape
 
-- Read the closest package and feature before changing code. Reuse the surrounding structure instead of introducing a new architecture.
-- Work from the repository root unless a Swift package command must run inside a package directory.
-- Treat warnings as errors. The package manifests enforce strict settings and the codebase expects clean concurrency-aware Swift.
-- Preserve the separation between app shell, feature packages, generated client wrappers, and design-system components.
-
-## Package and Module Shape
-
+- Read the closest package and feature before editing.
 - Keep features in Swift packages under `app/`, not in the app target by default.
-- Keep public entry points small and place implementation details under `Internals/` when the package already does so.
-- Reuse the existing module split:
+- Preserve the existing split between:
   - `KowalskiApp` for the scene shell
   - `KowalskiFeatures` for feature state and screens
-  - `KowalskiClient` for typed API wrappers over generated OpenAPI operations
+  - `KowalskiClient` for typed wrappers over generated OpenAPI operations
   - `KowalskiDesignSystem` for shared UI components
   - `KowalskiUtils` for cross-cutting utilities
-- Keep filenames in `PascalCase`.
+- Treat warnings as errors. The package manifests enforce strict concurrency-aware settings.
 
-## State and Dependency Patterns
+## Reuse Kowalski-Specific Patterns
 
-- Use `@Observable` and `@MainActor` on long-lived feature models that own user-visible state.
-- Inject those models through SwiftUI environment helpers such as `.kowalskiAuth(...)` and `.kowalskiPortfolio(...)`.
-- Create environment-aware factories such as `default()`, `preview(...)`, `forEnvironment()`, and `testing(...)` when the module already uses them.
-- Keep mutable UI state inside the owning feature model or view, not split across redundant wrappers.
-- Refresh feature state after successful mutations when the existing feature already follows that pattern.
-- **Minimise stored state.** When multiple values share the same lifecycle, combine them into a single stored property (a struct or named tuple) and expose derived values as computed properties. Never introduce a second `private(set) var` just to hold a value that can be computed from an already-stored one.
+- Inject long-lived feature models through helpers such as `.kowalskiAuth(...)` and `.kowalskiPortfolio(...)`.
+- Reuse environment-aware factories such as `default()`, `preview(...)`, `forEnvironment()`, and `testing(...)` when the module already provides them.
+- Keep the generated OpenAPI surface behind wrappers in `KowalskiClient`.
+- Prefer `KowalskiServerConfiguration` for deployment-sensitive setup, especially for clients such as `ForexKit`.
+- Log unexpected failures with `KamaalLogger`.
 
-## View and Feature Patterns
-
-- Keep SwiftUI views focused on rendering and orchestration.
-- Pass async closures into reusable editors and supporting views rather than hard-coding one screen's workflow into the shared component.
-- Use `@State`, `@FocusState`, and environment objects sparingly and intentionally.
-- Reuse `KowalskiDesignSystem` components before introducing a new field or control.
-- Provide previews that exercise realistic app states through the existing preview factories.
-
-Model new work after files such as:
+## Model New Work After Existing Files
 
 - `app/KowalskiApp/Sources/KowalskiApp/KowalskiScene.swift`
 - `app/KowalskiFeatures/Sources/KowalskiAuth/KowalskiAuth.swift`
@@ -53,50 +37,22 @@ Model new work after files such as:
 - `app/KowalskiFeatures/Sources/KowalskiPortfolio/Internals/Views/SupportingViews/KowalskiPortfolioTransactionEditor.swift`
 - `app/KowalskiClient/Sources/KowalskiClient/KowalskiClient.swift`
 
-## Client and Error-Handling Patterns
+## Keep Kowalski Tests Honest
 
-- Keep the generated OpenAPI surface behind small protocols and wrapper types in `KowalskiClient`.
-- Prefer shared configuration entry points such as `KowalskiServerConfiguration` for deployment-sensitive clients like `ForexKit`, so base URLs and transport setup stay centralized.
-- Return `Result<Success, Failure>` from async client and feature APIs when the surrounding module already does so.
-- Map transport and API errors into feature-specific error enums instead of leaking raw generated types into the UI.
-- Use explicit `switch` or `do/catch` flows for fallible calls that matter.
-- Reserve `try?` for intentionally optional parsing or probing, not for meaningful control flow that should be logged or surfaced.
-- Log unexpected failures with `KamaalLogger` instead of silently swallowing them.
+- Use the production `fetchLatestExchangeRates` path for `ForexKit`.
+- Inject test sessions through `KowalskiServerConfiguration.defaultForexKitConfiguration(...)` instead of adding a parallel seam.
 
-## Swift Style Rules
-
-- Prefer one condition per `guard` line for readability.
-- Prefer explicit async flows over hidden side effects.
-- Prefer enums over repeated raw strings for fixed fields, keys, and identifiers; derive lists like CSV headers from `CaseIterable` enums when possible.
-- Keep localization consistent with nearby code.
-- Use `NSLocalizedString(..., bundle: .module, comment: "")` inside Swift packages that ship their own resources.
-- Do not manually edit `.xcstrings` files. Add or update localization calls in Swift and let Xcode manage the catalog.
-
-## Concurrency and Configuration
-
-- Respect the package's strict settings in `Package.swift`, including warnings-as-errors, strict memory safety, and strict concurrency.
-- Keep `Sendable` boundaries honest for shared protocols and generic view callbacks when concurrency crosses those boundaries.
-- Use actor-based test doubles when concurrent mutation or call counting is involved.
-
-## Testing Patterns
-
-- Use Swift Testing, not XCTest-style conventions, when working in the package tests that already use it.
-- Prefer `@Suite` and `@Test` with descriptive backtick names.
-- Assert `Result` values through `.get()` and `#require(throws:)` or `#expect(...)` rather than large manual switch statements.
-- Build focused mocks and previews that match the package's protocol boundaries.
-- When a dependency already supports `URLSession` injection, prefer testing through that transport hook instead of adding a second production-only seam.
-- For `ForexKit`, keep the production path on the real `fetchLatestExchangeRates` flow and inject test sessions through `KowalskiServerConfiguration.defaultForexKitConfiguration(...)`.
-- Verify user-facing error formatting, refreshed state after mutations, and request construction in client tests when those behaviors change.
-
-## Verification Workflow
+## Verify In Kowalski's Workflow
 
 - Run `swift build` in the affected package directory when package code changes.
 - Run `just test` for app behavior changes unless the work is docs-only.
 - Run `just ready` from the repository root before declaring app code changes complete.
-- Run `just test-ui` only when a human explicitly asks for UI test coverage.
+- Run `just test-ui` only when a human explicitly asks for UI coverage.
 
 ## Expected Output When Using This Skill
 
-- State which package or feature patterns you followed.
-- State which package builds or tests you ran.
-- State whether `just ready` passed, or why it was intentionally skipped.
+Finish by stating:
+
+- which Kowalski packages or feature patterns you followed
+- which package builds or tests you ran
+- whether `just ready` passed, or why it was intentionally skipped
