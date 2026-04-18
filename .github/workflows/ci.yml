@@ -9,6 +9,7 @@ on:
 env:
   PNPM_VERSION: 10.26.1
   XCODE_APP_NAME: Xcode_26.3.app
+  PYTHON_VERSION: 3.12
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref }}
@@ -24,6 +25,7 @@ jobs:
     outputs:
       server: ${{ steps.detect.outputs.server }}
       app: ${{ steps.detect.outputs.app }}
+      skills: ${{ steps.detect.outputs.skills }}
     steps:
       - name: Check out code
         uses: actions/checkout@v6
@@ -88,6 +90,27 @@ jobs:
 
       - name: Run server tests
         run: just test-server
+
+  skills:
+    name: Skill script tests
+    needs: changes
+    if: needs.changes.outputs.skills == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up just
+        uses: extractions/setup-just@v4
+
+      - name: Run skill tests
+        run: just test-skills
 
   app:
     name: App checks

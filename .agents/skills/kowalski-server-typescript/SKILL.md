@@ -1,106 +1,51 @@
 ---
 name: kowalski-server-typescript
-description: Repository-specific patterns for Kowalski's TypeScript server built with Hono, Zod, Drizzle, and structured Pino logging. Use when changing files under `server/src/**`, adding or updating API endpoints, request/response schemas, middleware, auth flows, services, repositories, database-backed behavior, or server integration tests.
+description: Repository-specific overlay for Kowalski's TypeScript server built with Hono, Zod, Drizzle, and structured Pino logging. Use with `typescript-server-best-practices` when changing files under `server/src/**`, adding or updating API endpoints, request or response schemas, middleware, auth flows, services, repositories, database-backed behavior, or server integration tests.
 ---
 
 # Kowalski Server Typescript
 
 ## Overview
 
-Follow this skill to match the server's existing architecture instead of inventing a parallel one. Prefer repository-specific patterns from nearby feature folders over generic Node or Hono habits.
+Load [typescript-server-best-practices](../typescript-server-best-practices/SKILL.md) first. Use this skill for Kowalski's feature layout, helper names, logging entrypoints, test harness locations, and OpenAPI workflow.
 
-## Start Here
+## Follow Kowalski's Server Shape
 
-- Run `just` from the repository root first and prefer root `just` recipes over ad hoc commands.
-- Read the nearest existing feature module before editing. The portfolio, auth, stocks, and forex folders show the expected server shape.
+- Read the nearest existing feature module before editing. The portfolio, auth, stocks, and forex folders show the expected shape.
 - Keep changes scoped to the existing feature slices under `server/src/<feature>/`.
-- Avoid starting the server directly. Use compile, test, and OpenAPI workflows instead.
+- Model new work after files such as:
+  - `server/src/portfolio/routes/create-entry.ts`
+  - `server/src/portfolio/handlers/create-entry.ts`
+  - `server/src/portfolio/services/create-entry.ts`
+  - `server/src/portfolio/repositories/create-entry.ts`
+  - `server/src/portfolio/tests/create-entry.integration.test.ts`
 
-## Non-Negotiable Rules
+## Reuse Kowalski-Specific Server Helpers
 
-- Validate all external or unknown data with Zod. Parse environment variables, request bodies, response bodies, auth payloads, database-adjacent unknowns, and third-party API data at the boundary.
-- Avoid `console.*` in `server/src/**`. Use the shared logger from `server/src/logging/`.
-- Avoid `as` casts, suppression comments, and lint bypasses. Fix the type or validate the data instead.
+- Define route contracts with `@hono/zod-openapi`.
+- Type handlers with `HonoContext<..., { out: ... }>` so `c.req.valid(...)` stays strongly typed without casts.
 - Reuse shared constants from `server/src/constants/` and shared schemas from `server/src/schemas/` when they fit.
-- Use integration tests for route and persistence behavior unless the change is truly isolated.
-- Fail loudly when required dependency data is missing or unusable. If an endpoint cannot produce the response semantics the app depends on, throw a typed domain exception and return a clear `5xx` instead of silently degrading to placeholder values, alternate currencies, partial payloads, or undocumented nullability.
+- Reuse auth and request-context helpers such as `getSessionWhereSessionIsRequired(...)`, `setRequestRoute(...)`, `setRequestUserId(...)`, `withRequestLogger(...)`, and `allowedModes(...)`.
+- Use the shared logging module in `server/src/logging/`, including helpers such as `getComponentLogger(...)`, `logInfo(...)`, `logWarn(...)`, and `logError(...)`.
+- Never assume a client-supplied portfolio, transaction, or other resource ID belongs to the requester just because the user is authenticated.
 
-## Architectural Shape
+## Follow Kowalski's Persistence And Test Setup
 
-Use the established flow:
+- Keep database access in feature repositories and business orchestration in feature services.
+- Resolve the authenticated user's owned parent record first, then query nested resources through that owned record or an equivalent user-scoped repository method.
+- Keep ownership checks inside the query path itself so another user's resource ID cannot be used to read or mutate data.
+- Use the integration harness from `server/src/tests/fixtures` and helpers from `server/src/tests/`.
+- Expect server integration tests to create a temporary Postgres database and run the current Drizzle migrations from `server/drizzle/`.
+- Add or update regression coverage for cross-user access whenever you touch ownership-sensitive routes, handlers, services, or repositories.
 
-- Define the OpenAPI contract in `routes/` with `createRoute(...)`.
-- Define request and response Zod schemas in `schemas/`.
-- Read validated request data in `handlers/` with `c.req.valid(...)`.
-- Type handler contexts with `HonoContext<..., { out: ... }>` so `c.req.valid('json' | 'query' | 'param')` returns the validated shape directly instead of needing casts.
-- Delegate business logic to `services/`.
-- Keep database access in `repositories/`.
-- Throw domain exceptions when required persistence work fails.
-- Parse handler responses through the response schema before returning them.
-
-Model new work after files such as:
-
-- `server/src/portfolio/routes/create-entry.ts`
-- `server/src/portfolio/handlers/create-entry.ts`
-- `server/src/portfolio/services/create-entry.ts`
-- `server/src/portfolio/repositories/create-entry.ts`
-- `server/src/portfolio/tests/create-entry.integration.test.ts`
-
-## Route and Schema Patterns
-
-- Describe endpoints with `@hono/zod-openapi` instead of undocumented Hono handlers.
-- Attach request headers, request bodies, response bodies, status codes, tags, and descriptions in the route definition.
-- Keep schema naming explicit and reusable. Use shared schema fragments when the shape is already defined elsewhere.
-- Export inferred payload types when handlers need them for `HonoContext` typing, and treat missing handler types as a typing problem to fix rather than a reason to cast `c.req.valid(...)`.
-- Use `.parse(...)` for values that must be correct and `.safeParse(...)` when a graceful branch is required.
-- Treat response mapping as a validation boundary too. The handlers in portfolio routes parse the response shape right before `c.json(...)`.
-- When a response combines multiple data sources, treat missing prerequisite records such as FX snapshots, cached prices, or derived aggregates as server errors unless the degraded state is explicitly documented in the contract.
-
-## Middleware, Context, and Auth Patterns
-
-- Prefer context-injected dependencies over global singletons. The server expects things like `db`, `auth`, `logger`, `requestId`, and `session` to flow through Hono context.
-- Use shared auth helpers such as `getSessionWhereSessionIsRequired(...)` once middleware guarantees a session.
-- Keep app-owned auth-adjacent state, such as user preferences, out of generated Better Auth schema files. Model it in app-owned tables keyed off `user.id` and enrich session responses by reading that state separately.
-- Update request logging context when the route or authenticated user becomes known. Use helpers such as `setRequestRoute(...)`, `setRequestUserId(...)`, and `withRequestLogger(...)`.
-- Keep middleware focused. Reuse `allowedModes(...)`, auth middleware, cache middleware, and the centralized error handler instead of duplicating their logic.
-
-## Repository and Persistence Patterns
-
-- Use narrow Drizzle selects and return only the fields the next layer needs.
-- Prefer repository-local input and output types derived from `table.$inferInsert` and `table.$inferSelect`.
-- Check `returning(...)` results explicitly and throw domain exceptions when no row comes back.
-- Keep persistence shape concerns in the repository layer and business orchestration in the service layer.
-- For bulk database writes, collect rows first and issue a single set-based insert or update through the repository layer instead of awaiting per-row writes in a service loop when the behavior is the same.
-- Avoid N+1 reads in bulk flows. Collect related IDs or keys first and fetch the required records in one set-based query, then resolve the batch from that in-memory map.
-- Resolve the authenticated user's owned parent record first and pass that full record through ownership-sensitive flows instead of trusting client-supplied identifiers alone. This keeps downstream helpers able to assert they are operating on the expected owned resource. For example, fetch the user's portfolio first and query transactions through that portfolio record instead of looking up transaction IDs globally.
-- Use helper functions for repeated conversions such as transaction date normalization.
-
-## Logging Patterns
-
-- Use `getComponentLogger(...)`, `logInfo(...)`, `logWarn(...)`, and `logError(...)` from the shared logging module.
-- Emit flat structured fields only. Prefer scalars or arrays of scalars.
-- Include meaningful event names such as `portfolio.entry.created` or `request.validation.failed`.
-- Include standard fields when relevant: `component`, `event`, `route`, `request_id`, `user_id`, `status_code`, `duration_ms`, `outcome`, `error_code`, `error_name`.
-- Avoid secrets, tokens, cookies, raw bodies, or other sensitive payloads in logs.
-- Add or update tests when logging behavior changes. The repository has explicit logging policy coverage.
-
-## Testing Patterns
-
-- Prefer the existing integration harness from `server/src/tests/fixtures` and helpers from `server/src/tests/`.
-- Server integration tests create a temporary Postgres database and run the current Drizzle migrations from `server/drizzle/` before booting the app. Migration and squash changes must leave a fresh database bootstrapable.
-- Parse response bodies in tests with the same Zod schemas used by production code.
-- Assert behavior across the full path when it matters: HTTP status, response body, persisted database state, and emitted logs.
-- Reuse helper constructors for authenticated requests, request IDs, and fixtures instead of rebuilding them in each test.
-- Keep regression tests focused and descriptive.
-
-## API and OpenAPI Workflow
+## Respect Kowalski's OpenAPI Workflow
 
 - Update route schemas first when the API contract changes.
 - Run `just download-spec` after API changes instead of hand-editing generated client inputs.
-- Expect downstream Swift client code to depend on the generated OpenAPI surface.
-- Prefer asking the user to start the server if spec download requires a live server instead of relying on auto-start behavior.
+- Expect downstream Swift code to depend on `app/KowalskiClient/Sources/KowalskiClient/openapi.yaml`.
+- Keep spec generation on the in-process `just download-spec` path instead of starting the server to fetch `/spec.yaml`.
 
-## Verification Workflow
+## Verify In Kowalski's Workflow
 
 - Run the narrowest useful command while iterating:
   - `just compile-server` for compile-level server changes
@@ -108,13 +53,13 @@ Model new work after files such as:
   - `just lint` or `just format-check` when relevant
   - `just test` for behavior changes
 - Run `just ready` from the repository root before declaring completion on server code changes.
-- If the change is docs-only inside skills or guidance files, skip `just ready` unless the user explicitly asks for it.
+- Skip `just ready` only for docs-only work when the repository rules allow it.
 
 ## Expected Output When Using This Skill
 
 Finish by stating:
 
-- which server patterns you followed
-- which files or layers you touched
+- which Kowalski server layers or helper patterns you followed
+- which files or feature slices you touched
 - which commands you ran
 - whether `just ready` passed, or why it was not run

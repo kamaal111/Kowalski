@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Git Worktree Best Practices'
+  short_description: 'Reusable linked worktree workflow guidance'
+  default_prompt: 'Use $git-worktree-best-practices when a task involves linked git worktrees, detached HEAD, branch sync, publish, or worktree-safe git operations.'
