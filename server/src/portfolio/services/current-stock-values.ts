@@ -2,7 +2,7 @@ import { getSessionWhereSessionIsRequired } from '@/auth';
 import type { HonoContext } from '@/api/contexts';
 import { logInfo } from '@/logging';
 import { withRequestLogger } from '@/logging/http';
-import type { PersistedPortfolioEntry, PersistedExchangeRateSnapshot } from '../repositories/list-entries';
+import type { PersistedExchangeRateSnapshot } from '../repositories/list-entries';
 import { findLatestExchangeRateSnapshotByBase } from '../repositories/list-entries';
 import {
   findLatestStockPricesByTickerIds,
@@ -14,9 +14,14 @@ import { type CurrentValue } from '../schemas/responses';
 import { ExchangeRateResolutionFailed, StockPriceFetchFailed } from '../exceptions';
 import { fetchYahooQuotes } from './yahoo-quote';
 
+interface EntryWithTickerIdAndStockSymbol {
+  tickerId: string;
+  stockSymbol: string;
+}
+
 export async function getCurrentStockValues(
   c: HonoContext,
-  entries: PersistedPortfolioEntry[],
+  entries: EntryWithTickerIdAndStockSymbol[],
 ): Promise<Record<string, CurrentValue>> {
   if (entries.length === 0) {
     return {};
@@ -111,8 +116,8 @@ export async function getCurrentStockValues(
   return currentValues;
 }
 
-function getUniquePortfolioEntries(entries: PersistedPortfolioEntry[]) {
-  const uniqueEntries = new Map<string, PersistedPortfolioEntry>();
+function getUniquePortfolioEntries<TEntry extends EntryWithTickerIdAndStockSymbol>(entries: TEntry[]) {
+  const uniqueEntries = new Map<string, TEntry>();
 
   for (const entry of entries) {
     if (!uniqueEntries.has(entry.tickerId)) {

@@ -6,11 +6,11 @@ import { ListEntriesResponseSchema, type ListEntriesResponse } from '../schemas/
 import { logInfo } from '@/logging';
 import { withRequestLogger } from '@/logging/http';
 import type { HonoContext } from '@/api/contexts';
-import { mapPersistedPortfolioEntryToResponse } from '../mappers/entry-response';
+import { mapResolvedPortfolioEntryToResponse } from '../mappers/entry-response';
 
 async function listEntries(c: HonoContext): Promise<TypedResponse<ListEntriesResponse, typeof STATUS_CODES.OK>> {
   const entries = await listPortfolioEntries(c);
-  const response = ListEntriesResponseSchema.parse(entries.map(mapPersistedPortfolioEntryToResponse));
+  const response = ListEntriesResponseSchema.parse(entries.map(mapResolvedPortfolioEntryToResponse));
   logInfo(withRequestLogger(c, { component: 'portfolio' }), {
     event: 'portfolio.entries.listed',
     result_count: response.length,

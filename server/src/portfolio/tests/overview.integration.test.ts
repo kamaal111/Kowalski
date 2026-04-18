@@ -2,9 +2,9 @@ import { eq } from 'drizzle-orm';
 import { describe, expect } from 'vitest';
 
 import { PORTFOLIO_ROUTE_NAME } from '..';
-import { PortfolioOverviewResponseSchema, type CreateEntryResponse } from '../schemas/responses';
+import { PortfolioOverviewResponseSchema, ResolvedEntryResponseSchema } from '../schemas/responses';
 import { seedExchangeRate, seedPortfolioEntry, seedStockInfo } from './helpers';
-import { APP_API_BASE_PATH } from '@/constants/common';
+import { APP_API_BASE_PATH, type ResolvedtransactionType } from '@/constants/common';
 import { ErrorResponseSchema } from '@/schemas/errors';
 import { integrationTest } from '@/tests/fixtures';
 import { yahooFinanceQuoteMock } from '@/tests/mocks/yahoo-finance';
@@ -18,6 +18,68 @@ interface AppRequestClient {
 }
 
 describe('Portfolio Overview Route', () => {
+  integrationTest(
+    'resolves split entries before returning overview transactions and current values',
+    async ({ app, db, sessionToken, userId }) => {
+      const purchaseEntry = await seedPortfolioEntry(db, {
+        userId,
+        stock: {
+          symbol: 'AAPL',
+          exchange: 'NMS',
+          name: 'Apple Inc.',
+        },
+        amount: 5,
+        purchasePrice: { currency: 'USD', value: 150 },
+        transactionType: 'buy',
+        transactionDate: '2025-12-19T10:30:00.000Z',
+      });
+      const splitEntry = await seedPortfolioEntry(db, {
+        userId,
+        stock: {
+          symbol: 'AAPL',
+          exchange: 'NMS',
+          name: 'Apple Inc.',
+        },
+        amount: 10,
+        purchasePrice: { currency: 'USD', value: 150 },
+        transactionType: 'split',
+        transactionDate: '2025-12-20T10:30:00.000Z',
+      });
+      await seedStockInfo(db, {
+        tickerId: createSyntheticTickerId('NMS', 'AAPL'),
+        currency: 'USD',
+        date: new Date().toISOString().slice(0, 10),
+        price: 16,
+      });
+
+      const response = await sendOverviewRequest(app, { sessionToken });
+      const body = await expectSuccessfulOverviewResponse(response);
+
+      expect(body).toEqual({
+        transactions: [
+          makeResolvedSplitEntry({
+            id: body.transactions[0]?.id ?? '',
+            entry: splitEntry,
+            amount: 50,
+            purchasePrice: 15,
+            transactionType: 'buy',
+          }),
+          makeResolvedSplitEntry({
+            id: body.transactions[1]?.id ?? '',
+            entry: splitEntry,
+            amount: 5,
+            purchasePrice: 150,
+            transactionType: 'sell',
+          }),
+          withPreferredCurrencyPurchasePrice(purchaseEntry),
+        ],
+        current_values: {
+          AAPL: { currency: 'USD', value: 16 },
+        },
+      });
+    },
+  );
+
   integrationTest(
     'returns transactions and current_values from cached daily prices',
     async ({ app, db, sessionToken, userId, getLogsForRequestId, withRequestId }) => {
@@ -401,13 +463,39 @@ async function expectSuccessfulOverviewResponse(response: Response) {
 }
 
 function withPreferredCurrencyPurchasePrice(
-  entry: CreateEntryResponse,
-  preferredCurrencyPurchasePrice: CreateEntryResponse['preferred_currency_purchase_price'] = null,
-): CreateEntryResponse {
+  entry: { preferred_currency_purchase_price: unknown },
+  preferredCurrencyPurchasePrice: unknown = null,
+) {
   return {
     ...entry,
     preferred_currency_purchase_price: preferredCurrencyPurchasePrice,
   };
+}
+
+function makeResolvedSplitEntry({
+  id,
+  entry,
+  amount,
+  purchasePrice,
+  transactionType,
+}: {
+  id: string;
+  entry: Awaited<ReturnType<typeof seedPortfolioEntry>>;
+  amount: number;
+  purchasePrice: number;
+  transactionType: ResolvedtransactionType;
+}) {
+  return ResolvedEntryResponseSchema.parse({
+    ...entry,
+    id,
+    amount,
+    purchase_price: {
+      currency: entry.purchase_price.currency,
+      value: purchasePrice,
+    },
+    preferred_currency_purchase_price: null,
+    transaction_type: transactionType,
+  });
 }
 
 async function expectNotFoundErrorResponse(response: Response) {

@@ -1,5 +1,6 @@
 import * as z from 'zod';
 
+import { RESOLVED_TRANSACTION_TYPE_ARRAY } from '@/constants/common';
 import { ApiCommonDatetimeShape } from '@/schemas/common';
 import { CreateEntryPayloadSchema, MoneySchema } from './payloads';
 
@@ -60,11 +61,45 @@ export const CreateEntryResponseSchema = PortfolioEntryResponseObjectSchema.exte
   },
 });
 
+export type ResolvedEntryResponse = z.infer<typeof ResolvedEntryResponseSchema>;
+
+export const ResolvedEntryResponseSchema = PortfolioEntryResponseObjectSchema.extend({
+  preferred_currency_purchase_price: PreferredCurrencyPurchasePriceSchema,
+  transaction_type: z.enum(RESOLVED_TRANSACTION_TYPE_ARRAY).openapi({
+    description: 'Resolved transaction type returned by portfolio list and overview responses',
+    example: 'buy',
+  }),
+}).openapi('ResolvedEntryResponse', {
+  title: 'Resolved Portfolio Entry Response',
+  description:
+    'Portfolio entry returned by portfolio list and overview responses after split transactions are resolved into buy and sell pairs.',
+  example: {
+    id: '550e8400-e29b-41d4-a716-446655440000',
+    stock: {
+      symbol: 'AAPL',
+      exchange: 'NMS',
+      name: 'Apple Inc.',
+      isin: 'US0378331005',
+      sector: 'Technology',
+      industry: 'Consumer Electronics',
+      exchange_dispatch: 'NASDAQ',
+    },
+    amount: 10,
+    purchase_price: { currency: 'USD', value: 150.5 },
+    preferred_currency_purchase_price: { currency: 'EUR', value: 138.07 },
+    transaction_type: 'buy',
+    transaction_date: '2025-12-20T00:00:00.000Z',
+    created_at: '2025-12-20T12:00:00.000Z',
+    updated_at: '2025-12-20T12:00:00.000Z',
+  },
+});
+
 export type ListEntriesResponse = z.infer<typeof ListEntriesResponseSchema>;
 
-export const ListEntriesResponseSchema = z.array(CreateEntryResponseSchema).openapi('ListEntriesResponse', {
+export const ListEntriesResponseSchema = z.array(ResolvedEntryResponseSchema).openapi('ListEntriesResponse', {
   title: 'List Portfolio Entries Response',
-  description: 'Response containing persisted portfolio entries for the signed-in user',
+  description:
+    'Response containing portfolio entries for the signed-in user after any stored split transactions are resolved into buy and sell entries.',
   example: [
     {
       id: '550e8400-e29b-41d4-a716-446655440000',

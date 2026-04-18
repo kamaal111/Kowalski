@@ -317,7 +317,7 @@ struct KowalskiPortfolioTests {
     }
 
     @Test
-    func `Overview fetch should adjust holdings for split transactions`() async throws {
+    func `Overview fetch should compute holdings from resolved split transactions`() async throws {
         let overview = makePortfolioOverviewResponse(
             transactions: [
                 makePortfolioEntryResponse(
@@ -328,13 +328,19 @@ struct KowalskiPortfolioTests {
                 ),
                 makePortfolioEntryResponse(
                     stock: makeAppleStockResponse(),
-                    amount: 3,
-                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 0),
-                    transactionType: .split,
+                    amount: 2,
+                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    transactionType: .sell,
+                ),
+                makePortfolioEntryResponse(
+                    stock: makeAppleStockResponse(),
+                    amount: 4,
+                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 50),
+                    transactionType: .buy,
                 ),
             ],
             currentValues: [
-                "AAPL": KowalskiClientMoney(currency: "USD", value: 10),
+                "AAPL": KowalskiClientMoney(currency: "USD", value: 40),
             ],
         )
         let portfolio = KowalskiPortfolio.testing(
@@ -343,9 +349,9 @@ struct KowalskiPortfolioTests {
 
         try await portfolio.fetchOverview().get()
 
-        #expect(portfolio.netWorth?.value == 50)
-        #expect(portfolio.allTimeProfit?.value == -150)
-        #expect(portfolio.allTimeProfitPercentage == -75)
+        #expect(portfolio.netWorth?.value == 160)
+        #expect(portfolio.allTimeProfit?.value == -40)
+        #expect(portfolio.allTimeProfitPercentage == -20)
     }
 
     @Test
@@ -959,7 +965,23 @@ struct KowalskiPortfolioTests {
     }
 
     @Test
-    func `Paired create form values should use the opposite transaction type`() throws {
+    func `Transaction types should expose paired actions and split-specific labels`() {
+        #expect(TransactionType.purchase.pairedActions == [
+            .init(transactionType: .split, title: "Split"),
+            .init(transactionType: .sell, title: "Sell"),
+        ])
+        #expect(TransactionType.sell.pairedActions == [
+            .init(transactionType: .purchase, title: "Buy"),
+        ])
+        #expect(TransactionType.split.pairedActions.isEmpty)
+        #expect(TransactionType.split.amountFieldTitle == "Ratio")
+        #expect(TransactionType.split.amountFieldPrefix == "1/")
+        #expect(TransactionType.split.purchasePriceTitle == "Price before split")
+        #expect(TransactionType.split.screenTitle == "Split Transaction")
+    }
+
+    @Test
+    func `Paired create form values should use the configured transaction type`() throws {
         let buyEntry = makePortfolioEntry(
             stock: makeAppleStock(),
             amount: 10,
@@ -970,9 +992,14 @@ struct KowalskiPortfolioTests {
             amount: 7,
             transactionType: .sell,
         )
-        let pairedSellType = try #require(buyEntry.transactionType.pairedTransactionType)
-        let pairedBuyType = try #require(sellEntry.transactionType.pairedTransactionType)
+        let pairedSplitType = try #require(buyEntry.transactionType.pairedActions.first?.transactionType)
+        let pairedSellType = try #require(buyEntry.transactionType.pairedActions.last?.transactionType)
+        let pairedBuyType = try #require(sellEntry.transactionType.pairedActions.first?.transactionType)
 
+        let splitFormValues = KowalskiPortfolioTransactionFormValues.pairedCreate(
+            from: buyEntry,
+            transactionType: pairedSplitType,
+        )
         let sellFormValues = KowalskiPortfolioTransactionFormValues.pairedCreate(
             from: buyEntry,
             transactionType: pairedSellType,
@@ -981,6 +1008,13 @@ struct KowalskiPortfolioTests {
             from: sellEntry,
             transactionType: pairedBuyType,
         )
+
+        #expect(splitFormValues.selectedStock?.symbol == "AAPL")
+        #expect(splitFormValues.selectedStock?.name == "Apple Inc.")
+        #expect(splitFormValues.amount.isEmpty)
+        #expect(splitFormValues.transactionType == .split)
+        #expect(splitFormValues.purchasePriceCurrency == buyEntry.purchasePrice.currency)
+        #expect(splitFormValues.purchasePriceValue == "0")
 
         #expect(sellFormValues.selectedStock?.symbol == "AAPL")
         #expect(sellFormValues.selectedStock?.name == "Apple Inc.")
@@ -1032,6 +1066,27 @@ struct KowalskiPortfolioTests {
         #expect(formValues.selectedStock?.symbol == "AAPL")
         #expect(formValues.amount == "5")
         #expect(formValues.transactionType == .sell)
+    }
+
+    @Test
+    func `Split paired create should leave the ratio empty and reset the price value`() {
+        let entry = makePortfolioEntry(
+            stock: makeAppleStock(),
+            amount: 5,
+            purchasePrice: Money(currency: .EUR, value: 130),
+            transactionType: .purchase,
+        )
+
+        let formValues = KowalskiPortfolioTransactionFormValues.pairedCreate(
+            from: entry,
+            transactionType: .split,
+        )
+
+        #expect(formValues.selectedStock?.symbol == "AAPL")
+        #expect(formValues.purchasePriceCurrency == .EUR)
+        #expect(formValues.purchasePriceValue == "0")
+        #expect(formValues.amount.isEmpty)
+        #expect(formValues.transactionType == .split)
     }
 }
 

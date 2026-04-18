@@ -7,6 +7,7 @@ import { exchangeRates, portfolio, portfolioTransaction, stockInfo, stockTicker 
 import { dateOnlyStringToISO8601String } from '@/utils/dates';
 import { createSyntheticTickerId, createSyntheticTickerIsin } from '@/utils/tickers';
 import { CreateEntryResponseSchema } from '../schemas/responses';
+import type { TransactionType } from '@/constants/common';
 
 const DEFAULT_PORTFOLIO_NAME = 'Default Portfolio';
 
@@ -26,7 +27,7 @@ interface SeedPortfolioEntryInput {
     currency: string;
     value: number;
   };
-  transactionType: 'buy' | 'sell' | 'split';
+  transactionType: TransactionType;
   transactionDate: string;
   createdAt?: Date;
   updatedAt?: Date;

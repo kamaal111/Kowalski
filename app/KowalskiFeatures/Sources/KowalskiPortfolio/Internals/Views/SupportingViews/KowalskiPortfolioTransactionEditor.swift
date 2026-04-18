@@ -20,8 +20,6 @@ private let logger = KamaalLogger(
 )
 
 struct KowalskiPortfolioTransactionEditor<SuccessValue: Sendable>: View {
-    @Environment(KowalskiPortfolio.self) private var portfolio
-
     @FocusState private var focusedTextfield: EntryScreenFocusFields?
 
     @State private var selectedStock: Stock?
@@ -64,61 +62,46 @@ struct KowalskiPortfolioTransactionEditor<SuccessValue: Sendable>: View {
 
     var body: some View {
         VStack {
-            KowalskiSearchableDropdown(
-                selectedItem: $selectedStock,
-                localizedTitle: "Symbol or ISIN",
-                itemLabel: stockSearchLabel,
-                onSearch: { query in
-                    await portfolio.searchStocks(query: query)
-                },
+            StockSearchField(
+                selectedStock: $selectedStock,
+                isEnabled: configuration.stockSelectionIsEnabled,
             )
-            .disabled(!configuration.stockSelectionIsEnabled)
             MoneyField(
                 currency: $purchasePriceCurrency,
                 value: $purchasePriceValue,
-                title: NSLocalizedString("Purchase price", comment: ""),
+                title: transactionType.purchasePriceTitle,
                 currencies: Currencies.allCases,
                 fixButtonTitle: NSLocalizedString("Fix", comment: ""),
                 fixMessage: "Invalid value",
             )
-            KowalskiTextField(
-                text: $amount,
-                errorResult: $amountError,
-                localizedTitle: "Amount",
-                variant: .decimals(locale: ModuleConfig.defaultLocale),
-                validations: [
-                    .numeric(
-                        locale: ModuleConfig.defaultLocale,
-                        greaterThanOrEqualTo: 0,
-                        message: NSLocalizedString("Amount should be numeric", comment: ""),
-                    ),
-                ],
-            )
-            .focused($focusedTextfield, equals: .amount)
-            .onSubmit(handleSubmit)
-            HStack {
-                Picker(
-                    selection: $transactionType,
-                    content: {
-                        ForEach(TransactionType.allCases, id: \.self) { type in
-                            Text(type.label)
-                                .tag(type)
-                        }
-                    },
-                    label: {
-                        Text(transactionTypeAccessibilityLabel)
-                    },
+            HStack(alignment: .top, spacing: 8) {
+                if let amountFieldPrefix = transactionType.amountFieldPrefix {
+                    Text(amountFieldPrefix)
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 14)
+                }
+                KowalskiTextField(
+                    text: $amount,
+                    errorResult: $amountError,
+                    localizedTitle: transactionType == .split ? "Ratio" : "Amount",
+                    variant: .decimals(locale: ModuleConfig.defaultLocale),
+                    validations: [
+                        .numeric(
+                            locale: ModuleConfig.defaultLocale,
+                            greaterThanOrEqualTo: 0,
+                            message: NSLocalizedString("Amount should be numeric", comment: ""),
+                        ),
+                    ],
                 )
-                .labelsHidden()
-                .pickerStyle(.menu)
-                .disabled(configuration.fixedTransactionType != nil)
-                .accessibilityIdentifier(transactionTypeAccessibilityLabel)
-                .accessibilityLabel(Text(transactionTypeAccessibilityLabel))
-                DatePicker("", selection: $transactionDate, displayedComponents: .date)
-                    .labelsHidden()
+                .focused($focusedTextfield, equals: .amount)
+                .onSubmit(handleSubmit)
             }
-            .padding(.vertical, .small)
             .ktakeWidthEagerly(alignment: .leading)
+            TransactionControls(
+                transactionType: $transactionType,
+                transactionDate: $transactionDate,
+                fixedTransactionType: configuration.fixedTransactionType,
+            )
             Button(action: handleSubmit) {
                 Text(submitButtonTitle)
                     .ktakeWidthEagerly()
@@ -217,21 +200,6 @@ struct KowalskiPortfolioTransactionEditor<SuccessValue: Sendable>: View {
             focusedTextfield = .amount
         }
     }
-
-    private func stockSearchLabel(_ stock: Stock) -> String {
-        let exchange = stock.exchangeDispatch ?? stock.exchange
-        let isinLabel = if let isin = stock.isin {
-            " [ISIN: \(isin)]"
-        } else {
-            ""
-        }
-
-        return "\(stock.symbol) - \(stock.name)\(isinLabel) (\(exchange))"
-    }
-
-    private var transactionTypeAccessibilityLabel: String {
-        NSLocalizedString("Transaction Type", comment: "")
-    }
 }
 
 struct KowalskiPortfolioTransactionEditorConfiguration {
@@ -304,10 +272,14 @@ struct KowalskiPortfolioTransactionFormValues {
         transactionType: TransactionType,
     ) -> Self {
         let emptyValues = empty()
+        let amount = switch transactionType {
+        case .split: ""
+        case .purchase, .sell: formattedNumber(entry.amount)
+        }
 
         return Self(
             selectedStock: entry.stock,
-            amount: formattedNumber(entry.amount),
+            amount: amount,
             purchasePriceCurrency: entry.purchasePrice.currency,
             purchasePriceValue: emptyValues.purchasePriceValue,
             transactionType: transactionType,
