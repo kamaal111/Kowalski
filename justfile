@@ -270,6 +270,14 @@ test-heavy: test-server test-app-heavy
 [parallel]
 quality: check-spec lint format-check typecheck
 
+# Open project in zed
+zed:
+    zed .
+
+# Open project in vscode
+code:
+    code kowalski.code-workspace
+
 # Open app in Xcode
 [working-directory("app")]
 xcode:
