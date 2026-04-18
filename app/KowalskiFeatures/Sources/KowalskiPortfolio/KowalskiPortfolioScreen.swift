@@ -23,7 +23,7 @@ public struct KowalskiPortfolioScreen: View {
     public var body: some View {
         KJustStack {
             if portfolio.isLoading, portfolio.entries.isEmpty {
-                ProgressView("Loading entries")
+                loadingState
             } else if portfolio.entries.isEmpty {
                 emptyState
             } else {
@@ -156,6 +156,18 @@ public struct KowalskiPortfolioScreen: View {
         }
         .multilineTextAlignment(.center)
         .padding(.all, .medium)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+    }
+
+    private var loadingState: some View {
+        VStack(spacing: KowalskiSizes.medium.rawValue) {
+            ProgressView()
+                .controlSize(.large)
+            Text("Loading your portfolio", bundle: .module)
+                .font(.headline)
+                .foregroundStyle(.secondary)
+        }
+        .multilineTextAlignment(.center)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
     }
 
