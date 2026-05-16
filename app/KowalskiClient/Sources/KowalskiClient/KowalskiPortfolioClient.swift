@@ -14,6 +14,7 @@ import OpenAPIRuntime
 public protocol KowalskiPortfolioClient: Sendable {
     func listEntries() async -> Result<[KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientListEntriesErrors>
     func getOverview() async -> Result<KowalskiPortfolioOverviewResponse, KowalskiPortfolioClientOverviewErrors>
+    func getHoldings() async -> Result<KowalskiPortfolioHoldingsResponse, KowalskiPortfolioClientHoldingsErrors>
     func bulkCreateEntries(
         entries: [KowalskiPortfolioBulkCreateEntryItemPayload],
     ) async -> Result<[KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientBulkCreateEntriesErrors>
@@ -73,7 +74,7 @@ struct KowalskiPortfolioClientFactory {
     }
 
     static func listEntriesFailingPreview() -> KowalskiPortfolioClient {
-        KowalskiPortfolioClientPreview(overviewFailure: .unknown(statusCode: 500, payload: nil, context: nil))
+        KowalskiPortfolioClientPreview(listFailure: .unknown(statusCode: 500, payload: nil, context: nil))
     }
 }
 
@@ -204,6 +205,11 @@ public enum KowalskiPortfolioClientOverviewErrors: Error {
     case unauthorized
 }
 
+public enum KowalskiPortfolioClientHoldingsErrors: Error {
+    case unknown(statusCode: Int, payload: OpenAPIRuntime.UndocumentedPayload?, context: Error?)
+    case unauthorized
+}
+
 // MARK: Implementation
 
 struct KowalskiPortfolioClientImpl: KowalskiPortfolioClient {
@@ -273,6 +279,35 @@ struct KowalskiPortfolioClientImpl: KowalskiPortfolioClient {
         }
 
         return .success(mapper.mapOverviewApiResponseToClient(jsonResponse))
+    }
+
+    func getHoldings() async -> Result<KowalskiPortfolioHoldingsResponse, KowalskiPortfolioClientHoldingsErrors> {
+        let response: Operations.GetAppApiPortfolioHoldings.Output
+        do {
+            response = try await client.getAppApiPortfolioHoldings()
+        } catch {
+            return .failure(.unknown(statusCode: 503, payload: nil, context: error))
+        }
+
+        let okResponse: Operations.GetAppApiPortfolioHoldings.Output.Ok
+        switch response {
+        case .unauthorized, .notFound:
+            return .failure(.unauthorized)
+        case .internalServerError:
+            return .failure(.unknown(statusCode: 500, payload: nil, context: nil))
+        case let .undocumented(statusCode, payload):
+            return .failure(.unknown(statusCode: statusCode, payload: payload, context: nil))
+        case let .ok(ok):
+            okResponse = ok
+        }
+        let jsonResponse: Components.Schemas.PortfolioHoldingsResponse
+        do {
+            jsonResponse = try okResponse.body.json
+        } catch {
+            return .failure(.unknown(statusCode: 500, payload: nil, context: error))
+        }
+
+        return .success(mapper.mapHoldingsApiResponseToClient(jsonResponse))
     }
 
     func bulkCreateEntries(
@@ -403,6 +438,7 @@ actor KowalskiPortfolioClientPreview: KowalskiPortfolioClient {
     private let updateFailure: KowalskiPortfolioClientUpdateEntryErrors?
     private let listFailure: KowalskiPortfolioClientListEntriesErrors?
     private let overviewFailure: KowalskiPortfolioClientOverviewErrors?
+    private let holdingsFailure: KowalskiPortfolioClientHoldingsErrors?
     private var overviewCurrentValues: [String: KowalskiClientMoney]
 
     fileprivate init(
@@ -411,6 +447,7 @@ actor KowalskiPortfolioClientPreview: KowalskiPortfolioClient {
         updateFailure: KowalskiPortfolioClientUpdateEntryErrors? = nil,
         listFailure: KowalskiPortfolioClientListEntriesErrors? = nil,
         overviewFailure: KowalskiPortfolioClientOverviewErrors? = nil,
+        holdingsFailure: KowalskiPortfolioClientHoldingsErrors? = nil,
         overviewCurrentValues: [String: KowalskiClientMoney] = makePreviewCurrentValues(),
     ) {
         self.entries = entries
@@ -418,6 +455,7 @@ actor KowalskiPortfolioClientPreview: KowalskiPortfolioClient {
         self.updateFailure = updateFailure
         self.listFailure = listFailure
         self.overviewFailure = overviewFailure
+        self.holdingsFailure = holdingsFailure
         self.overviewCurrentValues = overviewCurrentValues
     }
 
@@ -443,6 +481,14 @@ actor KowalskiPortfolioClientPreview: KowalskiPortfolioClient {
                 currentValues: overviewCurrentValues,
             ),
         )
+    }
+
+    func getHoldings() async -> Result<KowalskiPortfolioHoldingsResponse, KowalskiPortfolioClientHoldingsErrors> {
+        if let holdingsFailure {
+            return .failure(holdingsFailure)
+        }
+
+        return .success(makeHoldingsResponse(entries: sortedEntries(), currentValues: overviewCurrentValues))
     }
 
     func bulkCreateEntries(
@@ -648,6 +694,60 @@ private func makePreviewCurrentValues() -> [String: KowalskiClientMoney] {
         "TSLA": KowalskiClientMoney(currency: "USD", value: 420.5),
         "NVDA": KowalskiClientMoney(currency: "USD", value: 135),
     ]
+}
+
+private func makeHoldingsResponse(
+    entries: [KowalskiPortfolioClientEntryResponse],
+    currentValues: [String: KowalskiClientMoney],
+) -> KowalskiPortfolioHoldingsResponse {
+    let holdings = entries.reduce([String: KowalskiPortfolioHoldingResponse]()) { partialResult, entry in
+        let amountDelta: Double = switch entry.transactionType {
+        case .buy: entry.amount
+        case .sell: -entry.amount
+        case .split: 0
+        }
+        guard amountDelta != 0 else { return partialResult }
+        let unitValue = currentValues[entry.stock.symbol] ?? entry.purchasePrice
+        let existingHolding = partialResult[entry.stock.symbol]
+        let amount = (existingHolding?.amount ?? 0) + amountDelta
+        var updatedResult = partialResult
+        updatedResult[entry.stock.symbol] = KowalskiPortfolioHoldingResponse(
+            assetType: "equity",
+            asset: KowalskiPortfolioAssetResponse(
+                symbol: entry.stock.symbol,
+                exchange: entry.stock.exchange,
+                name: entry.stock.name,
+                isin: entry.stock.isin,
+                sector: entry.stock.sector,
+                industry: entry.stock.industry,
+                exchangeDispatch: entry.stock.exchangeDispatch,
+            ),
+            amount: amount,
+            unitValue: unitValue,
+            totalValue: KowalskiClientMoney(
+                currency: unitValue.currency,
+                value: amount * unitValue.value,
+            ),
+        )
+
+        return updatedResult
+    }
+    .values
+    .filter { $0.amount != 0 }
+    .sorted {
+        if $0.totalValue.value == $1.totalValue.value {
+            return $0.asset.symbol < $1.asset.symbol
+        }
+
+        return $0.totalValue.value > $1.totalValue.value
+    }
+    let netWorthCurrency = holdings.first?.totalValue.currency ?? "USD"
+    let netWorthValue = holdings.sum(by: \.totalValue.value)
+
+    return KowalskiPortfolioHoldingsResponse(
+        netWorth: KowalskiClientMoney(currency: netWorthCurrency, value: netWorthValue),
+        holdings: holdings,
+    )
 }
 
 private func makePreviewValidationIssue() -> KowalskiClientValidationIssue {

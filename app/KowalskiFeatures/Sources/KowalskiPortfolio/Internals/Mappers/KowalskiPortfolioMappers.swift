@@ -18,6 +18,13 @@ struct KowalskiPortfolioMappers {
         )
     }
 
+    func mapHoldingsResponse(_ response: KowalskiPortfolioHoldingsResponse) -> PortfolioHoldingsState {
+        PortfolioHoldingsState(
+            netWorth: mapMoney(response.netWorth),
+            holdings: response.holdings.map(mapPortfolioHolding),
+        )
+    }
+
     func mapPortfolioEntries(_ entries: [KowalskiPortfolioClientEntryResponse]) -> [PortfolioEntry] {
         entries.map(mapPortfolioEntry)
     }
@@ -71,6 +78,24 @@ struct KowalskiPortfolioMappers {
         )
     }
 
+    private func mapPortfolioHolding(_ holding: KowalskiPortfolioHoldingResponse) -> PortfolioHolding {
+        PortfolioHolding(
+            assetType: holding.assetType,
+            asset: PortfolioAsset(
+                symbol: holding.asset.symbol,
+                exchange: holding.asset.exchange,
+                name: holding.asset.name,
+                isin: holding.asset.isin,
+                sector: holding.asset.sector,
+                industry: holding.asset.industry,
+                exchangeDispatch: holding.asset.exchangeDispatch,
+            ),
+            amount: holding.amount,
+            unitValue: mapMoney(holding.unitValue),
+            totalValue: mapMoney(holding.totalValue),
+        )
+    }
+
     private func mapMoney(_ money: KowalskiClientMoney) -> Money {
         Money(
             currency: Currencies(rawValue: money.currency) ?? KowalskiFeatureDefaults.fallbackCurrency,
@@ -117,4 +142,9 @@ struct KowalskiPortfolioMappers {
 struct PortfolioOverviewState {
     let entries: [PortfolioEntry]
     let currentValues: [String: Money]
+}
+
+struct PortfolioHoldingsState {
+    let netWorth: Money
+    let holdings: [PortfolioHolding]
 }

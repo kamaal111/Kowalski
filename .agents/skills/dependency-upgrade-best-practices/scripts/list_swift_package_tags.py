@@ -50,7 +50,7 @@ def parse_args() -> argparse.Namespace:
 
 def run_git(args: list[str], cwd: Path) -> str:
     completed = subprocess.run(
-        ["git", *args],
+        ["git", "-c", "gc.auto=0", "-c", "maintenance.auto=false", *args],
         cwd=cwd,
         check=True,
         capture_output=True,

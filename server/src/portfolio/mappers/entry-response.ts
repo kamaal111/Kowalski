@@ -1,4 +1,5 @@
 import { dateOnlyStringToISO8601String } from '@/utils/dates';
+import type { HonoContext } from '@/api/contexts';
 import { toISO8601String } from '@/utils/strings';
 import {
   CreateEntryResponseSchema,
@@ -7,8 +8,10 @@ import {
   type ResolvedEntryResponse,
 } from '../schemas/responses';
 import { assertToFloat } from '@/utils/numbers';
+import { parseSyntheticTickerId } from '@/utils/tickers';
 import type { PersistedPortfolioEntry } from '../repositories/list-entries';
 import type { ResolvedPortfolioEntry } from '../services/resolve-splits';
+import { InvalidTickerId } from '../exceptions';
 
 interface PortfolioEntryResponseInput<TTransactionType extends string> {
   id: string;
@@ -61,17 +64,21 @@ export function mapResolvedPortfolioEntryInputToResponse(input: ResolvedEntryRes
 }
 
 export function mapPersistedPortfolioEntryToResponse({
+  c,
   entry,
   preferredCurrencyPurchasePrice,
 }: {
+  c: HonoContext;
   entry: PersistedPortfolioEntry;
   preferredCurrencyPurchasePrice: CreateEntryResponse['preferred_currency_purchase_price'];
 }): CreateEntryResponse {
+  const parsedTickerId = parseRequiredSyntheticTickerId(c, entry.tickerId);
+
   return mapPortfolioEntryToResponse({
     id: entry.id,
     stock: {
       symbol: entry.stockSymbol,
-      exchange: getExchangeFromTickerId(entry.tickerId),
+      exchange: parsedTickerId.exchange,
       name: entry.stockName,
       isin: entry.stockIsin,
       sector: entry.stockSector,
@@ -90,17 +97,21 @@ export function mapPersistedPortfolioEntryToResponse({
 }
 
 export function mapResolvedPortfolioEntryToResponse({
+  c,
   entry,
   preferredCurrencyPurchasePrice,
 }: {
+  c: HonoContext;
   entry: ResolvedPortfolioEntry;
   preferredCurrencyPurchasePrice: ResolvedEntryResponse['preferred_currency_purchase_price'];
 }): ResolvedEntryResponse {
+  const parsedTickerId = parseRequiredSyntheticTickerId(c, entry.tickerId);
+
   return mapResolvedPortfolioEntryInputToResponse({
     id: entry.id,
     stock: {
       symbol: entry.stockSymbol,
-      exchange: getExchangeFromTickerId(entry.tickerId),
+      exchange: parsedTickerId.exchange,
       name: entry.stockName,
       isin: entry.stockIsin,
       sector: entry.stockSector,
@@ -118,8 +129,11 @@ export function mapResolvedPortfolioEntryToResponse({
   });
 }
 
-function getExchangeFromTickerId(tickerId: string) {
-  const [, exchange] = tickerId.split(':');
+function parseRequiredSyntheticTickerId(c: HonoContext, tickerId: string) {
+  const parsedTickerId = parseSyntheticTickerId(tickerId);
+  if (parsedTickerId == null) {
+    throw new InvalidTickerId(c, tickerId);
+  }
 
-  return exchange?.length ? exchange : 'UNKNOWN';
+  return parsedTickerId;
 }

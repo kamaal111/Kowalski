@@ -22,9 +22,9 @@ public struct KowalskiPortfolioScreen: View {
 
     public var body: some View {
         KJustStack {
-            if portfolio.isLoading, portfolio.entries.isEmpty {
+            if portfolio.isLoading, portfolio.entries.isEmpty, portfolio.holdings.isEmpty {
                 loadingState
-            } else if portfolio.entries.isEmpty {
+            } else if portfolio.entries.isEmpty, portfolio.holdings.isEmpty {
                 emptyState
             } else {
                 content
@@ -73,82 +73,92 @@ public struct KowalskiPortfolioScreen: View {
     private var content: some View {
         VStack(spacing: KowalskiSizes.medium.rawValue) {
             netWorthCard
-            entriesList
+            holdingsList
         }
     }
 
-    private var entriesList: some View {
-        List(portfolio.entries) { entry in
-            NavigationLink(destination: {
-                KowalskiPortfolioTransactionDetailScreen(entry: entry)
-            }) {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(alignment: .firstTextBaseline) {
-                        Text(entry.stock.symbol)
-                            .font(.headline)
-                        Text(entry.stock.name)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    HStack {
-                        Text(entry.transactionType.label)
-                        Spacer()
-                        Text("\(entry.amount.formatted(.number)) shares")
-                    }
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    Text(entry.transactionDate.formatted(.dateTime.year().month().day()))
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
+    private var holdingsList: some View {
+        List(portfolio.holdings, id: \.self) { holding in
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(holding.asset.symbol)
+                        .font(.headline)
+                    Text(holding.asset.name)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
-                .padding(.vertical, .extraSmall)
+                HStack {
+                    Text("\(holding.amount.formatted(.number)) shares")
+                    Spacer()
+                    if portfolio.showsMoneyValues {
+                        Text(holding.totalValue.value, format: .currency(code: holding.totalValue.currency.rawValue))
+                    } else {
+                        Text(PortfolioMoneyValuePrivacy.maskedPlaceholder)
+                            .accessibilityIdentifier(PortfolioMoneyValuePrivacy.accessibilityIdentifier)
+                    }
+                }
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                if portfolio.showsMoneyValues {
+                    Text(
+                        "Unit \(holding.unitValue.value, format: .currency(code: holding.unitValue.currency.rawValue))",
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                }
             }
-            .accessibilityLabel(Text(entry.stock.name))
-            .accessibilityIdentifier("portfolio-entry-\(entry.stock.name)")
-            .accessibilityChildren {
-                Text(entry.stock.name)
-                Text("\(entry.amount.formatted(.number)) shares")
-            }
+            .padding(.vertical, .extraSmall)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(Text("\(holding.asset.name), \(holding.amount.formatted(.number)) shares"))
+            .accessibilityIdentifier("portfolio-holding-\(holding.asset.name)")
         }
         .listStyle(.inset)
     }
 
     private var netWorthCard: some View {
-        HStack(alignment: .top, spacing: KowalskiSizes.medium.rawValue) {
-            VStack(alignment: .leading, spacing: KowalskiSizes.small.rawValue) {
-                Text("Holdings Net Worth")
-                    .font(.headline)
-                if portfolio.isLoading, !portfolio.entries.isEmpty, portfolio.netWorth == nil {
-                    ProgressView("Loading net worth")
-                } else if !portfolio.showsMoneyValues, portfolio.netWorth != nil {
-                    Text(PortfolioMoneyValuePrivacy.maskedPlaceholder)
-                        .font(.largeTitle.weight(.semibold))
-                        .accessibilityLabel(Text(PortfolioMoneyValuePrivacy.maskedPlaceholder))
-                        .accessibilityIdentifier(PortfolioMoneyValuePrivacy.accessibilityIdentifier)
-                    Text(displayedNetWorthCurrency.localized)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else if let netWorth = portfolio.netWorth?.value {
-                    Text(netWorth, format: .currency(code: displayedNetWorthCurrency.rawValue))
-                        .font(.largeTitle.weight(.semibold))
-                    Text(displayedNetWorthCurrency.localized)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text("Net worth unavailable")
-                        .foregroundStyle(.secondary)
+        NavigationLink(destination: {
+            KowalskiPortfolioTransactionsScreen()
+        }) {
+            HStack(alignment: .top, spacing: KowalskiSizes.medium.rawValue) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Holdings Net Worth")
+                        .font(.headline)
+                    if portfolio.isLoading, !portfolio.entries.isEmpty, portfolio.netWorth == nil {
+                        ProgressView("Loading net worth")
+                    } else if !portfolio.showsMoneyValues, portfolio.netWorth != nil {
+                        Text(PortfolioMoneyValuePrivacy.maskedPlaceholder)
+                            .font(.largeTitle.weight(.semibold))
+                            .accessibilityLabel(Text(PortfolioMoneyValuePrivacy.maskedPlaceholder))
+                            .accessibilityIdentifier(PortfolioMoneyValuePrivacy.accessibilityIdentifier)
+                        Text(displayedNetWorthCurrency.localized)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else if let netWorth = portfolio.netWorth?.value {
+                        Text(netWorth, format: .currency(code: displayedNetWorthCurrency.rawValue))
+                            .font(.largeTitle.weight(.semibold))
+                        Text(displayedNetWorthCurrency.localized)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("Net worth unavailable")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .accessibilityElement(children: .contain)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                if portfolio.allTimeProfit != nil {
+                    profitView
                 }
             }
-            .accessibilityElement(children: .contain)
+            .padding(.horizontal, .medium)
+            .padding(.vertical, .medium)
             .frame(maxWidth: .infinity, alignment: .leading)
-
-            if portfolio.allTimeProfit != nil {
-                profitView
-            }
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+            .contentShape(RoundedRectangle(cornerRadius: 16))
         }
-        .padding(.horizontal, .medium)
-        .padding(.vertical, .medium)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("View transactions"))
         .padding(.all, .medium)
     }
 

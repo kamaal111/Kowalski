@@ -90,6 +90,15 @@ struct KowalskiPortfolioMapper {
         )
     }
 
+    func mapHoldingsApiResponseToClient(
+        _ response: Components.Schemas.PortfolioHoldingsResponse,
+    ) -> KowalskiPortfolioHoldingsResponse {
+        KowalskiPortfolioHoldingsResponse(
+            netWorth: mapHoldingValue(response.netWorth),
+            holdings: response.holdings.map(mapHoldingApiResponseToClient),
+        )
+    }
+
     func mapResolvedEntryApiResponseToClient(
         _ response: Components.Schemas.ResolvedEntryResponse,
     ) -> KowalskiPortfolioClientEntryResponse {
@@ -130,6 +139,39 @@ struct KowalskiPortfolioMapper {
     }
 
     private func mapCurrentValue(_ response: Components.Schemas.CurrentValue) -> KowalskiClientMoney {
+        KowalskiClientMoney(
+            currency: response.currency,
+            value: response.value,
+        )
+    }
+
+    private func mapHoldingApiResponseToClient(
+        _ response: Components.Schemas.PortfolioHolding,
+    ) -> KowalskiPortfolioHoldingResponse {
+        KowalskiPortfolioHoldingResponse(
+            assetType: response.assetType.rawValue,
+            asset: mapHoldingAsset(response.asset),
+            amount: response.amount,
+            unitValue: mapCurrentValue(response.unitValue.value1),
+            totalValue: mapHoldingValue(response.totalValue.value1),
+        )
+    }
+
+    private func mapHoldingAsset(
+        _ response: Components.Schemas.PortfolioHoldingAsset,
+    ) -> KowalskiPortfolioAssetResponse {
+        KowalskiPortfolioAssetResponse(
+            symbol: response.symbol,
+            exchange: response.exchange,
+            name: response.name,
+            isin: response.isin,
+            sector: response.sector,
+            industry: response.industry,
+            exchangeDispatch: response.exchangeDispatch,
+        )
+    }
+
+    private func mapHoldingValue(_ response: Components.Schemas.PortfolioHoldingValue) -> KowalskiClientMoney {
         KowalskiClientMoney(
             currency: response.currency,
             value: response.value,

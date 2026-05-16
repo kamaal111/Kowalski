@@ -1,6 +1,6 @@
 import * as z from 'zod';
 
-import { RESOLVED_TRANSACTION_TYPE_ARRAY } from '@/constants/common';
+import { ASSET_TYPE_ARRAY, ASSET_TYPES, RESOLVED_TRANSACTION_TYPE_ARRAY } from '@/constants/common';
 import { ApiCommonDatetimeShape } from '@/schemas/common';
 import { CreateEntryPayloadSchema, MoneySchema } from './payloads';
 
@@ -159,6 +159,117 @@ export const CurrentValueSchema = MoneySchema.openapi('CurrentValue', {
     "Current stock price in the signed-in user's preferred currency when conversion is required, or the native quote currency when no conversion is needed.",
   example: { currency: 'EUR', value: 185.45 },
 });
+
+const PortfolioHoldingValueSchema = z
+  .object({
+    currency: z.string().min(3).openapi({
+      description: 'Currency code',
+      example: 'USD',
+    }),
+    value: z.number().openapi({
+      description: 'Monetary value',
+      example: 1854.5,
+    }),
+  })
+  .openapi('PortfolioHoldingValue', {
+    title: 'Portfolio Holding Value',
+    description: 'Monetary value with currency for aggregated portfolio holdings.',
+    example: { currency: 'USD', value: 1854.5 },
+  });
+
+export const PortfolioHoldingAssetSchema = CreateEntryPayloadSchema.shape.stock.openapi('PortfolioHoldingAsset', {
+  title: 'Portfolio Holding Asset',
+  description: 'Asset metadata for an aggregated portfolio holding.',
+  example: {
+    symbol: 'AAPL',
+    exchange: 'NMS',
+    name: 'Apple Inc.',
+    isin: 'US0378331005',
+    sector: 'Technology',
+    industry: 'Consumer Electronics',
+    exchange_dispatch: 'NASDAQ',
+  },
+});
+
+export type PortfolioHolding = z.infer<typeof PortfolioHoldingSchema>;
+
+export const PortfolioHoldingSchema = z
+  .object({
+    asset_type: z.enum(ASSET_TYPE_ARRAY).openapi({
+      description: 'Type of asset represented by the holding.',
+      example: ASSET_TYPES.EQUITY,
+    }),
+    asset: PortfolioHoldingAssetSchema,
+    amount: z.number().openapi({
+      description: 'Net amount held for the asset.',
+      example: 10,
+    }),
+    unit_value: CurrentValueSchema.openapi({
+      description:
+        "Current per-share value in the signed-in user's preferred currency when configured, otherwise quote currency.",
+      example: { currency: 'EUR', value: 185.45 },
+    }),
+    total_value: PortfolioHoldingValueSchema.openapi({
+      description: 'Total holding value calculated as amount times unit value.',
+      example: { currency: 'EUR', value: 1854.5 },
+    }),
+  })
+  .openapi('PortfolioHolding', {
+    title: 'Portfolio Holding',
+    description: 'Aggregated portfolio holding for a single asset.',
+    example: {
+      asset_type: ASSET_TYPES.EQUITY,
+      asset: {
+        symbol: 'AAPL',
+        exchange: 'NMS',
+        name: 'Apple Inc.',
+        isin: 'US0378331005',
+        sector: 'Technology',
+        industry: 'Consumer Electronics',
+        exchange_dispatch: 'NASDAQ',
+      },
+      amount: 10,
+      unit_value: { currency: 'EUR', value: 185.45 },
+      total_value: { currency: 'EUR', value: 1854.5 },
+    },
+  });
+
+export type PortfolioHoldingsResponse = z.infer<typeof PortfolioHoldingsResponseSchema>;
+
+export const PortfolioHoldingsResponseSchema = z
+  .object({
+    net_worth: PortfolioHoldingValueSchema.openapi({
+      description: 'Sum of total holding values.',
+      example: { currency: 'EUR', value: 1854.5 },
+    }),
+    holdings: z.array(PortfolioHoldingSchema).openapi({
+      description: 'Aggregated holdings for the signed-in user default portfolio.',
+    }),
+  })
+  .openapi('PortfolioHoldingsResponse', {
+    title: 'Portfolio Holdings Response',
+    description: 'Portfolio net worth and aggregated holdings for the signed-in user default portfolio.',
+    example: {
+      net_worth: { currency: 'EUR', value: 1854.5 },
+      holdings: [
+        {
+          asset_type: ASSET_TYPES.EQUITY,
+          asset: {
+            symbol: 'AAPL',
+            exchange: 'NMS',
+            name: 'Apple Inc.',
+            isin: 'US0378331005',
+            sector: 'Technology',
+            industry: 'Consumer Electronics',
+            exchange_dispatch: 'NASDAQ',
+          },
+          amount: 10,
+          unit_value: { currency: 'EUR', value: 185.45 },
+          total_value: { currency: 'EUR', value: 1854.5 },
+        },
+      ],
+    },
+  });
 
 export type PortfolioOverviewResponse = z.infer<typeof PortfolioOverviewResponseSchema>;
 

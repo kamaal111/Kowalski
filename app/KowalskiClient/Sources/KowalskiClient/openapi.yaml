@@ -502,6 +502,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /app-api/portfolio/holdings:
+    get:
+      tags:
+        - Portfolio
+      summary: Get portfolio holdings
+      description: >-
+        Return portfolio net worth and aggregated holdings for the signed-in
+        user default portfolio.
+      parameters:
+        - schema:
+            type: string
+            description: Bearer token for authentication
+            example: Bearer f21wcpz7Aokmlh2MB632MZpTgfruPc62
+          required: true
+          description: Bearer token for authentication
+          name: authorization
+          in: header
+      responses:
+        '200':
+          description: Portfolio holdings retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioHoldingsResponse'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Portfolio holdings could not be retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /app-api/portfolio/entries/bulk:
     post:
       tags:
@@ -1201,6 +1243,173 @@ components:
       example:
         currency: EUR
         value: 185.45
+    PortfolioHoldingsResponse:
+      type: object
+      properties:
+        net_worth:
+          $ref: '#/components/schemas/PortfolioHoldingValue'
+        holdings:
+          type: array
+          items:
+            $ref: '#/components/schemas/PortfolioHolding'
+          description: Aggregated holdings for the signed-in user default portfolio.
+      required:
+        - net_worth
+        - holdings
+      title: Portfolio Holdings Response
+      description: >-
+        Portfolio net worth and aggregated holdings for the signed-in user
+        default portfolio.
+      example:
+        net_worth:
+          currency: EUR
+          value: 1854.5
+        holdings:
+          - asset_type: equity
+            asset:
+              symbol: AAPL
+              exchange: NMS
+              name: Apple Inc.
+              isin: US0378331005
+              sector: Technology
+              industry: Consumer Electronics
+              exchange_dispatch: NASDAQ
+            amount: 10
+            unit_value:
+              currency: EUR
+              value: 185.45
+            total_value:
+              currency: EUR
+              value: 1854.5
+    PortfolioHoldingValue:
+      type: object
+      properties:
+        currency:
+          type: string
+          minLength: 3
+          description: Currency code
+          example: USD
+        value:
+          type: number
+          description: Monetary value
+          example: 1854.5
+      required:
+        - currency
+        - value
+      title: Portfolio Holding Value
+      description: Sum of total holding values.
+      example:
+        currency: EUR
+        value: 1854.5
+    PortfolioHolding:
+      type: object
+      properties:
+        asset_type:
+          type: string
+          enum:
+            - equity
+          description: Type of asset represented by the holding.
+          example: equity
+        asset:
+          $ref: '#/components/schemas/PortfolioHoldingAsset'
+        amount:
+          type: number
+          description: Net amount held for the asset.
+          example: 10
+        unit_value:
+          allOf:
+            - $ref: '#/components/schemas/CurrentValue'
+            - description: >-
+                Current per-share value in the signed-in user's preferred
+                currency when configured, otherwise quote currency.
+        total_value:
+          allOf:
+            - $ref: '#/components/schemas/PortfolioHoldingValue'
+            - description: Total holding value calculated as amount times unit value.
+      required:
+        - asset_type
+        - asset
+        - amount
+        - unit_value
+        - total_value
+      title: Portfolio Holding
+      description: Aggregated portfolio holding for a single asset.
+      example:
+        asset_type: equity
+        asset:
+          symbol: AAPL
+          exchange: NMS
+          name: Apple Inc.
+          isin: US0378331005
+          sector: Technology
+          industry: Consumer Electronics
+          exchange_dispatch: NASDAQ
+        amount: 10
+        unit_value:
+          currency: EUR
+          value: 185.45
+        total_value:
+          currency: EUR
+          value: 1854.5
+    PortfolioHoldingAsset:
+      type: object
+      properties:
+        symbol:
+          type: string
+          minLength: 1
+          description: Stock symbol
+          example: AAPL
+        exchange:
+          type: string
+          minLength: 1
+          description: Exchange code where the stock is traded
+          example: NMS
+        name:
+          type: string
+          minLength: 1
+          description: Company name
+          example: Apple Inc.
+        isin:
+          type:
+            - null
+            - string
+          description: International Securities Identification Number
+          example: US0378331005
+        sector:
+          type:
+            - null
+            - string
+          description: Business sector
+          example: Technology
+        industry:
+          type:
+            - null
+            - string
+          description: Industry classification
+          example: Consumer Electronics
+        exchange_dispatch:
+          type:
+            - null
+            - string
+          description: Display name for the exchange
+          example: NASDAQ
+      required:
+        - symbol
+        - exchange
+        - name
+        - sector
+        - industry
+        - exchange_dispatch
+      title: Portfolio Holding Asset
+      description: Asset metadata for an aggregated portfolio holding.
+      example:
+        symbol: AAPL
+        exchange: NMS
+        name: Apple Inc.
+        isin: US0378331005
+        sector: Technology
+        industry: Consumer Electronics
+        exchange_dispatch: NASDAQ
     CreateEntryResponse:
       type: object
       properties:

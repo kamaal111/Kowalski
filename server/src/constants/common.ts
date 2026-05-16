@@ -7,6 +7,14 @@ export const ONE_MINUTE_IN_MILLISECONDS = 60 * ONE_SECOND_IN_MILLISECONDS;
 
 export const REQUEST_ID_HEADER_NAME = 'kowalski-request-id';
 
+export type AssetType = (typeof ASSET_TYPE_ARRAY)[number];
+
+export const ASSET_TYPES: { [Key in Uppercase<AssetType>]: Lowercase<Key> } = {
+  EQUITY: 'equity',
+};
+
+export const ASSET_TYPE_ARRAY = ['equity'] as const;
+
 export type ResolvedtransactionType = (typeof RESOLVED_TRANSACTION_TYPE_ARRAY)[number];
 
 export const RESOLVED_TRANSACTION_TYPES: { [Key in Uppercase<ResolvedtransactionType>]: Lowercase<Key> } = {
