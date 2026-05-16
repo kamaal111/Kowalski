@@ -16,6 +16,39 @@ import Testing
 @Suite("Portfolio Feature Tests", .serialized)
 struct KowalskiPortfolioTests {
     @Test
+    func `Money visibility should default to visible for a fresh portfolio instance`() {
+        KowalskiPortfolio.resetPersistedMoneyVisibility()
+        defer { KowalskiPortfolio.resetPersistedMoneyVisibility() }
+
+        let portfolio = KowalskiPortfolio.testing(client: .testing())
+
+        #expect(portfolio.showsMoneyValues)
+    }
+
+    @Test
+    func `Money visibility toggle should update in-memory state`() {
+        KowalskiPortfolio.resetPersistedMoneyVisibility()
+        defer { KowalskiPortfolio.resetPersistedMoneyVisibility() }
+        let portfolio = KowalskiPortfolio.testing(client: .testing())
+
+        portfolio.toggleMoneyVisibility()
+
+        #expect(!portfolio.showsMoneyValues)
+    }
+
+    @Test
+    func `Money visibility preference should persist across portfolio instances`() {
+        KowalskiPortfolio.resetPersistedMoneyVisibility()
+        defer { KowalskiPortfolio.resetPersistedMoneyVisibility() }
+        let firstPortfolio = KowalskiPortfolio.testing(client: .testing())
+
+        firstPortfolio.toggleMoneyVisibility()
+        let secondPortfolio = KowalskiPortfolio.testing(client: .testing())
+
+        #expect(!secondPortfolio.showsMoneyValues)
+    }
+
+    @Test
     func `Store transaction should turn the first validation issue into the message shown to the user`() async throws {
         let portfolioClient = MockPortfolioClient(
             createEntryResult: .failure(

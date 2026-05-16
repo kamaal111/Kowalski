@@ -61,6 +61,9 @@
     "Fix" : {
 
     },
+    "Hide money values" : {
+
+    },
     "Holdings Net Worth" : {
 
     },
@@ -107,6 +110,9 @@
 
     },
     "Sell Transaction" : {
+
+    },
+    "Show money values" : {
 
     },
     "Split" : {

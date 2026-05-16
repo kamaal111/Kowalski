@@ -9,11 +9,13 @@ import ForexKit
 import Foundation
 import KamaalExtensions
 import KamaalLogger
+import KamaalUtils
 import KowalskiClient
 import KowalskiUtils
 import Observation
 
 private let logger = KamaalLogger(from: KowalskiPortfolio.self, failOnError: true)
+private let moneyVisibilityPreferenceKey = "\(ModuleConfig.identifier).moneyVisibilityPreference"
 
 @Observable
 @MainActor
@@ -25,6 +27,10 @@ public final class KowalskiPortfolio {
     private(set) var isLoading = false
     private(set) var netWorth: Money?
     private(set) var allTimeProfit: AllTimeProfit?
+    private(set) var showsMoneyValues = true
+
+    @UserDefaultsValue(key: moneyVisibilityPreferenceKey)
+    private static var moneyVisibilityPreference: Bool?
 
     var allTimeProfitPercentage: Double? {
         allTimeProfit?.percentage
@@ -32,6 +38,7 @@ public final class KowalskiPortfolio {
 
     private init(client: KowalskiClient) {
         self.client = client
+        showsMoneyValues = Self.moneyVisibilityPreference ?? true
     }
 
     @MainActor
@@ -172,6 +179,10 @@ public final class KowalskiPortfolio {
         }
     }
 
+    func toggleMoneyVisibility() {
+        setMoneyVisibility(!showsMoneyValues)
+    }
+
     private func computeNetWorth(for entries: [PortfolioEntry], currentValues: [String: Money]) -> Money? {
         let holdings = computeNetHoldings(for: entries)
         guard !holdings.isEmpty else { return Money(currency: .USD, value: 0) }
@@ -274,6 +285,12 @@ public final class KowalskiPortfolio {
         allTimeProfit = profit
     }
 
+    @MainActor
+    private func setMoneyVisibility(_ showsMoneyValues: Bool) {
+        self.showsMoneyValues = showsMoneyValues
+        Self.moneyVisibilityPreference = showsMoneyValues
+    }
+
     private func refreshOverview() async -> Result<Void, Error> {
         await fetchOverview()
     }
@@ -291,6 +308,9 @@ public final class KowalskiPortfolio {
 
     public static func forEnvironment() -> KowalskiPortfolio {
         guard KowalskiEnvironment.isUiTesting else { return `default`() }
+        if KowalskiEnvironment.shouldResetPortfolioMoneyVisibility {
+            resetPersistedMoneyVisibility()
+        }
         guard let scenario = KowalskiEnvironment.portfolioUiTestScenario else { return preview() }
 
         switch scenario {
@@ -347,6 +367,12 @@ public final class KowalskiPortfolio {
 
     static func testing(client: KowalskiClient) -> KowalskiPortfolio {
         KowalskiPortfolio(client: client)
+    }
+
+    // - MARK: Private
+
+    static func resetPersistedMoneyVisibility() {
+        _moneyVisibilityPreference.removeValue()
     }
 }
 

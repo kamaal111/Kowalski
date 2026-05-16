@@ -170,9 +170,7 @@ struct KowalskiAuthClientImpl: KowalskiAuthClient {
         email: String,
         password: String,
     ) async -> Result<Void, KowalskiAuthSignInErrors> {
-        assert(
-            (try? Keychain.get(forKey: credentialsKeychainKey).get()) == nil, "There should not be a key chain entry",
-        )
+        logger.info("Deleting credentials because we are signing in")
         Keychain.delete(forKey: credentialsKeychainKey)
 
         let response: Operations.PostAppApiAuthSignInEmail.Output

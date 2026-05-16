@@ -74,10 +74,7 @@ struct KowalskiPortfolioTransactionDetailScreen: View {
             Section("Transaction") {
                 detailRow(title: "Type", value: entry.transactionType.label)
                 detailRow(title: "Amount", value: entry.amount.formatted(.number))
-                detailRow(
-                    title: "Purchase Price",
-                    value: "\(entry.purchasePrice.currency.rawValue) \(entry.purchasePrice.value.formatted(.number))",
-                )
+                detailRow(title: "Purchase Price", value: purchasePriceValue)
                 detailRow(title: "Date", value: entry.transactionDate.formatted(.dateTime.year().month().day()))
             }
             Section("Audit") {
@@ -130,6 +127,12 @@ struct KowalskiPortfolioTransactionDetailScreen: View {
         NSLocalizedString("Unavailable", comment: "")
     }
 
+    private var purchasePriceValue: String {
+        guard portfolio.showsMoneyValues else { return PortfolioMoneyValuePrivacy.maskedPlaceholder }
+
+        return "\(entry.purchasePrice.currency.rawValue) \(entry.purchasePrice.value.formatted(.number))"
+    }
+
     private func detailRow(title: String, value: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Text(title)
@@ -137,6 +140,11 @@ struct KowalskiPortfolioTransactionDetailScreen: View {
             Spacer()
             Text(value)
                 .multilineTextAlignment(.trailing)
+                .accessibilityIdentifier(
+                    value == PortfolioMoneyValuePrivacy.maskedPlaceholder
+                        ? PortfolioMoneyValuePrivacy.accessibilityIdentifier
+                        : "",
+                )
         }
     }
 }
