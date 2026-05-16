@@ -18,11 +18,14 @@ public enum KowalskiEnvironment {
     public static let portfolioUiTestScenario =
         ProcessInfo.processInfo[.isUiTestingPortfolioScenario]
             .flatMap(PortfolioUiTestScenario.init(rawValue:))
+    public static let shouldResetPortfolioMoneyVisibility =
+        ProcessInfo.processInfo[.resetPortfolioMoneyVisibility] == "1"
 }
 
 public enum KowalskiEnvironmentKeys: String {
     case isUiTesing = "IS_UI_TESTING"
     case isUiTestingPortfolioScenario = "IS_UI_TESTING_PORTFOLIO_SCENARIO"
+    case resetPortfolioMoneyVisibility = "RESET_PORTFOLIO_MONEY_VISIBILITY"
 }
 
 public extension ProcessInfo {

@@ -12,6 +12,10 @@ When a task matches one of these areas, load the skill and follow it instead of 
 
 - **Git worktree workflow:** `.agents/skills/kowalski-git-worktree/SKILL.md`
   - Use for detached `HEAD`, branch sync, rebasing, amending, force-pushing, upstream tracking, worktree env setup, or PR updates from a linked worktree.
+- **Git commit messages:** `.agents/skills/commit-message-best-practices/SKILL.md`
+  - Use when preparing commits, squashing history, or drafting review-friendly commit text.
+- **GitButler workflows:** `.agents/skills/gitbutler-workflows/SKILL.md`
+  - Use when creating branches, assigning changes, committing, amending, pushing, or opening pull requests through GitButler virtual branches.
 - **Server changes:** `.agents/skills/kowalski-server-typescript/SKILL.md`
   - Use for `server/src/**`, API endpoints, schemas, handlers, middleware, services, repositories, logging, OpenAPI-backed routes, and server integration tests.
 - **App and Swift package changes:** `.agents/skills/kowalski-app-swift/SKILL.md`

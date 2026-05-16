@@ -9,11 +9,15 @@ import XCTest
 @MainActor
 final class KowalskiPortfolioUITests: XCTestCase {
     private let portfolioScreenLaunchTimeout: TimeInterval = 20
+    private let maskedMoneyValueIdentifier = "portfolio-masked-money-value"
 
-    private func launchApp(scenario: PortfolioUiTestScenario) -> XCUIApplication {
+    private func launchApp(scenario: PortfolioUiTestScenario, resetMoneyVisibility: Bool = true) -> XCUIApplication {
         let app = XCUIApplication()
             .enableEnvironmentFlag(for: .isUiTesing)
             .setEnvironment(for: .isUiTestingPortfolioScenario, scenario.rawValue)
+        if resetMoneyVisibility {
+            app.enableEnvironmentFlag(for: .resetPortfolioMoneyVisibility)
+        }
         app.launchArguments += ["-ApplePersistenceIgnoreState", "YES"]
         app.launch()
         if !app.buttons["Add entry"].firstMatch
@@ -63,9 +67,21 @@ final class KowalskiPortfolioUITests: XCTestCase {
     }
 
     private func openTransactionDetail(named stockName: String, in app: XCUIApplication) {
-        let existingEntry = app.buttons[stockName].firstMatch
-        XCTAssertTrue(existingEntry.waitForExistenceUsingPredicate(timeout: 3))
-        existingEntry.tap()
+        let entryButton = app.buttons["portfolio-entry-\(stockName)"].firstMatch
+        if entryButton.waitForExistenceUsingPredicate(timeout: 1) {
+            entryButton.tap()
+            return
+        }
+
+        let labeledButton = app.buttons[stockName].firstMatch
+        if labeledButton.waitForExistenceUsingPredicate(timeout: 1) {
+            labeledButton.tap()
+            return
+        }
+
+        let stockNameText = app.staticTexts[stockName].firstMatch
+        XCTAssertTrue(stockNameText.waitForExistenceUsingPredicate(timeout: 3))
+        stockNameText.tap()
     }
 
     private func assertPairedTransactionPrefill(
@@ -141,12 +157,27 @@ final class KowalskiPortfolioUITests: XCTestCase {
         add(attachment)
     }
 
+    private func assertMoneyVisibilityButton(in app: XCUIApplication, label: String) {
+        XCTAssertTrue(app.buttons[label].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
+    }
+
+    private func assertTransactionRowShown(named stockName: String, in app: XCUIApplication) {
+        if app.buttons["portfolio-entry-\(stockName)"].firstMatch.waitForExistenceUsingPredicate(timeout: 1) {
+            return
+        }
+        if app.buttons[stockName].firstMatch.waitForExistenceUsingPredicate(timeout: 1) {
+            return
+        }
+
+        XCTAssertTrue(app.staticTexts[stockName].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
+    }
+
     func testTransactionCreationFeedbackFlows() {
         continueAfterFailure = false
         let app = launchApp(scenario: .createSequence)
 
         assertTransactionsListShown(in: app, timeout: 3)
-        XCTAssertTrue(app.buttons["Apple Inc."].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
+        assertTransactionRowShown(named: "Apple Inc.", in: app)
 
         XCTContext.runActivity(named: "Successful create returns to the list with a success toast") { _ in
             openAddTransaction(in: app)
@@ -214,7 +245,7 @@ final class KowalskiPortfolioUITests: XCTestCase {
             XCTAssertTrue(app.buttons["Sell"].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
 
             returnToTransactionsList(in: app)
-            XCTAssertTrue(app.buttons["Apple Inc."].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
+            assertTransactionRowShown(named: "Apple Inc.", in: app)
         }
 
         XCTContext.runActivity(named: "Apple sell paired action prefill supports back navigation") { _ in
@@ -238,7 +269,7 @@ final class KowalskiPortfolioUITests: XCTestCase {
             XCTAssertTrue(app.buttons["Sell"].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
 
             returnToTransactionsList(in: app)
-            XCTAssertTrue(app.buttons["Apple Inc."].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
+            assertTransactionRowShown(named: "Apple Inc.", in: app)
         }
 
         XCTContext.runActivity(named: "Tesla paired action can create the opposite transaction") { _ in
@@ -249,7 +280,7 @@ final class KowalskiPortfolioUITests: XCTestCase {
             app.buttons["Add Transaction"].firstMatch.tap()
 
             assertTransactionsListShown(in: app)
-            XCTAssertTrue(app.buttons["Tesla, Inc."].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
+            assertTransactionRowShown(named: "Tesla, Inc.", in: app)
         }
 
         XCTContext.runActivity(named: "NVIDIA detail hides opposite transaction actions") { _ in
@@ -281,6 +312,33 @@ final class KowalskiPortfolioUITests: XCTestCase {
 
             XCTAssertTrue(editButton.waitForExistenceUsingPredicate(timeout: 3))
             XCTAssertTrue(app.staticTexts["15"].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
+
+            returnToTransactionsList(in: app)
         }
+
+        XCTContext
+            .runActivity(named: "Money visibility toggle masks portfolio values and persists across relaunch") { _ in
+                assertMoneyVisibilityButton(in: app, label: "Hide money values")
+                XCTAssertTrue(app.staticTexts["15 shares"].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
+
+                app.buttons["Hide money values"].firstMatch.tap()
+
+                assertMoneyVisibilityButton(in: app, label: "Show money values")
+                XCTAssertGreaterThanOrEqual(app.staticTexts.matching(identifier: maskedMoneyValueIdentifier).count, 2)
+                XCTAssertTrue(app.staticTexts["15 shares"].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
+
+                openTransactionDetail(named: "Apple Inc.", in: app)
+                XCTAssertFalse(app.staticTexts["USD 150.5"].firstMatch.exists)
+                XCTAssertTrue(app.staticTexts["******"].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
+
+                app.terminate()
+
+                let relaunchedApp = launchApp(scenario: .entries, resetMoneyVisibility: false)
+                assertMoneyVisibilityButton(in: relaunchedApp, label: "Show money values")
+                XCTAssertTrue(
+                    relaunchedApp.staticTexts[maskedMoneyValueIdentifier].firstMatch
+                        .waitForExistenceUsingPredicate(timeout: 3),
+                )
+            }
     }
 }

@@ -32,7 +32,14 @@ public struct KowalskiPortfolioScreen: View {
         }
         .ktakeSizeEagerly(alignment: .topLeading)
         .toolbar {
-            ToolbarItem(placement: .automatic) {
+            ToolbarItemGroup(placement: .automatic) {
+                Button {
+                    portfolio.toggleMoneyVisibility()
+                } label: {
+                    Image(systemName: portfolio.showsMoneyValues ? "eye" : "eye.slash")
+                }
+                .accessibilityLabel(Text(moneyVisibilityAccessibilityLabel))
+
                 NavigationLink(destination: {
                     KowalskiPortfolioTransactionScreen(onTransactionAdd: { payload in
                         toast = .success(
@@ -97,6 +104,11 @@ public struct KowalskiPortfolioScreen: View {
                 .padding(.vertical, .extraSmall)
             }
             .accessibilityLabel(Text(entry.stock.name))
+            .accessibilityIdentifier("portfolio-entry-\(entry.stock.name)")
+            .accessibilityChildren {
+                Text(entry.stock.name)
+                Text("\(entry.amount.formatted(.number)) shares")
+            }
         }
         .listStyle(.inset)
     }
@@ -108,6 +120,14 @@ public struct KowalskiPortfolioScreen: View {
                     .font(.headline)
                 if portfolio.isLoading, !portfolio.entries.isEmpty, portfolio.netWorth == nil {
                     ProgressView("Loading net worth")
+                } else if !portfolio.showsMoneyValues, portfolio.netWorth != nil {
+                    Text(PortfolioMoneyValuePrivacy.maskedPlaceholder)
+                        .font(.largeTitle.weight(.semibold))
+                        .accessibilityLabel(Text(PortfolioMoneyValuePrivacy.maskedPlaceholder))
+                        .accessibilityIdentifier(PortfolioMoneyValuePrivacy.accessibilityIdentifier)
+                    Text(displayedNetWorthCurrency.localized)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 } else if let netWorth = portfolio.netWorth?.value {
                     Text(netWorth, format: .currency(code: displayedNetWorthCurrency.rawValue))
                         .font(.largeTitle.weight(.semibold))
@@ -119,6 +139,7 @@ public struct KowalskiPortfolioScreen: View {
                         .foregroundStyle(.secondary)
                 }
             }
+            .accessibilityElement(children: .contain)
             .frame(maxWidth: .infinity, alignment: .leading)
 
             if portfolio.allTimeProfit != nil {
@@ -138,11 +159,18 @@ public struct KowalskiPortfolioScreen: View {
                 .foregroundStyle(.secondary)
             Text(formattedAllTimeProfit)
                 .font(.headline.weight(.semibold))
-            if let formattedAllTimeProfitPercentage {
-                Text(formattedAllTimeProfitPercentage)
-                    .font(.caption)
-            }
+                .accessibilityLabel(Text(formattedAllTimeProfit))
+                .accessibilityIdentifier(
+                    portfolio.showsMoneyValues ? "" : PortfolioMoneyValuePrivacy.accessibilityIdentifier,
+                )
+            Text(formattedAllTimeProfitPercentage)
+                .font(.caption)
+                .accessibilityLabel(Text(formattedAllTimeProfitPercentage))
+                .accessibilityIdentifier(
+                    portfolio.showsMoneyValues ? "" : PortfolioMoneyValuePrivacy.accessibilityIdentifier,
+                )
         }
+        .accessibilityElement(children: .contain)
         .foregroundStyle(allTimeProfitColor)
         .multilineTextAlignment(.trailing)
     }
@@ -176,6 +204,7 @@ public struct KowalskiPortfolioScreen: View {
     }
 
     private var allTimeProfitColor: Color {
+        guard portfolio.showsMoneyValues else { return .secondary }
         guard let allTimeProfit = portfolio.allTimeProfit else { return .secondary }
         if allTimeProfit.value > 0 {
             return .green
@@ -188,6 +217,7 @@ public struct KowalskiPortfolioScreen: View {
     }
 
     private var formattedAllTimeProfit: String {
+        guard portfolio.showsMoneyValues else { return PortfolioMoneyValuePrivacy.maskedPlaceholder }
         guard let allTimeProfit = portfolio.allTimeProfit else { return "" }
 
         return formattedSignedCurrency(
@@ -196,10 +226,17 @@ public struct KowalskiPortfolioScreen: View {
         )
     }
 
-    private var formattedAllTimeProfitPercentage: String? {
-        guard let allTimeProfitPercentage = portfolio.allTimeProfitPercentage else { return nil }
+    private var formattedAllTimeProfitPercentage: String {
+        guard portfolio.showsMoneyValues else { return PortfolioMoneyValuePrivacy.maskedPlaceholder }
+        guard let allTimeProfitPercentage = portfolio.allTimeProfitPercentage else { return "" }
 
         return "(\(formattedSignedPercent(allTimeProfitPercentage)))"
+    }
+
+    private var moneyVisibilityAccessibilityLabel: String {
+        portfolio.showsMoneyValues
+            ? NSLocalizedString("Hide money values", bundle: .module, comment: "")
+            : NSLocalizedString("Show money values", bundle: .module, comment: "")
     }
 
     @MainActor
