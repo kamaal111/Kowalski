@@ -22,6 +22,13 @@ const NullableString = z
   .trim()
   .transform(val => (val === '' ? null : val))
   .nullable();
+const NormalizedTickerPartString = z
+  .string()
+  .trim()
+  .min(1)
+  .refine(value => /[A-Za-z0-9]/.test(value), {
+    message: 'Must contain at least one letter or number',
+  });
 const OptionalNullableString = z
   .string()
   .trim()
@@ -30,11 +37,11 @@ const OptionalNullableString = z
 
 export const StocksSearchQuoteItemResponseSchema = z
   .object({
-    symbol: z.string().nonempty().openapi({
+    symbol: NormalizedTickerPartString.openapi({
       description: 'Stock symbol',
       example: 'AAPL',
     }),
-    exchange: z.string().nonempty().openapi({
+    exchange: NormalizedTickerPartString.openapi({
       description: 'Exchange code where the stock is traded',
       example: 'NMS',
     }),

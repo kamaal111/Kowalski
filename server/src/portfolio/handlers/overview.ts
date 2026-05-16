@@ -11,7 +11,13 @@ import getPortfolioOverview from '../services/overview';
 async function overview(c: HonoContext): Promise<TypedResponse<PortfolioOverviewResponse, typeof STATUS_CODES.OK>> {
   const result = await getPortfolioOverview(c);
   const response = PortfolioOverviewResponseSchema.parse({
-    transactions: result.transactions.map(mapResolvedPortfolioEntryToResponse),
+    transactions: result.transactions.map(entry => {
+      return mapResolvedPortfolioEntryToResponse({
+        c,
+        entry: entry.entry,
+        preferredCurrencyPurchasePrice: entry.preferredCurrencyPurchasePrice,
+      });
+    }),
     current_values: result.currentValues,
   });
   logInfo(withRequestLogger(c, { component: 'portfolio' }), {

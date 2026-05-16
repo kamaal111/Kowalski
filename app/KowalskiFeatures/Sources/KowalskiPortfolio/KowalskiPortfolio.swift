@@ -24,6 +24,7 @@ public final class KowalskiPortfolio {
     private let mapper = KowalskiPortfolioMappers()
 
     private(set) var entries: [PortfolioEntry] = []
+    private(set) var holdings: [PortfolioHolding] = []
     private(set) var isLoading = false
     private(set) var netWorth: Money?
     private(set) var allTimeProfit: AllTimeProfit?
@@ -56,10 +57,10 @@ public final class KowalskiPortfolio {
         case .success: break
         }
 
-        let fetchOverviewResult = await refreshOverview()
+        let fetchOverviewResult = await refreshPortfolio()
         switch fetchOverviewResult {
         case let .failure(failure):
-            logger.error(label: "Failed to refresh portfolio overview after create", error: failure)
+            logger.error(label: "Failed to refresh portfolio after create", error: failure)
         case .success: break
         }
 
@@ -83,10 +84,10 @@ public final class KowalskiPortfolio {
         case .success: break
         }
 
-        let fetchOverviewResult = await refreshOverview()
+        let fetchOverviewResult = await refreshPortfolio()
         switch fetchOverviewResult {
         case let .failure(failure):
-            logger.error(label: "Failed to refresh portfolio overview after update", error: failure)
+            logger.error(label: "Failed to refresh portfolio after update", error: failure)
         case .success:
             guard let updatedEntry = entries.find(by: \.id, is: entryId) else {
                 logger.error("Updated entry missing from refreshed entries")
@@ -139,10 +140,10 @@ public final class KowalskiPortfolio {
             importedEntries = success
         }
 
-        let refreshOverviewResult = await refreshOverview()
+        let refreshOverviewResult = await refreshPortfolio()
         switch refreshOverviewResult {
         case let .failure(failure):
-            logger.error(label: "Failed to refresh portfolio overview after import", error: failure)
+            logger.error(label: "Failed to refresh portfolio after import", error: failure)
             return .failure(.unknown)
         case .success:
             logger.info("Imported \(importedEntries.count) transactions from CSV")
@@ -160,19 +161,27 @@ public final class KowalskiPortfolio {
 
     func fetchOverview() async -> Result<Void, Error> {
         await withLoading {
-            let result = await client.portfolio.getOverview()
-                .map(mapper.mapOverviewResponse)
-            let overviewState: PortfolioOverviewState
-            switch result {
+            async let holdingsResult = client.portfolio.getHoldings()
+                .map(mapper.mapHoldingsResponse)
+            async let entriesResult = client.portfolio.listEntries()
+                .map(mapper.mapPortfolioEntries)
+
+            let holdingsState: PortfolioHoldingsState
+            switch await holdingsResult {
             case let .failure(error): return .failure(error)
-            case let .success(success):
-                overviewState = success
+            case let .success(success): holdingsState = success
             }
 
-            let netWorth = computeNetWorth(for: overviewState.entries, currentValues: overviewState.currentValues)
-            let profitResult = computeAllTimeProfit(for: overviewState.entries, netWorth: netWorth)
-            setEntries(overviewState.entries)
-            setNetWorth(netWorth)
+            let entries: [PortfolioEntry]
+            switch await entriesResult {
+            case let .failure(error): return .failure(error)
+            case let .success(success): entries = success
+            }
+
+            let profitResult = computeAllTimeProfit(for: entries, netWorth: holdingsState.netWorth)
+            setHoldings(holdingsState.holdings)
+            setEntries(entries)
+            setNetWorth(holdingsState.netWorth)
             setAllTimeProfit(profitResult)
 
             return .success(())
@@ -183,41 +192,10 @@ public final class KowalskiPortfolio {
         setMoneyVisibility(!showsMoneyValues)
     }
 
-    private func computeNetWorth(for entries: [PortfolioEntry], currentValues: [String: Money]) -> Money? {
-        let holdings = computeNetHoldings(for: entries)
-        guard !holdings.isEmpty else { return Money(currency: .USD, value: 0) }
-
-        let fallbackCurrency = currentValues.first?.value.currency ?? .USD
-        var runningTotal = 0.0
-        var netWorthCurrency: Currencies?
-        for (symbol, quantity) in holdings {
-            guard quantity != 0 else { continue }
-            guard let currentValue = currentValues[symbol] else {
-                logger.warning("Missing current value required for net worth calculation")
-                return nil
-            }
-            if let netWorthCurrency, netWorthCurrency != currentValue.currency {
-                logger.warning("Current stock values should use a consistent currency")
-                return nil
-            }
-            if netWorthCurrency == nil {
-                netWorthCurrency = currentValue.currency
-            }
-
-            runningTotal += quantity * currentValue.value
-        }
-
-        guard let netWorthCurrency else { return Money(currency: fallbackCurrency, value: 0) }
-
-        return Money(currency: netWorthCurrency, value: runningTotal)
-    }
-
     private func computeAllTimeProfit(
         for entries: [PortfolioEntry],
-        netWorth: Money?,
+        netWorth: Money,
     ) -> AllTimeProfit? {
-        guard let netWorth else { return nil }
-
         let netHoldings = computeNetHoldings(for: entries)
         guard netHoldings.values.contains(where: { $0 != 0 }) else { return nil }
 
@@ -276,6 +254,11 @@ public final class KowalskiPortfolio {
     }
 
     @MainActor
+    private func setHoldings(_ newHoldings: [PortfolioHolding]) {
+        holdings = newHoldings
+    }
+
+    @MainActor
     private func setNetWorth(_ newNetWorth: Money?) {
         netWorth = newNetWorth
     }
@@ -291,7 +274,7 @@ public final class KowalskiPortfolio {
         Self.moneyVisibilityPreference = showsMoneyValues
     }
 
-    private func refreshOverview() async -> Result<Void, Error> {
+    private func refreshPortfolio() async -> Result<Void, Error> {
         await fetchOverview()
     }
 

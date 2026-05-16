@@ -17,6 +17,7 @@ SCRIPTS_DIR = REPO_ROOT / ".agents/skills/dependency-upgrade-best-practices/scri
 LIST_NPM_VERSIONS = SCRIPTS_DIR / "list_npm_versions.py"
 LIST_SWIFT_PACKAGE_TAGS = SCRIPTS_DIR / "list_swift_package_tags.py"
 CHECK_OSV_ADVISORIES = SCRIPTS_DIR / "check_osv_advisories.py"
+GIT_TEST_COMMAND = ["git", "-c", "gc.auto=0", "-c", "maintenance.auto=false"]
 
 
 def run_python_script(script: Path, *args: str) -> subprocess.CompletedProcess[str]:
@@ -100,21 +101,21 @@ class ListNpmVersionsTests(unittest.TestCase):
 class ListSwiftPackageTagsTests(unittest.TestCase):
     def init_repo(self, repo: Path) -> None:
         subprocess.run(
-            ["git", "init"],
+            [*GIT_TEST_COMMAND, "init"],
             cwd=repo,
             check=True,
             capture_output=True,
             text=True,
         )
         subprocess.run(
-            ["git", "config", "user.email", "test@example.com"],
+            [*GIT_TEST_COMMAND, "config", "user.email", "test@example.com"],
             cwd=repo,
             check=True,
             capture_output=True,
             text=True,
         )
         subprocess.run(
-            ["git", "config", "user.name", "Test User"],
+            [*GIT_TEST_COMMAND, "config", "user.name", "Test User"],
             cwd=repo,
             check=True,
             capture_output=True,
@@ -140,7 +141,7 @@ class ListSwiftPackageTagsTests(unittest.TestCase):
         env["GIT_COMMITTER_DATE"] = iso_timestamp
 
         subprocess.run(
-            ["git", "add", filename],
+            [*GIT_TEST_COMMAND, "add", filename],
             cwd=repo,
             env=env,
             check=True,
@@ -148,7 +149,7 @@ class ListSwiftPackageTagsTests(unittest.TestCase):
             text=True,
         )
         subprocess.run(
-            ["git", "commit", "-m", f"Add {tag} fixture"],
+            [*GIT_TEST_COMMAND, "commit", "-m", f"Add {tag} fixture"],
             cwd=repo,
             env=env,
             check=True,
@@ -156,7 +157,7 @@ class ListSwiftPackageTagsTests(unittest.TestCase):
             text=True,
         )
         subprocess.run(
-            ["git", "tag", tag],
+            [*GIT_TEST_COMMAND, "tag", tag],
             cwd=repo,
             env=env,
             check=True,

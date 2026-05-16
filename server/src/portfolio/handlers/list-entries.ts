@@ -10,7 +10,15 @@ import { mapResolvedPortfolioEntryToResponse } from '../mappers/entry-response';
 
 async function listEntries(c: HonoContext): Promise<TypedResponse<ListEntriesResponse, typeof STATUS_CODES.OK>> {
   const entries = await listPortfolioEntries(c);
-  const response = ListEntriesResponseSchema.parse(entries.map(mapResolvedPortfolioEntryToResponse));
+  const response = ListEntriesResponseSchema.parse(
+    entries.map(entry => {
+      return mapResolvedPortfolioEntryToResponse({
+        c,
+        entry: entry.entry,
+        preferredCurrencyPurchasePrice: entry.preferredCurrencyPurchasePrice,
+      });
+    }),
+  );
   logInfo(withRequestLogger(c, { component: 'portfolio' }), {
     event: 'portfolio.entries.listed',
     result_count: response.length,

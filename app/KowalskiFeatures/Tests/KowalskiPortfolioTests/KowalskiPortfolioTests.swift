@@ -110,8 +110,9 @@ struct KowalskiPortfolioTests {
         #expect(portfolio.entries.map(\.stock.name) == ["Apple Inc."])
         #expect(portfolio.netWorth?.value == 1854.5)
         #expect(await portfolioClient.createEntryCallCount == 1)
-        #expect(await portfolioClient.getOverviewCallCount == 1)
-        #expect(await portfolioClient.listEntriesCallCount == 0)
+        #expect(await portfolioClient.getHoldingsCallCount == 1)
+        #expect(await portfolioClient.listEntriesCallCount == 1)
+        #expect(await portfolioClient.getOverviewCallCount == 0)
     }
 
     @Test
@@ -170,8 +171,9 @@ struct KowalskiPortfolioTests {
         #expect(portfolio.entries.map(\.amount) == [15])
         #expect(portfolio.netWorth?.value == 3000)
         #expect(await portfolioClient.updateEntryCallCount == 1)
-        #expect(await portfolioClient.getOverviewCallCount == 1)
-        #expect(await portfolioClient.listEntriesCallCount == 0)
+        #expect(await portfolioClient.getHoldingsCallCount == 1)
+        #expect(await portfolioClient.listEntriesCallCount == 1)
+        #expect(await portfolioClient.getOverviewCallCount == 0)
     }
 
     @Test
@@ -235,7 +237,9 @@ struct KowalskiPortfolioTests {
 
         #expect(portfolio.entries.count == 3)
         #expect(portfolio.netWorth?.value == 420)
-        #expect(await portfolioClient.getOverviewCallCount == 1)
+        #expect(await portfolioClient.getHoldingsCallCount == 1)
+        #expect(await portfolioClient.listEntriesCallCount == 1)
+        #expect(await portfolioClient.getOverviewCallCount == 0)
     }
 
     @Test
@@ -447,7 +451,7 @@ struct KowalskiPortfolioTests {
     }
 
     @Test
-    func `Overview fetch should clear all time profit when net worth is unavailable`() async throws {
+    func `Overview fetch should use the server-backed net worth on repeated refreshes`() async throws {
         let populatedOverview = makePortfolioOverviewResponse(
             transactions: [
                 makePortfolioEntryResponse(
@@ -488,13 +492,13 @@ struct KowalskiPortfolioTests {
 
         try await portfolio.fetchOverview().get()
 
-        #expect(portfolio.netWorth == nil)
-        #expect(portfolio.allTimeProfit == nil)
-        #expect(portfolio.allTimeProfitPercentage == nil)
+        #expect(portfolio.netWorth?.value == 100)
+        #expect(portfolio.allTimeProfit?.value == 0)
+        #expect(portfolio.allTimeProfitPercentage == 0)
     }
 
     @Test
-    func `Overview fetch should clear net worth when current value currencies are mixed`() async throws {
+    func `Overview fetch should preserve server net worth when transaction cost basis currency is mixed`() async throws {
         let overview = makePortfolioOverviewResponse(
             transactions: [
                 makePortfolioEntryResponse(
@@ -521,7 +525,9 @@ struct KowalskiPortfolioTests {
 
         try await portfolio.fetchOverview().get()
 
-        #expect(portfolio.netWorth == nil)
+        #expect(portfolio.netWorth?.currency == .EUR)
+        #expect(portfolio.netWorth?.value == 350)
+        #expect(portfolio.allTimeProfit == nil)
     }
 
     @Test
@@ -630,7 +636,9 @@ struct KowalskiPortfolioTests {
         try await portfolio.fetchOverview().get()
 
         #expect(portfolio.netWorth?.value == 160)
-        #expect(await portfolioClient.getOverviewCallCount == 2)
+        #expect(await portfolioClient.getHoldingsCallCount == 2)
+        #expect(await portfolioClient.listEntriesCallCount == 2)
+        #expect(await portfolioClient.getOverviewCallCount == 0)
     }
 
     @Test
@@ -976,7 +984,9 @@ struct KowalskiPortfolioTests {
 
         #expect(portfolio.entries.map(\.amount) == [12])
         #expect(await portfolioClient.bulkCreateEntriesCallCount == 1)
-        #expect(await portfolioClient.getOverviewCallCount == 1)
+        #expect(await portfolioClient.getHoldingsCallCount == 1)
+        #expect(await portfolioClient.listEntriesCallCount == 1)
+        #expect(await portfolioClient.getOverviewCallCount == 0)
     }
 
     @Test
@@ -1129,6 +1139,7 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
     private(set) var updateEntryCallCount = 0
     private(set) var listEntriesCallCount = 0
     private(set) var getOverviewCallCount = 0
+    private(set) var getHoldingsCallCount = 0
     private(set) var bulkCreateEntriesPayloads: [[KowalskiPortfolioBulkCreateEntryItemPayload]] = []
 
     private let createEntryResult: Result<
@@ -1143,10 +1154,14 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
         KowalskiPortfolioClientEntryResponse,
         KowalskiPortfolioClientUpdateEntryErrors,
     >
-    private let listEntriesResult: Result<
+    private var listEntriesResults: [Result<
         [KowalskiPortfolioClientEntryResponse],
         KowalskiPortfolioClientListEntriesErrors,
-    >
+    >]
+    private var holdingsResults: [Result<
+        KowalskiPortfolioHoldingsResponse,
+        KowalskiPortfolioClientHoldingsErrors,
+    >]
     private var overviewResults: [Result<
         KowalskiPortfolioOverviewResponse,
         KowalskiPortfolioClientOverviewErrors,
@@ -1161,8 +1176,9 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
         > = .success([]),
         updateEntryResult: Result<KowalskiPortfolioClientEntryResponse, KowalskiPortfolioClientUpdateEntryErrors> =
             .success(makePortfolioEntryResponse(amount: 10)),
-        listEntriesResult: Result<[KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientListEntriesErrors> =
-            .success([]),
+        listEntriesResult: Result<[KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientListEntriesErrors>? =
+            nil,
+        holdingsResult: Result<KowalskiPortfolioHoldingsResponse, KowalskiPortfolioClientHoldingsErrors>? = nil,
         overviewResult: Result<KowalskiPortfolioOverviewResponse, KowalskiPortfolioClientOverviewErrors> = .success(
             makePortfolioOverviewResponse(transactions: [], currentValues: [:]),
         ),
@@ -1171,15 +1187,31 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
         self.createEntryResult = createEntryResult
         self.bulkCreateEntriesResult = bulkCreateEntriesResult
         self.updateEntryResult = updateEntryResult
-        self.listEntriesResult = listEntriesResult
         self.overviewResults = overviewResults.isEmpty ? [overviewResult] : overviewResults
+        listEntriesResults = if let listEntriesResult {
+            [listEntriesResult]
+        } else {
+            self.overviewResults.map(mapOverviewResultToListEntriesResult)
+        }
+        holdingsResults = if let holdingsResult {
+            [holdingsResult]
+        } else {
+            self.overviewResults.map(mapOverviewResultToHoldingsResult)
+        }
     }
 
     func listEntries() async
         -> Result<[KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientListEntriesErrors>
     {
         listEntriesCallCount += 1
-        return listEntriesResult
+        guard !listEntriesResults.isEmpty else {
+            return .success([])
+        }
+        if listEntriesResults.count == 1 {
+            return listEntriesResults[0]
+        }
+
+        return listEntriesResults.removeFirst()
     }
 
     func getOverview() async -> Result<KowalskiPortfolioOverviewResponse, KowalskiPortfolioClientOverviewErrors> {
@@ -1193,6 +1225,19 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
         }
 
         return overviewResults.removeFirst()
+    }
+
+    func getHoldings() async -> Result<KowalskiPortfolioHoldingsResponse, KowalskiPortfolioClientHoldingsErrors> {
+        getHoldingsCallCount += 1
+
+        guard !holdingsResults.isEmpty else {
+            return .success(makePortfolioHoldingsResponse(transactions: [], currentValues: [:]))
+        }
+        if holdingsResults.count == 1 {
+            return holdingsResults[0]
+        }
+
+        return holdingsResults.removeFirst()
     }
 
     func bulkCreateEntries(
@@ -1259,6 +1304,96 @@ private func makePortfolioOverviewResponse(
     KowalskiPortfolioOverviewResponse(
         transactions: transactions,
         currentValues: currentValues,
+    )
+}
+
+private func mapOverviewResultToListEntriesResult(
+    _ result: Result<KowalskiPortfolioOverviewResponse, KowalskiPortfolioClientOverviewErrors>,
+) -> Result<[KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientListEntriesErrors> {
+    switch result {
+    case let .success(overview):
+        .success(overview.transactions)
+    case let .failure(error):
+        switch error {
+        case .unauthorized: .failure(.unauthorized)
+        case let .unknown(statusCode, payload, context): .failure(.unknown(
+                statusCode: statusCode,
+                payload: payload,
+                context: context,
+            ))
+        }
+    }
+}
+
+private func mapOverviewResultToHoldingsResult(
+    _ result: Result<KowalskiPortfolioOverviewResponse, KowalskiPortfolioClientOverviewErrors>,
+) -> Result<KowalskiPortfolioHoldingsResponse, KowalskiPortfolioClientHoldingsErrors> {
+    switch result {
+    case let .success(overview):
+        .success(makePortfolioHoldingsResponse(
+            transactions: overview.transactions,
+            currentValues: overview.currentValues,
+        ))
+    case let .failure(error):
+        switch error {
+        case .unauthorized: .failure(.unauthorized)
+        case let .unknown(statusCode, payload, context): .failure(.unknown(
+                statusCode: statusCode,
+                payload: payload,
+                context: context,
+            ))
+        }
+    }
+}
+
+private func makePortfolioHoldingsResponse(
+    transactions: [KowalskiPortfolioClientEntryResponse],
+    currentValues: [String: KowalskiClientMoney],
+) -> KowalskiPortfolioHoldingsResponse {
+    let holdings = transactions.reduce([String: KowalskiPortfolioHoldingResponse]()) { partialResult, entry in
+        let amountDelta: Double = switch entry.transactionType {
+        case .buy: entry.amount
+        case .sell: -entry.amount
+        case .split: 0
+        }
+        guard amountDelta != 0 else { return partialResult }
+        let unitValue = currentValues[entry.stock.symbol] ?? entry.purchasePrice
+        let existingHolding = partialResult[entry.stock.symbol]
+        let amount = (existingHolding?.amount ?? 0) + amountDelta
+        var updatedResult = partialResult
+        updatedResult[entry.stock.symbol] = KowalskiPortfolioHoldingResponse(
+            assetType: "equity",
+            asset: KowalskiPortfolioAssetResponse(
+                symbol: entry.stock.symbol,
+                exchange: entry.stock.exchange,
+                name: entry.stock.name,
+                isin: entry.stock.isin,
+                sector: entry.stock.sector,
+                industry: entry.stock.industry,
+                exchangeDispatch: entry.stock.exchangeDispatch,
+            ),
+            amount: amount,
+            unitValue: unitValue,
+            totalValue: KowalskiClientMoney(currency: unitValue.currency, value: amount * unitValue.value),
+        )
+
+        return updatedResult
+    }
+    .values
+    .filter { $0.amount != 0 }
+    .sorted {
+        if $0.totalValue.value == $1.totalValue.value {
+            return $0.asset.symbol < $1.asset.symbol
+        }
+
+        return $0.totalValue.value > $1.totalValue.value
+    }
+    let netWorthCurrency = holdings.first?.totalValue.currency ?? "USD"
+    let netWorthValue = holdings.reduce(0) { $0 + $1.totalValue.value }
+
+    return KowalskiPortfolioHoldingsResponse(
+        netWorth: KowalskiClientMoney(currency: netWorthCurrency, value: netWorthValue),
+        holdings: holdings,
     )
 }
 

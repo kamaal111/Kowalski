@@ -283,6 +283,17 @@ describe('Create Portfolio Entry Route', () => {
     expectValidationIssueForField(body, 'amount');
   });
 
+  integrationTest('rejects a request with a non-workable stock exchange', async ({ app, sessionToken }) => {
+    const response = await sendCreateEntryRequest(app, {
+      payload: createPayloadWithWhitespaceOnlyExchange(),
+      sessionToken,
+    });
+
+    const body = await expectValidationErrorResponse(response);
+
+    expectValidationIssueForField(body, 'exchange');
+  });
+
   integrationTest('no longer serves the legacy singular path', async ({ app, sessionToken }) => {
     const response = await sendCreateEntryRequest(
       app,
@@ -348,6 +359,16 @@ function createPayloadWithNonPositiveAmount() {
   return {
     ...createValidCreateEntryPayload(),
     amount: 0,
+  };
+}
+
+function createPayloadWithWhitespaceOnlyExchange() {
+  return {
+    ...createValidCreateEntryPayload(),
+    stock: {
+      ...createValidCreateEntryPayload().stock,
+      exchange: '   ',
+    },
   };
 }
 

@@ -10,6 +10,16 @@
     "%@ shares" : {
 
     },
+    "%@, %@ shares" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@ shares"
+          }
+        }
+      }
+    },
     "Add entry" : {
 
     },
@@ -139,10 +149,19 @@
     "Transaction Type" : {
 
     },
+    "Transactions" : {
+
+    },
     "Unavailable" : {
 
     },
+    "Unit %@" : {
+
+    },
     "Use the add button to record your first stock transaction." : {
+
+    },
+    "View transactions" : {
 
     }
   },

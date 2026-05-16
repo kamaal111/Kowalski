@@ -11,6 +11,7 @@ const ERROR_CODES = {
   PORTFOLIO_ENTRY_UPDATE_FAILED: 'PORTFOLIO_ENTRY_UPDATE_FAILED',
   STOCK_PRICE_FETCH_FAILED: 'STOCK_PRICE_FETCH_FAILED',
   EXCHANGE_RATE_RESOLUTION_FAILED: 'EXCHANGE_RATE_RESOLUTION_FAILED',
+  INVALID_TICKER_ID: 'INVALID_TICKER_ID',
 } as const;
 
 const CODE_TO_STATUS: Record<ErrorCode, StatusCode> = {
@@ -20,6 +21,7 @@ const CODE_TO_STATUS: Record<ErrorCode, StatusCode> = {
   PORTFOLIO_ENTRY_UPDATE_FAILED: STATUS_CODES.INTERNAL_SERVER_ERROR,
   STOCK_PRICE_FETCH_FAILED: STATUS_CODES.INTERNAL_SERVER_ERROR,
   EXCHANGE_RATE_RESOLUTION_FAILED: STATUS_CODES.INTERNAL_SERVER_ERROR,
+  INVALID_TICKER_ID: STATUS_CODES.INTERNAL_SERVER_ERROR,
 };
 
 const CODE_TO_MESSAGE: Record<ErrorCode, string> = {
@@ -29,11 +31,12 @@ const CODE_TO_MESSAGE: Record<ErrorCode, string> = {
   PORTFOLIO_ENTRY_UPDATE_FAILED: 'Failed to update portfolio entry',
   STOCK_PRICE_FETCH_FAILED: 'Failed to resolve current stock prices',
   EXCHANGE_RATE_RESOLUTION_FAILED: 'Failed to resolve foreign exchange rates',
+  INVALID_TICKER_ID: 'Encountered invalid persisted ticker data',
 };
 
 class PortfolioException extends APIException {
-  constructor(c: HonoContext, { code }: { code: ErrorCode }) {
-    super(c, CODE_TO_STATUS[code], { message: CODE_TO_MESSAGE[code], code });
+  constructor(c: HonoContext, { code, context }: { code: ErrorCode; context?: unknown }) {
+    super(c, CODE_TO_STATUS[code], { message: CODE_TO_MESSAGE[code], code, context });
   }
 }
 
@@ -70,5 +73,11 @@ export class StockPriceFetchFailed extends PortfolioException {
 export class ExchangeRateResolutionFailed extends PortfolioException {
   constructor(c: HonoContext) {
     super(c, { code: ERROR_CODES.EXCHANGE_RATE_RESOLUTION_FAILED });
+  }
+}
+
+export class InvalidTickerId extends PortfolioException {
+  constructor(c: HonoContext, tickerId: string) {
+    super(c, { code: ERROR_CODES.INVALID_TICKER_ID, context: { ticker_id: tickerId } });
   }
 }
