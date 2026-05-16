@@ -276,7 +276,7 @@ test-heavy: test-server test-app-heavy
 quality: check-spec lint format-check typecheck
 
 # Open project in zed
-zed:
+z:
     zed .
 
 # Open project in vscode
