@@ -1,0 +1,47 @@
+app/KowalskiClient/Sources/KowalskiClient/Internals/Mappers/KowalskiPortfolioMapper.swift
+  s_949e1a48d75c49::t_71f3ac50dd2ba9 198
+  s_949e1a48d75c49::t_ff8132c005a371 160,194-197,199
+app/KowalskiFeatures/Tests/KowalskiPortfolioTests/KowalskiPortfolioTests.swift
+  s_949e1a48d75c49::t_cca838f193226e 1385
+  s_949e1a48d75c49::t_f59da0c2e83a08 1381-1384,1386-1389,1404-1408
+  s_949e1a48d75c49::t_8ae854cb0fceb0 331-333
+app/KowalskiFeatures/Sources/KowalskiPortfolio/KowalskiPortfolioScreen.swift
+  s_949e1a48d75c49::t_0eca80caec1749 120-127,310-329
+app/KowalskiClient/Tests/KowalskiClientTests/KowalskiPortfolioClientTests.swift
+  s_949e1a48d75c49::t_ca5bd8cfcfabb2 205-207,357-363
+app/KowalskiFeatures/Sources/KowalskiPortfolio/Internals/Mappers/KowalskiPortfolioMappers.swift
+  s_949e1a48d75c49::t_66f5f28d85abbd 91-94
+server/src/portfolio/schemas/responses.ts
+  s_949e1a48d75c49::t_12dbda16757e49 180-199,236-238,257-260,355-358
+server/src/portfolio/tests/overview.integration.test.ts
+  s_949e1a48d75c49::t_18fafd3127f8d2 95-98,180-181,183,199-200,202,393-394,396,432-435
+  s_949e1a48d75c49::t_6665f7a8a0f3d8 182,201,395
+app/KowalskiClient/Sources/KowalskiClient/Responses/KowalskiPortfolioHoldingsResponse.swift
+  s_949e1a48d75c49::t_1f92102d75979e 14,22,29-39
+server/src/portfolio/services/overview.ts
+  s_949e1a48d75c49::t_d631ca086f5246 7,44,66,71,84,94-98,112-132,134,138-150,152-157
+  s_949e1a48d75c49::t_0d07053b277953 151
+app/KowalskiFeatures/Sources/KowalskiPortfolio/Internals/Models/DataObjects/PortfolioHolding.swift
+  s_949e1a48d75c49::t_c50c9a84a02162 14-19
+app/KowalskiClient/Sources/KowalskiClient/openapi.yaml
+  s_949e1a48d75c49::t_30f579101700f7 1072-1076,1266-1267,1274,1294-1298,1378-1407
+app/KowalskiClient/Sources/KowalskiClient/KowalskiPortfolioClient.swift
+  s_949e1a48d75c49::t_80413d14c582a4 712
+  s_949e1a48d75c49::t_2dcc5b4959d2a5 705-711,713-716,731-734
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "4d930348ee4cc233b09a3ac44b2dafd1354073de",
+  "prompts": {},
+  "sessions": {
+    "s_949e1a48d75c49": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e377e-f8c4-7831-9873-40d95ed5c1eb",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>"
+    }
+  }
+}
