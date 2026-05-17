@@ -28,6 +28,8 @@ extension LoggingMiddleware: ClientMiddleware {
         operationID _: String,
         next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?),
     ) async throws -> (HTTPResponse, HTTPBody?) {
+        let clock = ContinuousClock()
+        let start = clock.now
         let (requestBodyToLog, requestBodyForNext) = await bodyLoggingPolicy.process(body)
         logBody(request: request, requestBody: requestBodyToLog)
 
@@ -35,12 +37,14 @@ extension LoggingMiddleware: ClientMiddleware {
         do {
             (response, responseBody) = try await next(request, requestBodyForNext, baseURL)
         } catch {
-            logFailure(request: request, failedWith: error)
+            let elapsedTime = start.duration(to: clock.now)
+            logFailure(request: request, failedWith: error, elapsedTime: elapsedTime)
             throw error
         }
 
         let (responseBodyToLog, responseBodyForNext) = await bodyLoggingPolicy.process(responseBody)
-        logResponse(request: request, response: response, responseBody: responseBodyToLog)
+        let elapsedTime = start.duration(to: clock.now)
+        logResponse(request: request, response: response, responseBody: responseBodyToLog, elapsedTime: elapsedTime)
         return (response, responseBodyForNext)
     }
 
@@ -48,15 +52,25 @@ extension LoggingMiddleware: ClientMiddleware {
         logger.debug("Request: \(request.method) \(request.path ?? defaultPath) body: \(requestBody)")
     }
 
-    private func logResponse(request: HTTPRequest, response: HTTPResponse, responseBody: BodyLoggingPolicy.BodyLog) {
+    private func logResponse(
+        request: HTTPRequest,
+        response: HTTPResponse,
+        responseBody: BodyLoggingPolicy.BodyLog,
+        elapsedTime: Duration,
+    ) {
         let sanitizedBody = Self.sanitizeResponseBodyForLogging(responseBody, requestPath: request.path)
         logger.debug(
-            "Response: \(request.method) \(request.path ?? defaultPath) \(response.status) body: \(sanitizedBody)",
+            "Response: \(request.method) \(request.path ?? defaultPath) \(response.status)"
+                + " in \(Self.formatElapsedTime(elapsedTime)) body: \(sanitizedBody)",
         )
     }
 
-    private func logFailure(request _: HTTPRequest, failedWith error: any Error) {
-        logger.warning("Request failed. Error: \(error.localizedDescription)")
+    private func logFailure(request: HTTPRequest, failedWith error: any Error, elapsedTime: Duration) {
+        logger.warning(
+            "Request failed: \(request.method) \(request.path ?? defaultPath)"
+                + " in \(Self.formatElapsedTime(elapsedTime))."
+                + " Error: \(error.localizedDescription)",
+        )
     }
 
     static func sanitizeResponseBodyForLogging(
@@ -78,5 +92,11 @@ extension LoggingMiddleware: ClientMiddleware {
         jsonDictionary["token"] = redactedTokenValue
 
         return try? JSONSerialization.data(withJSONObject: jsonDictionary, options: [.sortedKeys])
+    }
+
+    static func formatElapsedTime(_ elapsedTime: Duration) -> String {
+        let milliseconds = elapsedTime.components.seconds * 1000
+            + elapsedTime.components.attoseconds / 1_000_000_000_000_000
+        return "\(milliseconds)ms"
     }
 }
