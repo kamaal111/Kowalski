@@ -42,6 +42,15 @@ struct LoggingMiddlewareTests {
         #expect(sanitizedBody == responseBody)
     }
 
+    @Test
+    func `Elapsed time should format as milliseconds`() {
+        let elapsedTime = Duration.seconds(1) + .milliseconds(250)
+
+        let formattedElapsedTime = LoggingMiddleware.formatElapsedTime(elapsedTime)
+
+        #expect(formattedElapsedTime == "1250ms")
+    }
+
     private func bodyData(from bodyLog: BodyLoggingPolicy.BodyLog) -> Data? {
         guard case let .complete(data) = bodyLog else { return nil }
         return data
