@@ -167,52 +167,21 @@ struct KowalskiPortfolioClientTests {
     }
 
     @Test
-    func `List entries should decode preferred currency purchase prices`() async throws {
-        let responseBody = Data(
-            """
-            [
-              {
-                "id": "cd81dbd7-3efa-42b3-8127-c1589279542f",
-                "created_at": "2025-12-20T12:00:00Z",
-                "updated_at": "2025-12-20T12:00:00Z",
-                "stock": {
-                  "symbol": "AAPL",
-                  "exchange": "NMS",
-                  "name": "Apple Inc.",
-                  "isin": "US0378331005",
-                  "sector": "Technology",
-                  "industry": "Consumer Electronics",
-                  "exchange_dispatch": "NASDAQ"
-                },
-                "amount": 10,
-                "purchase_price": {
-                  "currency": "USD",
-                  "value": 150.5
-                },
-                "preferred_currency_purchase_price": {
-                  "currency": "EUR",
-                  "value": 138.07
-                },
-                "transaction_type": "buy",
-                "transaction_date": "2025-12-20T10:30:00Z"
-              }
-            ]
-            """.utf8,
-        )
+    func `Get overview should decode preferred currency purchase prices`() async throws {
         let transport = MockClientTransport(
             queuedResponses: [
-                QueuedResponse(status: .ok, body: responseBody),
+                QueuedResponse(status: .ok, body: makeOverviewResponseBody()),
             ],
         )
         let client = try makeGeneratedClient(transport: transport)
         let portfolioClient = KowalskiPortfolioClientFactory.default(client: client)
 
-        let entries = try await portfolioClient.listEntries().get()
+        let overview = try await portfolioClient.getOverview().get()
 
-        #expect(entries.count == 1)
-        #expect(entries.first?.purchasePrice.currency == "USD")
-        #expect(entries.first?.preferredCurrencyPurchasePrice?.currency == "EUR")
-        #expect(entries.first?.preferredCurrencyPurchasePrice?.value == 138.07)
+        #expect(overview.transactions.count == 1)
+        #expect(overview.transactions.first?.purchasePrice.currency == "USD")
+        #expect(overview.transactions.first?.preferredCurrencyPurchasePrice?.currency == "EUR")
+        #expect(overview.transactions.first?.preferredCurrencyPurchasePrice?.value == 138.07)
     }
 
     @Test
@@ -231,6 +200,10 @@ struct KowalskiPortfolioClientTests {
         #expect(overview.transactions.first?.stock.symbol == "AAPL")
         #expect(overview.currentValues["AAPL"]?.currency == "EUR")
         #expect(overview.currentValues["AAPL"]?.value == 185.45)
+        #expect(overview.holdings.count == 1)
+        #expect(overview.holdings.first?.asset.symbol == "AAPL")
+        #expect(overview.netWorth.currency == "EUR")
+        #expect(overview.netWorth.value == 1854.5)
 
         let request = try #require(transport.capturedRequests.first)
         #expect(request.path == "/app-api/portfolio/overview")
@@ -238,28 +211,28 @@ struct KowalskiPortfolioClientTests {
     }
 
     @Test
-    func `Get holdings preflight should decode refreshing response`() async throws {
+    func `Get overview preflight should decode refreshing response`() async throws {
         let transport = MockClientTransport(
             queuedResponses: [
-                QueuedResponse(status: .ok, body: makeHoldingsPreflightResponseBody()),
+                QueuedResponse(status: .ok, body: makeOverviewPreflightResponseBody()),
             ],
         )
         let client = try makeGeneratedClient(transport: transport)
         let portfolioClient = KowalskiPortfolioClientFactory.default(client: client)
 
-        let preflight = try await portfolioClient.getHoldingsPreflight().get()
+        let preflight = try await portfolioClient.getOverviewPreflight().get()
 
         #expect(preflight.refreshState == .refreshing)
         #expect(preflight.pollAfterMilliseconds == 1500)
         #expect(preflight.latestCachedPriceDate == "2026-05-16")
 
         let request = try #require(transport.capturedRequests.first)
-        #expect(request.path == "/app-api/portfolio/holdings/preflight")
+        #expect(request.path == "/app-api/portfolio/overview/preflight")
         #expect(request.method == .get)
     }
 
     @Test
-    func `Get holdings preflight should map unauthorized errors`() async throws {
+    func `Get overview preflight should map unauthorized errors`() async throws {
         let transport = MockClientTransport(
             queuedResponses: [
                 QueuedResponse(status: .unauthorized, body: makeErrorResponseBody(
@@ -271,8 +244,8 @@ struct KowalskiPortfolioClientTests {
         let client = try makeGeneratedClient(transport: transport)
         let portfolioClient = KowalskiPortfolioClientFactory.default(client: client)
 
-        try await #require(throws: KowalskiPortfolioClientHoldingsPreflightErrors.unauthorized) {
-            try await portfolioClient.getHoldingsPreflight().get()
+        try await #require(throws: KowalskiPortfolioClientOverviewPreflightErrors.unauthorized) {
+            try await portfolioClient.getOverviewPreflight().get()
         }
     }
 }
@@ -357,6 +330,33 @@ private func makeOverviewResponseBody() -> Data {
               "currency": "EUR",
               "value": 185.45
             }
+          },
+          "holdings": [
+            {
+              "asset_type": "equity",
+              "asset": {
+                "symbol": "AAPL",
+                "exchange": "NMS",
+                "name": "Apple Inc.",
+                "isin": "US0378331005",
+                "sector": "Technology",
+                "industry": "Consumer Electronics",
+                "exchange_dispatch": "NASDAQ"
+              },
+              "amount": 10,
+              "unit_value": {
+                "currency": "EUR",
+                "value": 185.45
+              },
+              "total_value": {
+                "currency": "EUR",
+                "value": 1854.5
+              }
+            }
+          ],
+          "net_worth": {
+            "currency": "EUR",
+            "value": 1854.5
           }
         }
         """.utf8,
@@ -422,7 +422,7 @@ private func makeBulkCreateEntriesResponseBody() -> Data {
     )
 }
 
-private func makeHoldingsPreflightResponseBody() -> Data {
+private func makeOverviewPreflightResponseBody() -> Data {
     Data(
         """
         {

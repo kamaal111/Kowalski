@@ -8,6 +8,7 @@ import { APP_API_BASE_PATH, type ResolvedtransactionType } from '@/constants/com
 import { ErrorResponseSchema } from '@/schemas/errors';
 import { integrationTest } from '@/tests/fixtures';
 import { yahooFinanceQuoteMock } from '@/tests/mocks/yahoo-finance';
+import { createTestUserAndSession } from '@/tests/utils';
 import * as schema from '@/db/schema';
 import { createSyntheticTickerId } from '@/utils/tickers';
 
@@ -76,6 +77,24 @@ describe('Portfolio Overview Route', () => {
         current_values: {
           AAPL: { currency: 'USD', value: 16 },
         },
+        holdings: [
+          {
+            asset_type: 'equity',
+            asset: {
+              symbol: 'AAPL',
+              exchange: 'NMS',
+              name: 'Apple Inc.',
+              isin: 'PORTFOLIO-NMS-AAPL',
+              sector: null,
+              industry: null,
+              exchange_dispatch: null,
+            },
+            amount: 50,
+            unit_value: { currency: 'USD', value: 16 },
+            total_value: { currency: 'USD', value: 800 },
+          },
+        ],
+        net_worth: { currency: 'USD', value: 800 },
       });
     },
   );
@@ -139,6 +158,39 @@ describe('Portfolio Overview Route', () => {
           AAPL: { currency: 'USD', value: 185.45 },
           MSFT: { currency: 'USD', value: 420.5 },
         },
+        holdings: [
+          {
+            asset_type: 'equity',
+            asset: {
+              symbol: 'AAPL',
+              exchange: 'NMS',
+              name: 'Apple Inc.',
+              isin: 'PORTFOLIO-NMS-AAPL',
+              sector: 'Technology',
+              industry: 'Consumer Electronics',
+              exchange_dispatch: 'NASDAQ',
+            },
+            amount: 10,
+            unit_value: { currency: 'USD', value: 185.45 },
+            total_value: { currency: 'USD', value: 1854.5 },
+          },
+          {
+            asset_type: 'equity',
+            asset: {
+              symbol: 'MSFT',
+              exchange: 'NMS',
+              name: 'Microsoft Corporation',
+              isin: 'PORTFOLIO-NMS-MSFT',
+              sector: 'Technology',
+              industry: 'Software - Infrastructure',
+              exchange_dispatch: 'NASDAQ',
+            },
+            amount: 4,
+            unit_value: { currency: 'USD', value: 420.5 },
+            total_value: { currency: 'USD', value: 1682 },
+          },
+        ],
+        net_worth: { currency: 'USD', value: 3536.5 },
       });
       expect(yahooFinanceQuoteMock).not.toHaveBeenCalled();
       expect(logs).toEqual(
@@ -154,8 +206,10 @@ describe('Portfolio Overview Route', () => {
             event: 'portfolio.overview.retrieved',
             request_id: request.requestId,
             component: 'portfolio',
-            result_count: 2,
+            transaction_count: 2,
+            holding_count: 2,
             stored_count: 2,
+            net_worth_currency: 'USD',
           }),
         ]),
       );
@@ -171,6 +225,8 @@ describe('Portfolio Overview Route', () => {
       expect(body).toEqual({
         transactions: [],
         current_values: {},
+        holdings: [],
+        net_worth: { currency: 'USD', value: 0 },
       });
       expect(yahooFinanceQuoteMock).not.toHaveBeenCalled();
     },
@@ -208,6 +264,8 @@ describe('Portfolio Overview Route', () => {
       expect(body.current_values).toEqual({
         AAPL: { currency: 'USD', value: 150 },
       });
+      expect(body.holdings[0]?.amount).toBe(1);
+      expect(body.net_worth).toEqual({ currency: 'USD', value: 150 });
       expect(yahooFinanceQuoteMock).toHaveBeenCalledWith(['AAPL'], {
         fields: ['symbol', 'regularMarketPrice', 'currency'],
       });
@@ -254,8 +312,142 @@ describe('Portfolio Overview Route', () => {
 
       expect(body.current_values.AAPL?.currency).toBe('EUR');
       expect(body.current_values.AAPL?.value).toBeCloseTo(100);
+      expect(body.holdings[0]?.unit_value.currency).toBe('EUR');
+      expect(body.holdings[0]?.unit_value.value).toBeCloseTo(100);
+      expect(body.net_worth.currency).toBe('EUR');
+      expect(body.net_worth.value).toBeCloseTo(100);
     },
   );
+
+  integrationTest(
+    'aggregates multiple transactions for the same symbol into one holding',
+    async ({ app, db, sessionToken, userId }) => {
+      await seedPortfolioEntry(db, {
+        userId,
+        stock: {
+          symbol: 'AAPL',
+          exchange: 'NMS',
+          name: 'Apple Inc.',
+          sector: 'Technology',
+          industry: 'Consumer Electronics',
+          exchangeDispatch: 'NASDAQ',
+        },
+        amount: 10,
+        purchasePrice: { currency: 'USD', value: 150 },
+        transactionType: 'buy',
+        transactionDate: '2025-12-19T10:30:00.000Z',
+      });
+      await seedPortfolioEntry(db, {
+        userId,
+        stock: {
+          symbol: 'AAPL',
+          exchange: 'NMS',
+          name: 'Apple Inc.',
+          sector: 'Technology',
+          industry: 'Consumer Electronics',
+          exchangeDispatch: 'NASDAQ',
+        },
+        amount: 3,
+        purchasePrice: { currency: 'USD', value: 170 },
+        transactionType: 'buy',
+        transactionDate: '2025-12-20T10:30:00.000Z',
+      });
+      await seedStockInfo(db, {
+        tickerId: createSyntheticTickerId('NMS', 'AAPL'),
+        currency: 'USD',
+        date: new Date().toISOString().slice(0, 10),
+        price: 185,
+      });
+
+      const response = await sendOverviewRequest(app, { sessionToken });
+      const body = await expectSuccessfulOverviewResponse(response);
+
+      expect(body.net_worth).toEqual({ currency: 'USD', value: 2405 });
+      expect(body.holdings).toEqual([
+        {
+          asset_type: 'equity',
+          asset: {
+            symbol: 'AAPL',
+            exchange: 'NMS',
+            name: 'Apple Inc.',
+            isin: 'PORTFOLIO-NMS-AAPL',
+            sector: 'Technology',
+            industry: 'Consumer Electronics',
+            exchange_dispatch: 'NASDAQ',
+          },
+          amount: 13,
+          unit_value: { currency: 'USD', value: 185 },
+          total_value: { currency: 'USD', value: 2405 },
+        },
+      ]);
+    },
+  );
+
+  integrationTest('reduces held amount and total value for sells', async ({ app, db, sessionToken, userId }) => {
+    await seedPortfolioEntry(db, {
+      userId,
+      stock: { symbol: 'AAPL', exchange: 'NMS', name: 'Apple Inc.' },
+      amount: 10,
+      purchasePrice: { currency: 'USD', value: 150 },
+      transactionType: 'buy',
+      transactionDate: '2025-12-19T10:30:00.000Z',
+    });
+    await seedPortfolioEntry(db, {
+      userId,
+      stock: { symbol: 'AAPL', exchange: 'NMS', name: 'Apple Inc.' },
+      amount: 4,
+      purchasePrice: { currency: 'USD', value: 175 },
+      transactionType: 'sell',
+      transactionDate: '2025-12-20T10:30:00.000Z',
+    });
+    await seedStockInfo(db, {
+      tickerId: createSyntheticTickerId('NMS', 'AAPL'),
+      currency: 'USD',
+      date: new Date().toISOString().slice(0, 10),
+      price: 200,
+    });
+
+    const response = await sendOverviewRequest(app, { sessionToken });
+    const body = await expectSuccessfulOverviewResponse(response);
+
+    expect(body.net_worth).toEqual({ currency: 'USD', value: 1200 });
+    expect(body.holdings[0]?.amount).toBe(6);
+    expect(body.holdings[0]?.total_value).toEqual({ currency: 'USD', value: 1200 });
+  });
+
+  integrationTest('does not return another user holdings in overview', async ({ app, db, sessionToken, userId }) => {
+    await seedPortfolioEntry(db, {
+      userId,
+      stock: { symbol: 'AAPL', exchange: 'NMS', name: 'Apple Inc.' },
+      amount: 5,
+      purchasePrice: { currency: 'USD', value: 175.25 },
+      transactionType: 'buy',
+      transactionDate: '2025-12-18T10:30:00.000Z',
+    });
+    const otherUser = await createTestUserAndSession(db);
+    await seedPortfolioEntry(db, {
+      userId: otherUser.userId,
+      stock: { symbol: 'NVDA', exchange: 'NMS', name: 'NVIDIA Corporation' },
+      amount: 9,
+      purchasePrice: { currency: 'USD', value: 140.1 },
+      transactionType: 'buy',
+      transactionDate: '2025-12-21T10:30:00.000Z',
+    });
+    await seedStockInfo(db, {
+      tickerId: createSyntheticTickerId('NMS', 'AAPL'),
+      currency: 'USD',
+      date: new Date().toISOString().slice(0, 10),
+      price: 200,
+    });
+
+    const response = await sendOverviewRequest(app, { sessionToken });
+    const body = await expectSuccessfulOverviewResponse(response);
+
+    expect(body.net_worth).toEqual({ currency: 'USD', value: 1000 });
+    expect(body.holdings).toHaveLength(1);
+    expect(body.holdings[0]?.asset.symbol).toBe('AAPL');
+    expect(body.transactions).toHaveLength(1);
+  });
 
   integrationTest(
     'returns an internal server error when preferred-currency current values need FX data that is missing',

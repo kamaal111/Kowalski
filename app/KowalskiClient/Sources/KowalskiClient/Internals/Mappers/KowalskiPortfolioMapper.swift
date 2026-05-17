@@ -87,23 +87,16 @@ struct KowalskiPortfolioMapper {
         return KowalskiPortfolioOverviewResponse(
             transactions: mapListEntriesApiResponseToClient(response.transactions),
             currentValues: currentValues,
-        )
-    }
-
-    func mapHoldingsApiResponseToClient(
-        _ response: Components.Schemas.PortfolioHoldingsResponse,
-    ) -> KowalskiPortfolioHoldingsResponse {
-        KowalskiPortfolioHoldingsResponse(
-            netWorth: mapHoldingValue(response.netWorth),
             holdings: response.holdings.map(mapHoldingApiResponseToClient),
+            netWorth: mapHoldingValue(response.netWorth.value1),
         )
     }
 
-    func mapHoldingsPreflightApiResponseToClient(
-        _ response: Components.Schemas.PortfolioHoldingsPreflightResponse,
-    ) -> KowalskiPortfolioHoldingsPreflightResponse {
-        KowalskiPortfolioHoldingsPreflightResponse(
-            refreshState: mapHoldingsPreflightRefreshState(response.refreshState),
+    func mapOverviewPreflightApiResponseToClient(
+        _ response: Components.Schemas.PortfolioOverviewPreflightResponse,
+    ) -> KowalskiPortfolioOverviewPreflightResponse {
+        KowalskiPortfolioOverviewPreflightResponse(
+            refreshState: mapOverviewPreflightRefreshState(response.refreshState),
             pollAfterMilliseconds: response.pollAfterMs,
             latestCachedPriceDate: response.latestCachedPriceDate,
         )
@@ -163,13 +156,13 @@ struct KowalskiPortfolioMapper {
             asset: mapHoldingAsset(response.asset),
             amount: response.amount,
             unitValue: mapCurrentValue(response.unitValue.value1),
-            totalValue: mapHoldingValue(response.totalValue.value1),
+            totalValue: mapHoldingValue(response.totalValue),
         )
     }
 
-    private func mapHoldingsPreflightRefreshState(
-        _ response: Components.Schemas.PortfolioHoldingsPreflightResponse.RefreshStatePayload,
-    ) -> KowalskiPortfolioHoldingsPreflightResponse.RefreshState {
+    private func mapOverviewPreflightRefreshState(
+        _ response: Components.Schemas.PortfolioOverviewPreflightResponse.RefreshStatePayload,
+    ) -> KowalskiPortfolioOverviewPreflightResponse.RefreshState {
         switch response {
         case .ready: .ready
         case .refreshing: .refreshing

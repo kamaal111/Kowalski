@@ -15,11 +15,6 @@ struct KowalskiPortfolioMappers {
         PortfolioOverviewState(
             entries: mapPortfolioEntries(response.transactions),
             currentValues: mapCurrentValues(response.currentValues),
-        )
-    }
-
-    func mapHoldingsResponse(_ response: KowalskiPortfolioHoldingsResponse) -> PortfolioHoldingsState {
-        PortfolioHoldingsState(
             netWorth: mapMoney(response.netWorth),
             holdings: response.holdings.map(mapPortfolioHolding),
         )
@@ -142,9 +137,6 @@ struct KowalskiPortfolioMappers {
 struct PortfolioOverviewState {
     let entries: [PortfolioEntry]
     let currentValues: [String: Money]
-}
-
-struct PortfolioHoldingsState {
     let netWorth: Money
     let holdings: [PortfolioHolding]
 }

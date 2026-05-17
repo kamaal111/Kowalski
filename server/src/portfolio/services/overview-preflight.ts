@@ -7,7 +7,7 @@ import { logError, logInfo } from '@/logging';
 import { withRequestLogger } from '@/logging/http';
 import { findPortfolioEntriesByUserId } from '../repositories/list-entries';
 import { findLatestCachedPriceDateByTickerIds } from '../repositories/stock-prices';
-import type { PortfolioHoldingsPreflightResponse } from '../schemas/responses';
+import type { PortfolioOverviewPreflightResponse } from '../schemas/responses';
 import { aggregateHoldings } from './aggregate-holdings';
 import { findResolvedAndMissingDailyPrices, refreshPortfolioDailyPrices } from './current-stock-values';
 import {
@@ -24,7 +24,7 @@ interface ActiveTickerEntry {
   stockSymbol: string;
 }
 
-export async function getPortfolioHoldingsPreflight(c: HonoContext): Promise<PortfolioHoldingsPreflightResponse> {
+export async function getPortfolioOverviewPreflight(c: HonoContext): Promise<PortfolioOverviewPreflightResponse> {
   const session = getSessionWhereSessionIsRequired(c);
   const today = new Date().toISOString().slice(0, 10);
   clearExpiredHoldingsRefreshStates(today);
@@ -63,7 +63,7 @@ export async function getPortfolioHoldingsPreflight(c: HonoContext): Promise<Por
     try {
       await refreshPortfolioDailyPrices(c, activeEntries);
       logInfo(withRequestLogger(c, { component: 'portfolio' }), {
-        event: 'portfolio.holdings.preflight.refresh.completed',
+        event: 'portfolio.overview.preflight.refresh.completed',
         user_id: session.user.id,
         ticker_count: activeEntries.length,
         missing_today_count: missingEntries.length,
@@ -73,7 +73,7 @@ export async function getPortfolioHoldingsPreflight(c: HonoContext): Promise<Por
       logError(
         withRequestLogger(c, { component: 'portfolio' }),
         {
-          event: 'portfolio.holdings.preflight.refresh.failed',
+          event: 'portfolio.overview.preflight.refresh.failed',
           user_id: session.user.id,
           ticker_count: activeEntries.length,
           missing_today_count: missingEntries.length,
@@ -95,8 +95,8 @@ export async function getPortfolioHoldingsPreflight(c: HonoContext): Promise<Por
   logInfo(withRequestLogger(c, { component: 'portfolio' }), {
     event:
       refreshOutcome === RUN_ONCE_RESULTS.STARTED
-        ? 'portfolio.holdings.preflight.refresh.started'
-        : 'portfolio.holdings.preflight.refresh.reused',
+        ? 'portfolio.overview.preflight.refresh.started'
+        : 'portfolio.overview.preflight.refresh.reused',
     user_id: session.user.id,
     ticker_count: activeEntries.length,
     missing_today_count: missingEntries.length,
@@ -118,17 +118,18 @@ function getActiveTickerEntries(entries: ResolvedPortfolioEntry[]): ActiveTicker
     if (holding.amount === 0) {
       return null;
     }
+
     return { tickerId: holding.entry.tickerId, stockSymbol: holding.entry.stockSymbol };
   });
 }
 
 function logAndReturnPreflight(
   c: HonoContext,
-  response: PortfolioHoldingsPreflightResponse,
-): PortfolioHoldingsPreflightResponse {
+  response: PortfolioOverviewPreflightResponse,
+): PortfolioOverviewPreflightResponse {
   const session = getSessionWhereSessionIsRequired(c);
   logInfo(withRequestLogger(c, { component: 'portfolio' }), {
-    event: 'portfolio.holdings.preflight.checked',
+    event: 'portfolio.overview.preflight.checked',
     user_id: session.user.id,
     refresh_state: response.refresh_state,
     poll_after_ms: response.poll_after_ms,

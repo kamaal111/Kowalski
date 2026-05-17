@@ -19,11 +19,15 @@ async function overview(c: HonoContext): Promise<TypedResponse<PortfolioOverview
       });
     }),
     current_values: result.currentValues,
+    holdings: result.holdings,
+    net_worth: result.netWorth,
   });
   logInfo(withRequestLogger(c, { component: 'portfolio' }), {
     event: 'portfolio.overview.retrieved',
-    result_count: response.transactions.length,
+    transaction_count: response.transactions.length,
+    holding_count: response.holdings.length,
     stored_count: Object.keys(response.current_values).length,
+    net_worth_currency: response.net_worth.currency,
     outcome: 'success',
   });
 

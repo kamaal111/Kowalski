@@ -367,12 +367,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /app-api/portfolio/entries:
+  /app-api/portfolio/overview:
     get:
       tags:
         - Portfolio
-      summary: List portfolio entries
-      description: List portfolio entries for the signed-in user default portfolio.
+      summary: Get portfolio overview
+      description: >-
+        Return portfolio transactions, current stock values, aggregated
+        holdings, and net worth for the signed-in user default portfolio.
       parameters:
         - schema:
             type: string
@@ -384,11 +386,11 @@ paths:
           in: header
       responses:
         '200':
-          description: Portfolio entries retrieved successfully
+          description: Portfolio overview retrieved successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListEntriesResponse'
+                $ref: '#/components/schemas/PortfolioOverviewResponse'
         '401':
           description: Authentication failed
           content:
@@ -402,11 +404,54 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '500':
-          description: Portfolio entries could not be retrieved
+          description: Portfolio overview could not be retrieved
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /app-api/portfolio/overview/preflight:
+    get:
+      tags:
+        - Portfolio
+      summary: Check portfolio overview price readiness
+      description: >-
+        Return whether daily prices are ready before fetching the portfolio
+        overview.
+      parameters:
+        - schema:
+            type: string
+            description: Bearer token for authentication
+            example: Bearer f21wcpz7Aokmlh2MB632MZpTgfruPc62
+          required: true
+          description: Bearer token for authentication
+          name: authorization
+          in: header
+      responses:
+        '200':
+          description: Portfolio overview price readiness retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioOverviewPreflightResponse'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Portfolio overview preflight could not be retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /app-api/portfolio/entries:
     post:
       tags:
         - Portfolio
@@ -456,132 +501,6 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: Portfolio entry persistence failed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /app-api/portfolio/overview:
-    get:
-      tags:
-        - Portfolio
-      summary: Get portfolio overview
-      description: >-
-        Return portfolio transactions together with current stock values keyed
-        by stock symbol for the signed-in user default portfolio.
-      parameters:
-        - schema:
-            type: string
-            description: Bearer token for authentication
-            example: Bearer f21wcpz7Aokmlh2MB632MZpTgfruPc62
-          required: true
-          description: Bearer token for authentication
-          name: authorization
-          in: header
-      responses:
-        '200':
-          description: Portfolio overview retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PortfolioOverviewResponse'
-        '401':
-          description: Authentication failed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Session not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Portfolio overview could not be retrieved
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /app-api/portfolio/holdings:
-    get:
-      tags:
-        - Portfolio
-      summary: Get portfolio holdings
-      description: >-
-        Return portfolio net worth and aggregated holdings for the signed-in
-        user default portfolio.
-      parameters:
-        - schema:
-            type: string
-            description: Bearer token for authentication
-            example: Bearer f21wcpz7Aokmlh2MB632MZpTgfruPc62
-          required: true
-          description: Bearer token for authentication
-          name: authorization
-          in: header
-      responses:
-        '200':
-          description: Portfolio holdings retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PortfolioHoldingsResponse'
-        '401':
-          description: Authentication failed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Session not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Portfolio holdings could not be retrieved
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /app-api/portfolio/holdings/preflight:
-    get:
-      tags:
-        - Portfolio
-      summary: Check portfolio holdings price readiness
-      description: >-
-        Return whether daily prices are ready before fetching portfolio
-        holdings.
-      parameters:
-        - schema:
-            type: string
-            description: Bearer token for authentication
-            example: Bearer f21wcpz7Aokmlh2MB632MZpTgfruPc62
-          required: true
-          description: Bearer token for authentication
-          name: authorization
-          in: header
-      responses:
-        '200':
-          description: Portfolio holdings price readiness retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PortfolioHoldingsPreflightResponse'
-        '401':
-          description: Authentication failed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Session not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Portfolio holdings preflight could not be retrieved
           content:
             application/json:
               schema:
@@ -1072,6 +991,87 @@ components:
         sector: Technology
         industry: Consumer Electronics
         exchange_dispatch: NASDAQ
+    PortfolioOverviewResponse:
+      type: object
+      properties:
+        transactions:
+          $ref: '#/components/schemas/ListEntriesResponse'
+        current_values:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/CurrentValue'
+          description: Current stock values keyed by the transaction stock symbol.
+          example:
+            AAPL:
+              currency: EUR
+              value: 185.45
+            MSFT:
+              currency: EUR
+              value: 420.5
+        holdings:
+          type: array
+          items:
+            $ref: '#/components/schemas/PortfolioHolding'
+          description: Aggregated holdings for the signed-in user default portfolio.
+        net_worth:
+          allOf:
+            - $ref: '#/components/schemas/PortfolioHoldingValue'
+            - description: Sum of total holding values.
+      required:
+        - transactions
+        - current_values
+        - holdings
+        - net_worth
+      title: Portfolio Overview Response
+      description: >-
+        Portfolio transactions, current stock values, aggregated holdings, and
+        net worth for the signed-in user default portfolio.
+      example:
+        transactions:
+          - id: 550e8400-e29b-41d4-a716-446655440000
+            stock:
+              symbol: AAPL
+              exchange: NMS
+              name: Apple Inc.
+              isin: US0378331005
+              sector: Technology
+              industry: Consumer Electronics
+              exchange_dispatch: NASDAQ
+            amount: 10
+            purchase_price:
+              currency: USD
+              value: 150.5
+            preferred_currency_purchase_price:
+              currency: EUR
+              value: 138.07
+            transaction_type: buy
+            transaction_date: '2025-12-20T00:00:00.000Z'
+            created_at: '2025-12-20T12:00:00.000Z'
+            updated_at: '2025-12-20T12:00:00.000Z'
+        current_values:
+          AAPL:
+            currency: EUR
+            value: 185.45
+        holdings:
+          - asset_type: equity
+            asset:
+              symbol: AAPL
+              exchange: NMS
+              name: Apple Inc.
+              isin: US0378331005
+              sector: Technology
+              industry: Consumer Electronics
+              exchange_dispatch: NASDAQ
+            amount: 10
+            unit_value:
+              currency: EUR
+              value: 185.45
+            total_value:
+              currency: EUR
+              value: 1854.5
+        net_worth:
+          currency: EUR
+          value: 1854.5
     ListEntriesResponse:
       type: array
       items:
@@ -1211,56 +1211,6 @@ components:
       example:
         currency: EUR
         value: 138.07
-    PortfolioOverviewResponse:
-      type: object
-      properties:
-        transactions:
-          $ref: '#/components/schemas/ListEntriesResponse'
-        current_values:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/CurrentValue'
-          description: Current stock values keyed by the transaction stock symbol.
-          example:
-            AAPL:
-              currency: EUR
-              value: 185.45
-            MSFT:
-              currency: EUR
-              value: 420.5
-      required:
-        - transactions
-        - current_values
-      title: Portfolio Overview Response
-      description: >-
-        Portfolio transactions with current stock values keyed by symbol for the
-        signed-in user default portfolio.
-      example:
-        transactions:
-          - id: 550e8400-e29b-41d4-a716-446655440000
-            stock:
-              symbol: AAPL
-              exchange: NMS
-              name: Apple Inc.
-              isin: US0378331005
-              sector: Technology
-              industry: Consumer Electronics
-              exchange_dispatch: NASDAQ
-            amount: 10
-            purchase_price:
-              currency: USD
-              value: 150.5
-            preferred_currency_purchase_price:
-              currency: EUR
-              value: 138.07
-            transaction_type: buy
-            transaction_date: '2025-12-20T00:00:00.000Z'
-            created_at: '2025-12-20T12:00:00.000Z'
-            updated_at: '2025-12-20T12:00:00.000Z'
-        current_values:
-          AAPL:
-            currency: EUR
-            value: 185.45
     CurrentValue:
       type: object
       properties:
@@ -1285,64 +1235,6 @@ components:
       example:
         currency: EUR
         value: 185.45
-    PortfolioHoldingsResponse:
-      type: object
-      properties:
-        net_worth:
-          $ref: '#/components/schemas/PortfolioHoldingValue'
-        holdings:
-          type: array
-          items:
-            $ref: '#/components/schemas/PortfolioHolding'
-          description: Aggregated holdings for the signed-in user default portfolio.
-      required:
-        - net_worth
-        - holdings
-      title: Portfolio Holdings Response
-      description: >-
-        Portfolio net worth and aggregated holdings for the signed-in user
-        default portfolio.
-      example:
-        net_worth:
-          currency: EUR
-          value: 1854.5
-        holdings:
-          - asset_type: equity
-            asset:
-              symbol: AAPL
-              exchange: NMS
-              name: Apple Inc.
-              isin: US0378331005
-              sector: Technology
-              industry: Consumer Electronics
-              exchange_dispatch: NASDAQ
-            amount: 10
-            unit_value:
-              currency: EUR
-              value: 185.45
-            total_value:
-              currency: EUR
-              value: 1854.5
-    PortfolioHoldingValue:
-      type: object
-      properties:
-        currency:
-          type: string
-          minLength: 3
-          description: Currency code
-          example: USD
-        value:
-          type: number
-          description: Monetary value
-          example: 1854.5
-      required:
-        - currency
-        - value
-      title: Portfolio Holding Value
-      description: Sum of total holding values.
-      example:
-        currency: EUR
-        value: 1854.5
     PortfolioHolding:
       type: object
       properties:
@@ -1365,9 +1257,7 @@ components:
                 Current per-share value in the signed-in user's preferred
                 currency when configured, otherwise quote currency.
         total_value:
-          allOf:
-            - $ref: '#/components/schemas/PortfolioHoldingValue'
-            - description: Total holding value calculated as amount times unit value.
+          $ref: '#/components/schemas/PortfolioHoldingValue'
       required:
         - asset_type
         - asset
@@ -1452,7 +1342,27 @@ components:
         sector: Technology
         industry: Consumer Electronics
         exchange_dispatch: NASDAQ
-    PortfolioHoldingsPreflightResponse:
+    PortfolioHoldingValue:
+      type: object
+      properties:
+        currency:
+          type: string
+          minLength: 3
+          description: Currency code
+          example: USD
+        value:
+          type: number
+          description: Monetary value
+          example: 1854.5
+      required:
+        - currency
+        - value
+      title: Portfolio Holding Value
+      description: Total holding value calculated as amount times unit value.
+      example:
+        currency: EUR
+        value: 1854.5
+    PortfolioOverviewPreflightResponse:
       type: object
       properties:
         refresh_state:
@@ -1483,8 +1393,8 @@ components:
         - refresh_state
         - poll_after_ms
         - latest_cached_price_date
-      title: Portfolio Holdings Preflight Response
-      description: Readiness state for fetching fresh portfolio holdings.
+      title: Portfolio Overview Preflight Response
+      description: Readiness state for fetching a fresh portfolio overview.
       example:
         refresh_state: refreshing
         poll_after_ms: 1500
