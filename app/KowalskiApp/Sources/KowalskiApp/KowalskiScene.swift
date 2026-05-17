@@ -18,11 +18,9 @@ public struct KowalskiScene: Scene {
 
     public var body: some Scene {
         WindowGroup {
-            NavigationStack {
-                KowalskiPortfolioScreen()
-            }
-            .kowalskiAuth(auth)
-            .kowalskiPortfolio(portfolio)
+            KowalskiPortfolioNavigationStack()
+                .kowalskiAuth(auth)
+                .kowalskiPortfolio(portfolio)
         }
         Settings {
             KowalskiAuthSettingsView(

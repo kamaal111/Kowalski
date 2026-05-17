@@ -92,6 +92,9 @@
     "My Portfolio" : {
 
     },
+    "Net Worth" : {
+
+    },
     "Net worth unavailable" : {
 
     },
@@ -99,6 +102,9 @@
 
     },
     "Please select a stock" : {
+
+    },
+    "Portfolio" : {
 
     },
     "Price before split" : {
@@ -165,9 +171,6 @@
 
     },
     "Use the add button to record your first stock transaction." : {
-
-    },
-    "View transactions" : {
 
     }
   },

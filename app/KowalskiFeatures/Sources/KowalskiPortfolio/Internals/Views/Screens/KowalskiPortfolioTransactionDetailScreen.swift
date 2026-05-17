@@ -15,12 +15,16 @@ struct KowalskiPortfolioTransactionDetailScreen: View {
 
     @State private var entry: PortfolioEntry
     @State private var isEditing = false
-    @State private var selectedPairedTransactionType: TransactionType?
-    @State private var shouldDismissAfterPairedTransaction = false
     @State private var toast: Toast?
 
-    init(entry: PortfolioEntry) {
+    private let onPairedTransaction: (_ entry: PortfolioEntry, _ type: TransactionType) -> Void
+
+    init(
+        entry: PortfolioEntry,
+        onPairedTransaction: @escaping (_ entry: PortfolioEntry, _ type: TransactionType) -> Void,
+    ) {
         _entry = State(initialValue: entry)
+        self.onPairedTransaction = onPairedTransaction
     }
 
     var body: some View {
@@ -38,7 +42,7 @@ struct KowalskiPortfolioTransactionDetailScreen: View {
                 if !isEditing {
                     ForEach(entry.transactionType.pairedActions, id: \.transactionType) { action in
                         Button(action.title) {
-                            selectedPairedTransactionType = action.transactionType
+                            onPairedTransaction(entry, action.transactionType)
                         }
                     }
                 }
@@ -46,16 +50,6 @@ struct KowalskiPortfolioTransactionDetailScreen: View {
                     isEditing.toggle()
                 }
             }
-        }
-        .navigationDestination(item: $selectedPairedTransactionType) { pairedTransactionType in
-            pairedTransactionView(transactionType: pairedTransactionType)
-        }
-        .onChange(of: selectedPairedTransactionType) { _, selectedPairedTransactionType in
-            guard selectedPairedTransactionType == nil else { return }
-            guard shouldDismissAfterPairedTransaction else { return }
-
-            shouldDismissAfterPairedTransaction = false
-            dismiss()
         }
         .toastView(toast: $toast)
     }
@@ -75,16 +69,16 @@ struct KowalskiPortfolioTransactionDetailScreen: View {
                 detailRow(title: "Type", value: entry.transactionType.label)
                 detailRow(title: "Amount", value: entry.amount.formatted(.number))
                 detailRow(title: "Purchase Price", value: purchasePriceValue)
-                detailRow(title: "Date", value: entry.transactionDate.formatted(.dateTime.year().month().day()))
+                detailRow(title: "Date", value: formatDate(entry.transactionDate))
             }
             Section("Audit") {
                 detailRow(
                     title: "Created",
-                    value: entry.createdAt.formatted(.dateTime.year().month().day().hour().minute()),
+                    value: formatDate(entry.createdAt),
                 )
                 detailRow(
                     title: "Updated",
-                    value: entry.updatedAt.formatted(.dateTime.year().month().day().hour().minute()),
+                    value: formatDate(entry.updatedAt),
                 )
             }
         }
@@ -113,16 +107,6 @@ struct KowalskiPortfolioTransactionDetailScreen: View {
         }
     }
 
-    private func pairedTransactionView(transactionType: TransactionType) -> some View {
-        KowalskiPortfolioTransactionScreen(
-            initialValues: .pairedCreate(from: entry, transactionType: transactionType),
-            editorConfiguration: .pairedCreate(transactionType: transactionType),
-            onTransactionAdd: { _ in
-                shouldDismissAfterPairedTransaction = true
-            },
-        )
-    }
-
     private var unavailableValue: String {
         NSLocalizedString("Unavailable", comment: "")
     }
@@ -131,6 +115,10 @@ struct KowalskiPortfolioTransactionDetailScreen: View {
         guard portfolio.showsMoneyValues else { return PortfolioMoneyValuePrivacy.maskedPlaceholder }
 
         return "\(entry.purchasePrice.currency.rawValue) \(entry.purchasePrice.value.formatted(.number))"
+    }
+
+    private func formatDate(_ date: Date) -> String {
+        date.formatted(.dateTime.year().month().day().hour().minute())
     }
 
     private func detailRow(title: String, value: String) -> some View {
@@ -170,6 +158,7 @@ struct KowalskiPortfolioTransactionDetailScreen: View {
                 transactionType: .purchase,
                 transactionDate: Date(timeIntervalSince1970: 1_766_246_840),
             ),
+            onPairedTransaction: { _, _ in },
         )
     }
     .preview()
