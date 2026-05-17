@@ -2,11 +2,14 @@ import { eq } from 'drizzle-orm';
 
 import type { HonoContext } from '@/api/contexts';
 import { userPreferences } from '@/db/schema';
+import { CurrencyShape, type Currency } from '@/forex/constants';
 
 type UserPreferencesInsert = typeof userPreferences.$inferInsert;
-type UserPreferencesSelect = typeof userPreferences.$inferSelect;
 
-type UserPreferredCurrencyRecord = Pick<UserPreferencesSelect, 'preferredCurrency'>;
+interface UserPreferredCurrencyRecord {
+  preferredCurrency: Currency | null;
+}
+
 type UpsertUserPreferredCurrencyInput = Pick<UserPreferencesInsert, 'userId' | 'preferredCurrency'>;
 
 export async function findUserPreferredCurrencyByUserId(
@@ -19,8 +22,15 @@ export async function findUserPreferredCurrencyByUserId(
     .from(userPreferences)
     .where(eq(userPreferences.userId, userId))
     .limit(1);
+  const preference = preferences.at(0);
+  if (preference == null) {
+    return undefined;
+  }
 
-  return preferences.at(0);
+  const preferredCurrency =
+    preference.preferredCurrency == null ? null : CurrencyShape.parse(preference.preferredCurrency);
+
+  return { preferredCurrency };
 }
 
 export async function upsertUserPreferredCurrency(c: HonoContext, input: UpsertUserPreferredCurrencyInput) {

@@ -2,6 +2,7 @@ import { and, eq } from 'drizzle-orm';
 
 import type { HonoContext } from '@/api/contexts';
 import { portfolio, portfolioTransaction } from '@/db/schema';
+import { CurrencyShape, type Currency } from '@/forex/constants';
 import { PortfolioEntryUpdateFailed } from '../exceptions';
 import { getSessionWhereSessionIsRequired } from '@/auth';
 
@@ -10,21 +11,22 @@ type PortfolioTransactionSelect = typeof portfolioTransaction.$inferSelect;
 
 type OwnedPortfolioTransaction = Pick<
   PortfolioTransactionSelect,
-  | 'id'
-  | 'transactionType'
-  | 'transactionDate'
-  | 'amount'
-  | 'purchasePrice'
-  | 'purchasePriceCurrency'
-  | 'tickerId'
-  | 'createdAt'
-  | 'updatedAt'
->;
+  'id' | 'transactionType' | 'transactionDate' | 'amount' | 'purchasePrice' | 'tickerId' | 'createdAt' | 'updatedAt'
+> & { purchasePriceCurrency: Currency };
 
 type UpdatePortfolioTransactionInput = Pick<
   PortfolioTransactionInsert,
   'id' | 'transactionType' | 'transactionDate' | 'amount' | 'purchasePrice' | 'purchasePriceCurrency' | 'tickerId'
 >;
+
+function mapOwnedPortfolioTransaction<TTransaction extends { purchasePriceCurrency: string }>(
+  transaction: TTransaction,
+): TTransaction & { purchasePriceCurrency: Currency } {
+  return {
+    ...transaction,
+    purchasePriceCurrency: CurrencyShape.parse(transaction.purchasePriceCurrency),
+  };
+}
 
 export async function findPortfolioTransactionByIdAndUserId(
   c: HonoContext,
@@ -49,7 +51,9 @@ export async function findPortfolioTransactionByIdAndUserId(
     .where(and(eq(portfolioTransaction.id, entryId), eq(portfolio.userId, session.user.id)))
     .limit(1);
 
-  return transactions.at(0);
+  const transaction = transactions.at(0);
+
+  return transaction == null ? undefined : mapOwnedPortfolioTransaction(transaction);
 }
 
 export async function updatePortfolioTransaction(
@@ -84,5 +88,5 @@ export async function updatePortfolioTransaction(
     throw new PortfolioEntryUpdateFailed(c);
   }
 
-  return updatedTransaction;
+  return mapOwnedPortfolioTransaction(updatedTransaction);
 }

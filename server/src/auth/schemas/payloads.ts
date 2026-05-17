@@ -1,15 +1,12 @@
 import * as z from 'zod';
 
-const CURRENCY_CODE_LENGTH = 3;
+import { CurrencyShape } from '@/forex/constants';
 
 export type UpdatePreferencesPayload = z.infer<typeof UpdatePreferencesPayloadSchema>;
 
 export const UpdatePreferencesPayloadSchema = z
   .object({
-    preferred_currency: z.string().length(CURRENCY_CODE_LENGTH).toUpperCase().openapi({
-      description: 'ISO 4217 currency code the user prefers for new transactions',
-      example: 'USD',
-    }),
+    preferred_currency: CurrencyShape,
   })
   .openapi('UpdatePreferencesPayload', {
     title: 'Update Preferences Payload',

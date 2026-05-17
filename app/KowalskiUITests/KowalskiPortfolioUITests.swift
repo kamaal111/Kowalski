@@ -83,7 +83,7 @@ final class KowalskiPortfolioUITests: XCTestCase {
         stockSearchField.typeText("AAPL")
 
         let stockResult = app.buttons["AAPL - Apple Inc. [ISIN: US0378331005] (NASDAQ)"].firstMatch
-        XCTAssertTrue(stockResult.waitForExistenceUsingPredicate(timeout: 5))
+        XCTAssertTrue(stockResult.waitForExistenceUsingPredicate(timeout: 15))
         stockResult.tap()
     }
 

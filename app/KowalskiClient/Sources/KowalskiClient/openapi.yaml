@@ -819,9 +819,9 @@ components:
               description: User account creation timestamp
               example: '2025-10-05T12:08:28.374Z'
             preferred_currency:
-              type:
-                - null
-                - string
+              anyOf:
+                - $ref: '#/components/schemas/Currency'
+                - {}
               description: ISO 4217 currency code the user prefers for new transactions
               example: USD
           required:
@@ -848,6 +848,53 @@ components:
           email_verified: false
           created_at: '2025-10-05T12:08:28.374Z'
           preferred_currency: null
+    Currency:
+      type: string
+      enum:
+        - EUR
+        - USD
+        - JPY
+        - BGN
+        - CYP
+        - CZK
+        - DKK
+        - EEK
+        - GBP
+        - HUF
+        - LTL
+        - LVL
+        - MTL
+        - PLN
+        - ROL
+        - RON
+        - SEK
+        - SIT
+        - SKK
+        - CHF
+        - ISK
+        - ILS
+        - NOK
+        - HRK
+        - RUB
+        - TRL
+        - TRY
+        - AUD
+        - BRL
+        - CAD
+        - CNY
+        - HKD
+        - IDR
+        - INR
+        - KRW
+        - MXN
+        - MYR
+        - NZD
+        - PHP
+        - SGD
+        - THB
+        - ZAR
+      description: Supported ISO 4217 currency code
+      example: USD
     TokenResponse:
       type: object
       properties:
@@ -861,11 +908,7 @@ components:
       type: object
       properties:
         preferred_currency:
-          type: string
-          minLength: 3
-          maxLength: 3
-          description: ISO 4217 currency code the user prefers for new transactions
-          example: USD
+          $ref: '#/components/schemas/Currency'
       required:
         - preferred_currency
       title: Update Preferences Payload
@@ -1069,6 +1112,11 @@ components:
             total_value:
               currency: EUR
               value: 1854.5
+            profit_loss:
+              amount:
+                currency: EUR
+                value: 473.8
+              percentage: 34.32
         net_worth:
           currency: EUR
           value: 1854.5
@@ -1184,10 +1232,7 @@ components:
       type: object
       properties:
         currency:
-          type: string
-          minLength: 3
-          description: Currency code
-          example: USD
+          $ref: '#/components/schemas/Currency'
         value:
           type: number
           minimum: 0
@@ -1215,10 +1260,7 @@ components:
       type: object
       properties:
         currency:
-          type: string
-          minLength: 3
-          description: Currency code
-          example: USD
+          $ref: '#/components/schemas/Currency'
         value:
           type: number
           minimum: 0
@@ -1258,12 +1300,15 @@ components:
                 currency when configured, otherwise quote currency.
         total_value:
           $ref: '#/components/schemas/PortfolioHoldingValue'
+        profit_loss:
+          $ref: '#/components/schemas/PortfolioHoldingProfitLoss'
       required:
         - asset_type
         - asset
         - amount
         - unit_value
         - total_value
+        - profit_loss
       title: Portfolio Holding
       description: Aggregated portfolio holding for a single asset.
       example:
@@ -1283,6 +1328,11 @@ components:
         total_value:
           currency: EUR
           value: 1854.5
+        profit_loss:
+          amount:
+            currency: EUR
+            value: 473.8
+          percentage: 34.32
     PortfolioHoldingAsset:
       type: object
       properties:
@@ -1346,10 +1396,7 @@ components:
       type: object
       properties:
         currency:
-          type: string
-          minLength: 3
-          description: Currency code
-          example: USD
+          $ref: '#/components/schemas/Currency'
         value:
           type: number
           description: Monetary value
@@ -1362,6 +1409,39 @@ components:
       example:
         currency: EUR
         value: 1854.5
+    PortfolioHoldingProfitLoss:
+      type:
+        - null
+        - object
+      properties:
+        amount:
+          allOf:
+            - $ref: '#/components/schemas/PortfolioHoldingValue'
+            - description: Total unrealized profit or loss for the holding.
+              example:
+                currency: EUR
+                value: 469.8
+        percentage:
+          type:
+            - null
+            - number
+          description: >-
+            Profit or loss as a percentage of the holding cost basis, or null
+            when cost basis is zero.
+          example: 33.9
+      required:
+        - amount
+        - percentage
+      title: Portfolio Holding Profit Loss
+      description: >-
+        Unrealized profit or loss calculated from the holding cost basis and
+        current total value, or null when cost basis currency conversion is
+        unavailable.
+      example:
+        amount:
+          currency: EUR
+          value: 469.8
+        percentage: 33.9
     PortfolioOverviewPreflightResponse:
       type: object
       properties:
@@ -1397,7 +1477,7 @@ components:
       description: Readiness state for fetching a fresh portfolio overview.
       example:
         refresh_state: refreshing
-        poll_after_ms: 1500
+        poll_after_ms: 3000
         latest_cached_price_date: '2026-05-16'
     CreateEntryResponse:
       type: object

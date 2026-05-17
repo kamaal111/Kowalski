@@ -5,7 +5,6 @@
 //  Created by OpenAI Codex on 4/3/26.
 //
 
-import ForexKit
 import KowalskiDesignSystem
 import SwiftUI
 

@@ -1,6 +1,7 @@
 import * as z from 'zod';
 
 import { ApiCommonDatetimeShape } from '@/schemas/common';
+import { CurrencyShape } from '@/forex/constants';
 
 export const AuthResponseSchema = z
   .object({
@@ -58,7 +59,7 @@ export const SessionResponseSchema = z
         description: 'User account creation timestamp',
         example: '2025-10-05T12:08:28.374Z',
       }),
-      preferred_currency: z.string().nullable().openapi({
+      preferred_currency: z.union([CurrencyShape, z.null()]).openapi({
         description: 'ISO 4217 currency code the user prefers for new transactions',
         example: 'USD',
       }),

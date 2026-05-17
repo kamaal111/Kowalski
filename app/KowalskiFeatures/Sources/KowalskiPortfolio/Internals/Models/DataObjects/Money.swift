@@ -5,9 +5,9 @@
 //  Created by Kamaal M Farah on 11/9/25.
 //
 
-import ForexKit
+import KowalskiModels
 
 struct Money: Codable, Hashable {
-    let currency: Currencies
+    let currency: KowalskiCurrency
     let value: Double
 }

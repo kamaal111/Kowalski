@@ -2,6 +2,7 @@ import type { QuoteResponseArray } from 'yahoo-finance2/modules/quote';
 import z from 'zod';
 
 import type { HonoContext } from '@/api/contexts';
+import { CurrencyShape, type Currency } from '@/forex/constants';
 import { logError, logWarn } from '@/logging';
 import { withRequestLogger } from '@/logging/http';
 import yahooFinance from '@/utils/yahoo-finance';
@@ -9,13 +10,13 @@ import yahooFinance from '@/utils/yahoo-finance';
 const YahooQuoteSchema = z
   .object({
     symbol: z.string().min(1),
-    currency: z.string().length(3),
+    currency: CurrencyShape,
     regularMarketPrice: z.number().positive(),
   })
   .loose();
 
 interface YahooQuote {
-  currency: string;
+  currency: Currency;
   price: number;
 }
 

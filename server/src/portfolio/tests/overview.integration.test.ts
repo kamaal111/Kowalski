@@ -92,6 +92,10 @@ describe('Portfolio Overview Route', () => {
             amount: 50,
             unit_value: { currency: 'USD', value: 16 },
             total_value: { currency: 'USD', value: 800 },
+            profit_loss: {
+              amount: { currency: 'USD', value: 50 },
+              percentage: 6.666666666666667,
+            },
           },
         ],
         net_worth: { currency: 'USD', value: 800 },
@@ -173,6 +177,10 @@ describe('Portfolio Overview Route', () => {
             amount: 10,
             unit_value: { currency: 'USD', value: 185.45 },
             total_value: { currency: 'USD', value: 1854.5 },
+            profit_loss: {
+              amount: { currency: 'USD', value: 349.5 },
+              percentage: 23.222591362126245,
+            },
           },
           {
             asset_type: 'equity',
@@ -188,6 +196,10 @@ describe('Portfolio Overview Route', () => {
             amount: 4,
             unit_value: { currency: 'USD', value: 420.5 },
             total_value: { currency: 'USD', value: 1682 },
+            profit_loss: {
+              amount: { currency: 'USD', value: 401 },
+              percentage: 31.303669008587043,
+            },
           },
         ],
         net_worth: { currency: 'USD', value: 3536.5 },
@@ -320,6 +332,40 @@ describe('Portfolio Overview Route', () => {
   );
 
   integrationTest(
+    'returns overview with null profit loss when cost basis currency cannot be converted',
+    async ({ app, db, sessionToken, userId }) => {
+      await seedPortfolioEntry(db, {
+        userId,
+        stock: {
+          symbol: 'AAPL',
+          exchange: 'NMS',
+          name: 'Apple Inc.',
+        },
+        amount: 2,
+        purchasePrice: { currency: 'GBP', value: 100 },
+        transactionType: 'buy',
+        transactionDate: '2025-12-20T10:30:00.000Z',
+      });
+      await seedStockInfo(db, {
+        tickerId: createSyntheticTickerId('NMS', 'AAPL'),
+        currency: 'USD',
+        date: new Date().toISOString().slice(0, 10),
+        price: 150,
+      });
+
+      const response = await sendOverviewRequest(app, { sessionToken });
+      const body = await expectSuccessfulOverviewResponse(response);
+
+      expect(body.current_values).toEqual({
+        AAPL: { currency: 'USD', value: 150 },
+      });
+      expect(body.holdings[0]?.total_value).toEqual({ currency: 'USD', value: 300 });
+      expect(body.holdings[0]?.profit_loss).toBeNull();
+      expect(body.net_worth).toEqual({ currency: 'USD', value: 300 });
+    },
+  );
+
+  integrationTest(
     'aggregates multiple transactions for the same symbol into one holding',
     async ({ app, db, sessionToken, userId }) => {
       await seedPortfolioEntry(db, {
@@ -378,6 +424,10 @@ describe('Portfolio Overview Route', () => {
           amount: 13,
           unit_value: { currency: 'USD', value: 185 },
           total_value: { currency: 'USD', value: 2405 },
+          profit_loss: {
+            amount: { currency: 'USD', value: 395 },
+            percentage: 19.65174129353234,
+          },
         },
       ]);
     },
@@ -413,6 +463,10 @@ describe('Portfolio Overview Route', () => {
     expect(body.net_worth).toEqual({ currency: 'USD', value: 1200 });
     expect(body.holdings[0]?.amount).toBe(6);
     expect(body.holdings[0]?.total_value).toEqual({ currency: 'USD', value: 1200 });
+    expect(body.holdings[0]?.profit_loss).toEqual({
+      amount: { currency: 'USD', value: 400 },
+      percentage: 50,
+    });
   });
 
   integrationTest('does not return another user holdings in overview', async ({ app, db, sessionToken, userId }) => {

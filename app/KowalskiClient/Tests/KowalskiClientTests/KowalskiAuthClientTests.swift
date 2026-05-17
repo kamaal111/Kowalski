@@ -98,16 +98,28 @@ struct KowalskiAuthClientTests {
             credentialsGetter: MockCredentialsGetter(credentials: nil),
         )
 
-        let response = try await authClient.updatePreferences(preferredCurrency: "USD").get()
+        let response = try await authClient.updatePreferences(preferredCurrency: .USD).get()
 
-        #expect(response.preferredCurrency == "EUR")
+        #expect(response.preferredCurrency == .EUR)
         #expect(response.name == "Test User")
         #expect(response.email == "test@example.com")
         #expect(response.expiresAt == Date(timeIntervalSince1970: 1_767_139_200))
 
         let request = try #require(transport.capturedRequests.first)
+        let body = try #require(transport.capturedBodies.first)
+        let decodedBody = try JSONDecoder().decode(UpdatePreferencesRequestBody.self, from: #require(body))
+
         #expect(request.path == "/app-api/auth/preferences")
         #expect(request.method == .patch)
+        #expect(decodedBody.preferredCurrency == "USD")
+    }
+}
+
+private struct UpdatePreferencesRequestBody: Decodable {
+    let preferredCurrency: String
+
+    enum CodingKeys: String, CodingKey {
+        case preferredCurrency = "preferred_currency"
     }
 }
 

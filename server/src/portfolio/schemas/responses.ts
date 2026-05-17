@@ -3,6 +3,7 @@ import * as z from 'zod';
 import { ASSET_TYPE_ARRAY, ASSET_TYPES, RESOLVED_TRANSACTION_TYPE_ARRAY } from '@/constants/common';
 import { ApiCommonDatetimeShape } from '@/schemas/common';
 import { CreateEntryPayloadSchema, MoneySchema } from './payloads';
+import { CurrencyShape } from '@/forex/constants';
 
 const AuditFieldsSchema = z.object({
   created_at: ApiCommonDatetimeShape.openapi({
@@ -162,10 +163,7 @@ export const CurrentValueSchema = MoneySchema.openapi('CurrentValue', {
 
 const PortfolioHoldingValueSchema = z
   .object({
-    currency: z.string().min(3).openapi({
-      description: 'Currency code',
-      example: 'USD',
-    }),
+    currency: CurrencyShape,
     value: z.number().openapi({
       description: 'Monetary value',
       example: 1854.5,
@@ -175,6 +173,27 @@ const PortfolioHoldingValueSchema = z
     title: 'Portfolio Holding Value',
     description: 'Monetary value with currency for aggregated portfolio holdings.',
     example: { currency: 'USD', value: 1854.5 },
+  });
+
+const PortfolioHoldingProfitLossSchema = z
+  .object({
+    amount: PortfolioHoldingValueSchema.openapi({
+      description: 'Total unrealized profit or loss for the holding.',
+      example: { currency: 'EUR', value: 469.8 },
+    }),
+    percentage: z.number().nullable().openapi({
+      description: 'Profit or loss as a percentage of the holding cost basis, or null when cost basis is zero.',
+      example: 33.9,
+    }),
+  })
+  .nullable()
+  .openapi('PortfolioHoldingProfitLoss', {
+    title: 'Portfolio Holding Profit Loss',
+    description: 'Unrealized profit or loss for an aggregated portfolio holding.',
+    example: {
+      amount: { currency: 'EUR', value: 469.8 },
+      percentage: 33.9,
+    },
   });
 
 export const PortfolioHoldingAssetSchema = CreateEntryPayloadSchema.shape.stock.openapi('PortfolioHoldingAsset', {
@@ -213,6 +232,10 @@ export const PortfolioHoldingSchema = z
       description: 'Total holding value calculated as amount times unit value.',
       example: { currency: 'EUR', value: 1854.5 },
     }),
+    profit_loss: PortfolioHoldingProfitLossSchema.openapi({
+      description:
+        'Unrealized profit or loss calculated from the holding cost basis and current total value, or null when cost basis currency conversion is unavailable.',
+    }),
   })
   .openapi('PortfolioHolding', {
     title: 'Portfolio Holding',
@@ -231,6 +254,10 @@ export const PortfolioHoldingSchema = z
       amount: 10,
       unit_value: { currency: 'EUR', value: 185.45 },
       total_value: { currency: 'EUR', value: 1854.5 },
+      profit_loss: {
+        amount: { currency: 'EUR', value: 473.8 },
+        percentage: 34.32,
+      },
     },
   });
 
@@ -254,7 +281,7 @@ export const PortfolioOverviewPreflightResponseSchema = z
     description: 'Readiness state for fetching a fresh portfolio overview.',
     example: {
       refresh_state: 'refreshing',
-      poll_after_ms: 1500,
+      poll_after_ms: 3000,
       latest_cached_price_date: '2026-05-16',
     },
   });
@@ -325,6 +352,10 @@ export const PortfolioOverviewResponseSchema = z
           amount: 10,
           unit_value: { currency: 'EUR', value: 185.45 },
           total_value: { currency: 'EUR', value: 1854.5 },
+          profit_loss: {
+            amount: { currency: 'EUR', value: 473.8 },
+            percentage: 34.32,
+          },
         },
       ],
       net_worth: { currency: 'EUR', value: 1854.5 },

@@ -3,13 +3,11 @@ import z from 'zod';
 import { TRANSACTION_TYPE_ARRAY } from '@/constants/common';
 import { ApiCommonDatetimeShape } from '@/schemas/common';
 import { StocksSearchQuoteItemResponseSchema } from '@/stocks';
+import { CurrencyShape } from '@/forex/constants';
 
 export const MoneySchema = z
   .object({
-    currency: z.string().min(3).openapi({
-      description: 'Currency code',
-      example: 'USD',
-    }),
+    currency: CurrencyShape,
     value: z.number().nonnegative().openapi({
       description: 'Monetary value (non-negative)',
       example: 150.5,

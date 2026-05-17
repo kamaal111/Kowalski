@@ -2,6 +2,7 @@ import { desc, eq } from 'drizzle-orm';
 
 import type { HonoContext } from '@/api/contexts';
 import { exchangeRates, portfolio, portfolioTransaction, stockTicker } from '@/db/schema';
+import { CurrencyShape, type Currency } from '@/forex/constants';
 import { getSessionWhereSessionIsRequired } from '@/auth';
 
 type PortfolioTransactionSelect = typeof portfolioTransaction.$inferSelect;
@@ -12,7 +13,7 @@ export interface PersistedPortfolioEntry {
   transactionDate: PortfolioTransactionSelect['transactionDate'];
   amount: PortfolioTransactionSelect['amount'];
   purchasePrice: PortfolioTransactionSelect['purchasePrice'];
-  purchasePriceCurrency: PortfolioTransactionSelect['purchasePriceCurrency'];
+  purchasePriceCurrency: Currency;
   createdAt: PortfolioTransactionSelect['createdAt'];
   updatedAt: PortfolioTransactionSelect['updatedAt'];
   tickerId: string;
@@ -25,15 +26,14 @@ export interface PersistedPortfolioEntry {
 }
 
 export interface PersistedExchangeRateSnapshot {
-  base: string;
+  base: Currency;
   date: string;
-  rates: Record<string, number>;
+  rates: Partial<Record<Currency, number>>;
 }
 
 export async function findPortfolioEntriesByUserId(c: HonoContext): Promise<PersistedPortfolioEntry[]> {
   const session = getSessionWhereSessionIsRequired(c);
-
-  return c
+  const entries = await c
     .get('db')
     .select({
       id: portfolioTransaction.id,
@@ -57,11 +57,16 @@ export async function findPortfolioEntriesByUserId(c: HonoContext): Promise<Pers
     .innerJoin(stockTicker, eq(stockTicker.id, portfolioTransaction.tickerId))
     .where(eq(portfolio.userId, session.user.id))
     .orderBy(desc(portfolioTransaction.transactionDate), desc(portfolioTransaction.updatedAt));
+
+  return entries.map(entry => ({
+    ...entry,
+    purchasePriceCurrency: CurrencyShape.parse(entry.purchasePriceCurrency),
+  }));
 }
 
 export async function findLatestExchangeRateSnapshotByBase(
   c: HonoContext,
-  base: string,
+  base: Currency,
 ): Promise<PersistedExchangeRateSnapshot | undefined> {
   const latestRates = await c
     .get('db')
@@ -70,6 +75,16 @@ export async function findLatestExchangeRateSnapshotByBase(
     .where(eq(exchangeRates.base, base))
     .orderBy(desc(exchangeRates.date))
     .limit(1);
+  const latestRate = latestRates.at(0);
+  if (latestRate == null) {
+    return undefined;
+  }
 
-  return latestRates.at(0);
+  return {
+    date: latestRate.date,
+    base: CurrencyShape.parse(latestRate.base),
+    rates: Object.fromEntries(
+      Object.entries(latestRate.rates).map(([currency, value]) => [CurrencyShape.parse(currency), value]),
+    ),
+  };
 }

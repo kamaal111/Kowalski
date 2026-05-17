@@ -5,6 +5,7 @@ import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 
 import type { HonoContext } from '@/api/contexts';
 import { portfolio, portfolioTransaction, stockTicker } from '@/db/schema';
+import { CurrencyShape, type Currency } from '@/forex/constants';
 import { DefaultPortfolioCreateFailed, PortfolioEntryCreateFailed, StockTickerCreateFailed } from '../exceptions';
 import { getSessionWhereSessionIsRequired } from '@/auth';
 
@@ -37,15 +38,8 @@ type CreatePortfolioTransactionInput = Pick<
 >;
 type CreatedPortfolioTransaction = Pick<
   PortfolioTransactionSelect,
-  | 'id'
-  | 'transactionType'
-  | 'transactionDate'
-  | 'amount'
-  | 'purchasePrice'
-  | 'purchasePriceCurrency'
-  | 'createdAt'
-  | 'updatedAt'
->;
+  'id' | 'transactionType' | 'transactionDate' | 'amount' | 'purchasePrice' | 'createdAt' | 'updatedAt'
+> & { purchasePriceCurrency: Currency };
 
 const stockTickerRecordSelection = {
   id: stockTicker.id,
@@ -55,6 +49,15 @@ const stockTickerRecordSelection = {
   industry: stockTicker.industry,
   exchangeDispatch: stockTicker.exchangeDispatch,
 };
+
+function mapCreatedPortfolioTransaction<TTransaction extends { purchasePriceCurrency: string }>(
+  transaction: TTransaction,
+): TTransaction & { purchasePriceCurrency: Currency } {
+  return {
+    ...transaction,
+    purchasePriceCurrency: CurrencyShape.parse(transaction.purchasePriceCurrency),
+  };
+}
 
 export async function findDefaultPortfolioByUserId(c: HonoContext): Promise<PortfolioRecord | undefined> {
   const session = getSessionWhereSessionIsRequired(c);
@@ -237,7 +240,7 @@ export async function createPortfolioTransaction(
     throw new PortfolioEntryCreateFailed(c);
   }
 
-  return createdTransaction;
+  return mapCreatedPortfolioTransaction(createdTransaction);
 }
 
 export async function createPortfolioTransactions(
@@ -278,5 +281,5 @@ export async function createPortfolioTransactions(
     throw new PortfolioEntryCreateFailed(c);
   }
 
-  return createdTransactions;
+  return createdTransactions.map(mapCreatedPortfolioTransaction);
 }

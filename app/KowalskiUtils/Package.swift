@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "KowalskiUtils",
-    platforms: [.macOS(.v12)],
+    platforms: [.macOS(.v14)],
     products: [
         .library(name: "KowalskiUtils", targets: ["KowalskiUtils"]),
     ],

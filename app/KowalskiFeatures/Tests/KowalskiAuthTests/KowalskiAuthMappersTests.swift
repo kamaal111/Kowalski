@@ -20,7 +20,7 @@ struct KowalskiAuthMappersTests {
             name: "Test User",
             email: "test@example.com",
             expiresAt: Date(timeIntervalSince1970: 1_766_246_840),
-            preferredCurrency: "EUR",
+            preferredCurrency: .EUR,
         )
 
         let session = mapper.mapSessionResponse(response)

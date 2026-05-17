@@ -11,7 +11,7 @@ struct KowalskiAuthMapper {
             name: response.user.name,
             email: response.user.email,
             expiresAt: response.session.expiresAt,
-            preferredCurrency: response.user.preferredCurrency,
+            preferredCurrency: response.user.preferredCurrency.kowalskiCurrency,
         )
     }
 }

@@ -11,6 +11,7 @@ import KamaalLogger
 import KamaalUI
 import KowalskiDesignSystem
 import KowalskiFeaturesConfig
+import KowalskiModels
 import KowalskiUtils
 import SwiftUI
 
@@ -25,7 +26,7 @@ struct KowalskiPortfolioTransactionEditor<SuccessValue: Sendable>: View {
     @State private var selectedStock: Stock?
     @State private var amount: String
     @State private var amountError: KowalskiTextFieldErrorResult?
-    @State private var purchasePriceCurrency: Currencies
+    @State private var purchasePriceCurrency: KowalskiCurrency
     @State private var purchasePriceValue: String
     @State private var transactionType: TransactionType
     @State private var transactionDate: Date
@@ -67,10 +68,10 @@ struct KowalskiPortfolioTransactionEditor<SuccessValue: Sendable>: View {
                 isEnabled: configuration.stockSelectionIsEnabled,
             )
             MoneyField(
-                currency: $purchasePriceCurrency,
+                currency: purchasePriceForexCurrency,
                 value: $purchasePriceValue,
                 title: transactionType.purchasePriceTitle,
-                currencies: Currencies.allCases,
+                currencies: KowalskiFeatureDefaults.serverSupportedForexCurrencies,
                 fixButtonTitle: NSLocalizedString("Fix", comment: ""),
                 fixMessage: "Invalid value",
             )
@@ -113,6 +114,20 @@ struct KowalskiPortfolioTransactionEditor<SuccessValue: Sendable>: View {
 
     private var submissionIsEnabled: Bool {
         formIsValid
+    }
+
+    private var purchasePriceForexCurrency: Binding<Currencies> {
+        Binding(
+            get: {
+                KowalskiFeatureDefaults.forexCurrency(for: purchasePriceCurrency)
+                    ?? KowalskiFeatureDefaults.fallbackForexKitCurrency
+            },
+            set: { currency in
+                guard let kowalskiCurrency = KowalskiFeatureDefaults.kowalskiCurrency(for: currency) else { return }
+
+                purchasePriceCurrency = kowalskiCurrency
+            },
+        )
     }
 
     private var formPayload: TransactionPayload? {
@@ -222,13 +237,13 @@ struct KowalskiPortfolioTransactionEditorConfiguration {
 struct KowalskiPortfolioTransactionFormValues {
     let selectedStock: Stock?
     let amount: String
-    let purchasePriceCurrency: Currencies
+    let purchasePriceCurrency: KowalskiCurrency
     let purchasePriceValue: String
     let transactionType: TransactionType
     let transactionDate: Date
 
     static func empty(
-        preferredCurrency: Currencies = KowalskiFeatureDefaults.fallbackCurrency,
+        preferredCurrency: KowalskiCurrency = KowalskiFeatureDefaults.fallbackCurrency,
     ) -> KowalskiPortfolioTransactionFormValues {
         KowalskiPortfolioTransactionFormValues(
             selectedStock: nil,
@@ -243,7 +258,7 @@ struct KowalskiPortfolioTransactionFormValues {
     init(
         selectedStock: Stock?,
         amount: String,
-        purchasePriceCurrency: Currencies,
+        purchasePriceCurrency: KowalskiCurrency,
         purchasePriceValue: String,
         transactionType: TransactionType,
         transactionDate: Date,

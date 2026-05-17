@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "KowalskiClient",
-    platforms: [.macOS(.v13)],
+    platforms: [.macOS(.v14)],
     products: [
         .library(name: "KowalskiClient", targets: ["KowalskiClient"]),
     ],
@@ -16,6 +16,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-http-types", .upToNextMajor(from: "1.5.1")),
         .package(url: "https://github.com/Kamaalio/KamaalSwift", .upToNextMajor(from: "3.5.0")),
         .package(url: "https://github.com/kamaal111/ForexKit", .upToNextMajor(from: "5.0.0")),
+        .package(path: "../KowalskiModels"),
         .package(path: "../KowalskiUtils"),
     ],
     targets: [
@@ -29,6 +30,7 @@ let package = Package(
                 .product(name: "KamaalLogger", package: "KamaalSwift"),
                 .product(name: "KamaalExtensions", package: "KamaalSwift"),
                 "ForexKit",
+                "KowalskiModels",
                 "KowalskiUtils",
             ],
             swiftSettings: [
@@ -45,6 +47,7 @@ let package = Package(
             dependencies: [
                 "KowalskiClient",
                 "ForexKit",
+                "KowalskiModels",
                 .product(name: "HTTPTypes", package: "swift-http-types"),
                 .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
             ],

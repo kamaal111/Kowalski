@@ -16,6 +16,7 @@ let package = Package(
         .package(url: "https://github.com/kamaal111/ForexKit", .upToNextMajor(from: "5.0.0")),
         .package(path: "../KowalskiClient"),
         .package(path: "../KowalskiDesignSystem"),
+        .package(path: "../KowalskiModels"),
         .package(path: "../KowalskiUtils"),
     ],
     targets: [
@@ -23,6 +24,7 @@ let package = Package(
             name: "KowalskiFeaturesConfig",
             dependencies: [
                 "ForexKit",
+                "KowalskiModels",
             ],
             swiftSettings: [
                 .treatAllWarnings(as: .error),
@@ -36,10 +38,10 @@ let package = Package(
                 .product(name: "KamaalLogger", package: "KamaalSwift"),
                 .product(name: "KamaalUI", package: "KamaalSwift"),
                 .product(name: "KamaalUtils", package: "KamaalSwift"),
-                "ForexKit",
                 "KowalskiClient",
                 "KowalskiDesignSystem",
                 "KowalskiFeaturesConfig",
+                "KowalskiModels",
                 "KowalskiUtils",
             ],
             resources: [
@@ -59,6 +61,7 @@ let package = Package(
                 .product(name: "KamaalExtensions", package: "KamaalSwift"),
                 "ForexKit",
                 "KowalskiAuth",
+                "KowalskiModels",
                 "KowalskiUtils",
                 "KowalskiDesignSystem",
                 "KowalskiFeaturesConfig",
@@ -79,6 +82,7 @@ let package = Package(
                 "KowalskiClient",
                 "ForexKit",
                 "KowalskiFeaturesConfig",
+                "KowalskiModels",
                 "KowalskiUtils",
             ],
             swiftSettings: [
@@ -93,6 +97,7 @@ let package = Package(
                 "KowalskiAuth",
                 "KowalskiClient",
                 "ForexKit",
+                "KowalskiModels",
             ],
             swiftSettings: [
                 .treatAllWarnings(as: .error),

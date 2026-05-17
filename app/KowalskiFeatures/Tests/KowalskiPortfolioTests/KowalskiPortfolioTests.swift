@@ -55,7 +55,7 @@ struct KowalskiPortfolioTests {
         let entry = makePortfolioEntryResponse(amount: 10)
         let overview = makePortfolioOverviewResponse(
             transactions: [entry],
-            currentValues: ["AAPL": KowalskiClientMoney(currency: "USD", value: 185.45)],
+            currentValues: ["AAPL": KowalskiClientMoney(currency: .USD, value: 185.45)],
         )
         let portfolioClient = MockPortfolioClient(overviewResult: .success(overview))
         let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
@@ -77,7 +77,7 @@ struct KowalskiPortfolioTests {
         let entry = makePortfolioEntryResponse(amount: 10)
         let overview = makePortfolioOverviewResponse(
             transactions: [entry],
-            currentValues: ["AAPL": KowalskiClientMoney(currency: "USD", value: 185.45)],
+            currentValues: ["AAPL": KowalskiClientMoney(currency: .USD, value: 185.45)],
         )
         let portfolioClient = MockPortfolioClient(
             overviewResult: .success(overview),
@@ -102,7 +102,7 @@ struct KowalskiPortfolioTests {
         let entry = makePortfolioEntryResponse(amount: 10)
         let overview = makePortfolioOverviewResponse(
             transactions: [entry],
-            currentValues: ["AAPL": KowalskiClientMoney(currency: "USD", value: 185.45)],
+            currentValues: ["AAPL": KowalskiClientMoney(currency: .USD, value: 185.45)],
         )
         let firstClient = MockPortfolioClient(overviewResult: .success(overview))
         let firstPortfolio = KowalskiPortfolio.testing(client: .testing(portfolio: firstClient))
@@ -169,7 +169,7 @@ struct KowalskiPortfolioTests {
         let overview = makePortfolioOverviewResponse(
             transactions: [createdEntry],
             currentValues: [
-                "AAPL": KowalskiClientMoney(currency: "USD", value: 185.45),
+                "AAPL": KowalskiClientMoney(currency: .USD, value: 185.45),
             ],
         )
         let portfolioClient = MockPortfolioClient(
@@ -223,7 +223,7 @@ struct KowalskiPortfolioTests {
         let overview = makePortfolioOverviewResponse(
             transactions: [updatedEntry],
             currentValues: [
-                "AAPL": KowalskiClientMoney(currency: "USD", value: 200),
+                "AAPL": KowalskiClientMoney(currency: .USD, value: 200),
             ],
         )
         let portfolioClient = MockPortfolioClient(
@@ -278,25 +278,25 @@ struct KowalskiPortfolioTests {
                 makePortfolioEntryResponse(
                     stock: makeAppleStockResponse(),
                     amount: 10,
-                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    purchasePrice: KowalskiClientMoney(currency: .USD, value: 100),
                     transactionType: .buy,
                 ),
                 makePortfolioEntryResponse(
                     stock: makeAppleStockResponse(),
                     amount: 2,
-                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 120),
+                    purchasePrice: KowalskiClientMoney(currency: .USD, value: 120),
                     transactionType: .sell,
                 ),
                 makePortfolioEntryResponse(
                     stock: makeTeslaStockResponse(),
                     amount: 1,
-                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 300),
+                    purchasePrice: KowalskiClientMoney(currency: .USD, value: 300),
                     transactionType: .buy,
                 ),
             ],
             currentValues: [
-                "AAPL": KowalskiClientMoney(currency: "USD", value: 50),
-                "TSLA": KowalskiClientMoney(currency: "USD", value: 20),
+                "AAPL": KowalskiClientMoney(currency: .USD, value: 50),
+                "TSLA": KowalskiClientMoney(currency: .USD, value: 20),
             ],
         )
         let portfolioClient = MockPortfolioClient(overviewResult: .success(overview))
@@ -316,12 +316,12 @@ struct KowalskiPortfolioTests {
                 makePortfolioEntryResponse(
                     stock: makeAppleStockResponse(),
                     amount: 10,
-                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    purchasePrice: KowalskiClientMoney(currency: .USD, value: 100),
                     transactionType: .buy,
                 ),
             ],
             currentValues: [
-                "AAPL": KowalskiClientMoney(currency: "USD", value: 150),
+                "AAPL": KowalskiClientMoney(currency: .USD, value: 150),
             ],
         )
         let portfolio = KowalskiPortfolio.testing(
@@ -334,6 +334,9 @@ struct KowalskiPortfolioTests {
         #expect(portfolio.allTimeProfit?.currency == .USD)
         #expect(portfolio.allTimeProfit?.value == 500)
         #expect(portfolio.allTimeProfitPercentage == 50)
+        #expect(portfolio.holdings.first?.profitLoss?.amount.currency == .USD)
+        #expect(portfolio.holdings.first?.profitLoss?.amount.value == 500)
+        #expect(portfolio.holdings.first?.profitLoss?.percentage == 50)
     }
 
     @Test
@@ -343,12 +346,12 @@ struct KowalskiPortfolioTests {
                 makePortfolioEntryResponse(
                     stock: makeAppleStockResponse(),
                     amount: 5,
-                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 200),
+                    purchasePrice: KowalskiClientMoney(currency: .USD, value: 200),
                     transactionType: .buy,
                 ),
             ],
             currentValues: [
-                "AAPL": KowalskiClientMoney(currency: "USD", value: 100),
+                "AAPL": KowalskiClientMoney(currency: .USD, value: 100),
             ],
         )
         let portfolio = KowalskiPortfolio.testing(
@@ -369,12 +372,12 @@ struct KowalskiPortfolioTests {
                 makePortfolioEntryResponse(
                     stock: makeAppleStockResponse(),
                     amount: 4,
-                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    purchasePrice: KowalskiClientMoney(currency: .USD, value: 100),
                     transactionType: .buy,
                 ),
             ],
             currentValues: [
-                "AAPL": KowalskiClientMoney(currency: "USD", value: 100),
+                "AAPL": KowalskiClientMoney(currency: .USD, value: 100),
             ],
         )
         let portfolio = KowalskiPortfolio.testing(
@@ -395,18 +398,18 @@ struct KowalskiPortfolioTests {
                 makePortfolioEntryResponse(
                     stock: makeAppleStockResponse(),
                     amount: 10,
-                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    purchasePrice: KowalskiClientMoney(currency: .USD, value: 100),
                     transactionType: .buy,
                 ),
                 makePortfolioEntryResponse(
                     stock: makeAppleStockResponse(),
                     amount: 2,
-                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    purchasePrice: KowalskiClientMoney(currency: .USD, value: 100),
                     transactionType: .sell,
                 ),
             ],
             currentValues: [
-                "AAPL": KowalskiClientMoney(currency: "USD", value: 150),
+                "AAPL": KowalskiClientMoney(currency: .USD, value: 150),
             ],
         )
         let portfolio = KowalskiPortfolio.testing(
@@ -427,24 +430,24 @@ struct KowalskiPortfolioTests {
                 makePortfolioEntryResponse(
                     stock: makeAppleStockResponse(),
                     amount: 2,
-                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    purchasePrice: KowalskiClientMoney(currency: .USD, value: 100),
                     transactionType: .buy,
                 ),
                 makePortfolioEntryResponse(
                     stock: makeAppleStockResponse(),
                     amount: 2,
-                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    purchasePrice: KowalskiClientMoney(currency: .USD, value: 100),
                     transactionType: .sell,
                 ),
                 makePortfolioEntryResponse(
                     stock: makeAppleStockResponse(),
                     amount: 4,
-                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 50),
+                    purchasePrice: KowalskiClientMoney(currency: .USD, value: 50),
                     transactionType: .buy,
                 ),
             ],
             currentValues: [
-                "AAPL": KowalskiClientMoney(currency: "USD", value: 40),
+                "AAPL": KowalskiClientMoney(currency: .USD, value: 40),
             ],
         )
         let portfolio = KowalskiPortfolio.testing(
@@ -465,18 +468,18 @@ struct KowalskiPortfolioTests {
                 makePortfolioEntryResponse(
                     stock: makeAppleStockResponse(),
                     amount: 1,
-                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    purchasePrice: KowalskiClientMoney(currency: .USD, value: 100),
                     transactionType: .buy,
                 ),
                 makePortfolioEntryResponse(
                     stock: makeAppleStockResponse(),
                     amount: 1,
-                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 110),
+                    purchasePrice: KowalskiClientMoney(currency: .USD, value: 110),
                     transactionType: .sell,
                 ),
             ],
             currentValues: [
-                "AAPL": KowalskiClientMoney(currency: "USD", value: 200),
+                "AAPL": KowalskiClientMoney(currency: .USD, value: 200),
             ],
         )
         let portfolio = KowalskiPortfolio.testing(
@@ -495,13 +498,13 @@ struct KowalskiPortfolioTests {
                 makePortfolioEntryResponse(
                     stock: makeAppleStockResponse(),
                     amount: 1,
-                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
-                    preferredCurrencyPurchasePrice: KowalskiClientMoney(currency: "EUR", value: 90),
+                    purchasePrice: KowalskiClientMoney(currency: .USD, value: 100),
+                    preferredCurrencyPurchasePrice: KowalskiClientMoney(currency: .EUR, value: 90),
                     transactionType: .buy,
                 ),
             ],
             currentValues: [
-                "AAPL": KowalskiClientMoney(currency: "EUR", value: 120),
+                "AAPL": KowalskiClientMoney(currency: .EUR, value: 120),
             ],
         )
         let portfolio = KowalskiPortfolio.testing(
@@ -524,12 +527,12 @@ struct KowalskiPortfolioTests {
                 makePortfolioEntryResponse(
                     stock: makeAppleStockResponse(),
                     amount: 1,
-                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    purchasePrice: KowalskiClientMoney(currency: .USD, value: 100),
                     transactionType: .buy,
                 ),
             ],
             currentValues: [
-                "AAPL": KowalskiClientMoney(currency: "USD", value: 150),
+                "AAPL": KowalskiClientMoney(currency: .USD, value: 150),
             ],
         )
         let unavailableOverview = makePortfolioOverviewResponse(
@@ -537,7 +540,7 @@ struct KowalskiPortfolioTests {
                 makePortfolioEntryResponse(
                     stock: makeAppleStockResponse(),
                     amount: 1,
-                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    purchasePrice: KowalskiClientMoney(currency: .USD, value: 100),
                     transactionType: .buy,
                 ),
             ],
@@ -571,19 +574,19 @@ struct KowalskiPortfolioTests {
                 makePortfolioEntryResponse(
                     stock: makeAppleStockResponse(),
                     amount: 1,
-                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    purchasePrice: KowalskiClientMoney(currency: .USD, value: 100),
                     transactionType: .buy,
                 ),
                 makePortfolioEntryResponse(
                     stock: makeTeslaStockResponse(),
                     amount: 1,
-                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    purchasePrice: KowalskiClientMoney(currency: .USD, value: 100),
                     transactionType: .buy,
                 ),
             ],
             currentValues: [
-                "AAPL": KowalskiClientMoney(currency: "USD", value: 150),
-                "TSLA": KowalskiClientMoney(currency: "EUR", value: 200),
+                "AAPL": KowalskiClientMoney(currency: .USD, value: 150),
+                "TSLA": KowalskiClientMoney(currency: .EUR, value: 200),
             ],
         )
         let portfolio = KowalskiPortfolio.testing(
@@ -604,18 +607,18 @@ struct KowalskiPortfolioTests {
                 makePortfolioEntryResponse(
                     stock: makeAppleStockResponse(),
                     amount: 1,
-                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    purchasePrice: KowalskiClientMoney(currency: .USD, value: 100),
                     transactionType: .buy,
                 ),
                 makePortfolioEntryResponse(
                     stock: makeAppleStockResponse(),
                     amount: 1,
-                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    purchasePrice: KowalskiClientMoney(currency: .USD, value: 100),
                     transactionType: .sell,
                 ),
             ],
             currentValues: [
-                "AAPL": KowalskiClientMoney(currency: "USD", value: 200),
+                "AAPL": KowalskiClientMoney(currency: .USD, value: 200),
             ],
         )
         let portfolio = KowalskiPortfolio.testing(
@@ -636,18 +639,18 @@ struct KowalskiPortfolioTests {
                 makePortfolioEntryResponse(
                     stock: makeAppleStockResponse(),
                     amount: 1,
-                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    purchasePrice: KowalskiClientMoney(currency: .USD, value: 100),
                     transactionType: .buy,
                 ),
                 makePortfolioEntryResponse(
                     stock: makeAppleStockResponse(),
                     amount: 1,
-                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 118.73),
+                    purchasePrice: KowalskiClientMoney(currency: .USD, value: 118.73),
                     transactionType: .sell,
                 ),
             ],
             currentValues: [
-                "AAPL": KowalskiClientMoney(currency: "USD", value: 200),
+                "AAPL": KowalskiClientMoney(currency: .USD, value: 200),
             ],
         )
         let portfolio = KowalskiPortfolio.testing(
@@ -668,12 +671,12 @@ struct KowalskiPortfolioTests {
                 makePortfolioEntryResponse(
                     stock: makeAppleStockResponse(),
                     amount: 2,
-                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    purchasePrice: KowalskiClientMoney(currency: .USD, value: 100),
                     transactionType: .buy,
                 ),
             ],
             currentValues: [
-                "AAPL": KowalskiClientMoney(currency: "USD", value: 100),
+                "AAPL": KowalskiClientMoney(currency: .USD, value: 100),
             ],
         )
         let eurOverview = makePortfolioOverviewResponse(
@@ -681,12 +684,12 @@ struct KowalskiPortfolioTests {
                 makePortfolioEntryResponse(
                     stock: makeAppleStockResponse(),
                     amount: 2,
-                    purchasePrice: KowalskiClientMoney(currency: "USD", value: 100),
+                    purchasePrice: KowalskiClientMoney(currency: .USD, value: 100),
                     transactionType: .buy,
                 ),
             ],
             currentValues: [
-                "AAPL": KowalskiClientMoney(currency: "EUR", value: 80),
+                "AAPL": KowalskiClientMoney(currency: .EUR, value: 80),
             ],
         )
         let portfolioClient = MockPortfolioClient(
@@ -715,7 +718,7 @@ struct KowalskiPortfolioTests {
                     overviewResult: .success(
                         makePortfolioOverviewResponse(
                             transactions: [entry],
-                            currentValues: ["AAPL": KowalskiClientMoney(currency: "USD", value: 185.45)],
+                            currentValues: ["AAPL": KowalskiClientMoney(currency: .USD, value: 185.45)],
                         ),
                     ),
                 ),
@@ -737,7 +740,7 @@ struct KowalskiPortfolioTests {
         let entry = makePortfolioEntryResponse(
             stock: makeTeslaStockResponse(),
             amount: 7,
-            purchasePrice: KowalskiClientMoney(currency: "USD", value: 210.25),
+            purchasePrice: KowalskiClientMoney(currency: .USD, value: 210.25),
             transactionType: .sell,
         )
         let portfolio = KowalskiPortfolio.testing(
@@ -746,7 +749,7 @@ struct KowalskiPortfolioTests {
                     overviewResult: .success(
                         makePortfolioOverviewResponse(
                             transactions: [entry],
-                            currentValues: ["TSLA": KowalskiClientMoney(currency: "USD", value: 420.5)],
+                            currentValues: ["TSLA": KowalskiClientMoney(currency: .USD, value: 420.5)],
                         ),
                     ),
                 ),
@@ -1033,7 +1036,7 @@ struct KowalskiPortfolioTests {
             overviewResult: .success(
                 makePortfolioOverviewResponse(
                     transactions: [refreshedEntry],
-                    currentValues: ["AAPL": KowalskiClientMoney(currency: "USD", value: 200)],
+                    currentValues: ["AAPL": KowalskiClientMoney(currency: .USD, value: 200)],
                 ),
             ),
         )
@@ -1371,44 +1374,7 @@ private func makePortfolioHoldingResponses(
     transactions: [KowalskiPortfolioClientEntryResponse],
     currentValues: [String: KowalskiClientMoney],
 ) -> [KowalskiPortfolioHoldingResponse] {
-    transactions.reduce([String: KowalskiPortfolioHoldingResponse]()) { partialResult, entry in
-        let amountDelta: Double = switch entry.transactionType {
-        case .buy: entry.amount
-        case .sell: -entry.amount
-        case .split: 0
-        }
-        guard amountDelta != 0 else { return partialResult }
-        let unitValue = currentValues[entry.stock.symbol] ?? entry.purchasePrice
-        let existingHolding = partialResult[entry.stock.symbol]
-        let amount = (existingHolding?.amount ?? 0) + amountDelta
-        var updatedResult = partialResult
-        updatedResult[entry.stock.symbol] = KowalskiPortfolioHoldingResponse(
-            assetType: "equity",
-            asset: KowalskiPortfolioAssetResponse(
-                symbol: entry.stock.symbol,
-                exchange: entry.stock.exchange,
-                name: entry.stock.name,
-                isin: entry.stock.isin,
-                sector: entry.stock.sector,
-                industry: entry.stock.industry,
-                exchangeDispatch: entry.stock.exchangeDispatch,
-            ),
-            amount: amount,
-            unitValue: unitValue,
-            totalValue: KowalskiClientMoney(currency: unitValue.currency, value: amount * unitValue.value),
-        )
-
-        return updatedResult
-    }
-    .values
-    .filter { $0.amount != 0 }
-    .sorted {
-        if $0.totalValue.value == $1.totalValue.value {
-            return $0.asset.symbol < $1.asset.symbol
-        }
-
-        return $0.totalValue.value > $1.totalValue.value
-    }
+    KowalskiPortfolioHoldingsBuilder.make(entries: transactions, currentValues: currentValues)
 }
 
 private func makePortfolioNetWorth(
@@ -1416,7 +1382,7 @@ private func makePortfolioNetWorth(
     currentValues: [String: KowalskiClientMoney],
 ) -> KowalskiClientMoney {
     let holdings = makePortfolioHoldingResponses(transactions: transactions, currentValues: currentValues)
-    let netWorthCurrency = holdings.first?.totalValue.currency ?? "USD"
+    let netWorthCurrency = holdings.first?.totalValue.currency ?? .USD
     let netWorthValue = holdings.reduce(0) { $0 + $1.totalValue.value }
 
     return KowalskiClientMoney(currency: netWorthCurrency, value: netWorthValue)
@@ -1436,7 +1402,7 @@ private func makePortfolioEntryResponse(
         updatedAt: Date(timeIntervalSince1970: 1_766_246_840),
         stock: makeAppleStockResponse(),
         amount: amount,
-        purchasePrice: KowalskiClientMoney(currency: "USD", value: 150.5),
+        purchasePrice: KowalskiClientMoney(currency: .USD, value: 150.5),
         transactionType: transactionType,
         transactionDate: Date(timeIntervalSince1970: 1_766_246_840),
     )

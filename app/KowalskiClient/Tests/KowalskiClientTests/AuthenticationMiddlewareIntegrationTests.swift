@@ -8,6 +8,7 @@
 import Foundation
 import HTTPTypes
 @testable import KowalskiClient
+import KowalskiModels
 import OpenAPIRuntime
 import Testing
 
@@ -188,7 +189,7 @@ private struct MockAuthClient: KowalskiAuthClient {
     }
 
     func updatePreferences(
-        preferredCurrency _: String,
+        preferredCurrency _: KowalskiCurrency,
     ) async -> Result<KowalskiAuthSessionResponse, KowalskiAuthPreferencesErrors> {
         .failure(.unknown(statusCode: 500, payload: nil, context: nil))
     }

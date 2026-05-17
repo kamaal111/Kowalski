@@ -13,6 +13,7 @@ import { JWKS_URL } from './better-auth';
 import env, { IS_TEST } from '../api/env';
 import { jwks } from '../db/schema/better-auth';
 import { findUserPreferredCurrencyByUserId } from './repositories/preferences';
+import type { Currency } from '@/forex/constants';
 import { logInfo, logWarn } from '@/logging';
 import { withRequestLogger } from '@/logging/http';
 
@@ -141,7 +142,7 @@ async function getJwksForVerification(c: HonoContext) {
   return createLocalJWKSet({ keys });
 }
 
-async function getPreferredCurrency(c: HonoContext, userId: string): Promise<string | null> {
+async function getPreferredCurrency(c: HonoContext, userId: string): Promise<Currency | null> {
   const preferences = await findUserPreferredCurrencyByUserId(c, userId);
 
   return preferences?.preferredCurrency ?? null;
