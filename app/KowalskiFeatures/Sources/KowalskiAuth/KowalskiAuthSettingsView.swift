@@ -5,9 +5,9 @@
 //  Created by Copilot on 4/4/26.
 //
 
-import ForexKit
 import KowalskiDesignSystem
 import KowalskiFeaturesConfig
+import KowalskiModels
 import KowalskiUtils
 import SwiftUI
 import UniformTypeIdentifiers
@@ -19,8 +19,8 @@ public struct KowalskiAuthSettingsView: View {
     @Environment(KowalskiAuth.self) private var auth
 
     @State private var selectedPane: KowalskiAuthSettingsPane = .general
-    @State private var persistedCurrency: Currencies = KowalskiFeatureDefaults.fallbackCurrency
-    @State private var selectedCurrency: Currencies = KowalskiFeatureDefaults.fallbackCurrency
+    @State private var persistedCurrency: KowalskiCurrency = KowalskiFeatureDefaults.fallbackCurrency
+    @State private var selectedCurrency: KowalskiCurrency = KowalskiFeatureDefaults.fallbackCurrency
     @State private var isSaving = false
     @State private var isShowingImportSheet = false
     @State private var isShowingFileImporter = false
@@ -130,7 +130,7 @@ public struct KowalskiAuthSettingsView: View {
                         NSLocalizedString("Preferred Currency", bundle: .module, comment: ""),
                         selection: currencyBinding,
                     ) {
-                        ForEach(Currencies.allCases, id: \.self) { currency in
+                        ForEach(KowalskiFeatureDefaults.serverSupportedCurrencies, id: \.self) { currency in
                             Text(currency.rawValue)
                                 .tag(currency)
                         }
@@ -230,7 +230,7 @@ public struct KowalskiAuthSettingsView: View {
         .frame(width: 420, height: 220, alignment: .topLeading)
     }
 
-    private var currencyBinding: Binding<Currencies> {
+    private var currencyBinding: Binding<KowalskiCurrency> {
         Binding(
             get: { selectedCurrency },
             set: { currency in
@@ -262,14 +262,14 @@ public struct KowalskiAuthSettingsView: View {
 }
 
 private extension KowalskiAuthSettingsView {
-    func syncPersistedCurrency(_ currency: Currencies) {
+    func syncPersistedCurrency(_ currency: KowalskiCurrency) {
         persistedCurrency = currency
         guard !isSaving else { return }
 
         selectedCurrency = currency
     }
 
-    func finishSavingSuccessfully(with currency: Currencies) {
+    func finishSavingSuccessfully(with currency: KowalskiCurrency) {
         isSaving = false
         persistedCurrency = currency
         selectedCurrency = currency

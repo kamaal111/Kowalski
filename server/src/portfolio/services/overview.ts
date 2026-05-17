@@ -2,8 +2,9 @@ import { arrays } from '@kamaalio/kamaal';
 
 import type { HonoContext } from '@/api/contexts';
 import { getSessionWhereSessionIsRequired } from '@/auth';
-import { ASSET_TYPES } from '@/constants/common';
+import { ASSET_TYPES, RESOLVED_TRANSACTION_TYPES } from '@/constants/common';
 import { parseSyntheticTickerId } from '@/utils/tickers';
+import { assertToFloat } from '@/utils/numbers';
 import { FINAL_FALLBACK_CURRENCY } from '../constants';
 import { InvalidTickerId, StockPriceFetchFailed } from '../exceptions';
 import { findPortfolioEntriesByUserId } from '../repositories/list-entries';
@@ -40,7 +41,7 @@ async function getPortfolioOverview(c: HonoContext): Promise<PortfolioOverviewRe
     addPreferredCurrencyPurchasePrices(c, entries),
     getCurrentStockValues(c, entries),
   ]);
-  const holdings = mapHoldings(c, entries, currentValues);
+  const holdings = mapHoldings(c, entries, transactions, currentValues);
   const netWorthCurrency =
     holdings[0]?.total_value.currency ??
     Object.values(currentValues)[0]?.currency ??
@@ -62,11 +63,12 @@ async function getPortfolioOverview(c: HonoContext): Promise<PortfolioOverviewRe
 function mapHoldings(
   c: HonoContext,
   entries: ResolvedPortfolioEntry[],
+  transactions: EntryWithPreferredCurrencyPurchasePrice<ResolvedPortfolioEntry>[],
   currentValues: Awaited<ReturnType<typeof getCurrentStockValues>>,
 ): PortfolioHolding[] {
   return arrays
     .compactMap(aggregateHoldings(entries), holding => {
-      const mappedHolding = mapHoldingToResponse(c, holding, currentValues);
+      const mappedHolding = mapHoldingToResponse(c, holding, transactions, currentValues);
       if (mappedHolding.amount === 0) {
         return null;
       }
@@ -79,6 +81,7 @@ function mapHoldings(
 function mapHoldingToResponse(
   c: HonoContext,
   holding: AggregatedHolding,
+  transactions: EntryWithPreferredCurrencyPurchasePrice<ResolvedPortfolioEntry>[],
   currentValues: Awaited<ReturnType<typeof getCurrentStockValues>>,
 ): PortfolioHolding {
   const unitValue = currentValues[holding.entry.stockSymbol];
@@ -87,6 +90,11 @@ function mapHoldingToResponse(
   }
 
   const parsedTickerId = parseRequiredSyntheticTickerId(c, holding.entry.tickerId);
+
+  const totalValue = {
+    currency: unitValue.currency,
+    value: holding.amount * unitValue.value,
+  };
 
   return {
     asset_type: ASSET_TYPES.EQUITY,
@@ -101,11 +109,55 @@ function mapHoldingToResponse(
     },
     amount: holding.amount,
     unit_value: unitValue,
-    total_value: {
-      currency: unitValue.currency,
-      value: holding.amount * unitValue.value,
-    },
+    total_value: totalValue,
+    profit_loss: mapHoldingProfitLoss(holding, transactions, totalValue),
   };
+}
+
+function mapHoldingProfitLoss(
+  holding: AggregatedHolding,
+  transactions: EntryWithPreferredCurrencyPurchasePrice<ResolvedPortfolioEntry>[],
+  totalValue: PortfolioHolding['total_value'],
+): PortfolioHolding['profit_loss'] {
+  let costBasis = 0;
+  for (const transaction of transactions) {
+    if (transaction.entry.tickerId !== holding.entry.tickerId) {
+      continue;
+    }
+
+    const costBasisDelta = getCostBasisDelta(transaction, totalValue.currency);
+    if (costBasisDelta == null) {
+      return null;
+    }
+
+    costBasis += costBasisDelta;
+  }
+
+  const profitLossValue = totalValue.value - costBasis;
+  const percentage = costBasis === 0 ? null : (profitLossValue / costBasis) * 100;
+
+  return { amount: { currency: totalValue.currency, value: profitLossValue }, percentage };
+}
+
+function getCostBasisDelta(
+  transaction: EntryWithPreferredCurrencyPurchasePrice<ResolvedPortfolioEntry>,
+  targetCurrency: string,
+) {
+  const costBasisMoney = transaction.preferredCurrencyPurchasePrice ?? {
+    currency: transaction.entry.purchasePriceCurrency,
+    value: assertToFloat(transaction.entry.purchasePrice),
+  };
+  if (costBasisMoney.currency !== targetCurrency) {
+    return null;
+  }
+
+  const value = assertToFloat(transaction.entry.amount) * costBasisMoney.value;
+  switch (transaction.entry.transactionType) {
+    case RESOLVED_TRANSACTION_TYPES.BUY:
+      return value;
+    case RESOLVED_TRANSACTION_TYPES.SELL:
+      return -value;
+  }
 }
 
 function compareHoldings(left: PortfolioHolding, right: PortfolioHolding) {

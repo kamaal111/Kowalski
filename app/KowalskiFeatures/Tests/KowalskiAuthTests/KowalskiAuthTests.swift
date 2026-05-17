@@ -5,10 +5,10 @@
 //  Created by Copilot on 4/5/26.
 //
 
-import ForexKit
 import Foundation
 @testable import KowalskiAuth
 @testable import KowalskiClient
+import KowalskiModels
 import Testing
 
 @MainActor
@@ -17,7 +17,7 @@ struct KowalskiAuthTests {
     @Test
     func `Update preferred currency should refresh the effective currency after a successful save`() async throws {
         let authClient = MockAuthClient(
-            updatePreferencesResult: .success(makeSessionResponse(preferredCurrency: "EUR")),
+            updatePreferencesResult: .success(makeSessionResponse(preferredCurrency: .EUR)),
         )
         let auth = KowalskiAuth.testing(
             client: .testing(auth: authClient),
@@ -28,13 +28,13 @@ struct KowalskiAuthTests {
 
         #expect(auth.effectiveCurrency == .EUR)
         #expect(await authClient.updatePreferencesCallCount == 1)
-        #expect(await authClient.lastPreferredCurrency == "EUR")
+        #expect(await authClient.lastPreferredCurrency == .EUR)
     }
 }
 
 private actor MockAuthClient: KowalskiAuthClient {
     private(set) var updatePreferencesCallCount = 0
-    private(set) var lastPreferredCurrency: String?
+    private(set) var lastPreferredCurrency: KowalskiCurrency?
 
     private let updatePreferencesResult: Result<KowalskiAuthSessionResponse, KowalskiAuthPreferencesErrors>
 
@@ -53,7 +53,7 @@ private actor MockAuthClient: KowalskiAuthClient {
     }
 
     func session() async -> Result<KowalskiAuthSessionResponse, KowalskiAuthSessionErrors> {
-        .success(makeSessionResponse(preferredCurrency: "USD"))
+        .success(makeSessionResponse(preferredCurrency: .USD))
     }
 
     func refreshToken() async -> Result<Void, KowalskiAuthRefreshErrors> {
@@ -61,7 +61,7 @@ private actor MockAuthClient: KowalskiAuthClient {
     }
 
     func updatePreferences(
-        preferredCurrency: String,
+        preferredCurrency: KowalskiCurrency,
     ) async -> Result<KowalskiAuthSessionResponse, KowalskiAuthPreferencesErrors> {
         updatePreferencesCallCount += 1
         lastPreferredCurrency = preferredCurrency
@@ -79,7 +79,7 @@ private func makeSession(preferredCurrency: String?) -> UserSession {
     )
 }
 
-private func makeSessionResponse(preferredCurrency: String?) -> KowalskiAuthSessionResponse {
+private func makeSessionResponse(preferredCurrency: KowalskiCurrency?) -> KowalskiAuthSessionResponse {
     KowalskiAuthSessionResponse(
         name: "Test User",
         email: "test@example.com",

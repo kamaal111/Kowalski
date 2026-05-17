@@ -1,5 +1,6 @@
 import { getSessionWhereSessionIsRequired } from '@/auth';
 import type { HonoContext } from '@/api/contexts';
+import type { Currency } from '@/forex/constants';
 import type { CreateEntryResponse } from '../schemas/responses';
 import { findLatestExchangeRateSnapshotByBase, type PersistedExchangeRateSnapshot } from '../repositories/list-entries';
 import { ExchangeRateResolutionFailed } from '../exceptions';
@@ -7,7 +8,7 @@ import { assertToFloat } from '@/utils/numbers';
 
 interface EntryWithPurchasePrice {
   purchasePrice: string | number;
-  purchasePriceCurrency: string;
+  purchasePriceCurrency: Currency;
 }
 
 export interface EntryWithPreferredCurrencyPurchasePrice<TEntry> {
@@ -42,7 +43,7 @@ function convertPurchasePriceToPreferredCurrency<TEntry extends EntryWithPurchas
 }: {
   c: HonoContext;
   entry: TEntry;
-  preferredCurrency: string | null;
+  preferredCurrency: Currency | null;
   exchangeRateSnapshot: PersistedExchangeRateSnapshot | undefined;
 }): CreateEntryResponse['preferred_currency_purchase_price'] {
   if (preferredCurrency == null) {
@@ -71,7 +72,7 @@ function convertPurchasePriceToPreferredCurrency<TEntry extends EntryWithPurchas
 
 async function resolveExchangeRateSnapshotForPreferredCurrency<TEntry extends EntryWithPurchasePrice>(
   c: HonoContext,
-  preferredCurrency: string | null,
+  preferredCurrency: Currency | null,
   entries: TEntry[],
 ) {
   if (preferredCurrency == null) {

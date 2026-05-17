@@ -22,6 +22,8 @@ DOCKER_IMAGE := "kowalski-server"
 DOCKER_CONTAINER := env_var_or_default("KOWALSKI_DOCKER_CONTAINER", COMPOSE_PROJECT_NAME + "-server")
 DOCKER_DATABASE_URL := env_var_or_default("DOCKER_DATABASE_URL", "postgresql://" + DATABASE_USER + ":" + DATABASE_PASSWORD + "@" + DOCKER_DATABASE_HOST + ":" + DATABASE_PORT + "/" + DATABASE_NAME)
 
+UI_TEST_NAME := "KowalskiUITests"
+
 SCHEME := "Kowalski"
 MACOS_DESTINATION := "platform=macOS"
 
@@ -227,7 +229,7 @@ test: test-server test-app test-skills
 [working-directory("app")]
 test-app:
     xcodebuild test -scheme {{ SCHEME }} -destination {{ MACOS_DESTINATION }} \
-        -skip-testing:KowalskiUITests
+        -skip-testing:{{ UI_TEST_NAME }}
 
 # Run verification checks in CI for app
 [parallel]
@@ -241,6 +243,7 @@ quality-app: lint-app format-check-app
 [working-directory("app")]
 test-app-ci:
     xcodebuild test -scheme {{ SCHEME }} -destination {{ MACOS_DESTINATION }} \
+        -skip-testing:{{ UI_TEST_NAME }} \
         -skipPackagePluginValidation \
         -resultBundlePath TestResults \
         CODE_SIGNING_ALLOWED=NO \
@@ -251,7 +254,7 @@ test-app-ci:
 [working-directory("app")]
 test-ui:
     xcodebuild test -scheme {{ SCHEME }} -destination {{ MACOS_DESTINATION }} \
-        -only-testing:KowalskiUITests
+        -only-testing:{{ UI_TEST_NAME }}
 
 # Run app UI tests and unit tests
 [working-directory("app")]

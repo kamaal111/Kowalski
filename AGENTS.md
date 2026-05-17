@@ -65,6 +65,10 @@ When a task matches one of these areas, load the skill and follow it instead of 
   - If required derived data is missing, fail clearly instead of returning a superficially valid response that breaks downstream assumptions.
 - **NEVER manually edit `.xcstrings` files**
   - Update `NSLocalizedString` calls in Swift and let Xcode manage the localization catalogs.
+- **NEVER duplicate logic when a shared abstraction would keep the code clean**
+  - If you notice logic is being repeated or will be repeated, centralize it instead of copying it.
+  - Prefer the smallest clean abstraction that fits the existing architecture, such as a helper method, utility type, or service-level function.
+  - Do not take the easy way out by pasting nearly identical code into multiple places and treating cleanup as optional follow-up work.
 
 ## Verification Commands
 
@@ -76,6 +80,12 @@ When a task matches one of these areas, load the skill and follow it instead of 
 - Use `swift build` in the affected package directory for Swift package changes.
 - Run `just test-ui` only when a human explicitly requests app UI test coverage.
 - Run `just ready` last for code changes.
+
+## Temporary Test Artifacts
+
+- Do not leave Xcode result bundles in the repository working tree.
+- When running `xcodebuild` with `-resultBundlePath`, write the bundle to an ignored or temporary location, or delete the generated `*.xcresult` bundle before finishing.
+- If a repository recipe generates `app/TestResults*` or another untracked `*.xcresult` path, clean it up before reporting status so git clients only show intentional source changes.
 
 ## Additional Repository Requirements
 

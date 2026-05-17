@@ -8,6 +8,7 @@
 import Foundation
 import KamaalLogger
 import KamaalUtils
+import KowalskiModels
 import OpenAPIRuntime
 
 private let logger = KamaalLogger(from: KowalskiAuthClientImpl.self, failOnError: true)
@@ -24,7 +25,7 @@ public protocol KowalskiAuthClient: Sendable {
     func refreshToken() async -> Result<Void, KowalskiAuthRefreshErrors>
 
     func updatePreferences(
-        preferredCurrency: String,
+        preferredCurrency: KowalskiCurrency,
     ) async -> Result<KowalskiAuthSessionResponse, KowalskiAuthPreferencesErrors>
 }
 
@@ -295,12 +296,12 @@ struct KowalskiAuthClientImpl: KowalskiAuthClient {
     // MARK: Update Preferences
 
     func updatePreferences(
-        preferredCurrency: String,
+        preferredCurrency: KowalskiCurrency,
     ) async -> Result<KowalskiAuthSessionResponse, KowalskiAuthPreferencesErrors> {
         let response: Operations.PatchAppApiAuthPreferences.Output
         do {
             response = try await client.patchAppApiAuthPreferences(
-                body: .json(.init(preferredCurrency: preferredCurrency)),
+                body: .json(.init(preferredCurrency: .init(preferredCurrency))),
             )
         } catch {
             return .failure(.unknown(statusCode: 503, payload: nil, context: error))
@@ -381,7 +382,7 @@ struct KowalskiAuthClientPreview: KowalskiAuthClient {
     }
 
     func updatePreferences(
-        preferredCurrency: String,
+        preferredCurrency: KowalskiCurrency,
     ) async -> Result<KowalskiAuthSessionResponse, KowalskiAuthPreferencesErrors> {
         .success(
             KowalskiAuthSessionResponse(

@@ -587,7 +587,7 @@ private func makePreviewEntries() -> [KowalskiPortfolioClientEntryResponse] {
                     exchangeDispatch: "NASDAQ",
                 ),
                 amount: 7,
-                purchasePrice: KowalskiClientMoney(currency: "USD", value: 210),
+                purchasePrice: KowalskiClientMoney(currency: .USD, value: 210),
                 transactionType: .sell,
                 transactionDate: Date(timeIntervalSince1970: 1_766_160_440),
             ),
@@ -607,7 +607,7 @@ private func makePreviewEntries() -> [KowalskiPortfolioClientEntryResponse] {
                     exchangeDispatch: "NASDAQ",
                 ),
                 amount: 4,
-                purchasePrice: KowalskiClientMoney(currency: "USD", value: 120),
+                purchasePrice: KowalskiClientMoney(currency: .USD, value: 120),
                 transactionType: .split,
                 transactionDate: Date(timeIntervalSince1970: 1_766_074_040),
             ),
@@ -658,7 +658,7 @@ private func makePreviewCreatePayload() -> KowalskiPortfolioCreateEntryPayload {
             exchangeDispatch: "NASDAQ",
         ),
         amount: 10,
-        purchasePrice: KowalskiClientMoney(currency: "USD", value: 150.5),
+        purchasePrice: KowalskiClientMoney(currency: .USD, value: 150.5),
         transactionType: .buy,
         transactionDate: Date(timeIntervalSince1970: 1_766_246_840),
     )
@@ -682,9 +682,9 @@ private func makePreviewCreatePayload(
 
 private func makePreviewCurrentValues() -> [String: KowalskiClientMoney] {
     [
-        "AAPL": KowalskiClientMoney(currency: "USD", value: 185.45),
-        "TSLA": KowalskiClientMoney(currency: "USD", value: 420.5),
-        "NVDA": KowalskiClientMoney(currency: "USD", value: 135),
+        "AAPL": KowalskiClientMoney(currency: .USD, value: 185.45),
+        "TSLA": KowalskiClientMoney(currency: .USD, value: 420.5),
+        "NVDA": KowalskiClientMoney(currency: .USD, value: 135),
     ]
 }
 
@@ -692,47 +692,7 @@ private func makePreviewHoldings(
     entries: [KowalskiPortfolioClientEntryResponse],
     currentValues: [String: KowalskiClientMoney],
 ) -> [KowalskiPortfolioHoldingResponse] {
-    entries.reduce([String: KowalskiPortfolioHoldingResponse]()) { partialResult, entry in
-        let amountDelta: Double = switch entry.transactionType {
-        case .buy: entry.amount
-        case .sell: -entry.amount
-        case .split: 0
-        }
-        guard amountDelta != 0 else { return partialResult }
-        let unitValue = currentValues[entry.stock.symbol] ?? entry.purchasePrice
-        let existingHolding = partialResult[entry.stock.symbol]
-        let amount = (existingHolding?.amount ?? 0) + amountDelta
-        var updatedResult = partialResult
-        updatedResult[entry.stock.symbol] = KowalskiPortfolioHoldingResponse(
-            assetType: "equity",
-            asset: KowalskiPortfolioAssetResponse(
-                symbol: entry.stock.symbol,
-                exchange: entry.stock.exchange,
-                name: entry.stock.name,
-                isin: entry.stock.isin,
-                sector: entry.stock.sector,
-                industry: entry.stock.industry,
-                exchangeDispatch: entry.stock.exchangeDispatch,
-            ),
-            amount: amount,
-            unitValue: unitValue,
-            totalValue: KowalskiClientMoney(
-                currency: unitValue.currency,
-                value: amount * unitValue.value,
-            ),
-        )
-
-        return updatedResult
-    }
-    .values
-    .filter { $0.amount != 0 }
-    .sorted {
-        if $0.totalValue.value == $1.totalValue.value {
-            return $0.asset.symbol < $1.asset.symbol
-        }
-
-        return $0.totalValue.value > $1.totalValue.value
-    }
+    KowalskiPortfolioHoldingsBuilder.make(entries: entries, currentValues: currentValues)
 }
 
 private func makePreviewNetWorth(
@@ -740,7 +700,7 @@ private func makePreviewNetWorth(
     currentValues: [String: KowalskiClientMoney],
 ) -> KowalskiClientMoney {
     let holdings = makePreviewHoldings(entries: entries, currentValues: currentValues)
-    let netWorthCurrency = holdings.first?.totalValue.currency ?? "USD"
+    let netWorthCurrency = holdings.first?.totalValue.currency ?? .USD
     let netWorthValue = holdings.sum(by: \.totalValue.value)
 
     return KowalskiClientMoney(currency: netWorthCurrency, value: netWorthValue)

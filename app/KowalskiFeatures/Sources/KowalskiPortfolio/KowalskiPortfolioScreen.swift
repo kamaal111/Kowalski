@@ -5,10 +5,11 @@
 //  Created by Kamaal M Farah on 11/1/25.
 //
 
-import ForexKit
 import KamaalUI
 import KowalskiAuth
 import KowalskiDesignSystem
+import KowalskiFeaturesConfig
+import KowalskiModels
 import SwiftUI
 
 public struct KowalskiPortfolioScreen: View {
@@ -74,9 +75,14 @@ public struct KowalskiPortfolioScreen: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 if portfolio.showsMoneyValues {
-                    Text(
-                        "Unit \(holding.unitValue.value, format: .currency(code: holding.unitValue.currency.rawValue))",
-                    )
+                    HStack {
+                        Text(
+                            "Unit \(holding.unitValue.value, format: .currency(code: holding.unitValue.currency.rawValue))",
+                        )
+                        Spacer()
+                        Text(formattedHoldingProfitLoss(holding))
+                            .foregroundStyle(holdingProfitLossColor(holding))
+                    }
                     .font(.caption)
                     .foregroundStyle(.tertiary)
                 }
@@ -101,13 +107,13 @@ public struct KowalskiPortfolioScreen: View {
                         .font(.largeTitle.weight(.semibold))
                         .accessibilityLabel(Text(PortfolioMoneyValuePrivacy.maskedPlaceholder))
                         .accessibilityIdentifier(PortfolioMoneyValuePrivacy.accessibilityIdentifier)
-                    Text(displayedNetWorthCurrency.localized)
+                    Text(displayedNetWorthCurrencyLabel)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else if let netWorth = portfolio.netWorth?.value {
                     Text(netWorth, format: .currency(code: displayedNetWorthCurrency.rawValue))
                         .font(.largeTitle.weight(.semibold))
-                    Text(displayedNetWorthCurrency.localized)
+                    Text(displayedNetWorthCurrencyLabel)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {
@@ -178,8 +184,13 @@ public struct KowalskiPortfolioScreen: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
     }
 
-    private var displayedNetWorthCurrency: Currencies {
+    private var displayedNetWorthCurrency: KowalskiCurrency {
         portfolio.netWorth?.currency ?? auth.effectiveCurrency
+    }
+
+    private var displayedNetWorthCurrencyLabel: String {
+        KowalskiFeatureDefaults.forexCurrency(for: displayedNetWorthCurrency)?.localized
+            ?? displayedNetWorthCurrency.rawValue
     }
 
     private var allTimeProfitColor: Color {
@@ -212,7 +223,7 @@ public struct KowalskiPortfolioScreen: View {
         return "(\(formattedSignedPercent(allTimeProfitPercentage)))"
     }
 
-    private func formattedSignedCurrency(value: Double, currency: Currencies) -> String {
+    private func formattedSignedCurrency(value: Double, currency: KowalskiCurrency) -> String {
         let sign = if value > 0 {
             "+"
         } else if value < 0 {
@@ -236,6 +247,31 @@ public struct KowalskiPortfolioScreen: View {
         let formattedValue = (abs(value) / 100).formatted(.percent.precision(.fractionLength(0 ... 1)))
 
         return "\(sign)\(formattedValue)"
+    }
+
+    private func formattedHoldingProfitLoss(_ holding: PortfolioHolding) -> String {
+        guard let profitLoss = holding.profitLoss else {
+            return NSLocalizedString("Unavailable", bundle: .module, comment: "")
+        }
+
+        let amount = formattedSignedCurrency(value: profitLoss.amount.value, currency: profitLoss.amount.currency)
+        guard let percentage = profitLoss.percentage else { return amount }
+
+        return "\(amount) \(formattedSignedPercent(percentage))"
+    }
+
+    private func holdingProfitLossColor(_ holding: PortfolioHolding) -> Color {
+        guard let profitLoss = holding.profitLoss else { return .secondary }
+
+        let value = profitLoss.amount.value
+        if value > 0 {
+            return .green
+        }
+        if value < 0 {
+            return .red
+        }
+
+        return .secondary
     }
 }
 

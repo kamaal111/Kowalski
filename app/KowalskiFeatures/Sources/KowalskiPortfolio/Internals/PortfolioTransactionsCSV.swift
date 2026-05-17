@@ -9,6 +9,7 @@ import Foundation
 import KamaalExtensions
 import KamaalLogger
 import KowalskiClient
+import KowalskiModels
 import KowalskiUtils
 import TabularData
 
@@ -445,6 +446,8 @@ private extension PortfolioTransactionsCSV {
         guard let amountValue = requiredValue(.amount, row: row) else { return nil }
         guard let amount = Double(amountValue) else { return nil }
         guard let purchasePriceCurrency = requiredValue(.purchasePriceCurrency, row: row) else { return nil }
+        guard let kowalskiPurchasePriceCurrency = KowalskiCurrency(rawValue: purchasePriceCurrency)
+        else { return nil }
         guard let purchasePriceValue = requiredValue(.purchasePriceValue, row: row) else { return nil }
         guard let purchasePrice = Double(purchasePriceValue) else { return nil }
         guard let transactionTypeValue = requiredValue(.transactionType, row: row) else { return nil }
@@ -465,7 +468,7 @@ private extension PortfolioTransactionsCSV {
                 exchangeDispatch: optionalValue(.exchangeDispatch, row: row),
             ),
             amount: amount,
-            purchasePrice: KowalskiClientMoney(currency: purchasePriceCurrency, value: purchasePrice),
+            purchasePrice: KowalskiClientMoney(currency: kowalskiPurchasePriceCurrency, value: purchasePrice),
             transactionType: transactionType,
             transactionDate: transactionDate,
         )

@@ -2,6 +2,7 @@ import { arrays } from '@kamaalio/kamaal';
 
 import { getSessionWhereSessionIsRequired } from '@/auth';
 import type { HonoContext } from '@/api/contexts';
+import type { Currency } from '@/forex/constants';
 import { logInfo } from '@/logging';
 import { withRequestLogger } from '@/logging/http';
 import type { PersistedExchangeRateSnapshot } from '../repositories/list-entries';
@@ -175,7 +176,7 @@ function convertStockPriceToPreferredCurrency({
 }: {
   c: HonoContext;
   price: PersistedStockPrice;
-  preferredCurrency: string | null;
+  preferredCurrency: Currency | null;
   exchangeRateSnapshot: PersistedExchangeRateSnapshot | undefined;
 }): CurrentValue {
   if (preferredCurrency == null || price.currency === preferredCurrency) {
@@ -202,7 +203,7 @@ function convertStockPriceToPreferredCurrency({
 
 async function resolveExchangeRateSnapshotForPreferredCurrency(
   c: HonoContext,
-  preferredCurrency: string | null,
+  preferredCurrency: Currency | null,
   resolvedPrices: Iterable<PersistedStockPrice>,
 ) {
   if (preferredCurrency == null) {

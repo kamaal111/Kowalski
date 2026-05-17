@@ -13,7 +13,7 @@ struct KowalskiAuthMappers {
             name: response.name,
             email: response.email,
             expiresAt: response.expiresAt,
-            preferredCurrency: response.preferredCurrency,
+            preferredCurrency: response.preferredCurrency?.rawValue,
         )
     }
 }

@@ -11,4 +11,10 @@ struct PortfolioHolding: Codable, Hashable {
     let amount: Double
     let unitValue: Money
     let totalValue: Money
+    let profitLoss: PortfolioHoldingProfitLoss?
+}
+
+struct PortfolioHoldingProfitLoss: Codable, Hashable {
+    let amount: Money
+    let percentage: Double?
 }

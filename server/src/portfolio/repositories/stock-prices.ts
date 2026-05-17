@@ -2,18 +2,19 @@ import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 
 import type { HonoContext } from '@/api/contexts';
 import { stockInfo } from '@/db/schema';
+import { CurrencyShape, type Currency } from '@/forex/constants';
 import { assertToFloat } from '@/utils/numbers';
 
 export interface PersistedStockPrice {
   tickerId: string;
-  currency: string;
+  currency: Currency;
   date: string;
   close: number;
 }
 
 interface InsertStockPriceInput {
   tickerId: string;
-  currency: string;
+  currency: Currency;
   date: string;
   close: number;
 }
@@ -117,7 +118,12 @@ function mapStockPriceRow(row: {
   date: string;
   close: string | number;
 }): PersistedStockPrice {
-  return { tickerId: row.tickerId, currency: row.currency, date: row.date, close: assertToFloat(row.close) };
+  return {
+    tickerId: row.tickerId,
+    currency: CurrencyShape.parse(row.currency),
+    date: row.date,
+    close: assertToFloat(row.close),
+  };
 }
 
 function createStockPriceId(tickerId: string, date: string) {

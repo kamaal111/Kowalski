@@ -29,7 +29,7 @@ struct KowalskiPortfolioMapper {
             stock: stock,
             amount: payload.amount,
             purchasePrice: Components.Schemas.Money(
-                currency: payload.purchasePrice.currency,
+                currency: .init(payload.purchasePrice.currency),
                 value: payload.purchasePrice.value,
             ),
             transactionType: transactionType,
@@ -51,7 +51,7 @@ struct KowalskiPortfolioMapper {
             stock: stock,
             amount: payload.amount,
             purchasePrice: Components.Schemas.Money(
-                currency: payload.purchasePrice.currency,
+                currency: .init(payload.purchasePrice.currency),
                 value: payload.purchasePrice.value,
             ),
             transactionType: transactionType,
@@ -136,14 +136,14 @@ struct KowalskiPortfolioMapper {
 
     private func mapMoney(_ response: Components.Schemas.Money) -> KowalskiClientMoney {
         KowalskiClientMoney(
-            currency: response.currency,
+            currency: response.currency.kowalskiCurrency,
             value: response.value,
         )
     }
 
     private func mapCurrentValue(_ response: Components.Schemas.CurrentValue) -> KowalskiClientMoney {
         KowalskiClientMoney(
-            currency: response.currency,
+            currency: response.currency.kowalskiCurrency,
             value: response.value,
         )
     }
@@ -157,6 +157,7 @@ struct KowalskiPortfolioMapper {
             amount: response.amount,
             unitValue: mapCurrentValue(response.unitValue.value1),
             totalValue: mapHoldingValue(response.totalValue),
+            profitLoss: mapHoldingProfitLoss(response.profitLoss),
         )
     }
 
@@ -185,8 +186,19 @@ struct KowalskiPortfolioMapper {
 
     private func mapHoldingValue(_ response: Components.Schemas.PortfolioHoldingValue) -> KowalskiClientMoney {
         KowalskiClientMoney(
-            currency: response.currency,
+            currency: response.currency.kowalskiCurrency,
             value: response.value,
+        )
+    }
+
+    private func mapHoldingProfitLoss(
+        _ response: Components.Schemas.PortfolioHoldingProfitLoss?,
+    ) -> KowalskiPortfolioHoldingProfitLossResponse? {
+        guard let response else { return nil }
+
+        return KowalskiPortfolioHoldingProfitLossResponse(
+            amount: mapHoldingValue(response.amount.value1),
+            percentage: response.percentage,
         )
     }
 

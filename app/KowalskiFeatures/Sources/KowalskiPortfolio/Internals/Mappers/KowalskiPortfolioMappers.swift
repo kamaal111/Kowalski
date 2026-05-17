@@ -5,10 +5,9 @@
 //  Created by Kamaal M Farah on 11/17/25.
 //
 
-import ForexKit
 import KamaalExtensions
 import KowalskiClient
-import KowalskiFeaturesConfig
+import KowalskiModels
 
 struct KowalskiPortfolioMappers {
     func mapOverviewResponse(_ response: KowalskiPortfolioOverviewResponse) -> PortfolioOverviewState {
@@ -33,7 +32,7 @@ struct KowalskiPortfolioMappers {
     ) -> KowalskiPortfolioCreateEntryPayload {
         let stock = mapStockToKowalskiClientStockItem(payload.stock)
         let purchasePrice = KowalskiClientMoney(
-            currency: payload.purchasePrice.currency.rawValue,
+            currency: payload.purchasePrice.currency,
             value: payload.purchasePrice.value,
         )
         let transactionType: KowalskiClientPortfolioTransactionTypes =
@@ -88,21 +87,32 @@ struct KowalskiPortfolioMappers {
             amount: holding.amount,
             unitValue: mapMoney(holding.unitValue),
             totalValue: mapMoney(holding.totalValue),
+            profitLoss: mapPortfolioHoldingProfitLoss(holding.profitLoss),
+        )
+    }
+
+    private func mapPortfolioHoldingProfitLoss(
+        _ profitLoss: KowalskiPortfolioHoldingProfitLossResponse?,
+    ) -> PortfolioHoldingProfitLoss? {
+        guard let profitLoss else { return nil }
+
+        return PortfolioHoldingProfitLoss(
+            amount: mapMoney(profitLoss.amount),
+            percentage: profitLoss.percentage,
         )
     }
 
     private func mapMoney(_ money: KowalskiClientMoney) -> Money {
         Money(
-            currency: Currencies(rawValue: money.currency) ?? KowalskiFeatureDefaults.fallbackCurrency,
+            currency: money.currency,
             value: money.value,
         )
     }
 
     private func mapOptionalMoney(_ money: KowalskiClientMoney?) -> Money? {
         guard let money else { return nil }
-        guard let currency = Currencies(rawValue: money.currency) else { return nil }
 
-        return Money(currency: currency, value: money.value)
+        return Money(currency: money.currency, value: money.value)
     }
 
     private func mapCurrentValues(_ currentValues: [String: KowalskiClientMoney]) -> [String: Money] {

@@ -84,6 +84,8 @@ struct KowalskiPortfolioClientTests {
         #expect(decodedBody.entries.count == 2)
         #expect(decodedBody.entries[0].id == "550e8400-e29b-41d4-a716-446655440000")
         #expect(decodedBody.entries[1].id == nil)
+        #expect(decodedBody.entries[0].purchasePrice.currency == .USD)
+        #expect(decodedBody.entries[1].purchasePrice.currency == .USD)
     }
 
     @Test
@@ -179,8 +181,8 @@ struct KowalskiPortfolioClientTests {
         let overview = try await portfolioClient.getOverview().get()
 
         #expect(overview.transactions.count == 1)
-        #expect(overview.transactions.first?.purchasePrice.currency == "USD")
-        #expect(overview.transactions.first?.preferredCurrencyPurchasePrice?.currency == "EUR")
+        #expect(overview.transactions.first?.purchasePrice.currency == .USD)
+        #expect(overview.transactions.first?.preferredCurrencyPurchasePrice?.currency == .EUR)
         #expect(overview.transactions.first?.preferredCurrencyPurchasePrice?.value == 138.07)
     }
 
@@ -198,11 +200,14 @@ struct KowalskiPortfolioClientTests {
 
         #expect(overview.transactions.count == 1)
         #expect(overview.transactions.first?.stock.symbol == "AAPL")
-        #expect(overview.currentValues["AAPL"]?.currency == "EUR")
+        #expect(overview.currentValues["AAPL"]?.currency == .EUR)
         #expect(overview.currentValues["AAPL"]?.value == 185.45)
         #expect(overview.holdings.count == 1)
         #expect(overview.holdings.first?.asset.symbol == "AAPL")
-        #expect(overview.netWorth.currency == "EUR")
+        #expect(overview.holdings.first?.profitLoss?.amount.currency == .EUR)
+        #expect(overview.holdings.first?.profitLoss?.amount.value == 473.8)
+        #expect(overview.holdings.first?.profitLoss?.percentage == 34.32)
+        #expect(overview.netWorth.currency == .EUR)
         #expect(overview.netWorth.value == 1854.5)
 
         let request = try #require(transport.capturedRequests.first)
@@ -269,7 +274,7 @@ private func makeCreateEntryPayload() -> KowalskiPortfolioCreateEntryPayload {
             exchangeDispatch: "NASDAQ",
         ),
         amount: 0,
-        purchasePrice: KowalskiClientMoney(currency: "USD", value: 150.5),
+        purchasePrice: KowalskiClientMoney(currency: .USD, value: 150.5),
         transactionType: .buy,
         transactionDate: Date(timeIntervalSince1970: 1_766_246_840),
     )
@@ -288,7 +293,7 @@ private func makeBulkCreateEntryPayload(id: String?) -> KowalskiPortfolioBulkCre
             exchangeDispatch: "NASDAQ",
         ),
         amount: 10,
-        purchasePrice: KowalskiClientMoney(currency: "USD", value: 150.5),
+        purchasePrice: KowalskiClientMoney(currency: .USD, value: 150.5),
         transactionType: .buy,
         transactionDate: Date(timeIntervalSince1970: 1_766_246_840),
     )
@@ -351,6 +356,13 @@ private func makeOverviewResponseBody() -> Data {
               "total_value": {
                 "currency": "EUR",
                 "value": 1854.5
+              },
+              "profit_loss": {
+                "amount": {
+                  "currency": "EUR",
+                  "value": 473.8
+                },
+                "percentage": 34.32
               }
             }
           ],
@@ -440,6 +452,12 @@ private struct BulkCreateRequestBody: Decodable {
 
 private struct BulkCreateRequestEntry: Decodable {
     let id: String?
+    let purchasePrice: KowalskiClientMoney
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case purchasePrice = "purchase_price"
+    }
 }
 
 private func makeErrorResponseBody(message: String, code: String) -> Data {

@@ -5,12 +5,12 @@
 //  Created by Kamaal M Farah on 10/5/25.
 //
 
-import ForexKit
 import Foundation
 import KamaalLogger
 import KamaalUtils
 import KowalskiClient
 import KowalskiFeaturesConfig
+import KowalskiModels
 import KowalskiUtils
 import Observation
 
@@ -61,11 +61,11 @@ public final class KowalskiAuth {
 
     /// The currency the app should use for new transaction defaults.
     /// Priority: server-stored preference → device locale currency (if supported) → app fallback currency.
-    public var effectiveCurrency: Currencies {
+    public var effectiveCurrency: KowalskiCurrency {
         let defaultCurrency = Self.localeCurrency ?? KowalskiFeatureDefaults.fallbackCurrency
         guard let preferredCurrency = session?.preferredCurrency else { return defaultCurrency }
 
-        return Currencies(rawValue: preferredCurrency) ?? defaultCurrency
+        return KowalskiCurrency(rawValue: preferredCurrency) ?? defaultCurrency
     }
 
     // MARK: - Sign Up
@@ -134,8 +134,10 @@ public final class KowalskiAuth {
 
     // MARK: - Preferences
 
-    public func updatePreferredCurrency(_ currency: Currencies) async -> Result<Void, KowalskiAuthPreferenceErrors> {
-        let result = await client.auth.updatePreferences(preferredCurrency: currency.rawValue)
+    public func updatePreferredCurrency(
+        _ currency: KowalskiCurrency,
+    ) async -> Result<Void, KowalskiAuthPreferenceErrors> {
+        let result = await client.auth.updatePreferences(preferredCurrency: currency)
         switch result {
         case let .failure(failure):
             logger.error(label: "Failed to update preferences", error: failure)
@@ -241,10 +243,10 @@ public final class KowalskiAuth {
         }
     }
 
-    static var localeCurrency: Currencies? {
+    static var localeCurrency: KowalskiCurrency? {
         guard let currencyCode = Locale.current.currency?.identifier else { return nil }
 
-        return Currencies(rawValue: currencyCode)
+        return KowalskiCurrency(rawValue: currencyCode)
     }
 }
 
@@ -294,6 +296,7 @@ private enum KowalskiAuthFeatureSessionError: Error {
 
 public enum KowalskiAuthPreferenceErrors: Error {
     case generalFailure(context: Error)
+    case unsupportedCurrency
 }
 
 private func validationErrorMessage(_ validations: [KowalskiClientValidationIssue], fallback: String) -> String {

@@ -82,7 +82,7 @@ describe('Portfolio Overview Preflight Route', () => {
 
       expect(body).toEqual({
         refresh_state: 'refreshing',
-        poll_after_ms: 1500,
+        poll_after_ms: 3000,
         latest_cached_price_date: '2026-05-16',
       });
       await vi.waitFor(() => expect(yahooFinanceQuoteMock).toHaveBeenCalledOnce());

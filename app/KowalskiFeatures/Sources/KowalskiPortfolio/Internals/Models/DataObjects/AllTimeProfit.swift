@@ -5,13 +5,13 @@
 //  Created by Kamaal M Farah on 4/13/26.
 //
 
-import ForexKit
+import KowalskiModels
 
 struct AllTimeProfit: Hashable {
     let profit: Money
     let percentage: Double?
 
-    var currency: Currencies {
+    var currency: KowalskiCurrency {
         profit.currency
     }
 

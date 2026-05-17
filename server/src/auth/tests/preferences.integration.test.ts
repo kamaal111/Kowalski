@@ -108,19 +108,34 @@ describe('PATCH /auth/preferences integration', () => {
     },
   );
 
-  integrationTest('reflects the updated preference in subsequent session lookups', async ({ app, db }) => {
+  integrationTest('reflects supported uppercase preferences in subsequent session lookups', async ({ app, db }) => {
     const { token } = await createTestUserAndSession(db);
 
-    await app.request(PREFERENCES_PATH, {
+    for (const currency of ['EUR', 'USD', 'JPY', 'GBP']) {
+      const updateResponse = await app.request(PREFERENCES_PATH, {
+        method: 'PATCH',
+        headers: new Headers({ 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }),
+        body: JSON.stringify({ preferred_currency: currency }),
+      });
+      expect(updateResponse.status).toBe(200);
+
+      const sessionResponse = await sendSessionRequest(app, { authToken: token });
+      const session = SessionResponseSchema.parse(await sessionResponse.json());
+
+      expect(session.user.preferred_currency).toBe(currency);
+    }
+  });
+
+  integrationTest('rejects an unsupported uppercase currency code', async ({ app, db }) => {
+    const { token } = await createTestUserAndSession(db);
+
+    const response = await app.request(PREFERENCES_PATH, {
       method: 'PATCH',
       headers: new Headers({ 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }),
-      body: JSON.stringify({ preferred_currency: 'GBP' }),
+      body: JSON.stringify({ preferred_currency: 'AAA' }),
     });
 
-    const sessionResponse = await sendSessionRequest(app, { authToken: token });
-    const session = SessionResponseSchema.parse(await sessionResponse.json());
-
-    expect(session.user.preferred_currency).toBe('GBP');
+    expect(response.status).toBe(400);
   });
 
   integrationTest('rejects a currency code that is not exactly 3 characters', async ({ app, db }) => {
@@ -153,7 +168,7 @@ describe('PATCH /auth/preferences integration', () => {
     expect(response.status).toBe(400);
   });
 
-  integrationTest('normalises a lowercase currency code to uppercase', async ({ app, db }) => {
+  integrationTest('rejects a lowercase currency code', async ({ app, db }) => {
     const { token } = await createTestUserAndSession(db);
 
     const response = await app.request(PREFERENCES_PATH, {
@@ -162,9 +177,7 @@ describe('PATCH /auth/preferences integration', () => {
       body: JSON.stringify({ preferred_currency: 'eur' }),
     });
 
-    expect(response.status).toBe(200);
-    const body = SessionResponseSchema.parse(await response.json());
-    expect(body.user.preferred_currency).toBe('EUR');
+    expect(response.status).toBe(400);
   });
 });
 
