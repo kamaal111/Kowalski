@@ -234,9 +234,7 @@ export const PortfolioHoldingSchema = z
     },
   });
 
-export type PortfolioHoldingsResponse = z.infer<typeof PortfolioHoldingsResponseSchema>;
-
-export const PortfolioHoldingsPreflightResponseSchema = z
+export const PortfolioOverviewPreflightResponseSchema = z
   .object({
     refresh_state: z.enum(['ready', 'refreshing']).openapi({
       description: 'Whether daily prices are ready for a full holdings fetch.',
@@ -251,9 +249,9 @@ export const PortfolioHoldingsPreflightResponseSchema = z
       example: '2026-05-17',
     }),
   })
-  .openapi('PortfolioHoldingsPreflightResponse', {
-    title: 'Portfolio Holdings Preflight Response',
-    description: 'Readiness state for fetching fresh portfolio holdings.',
+  .openapi('PortfolioOverviewPreflightResponse', {
+    title: 'Portfolio Overview Preflight Response',
+    description: 'Readiness state for fetching a fresh portfolio overview.',
     example: {
       refresh_state: 'refreshing',
       poll_after_ms: 1500,
@@ -261,42 +259,7 @@ export const PortfolioHoldingsPreflightResponseSchema = z
     },
   });
 
-export type PortfolioHoldingsPreflightResponse = z.infer<typeof PortfolioHoldingsPreflightResponseSchema>;
-
-export const PortfolioHoldingsResponseSchema = z
-  .object({
-    net_worth: PortfolioHoldingValueSchema.openapi({
-      description: 'Sum of total holding values.',
-      example: { currency: 'EUR', value: 1854.5 },
-    }),
-    holdings: z.array(PortfolioHoldingSchema).openapi({
-      description: 'Aggregated holdings for the signed-in user default portfolio.',
-    }),
-  })
-  .openapi('PortfolioHoldingsResponse', {
-    title: 'Portfolio Holdings Response',
-    description: 'Portfolio net worth and aggregated holdings for the signed-in user default portfolio.',
-    example: {
-      net_worth: { currency: 'EUR', value: 1854.5 },
-      holdings: [
-        {
-          asset_type: ASSET_TYPES.EQUITY,
-          asset: {
-            symbol: 'AAPL',
-            exchange: 'NMS',
-            name: 'Apple Inc.',
-            isin: 'US0378331005',
-            sector: 'Technology',
-            industry: 'Consumer Electronics',
-            exchange_dispatch: 'NASDAQ',
-          },
-          amount: 10,
-          unit_value: { currency: 'EUR', value: 185.45 },
-          total_value: { currency: 'EUR', value: 1854.5 },
-        },
-      ],
-    },
-  });
+export type PortfolioOverviewPreflightResponse = z.infer<typeof PortfolioOverviewPreflightResponseSchema>;
 
 export type PortfolioOverviewResponse = z.infer<typeof PortfolioOverviewResponseSchema>;
 
@@ -310,11 +273,18 @@ export const PortfolioOverviewResponseSchema = z
         MSFT: { currency: 'EUR', value: 420.5 },
       },
     }),
+    holdings: z.array(PortfolioHoldingSchema).openapi({
+      description: 'Aggregated holdings for the signed-in user default portfolio.',
+    }),
+    net_worth: PortfolioHoldingValueSchema.openapi({
+      description: 'Sum of total holding values.',
+      example: { currency: 'EUR', value: 1854.5 },
+    }),
   })
   .openapi('PortfolioOverviewResponse', {
     title: 'Portfolio Overview Response',
     description:
-      'Portfolio transactions with current stock values keyed by symbol for the signed-in user default portfolio.',
+      'Portfolio transactions, current stock values, aggregated holdings, and net worth for the signed-in user default portfolio.',
     example: {
       transactions: [
         {
@@ -340,5 +310,23 @@ export const PortfolioOverviewResponseSchema = z
       current_values: {
         AAPL: { currency: 'EUR', value: 185.45 },
       },
+      holdings: [
+        {
+          asset_type: ASSET_TYPES.EQUITY,
+          asset: {
+            symbol: 'AAPL',
+            exchange: 'NMS',
+            name: 'Apple Inc.',
+            isin: 'US0378331005',
+            sector: 'Technology',
+            industry: 'Consumer Electronics',
+            exchange_dispatch: 'NASDAQ',
+          },
+          amount: 10,
+          unit_value: { currency: 'EUR', value: 185.45 },
+          total_value: { currency: 'EUR', value: 1854.5 },
+        },
+      ],
+      net_worth: { currency: 'EUR', value: 1854.5 },
     },
   });

@@ -87,7 +87,7 @@ public struct KowalskiClient: Sendable {
         let credentialsGetter = CredentialsGetterFactory.preview(withCredentials: withCredentials)
         let auth = KowalskiAuthClientFactory.preview()
         let stocks = KowalskiStocksClientFactory.preview()
-        let portfolio = KowalskiPortfolioClientFactory.listEntriesFailingPreview()
+        let portfolio = KowalskiPortfolioClientFactory.overviewFailingPreview()
 
         return KowalskiClient(auth: auth, stocks: stocks, portfolio: portfolio, credentialsGetter: credentialsGetter)
     }

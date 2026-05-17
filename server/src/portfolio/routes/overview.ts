@@ -13,7 +13,7 @@ const overviewRoute = createRoute({
   tags: [OPENAPI_TAG],
   summary: 'Get portfolio overview',
   description:
-    'Return portfolio transactions together with current stock values keyed by stock symbol for the signed-in user default portfolio.',
+    'Return portfolio transactions, current stock values, aggregated holdings, and net worth for the signed-in user default portfolio.',
   request: {
     headers: AuthenticationHeaders,
   },

@@ -5,23 +5,23 @@ import { AuthenticationHeaders } from '@/schemas/headers';
 import { ErrorResponseSchema } from '@/schemas/errors';
 import { STATUS_CODES } from '@/constants/http';
 import { MIME_TYPES } from '@/constants/request';
-import { ListEntriesResponseSchema } from '../schemas/responses';
+import { PortfolioOverviewPreflightResponseSchema } from '../schemas/responses';
 
-const listEntriesRoute = createRoute({
+const overviewPreflightRoute = createRoute({
   method: 'get',
-  path: '/entries',
+  path: '/overview/preflight',
   tags: [OPENAPI_TAG],
-  summary: 'List portfolio entries',
-  description: 'List portfolio entries for the signed-in user default portfolio.',
+  summary: 'Check portfolio overview price readiness',
+  description: 'Return whether daily prices are ready before fetching the portfolio overview.',
   request: {
     headers: AuthenticationHeaders,
   },
   responses: {
     [STATUS_CODES.OK]: {
-      description: 'Portfolio entries retrieved successfully',
+      description: 'Portfolio overview price readiness retrieved successfully',
       content: {
         [MIME_TYPES.APPLICATION_JSON]: {
-          schema: ListEntriesResponseSchema,
+          schema: PortfolioOverviewPreflightResponseSchema,
         },
       },
     },
@@ -42,7 +42,7 @@ const listEntriesRoute = createRoute({
       },
     },
     [STATUS_CODES.INTERNAL_SERVER_ERROR]: {
-      description: 'Portfolio entries could not be retrieved',
+      description: 'Portfolio overview preflight could not be retrieved',
       content: {
         [MIME_TYPES.APPLICATION_JSON]: {
           schema: ErrorResponseSchema,
@@ -52,4 +52,4 @@ const listEntriesRoute = createRoute({
   },
 });
 
-export default listEntriesRoute;
+export default overviewPreflightRoute;

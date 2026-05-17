@@ -179,13 +179,13 @@ public final class KowalskiPortfolio {
         }
         defer { isLoading = false }
 
-        let preflightResult = await client.portfolio.getHoldingsPreflight()
-        let preflight: KowalskiPortfolioHoldingsPreflightResponse
+        let preflightResult = await client.portfolio.getOverviewPreflight()
+        let preflight: KowalskiPortfolioOverviewPreflightResponse
         switch preflightResult {
         case let .success(success):
             preflight = success
         case let .failure(error):
-            logger.error(label: "Failed to preflight portfolio holdings", error: error)
+            logger.error(label: "Failed to preflight portfolio overview", error: error)
             if hydratedSnapshot {
                 return await refreshFromServer(sessionEmail: sessionEmail, currencyCode: currencyCode)
             }
@@ -319,7 +319,7 @@ public final class KowalskiPortfolio {
         case .createSequence:
             return createEntrySequencePreview()
         case .listFailure:
-            return listEntriesFailingPreview()
+            return overviewFailingPreview()
         }
     }
 
@@ -359,7 +359,7 @@ public final class KowalskiPortfolio {
         return KowalskiPortfolio(client: client)
     }
 
-    public static func listEntriesFailingPreview() -> KowalskiPortfolio {
+    public static func overviewFailingPreview() -> KowalskiPortfolio {
         let client = KowalskiClient.previewWithFailingPortfolioListEntries(withCredentials: true)
 
         return KowalskiPortfolio(client: client)
@@ -386,27 +386,18 @@ private extension KowalskiPortfolio {
     }
 
     func refreshFromServer(sessionEmail: String? = nil, currencyCode: String? = nil) async -> Result<Void, Error> {
-        async let holdingsResult = client.portfolio.getHoldings()
-            .map(mapper.mapHoldingsResponse)
-        async let entriesResult = client.portfolio.listEntries()
-            .map(mapper.mapPortfolioEntries)
-
-        let holdingsState: PortfolioHoldingsState
-        switch await holdingsResult {
+        let overviewResult = await client.portfolio.getOverview()
+            .map(mapper.mapOverviewResponse)
+        let overviewState: PortfolioOverviewState
+        switch overviewResult {
         case let .failure(error): return .failure(error)
-        case let .success(success): holdingsState = success
+        case let .success(success): overviewState = success
         }
 
-        let entries: [PortfolioEntry]
-        switch await entriesResult {
-        case let .failure(error): return .failure(error)
-        case let .success(success): entries = success
-        }
-
-        let profitResult = computeAllTimeProfit(for: entries, netWorth: holdingsState.netWorth)
-        setHoldings(holdingsState.holdings)
-        setEntries(entries)
-        setNetWorth(holdingsState.netWorth)
+        let profitResult = computeAllTimeProfit(for: overviewState.entries, netWorth: overviewState.netWorth)
+        setHoldings(overviewState.holdings)
+        setEntries(overviewState.entries)
+        setNetWorth(overviewState.netWorth)
         setAllTimeProfit(profitResult)
         persistCachedSnapshot(sessionEmail: sessionEmail, currencyCode: currencyCode)
 
@@ -415,7 +406,7 @@ private extension KowalskiPortfolio {
 
     func waitUntilHoldingsReady() async -> Result<Void, Error> {
         for _ in 0 ..< maxPreflightPollAttempts {
-            let preflightResult = await client.portfolio.getHoldingsPreflight()
+            let preflightResult = await client.portfolio.getOverviewPreflight()
             switch preflightResult {
             case let .failure(error):
                 return .failure(error)

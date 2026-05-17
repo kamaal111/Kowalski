@@ -5,16 +5,6 @@
 //  Created by OpenAI Codex on 5/16/26.
 //
 
-public struct KowalskiPortfolioHoldingsResponse: Sendable {
-    public let netWorth: KowalskiClientMoney
-    public let holdings: [KowalskiPortfolioHoldingResponse]
-
-    public init(netWorth: KowalskiClientMoney, holdings: [KowalskiPortfolioHoldingResponse]) {
-        self.netWorth = netWorth
-        self.holdings = holdings
-    }
-}
-
 public struct KowalskiPortfolioHoldingResponse: Sendable {
     public let assetType: String
     public let asset: KowalskiPortfolioAssetResponse
