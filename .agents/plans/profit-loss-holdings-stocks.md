@@ -161,6 +161,7 @@ Update [KowalskiPortfolioMappers.swift](app/KowalskiFeatures/Sources/KowalskiPor
 - keep `PortfolioOverviewState` shape unchanged unless it becomes clearer to include enriched holdings there after a separate helper step
 
 Recommended approach:
+
 - keep server-to-model mapping purely structural
 - do the per-holding P/L derivation in `KowalskiPortfolio`, where overall derived state already lives
 
@@ -199,6 +200,7 @@ Behavior for `computeHoldingsWithProfit`:
 - for each holding, create a new `PortfolioHolding` with identical fields plus computed `allTimeProfit`
 
 Important consistency note:
+
 - This per-holding definition should intentionally match the current overall `computeAllTimeProfit` semantics, even if the broader accounting treatment of realized gains is simplified. Do not “fix” or redefine overall profit logic in this task.
 
 ### 4. Use Enriched Holdings During Refresh And Cache Hydration
@@ -224,6 +226,7 @@ Update cached hydration:
   - recompute overall `allTimeProfit` the same way it works today
 
 Reason:
+
 - this guarantees old caches without the new field still hydrate cleanly
 - it also avoids stale derived values if the caching format predates the feature
 
@@ -234,6 +237,7 @@ Reason:
 Still, the implementation should not depend on cached `allTimeProfit` values being present.
 
 Recommended behavior:
+
 - either let the field serialize naturally and recompute after decode
 - or recompute and overwrite immediately after hydration, which is preferable for determinism
 
@@ -251,23 +255,28 @@ For each holding row:
 - add a new line under the unit-value line for holding profit/loss
 
 Requested display choice:
+
 - show both amount and percentage
 
 Recommended rendered text:
+
 - `"P/L \(signed amount) (\(signed percent))"`
 
 Example:
+
 - `P/L +€120.00 (+8.7%)`
 - `P/L -$54.50 (-3.2%)`
 - `P/L $0.00 (0%)` or equivalent zero formatting using the existing helpers
 
 Recommended styling:
+
 - `.font(.caption)`
 - gain: `.green`
 - loss: `.red`
 - zero or unavailable: `.secondary`
 
 Recommended implementation detail:
+
 - add small private helpers instead of embedding formatting in the view body:
   - `holdingProfitColor(_ holding: PortfolioHolding) -> Color`
   - `formattedHoldingProfit(_ holding: PortfolioHolding) -> String`
@@ -275,11 +284,13 @@ Recommended implementation detail:
   - or one combined helper if that reads better
 
 Formatting rules should match the existing summary card:
+
 - signed currency via the existing `formattedSignedCurrency`
 - signed percent via the existing `formattedSignedPercent`
 - if percentage is `nil`, show only amount rather than empty parentheses
 
 Recommended combined line behavior:
+
 - if `allTimeProfit` exists and `percentage` exists: `P/L <amount> (<percent>)`
 - if `allTimeProfit` exists and `percentage == nil`: `P/L <amount>`
 - if `allTimeProfit == nil`: render nothing for this line
@@ -296,11 +307,13 @@ When `portfolio.showsMoneyValues == false`:
 - use the same accessibility identifier where appropriate
 
 Recommended UX:
+
 - continue showing the row
 - replace the profit line content with a masked placeholder
 - keep the line in place so row height does not jump dramatically when toggling visibility
 
 Important detail:
+
 - the current row only shows the `Unit ...` line when money values are visible
 - for the new P/L line, either:
   - only show it when money is visible and show nothing otherwise, or
@@ -317,6 +330,7 @@ Current rows already use:
 That label currently omits financial detail entirely.
 
 Recommended update:
+
 - keep the row combined
 - expand the accessibility label when money values are visible to include:
   - holding name
@@ -326,14 +340,17 @@ Recommended update:
   - percentage when present
 
 When money values are hidden:
+
 - keep the accessibility output privacy-safe
 - do not expose hidden values through accessibility labels
 - use the same masking approach as visible text
 
 Suggested accessibility label shape when visible:
+
 - `"<name>, <shares> shares, value <total>, profit <amount>, <percent>"`
 
 Suggested label when hidden:
+
 - keep the current non-financial label or add masked wording, but do not leak money values
 
 The exact phrasing can follow SwiftUI interpolation patterns already used in the file.
@@ -362,6 +379,7 @@ Add focused Swift feature tests in [KowalskiPortfolioTests.swift](app/KowalskiFe
 ### New Behavior Tests
 
 1. `Overview fetch should compute positive profit for a holding`
+
 - seed one buy transaction for AAPL
 - current value higher than purchase price
 - assert first holding has non-nil `allTimeProfit`
@@ -369,52 +387,62 @@ Add focused Swift feature tests in [KowalskiPortfolioTests.swift](app/KowalskiFe
 - assert percentage is correct
 
 2. `Overview fetch should compute negative profit for a holding`
+
 - same as above with current value lower than purchase price
 - assert negative amount and negative percentage
 
 3. `Overview fetch should compute per-holding profit independently for multiple symbols`
+
 - at least AAPL and MSFT
 - give each a different purchase price/current value profile
 - assert each holding’s profit is computed from only its own entries
 
 4. `Overview fetch should reduce holding cost basis when sell transactions exist`
+
 - buy then sell same symbol
 - assert remaining holding amount and cost basis produce the expected P/L under the current app logic
 
 5. `Overview fetch should ignore split transactions when computing holding profit`
+
 - include split-resolved transaction patterns already used in current tests
 - assert split does not create direct cost-basis delta
 
 6. `Overview fetch should return nil holding profit when holding nets to zero`
+
 - transactions net to zero shares
 - assert no holding-level profit is exposed for removed holdings
 - align with current behavior that zero-net holdings disappear from holdings list
 
 7. `Cached snapshot hydration should recompute holding profit`
+
 - bootstrap once to persist a snapshot
 - create a fresh `KowalskiPortfolio` instance
 - bootstrap again with same scope so hydration path runs
 - assert hydrated holdings have the same computed `allTimeProfit`
 
 8. `Holding profit should be nil when transaction currency does not match displayed holding currency`
+
 - use preferred currency purchase price or mixed setup to force mismatch
 - assert method safely returns `nil` rather than displaying wrong numbers
 
 ### Existing Test Helpers To Reuse
 
 The file already has helpers for:
+
 - `makePortfolioOverviewResponse`
 - `makePortfolioHoldingResponses`
 - `makePortfolioEntryResponse`
 - mock clients and overview preflight fixtures
 
 Update those helpers only as needed:
+
 - `makePortfolioHoldingResponses` does not need to precompute profit if the app computes it during refresh
 - if `PortfolioHolding` gains an extra field, helper-generated holdings can still initialize it as `nil`
 
 ### Verification Commands
 
 During implementation:
+
 - run the narrowest useful Swift/app test command first if available
 - then run `just test`
 - run `just ready` last before declaring completion

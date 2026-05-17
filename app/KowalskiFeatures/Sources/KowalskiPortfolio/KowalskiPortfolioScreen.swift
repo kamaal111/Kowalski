@@ -15,18 +15,11 @@ public struct KowalskiPortfolioScreen: View {
     @Environment(KowalskiAuth.self) private var auth
     @Environment(KowalskiPortfolio.self) private var portfolio
 
-    @State private var hasLoadedEntries = false
-    @State private var toast: Toast?
-
     public init() {}
 
     public var body: some View {
         KJustStack {
-            if portfolio.isLoading,
-               portfolio.entries.isEmpty,
-               portfolio.holdings.isEmpty,
-               !portfolio.hasHydratedCachedSnapshot
-            {
+            if isShowingInitialLoadingState {
                 loadingState
             } else if portfolio.entries.isEmpty, portfolio.holdings.isEmpty {
                 emptyState
@@ -35,43 +28,14 @@ public struct KowalskiPortfolioScreen: View {
             }
         }
         .ktakeSizeEagerly(alignment: .topLeading)
-        .toolbar {
-            ToolbarItemGroup(placement: .automatic) {
-                Button {
-                    portfolio.toggleMoneyVisibility()
-                } label: {
-                    Image(systemName: portfolio.showsMoneyValues ? "eye" : "eye.slash")
-                }
-                .accessibilityLabel(Text(moneyVisibilityAccessibilityLabel))
-
-                NavigationLink(destination: {
-                    KowalskiPortfolioTransactionScreen(onTransactionAdd: { payload in
-                        toast = .success(
-                            message: String(localized: "\(payload.stock.name) entry added"),
-                        )
-                    })
-                }) {
-                    Image(systemName: "plus")
-                }
-                .accessibilityLabel(Text("Add entry"))
-            }
-        }
-        .frame(minSize: ModuleConfig.screenMinSize)
         .navigationTitle("My Portfolio")
-        .task {
-            guard !hasLoadedEntries else { return }
+    }
 
-            hasLoadedEntries = true
-            await handleBootstrapPortfolio()
-        }
-        .onChange(of: auth.effectiveCurrency) { _, _ in
-            guard hasLoadedEntries else { return }
-
-            Task {
-                await handleBootstrapPortfolio()
-            }
-        }
-        .toastView(toast: $toast)
+    private var isShowingInitialLoadingState: Bool {
+        portfolio.isLoading &&
+            portfolio.entries.isEmpty &&
+            portfolio.holdings.isEmpty &&
+            !portfolio.hasHydratedCachedSnapshot
     }
 
     private var content: some View {
@@ -133,49 +97,44 @@ public struct KowalskiPortfolioScreen: View {
     }
 
     private var netWorthCard: some View {
-        NavigationLink(destination: {
-            KowalskiPortfolioTransactionsScreen()
-        }) {
-            HStack(alignment: .top, spacing: KowalskiSizes.medium.rawValue) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Holdings Net Worth")
-                        .font(.headline)
-                    if portfolio.isLoading, !portfolio.entries.isEmpty, portfolio.netWorth == nil {
-                        ProgressView("Loading net worth")
-                    } else if !portfolio.showsMoneyValues, portfolio.netWorth != nil {
-                        Text(PortfolioMoneyValuePrivacy.maskedPlaceholder)
-                            .font(.largeTitle.weight(.semibold))
-                            .accessibilityLabel(Text(PortfolioMoneyValuePrivacy.maskedPlaceholder))
-                            .accessibilityIdentifier(PortfolioMoneyValuePrivacy.accessibilityIdentifier)
-                        Text(displayedNetWorthCurrency.localized)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    } else if let netWorth = portfolio.netWorth?.value {
-                        Text(netWorth, format: .currency(code: displayedNetWorthCurrency.rawValue))
-                            .font(.largeTitle.weight(.semibold))
-                        Text(displayedNetWorthCurrency.localized)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Text("Net worth unavailable")
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .accessibilityElement(children: .contain)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                if portfolio.allTimeProfit != nil {
-                    profitView
+        HStack(alignment: .top, spacing: KowalskiSizes.medium.rawValue) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Holdings Net Worth")
+                    .font(.headline)
+                if portfolio.isLoading, !portfolio.entries.isEmpty, portfolio.netWorth == nil {
+                    ProgressView("Loading net worth")
+                } else if !portfolio.showsMoneyValues, portfolio.netWorth != nil {
+                    Text(PortfolioMoneyValuePrivacy.maskedPlaceholder)
+                        .font(.largeTitle.weight(.semibold))
+                        .accessibilityLabel(Text(PortfolioMoneyValuePrivacy.maskedPlaceholder))
+                        .accessibilityIdentifier(PortfolioMoneyValuePrivacy.accessibilityIdentifier)
+                    Text(displayedNetWorthCurrency.localized)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else if let netWorth = portfolio.netWorth?.value {
+                    Text(netWorth, format: .currency(code: displayedNetWorthCurrency.rawValue))
+                        .font(.largeTitle.weight(.semibold))
+                    Text(displayedNetWorthCurrency.localized)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Net worth unavailable")
+                        .foregroundStyle(.secondary)
                 }
             }
-            .padding(.horizontal, .medium)
-            .padding(.vertical, .medium)
+            .accessibilityElement(children: .contain)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
-            .contentShape(RoundedRectangle(cornerRadius: 16))
+
+            if portfolio.allTimeProfit != nil {
+                profitView
+            }
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text("View transactions"))
+        .padding(.horizontal, .medium)
+        .padding(.vertical, .medium)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(Text("Holdings Net Worth"))
         .padding(.all, .medium)
     }
 
@@ -260,23 +219,6 @@ public struct KowalskiPortfolioScreen: View {
         return "(\(formattedSignedPercent(allTimeProfitPercentage)))"
     }
 
-    private var moneyVisibilityAccessibilityLabel: String {
-        portfolio.showsMoneyValues
-            ? NSLocalizedString("Hide money values", bundle: .module, comment: "")
-            : NSLocalizedString("Show money values", bundle: .module, comment: "")
-    }
-
-    @MainActor
-    private func handleBootstrapPortfolio() async {
-        let result = await portfolio.bootstrapPortfolio(
-            sessionEmail: auth.session?.email,
-            currencyCode: auth.effectiveCurrency.rawValue,
-        )
-        if case .failure = result {
-            toast = .error(message: NSLocalizedString("Failed to load portfolio entries", comment: ""))
-        }
-    }
-
     private func formattedSignedCurrency(value: Double, currency: Currencies) -> String {
         let sign = if value > 0 {
             "+"
@@ -305,8 +247,6 @@ public struct KowalskiPortfolioScreen: View {
 }
 
 #Preview {
-    NavigationStack {
-        KowalskiPortfolioScreen()
-    }
-    .preview()
+    KowalskiPortfolioScreen()
+        .preview()
 }

@@ -43,7 +43,14 @@ final class KowalskiPortfolioUITests: XCTestCase {
 
     private func assertPortfolioSummaryShown(in app: XCUIApplication, timeout: TimeInterval = 5) {
         XCTAssertTrue(app.buttons["Add entry"].firstMatch.waitForExistenceUsingPredicate(timeout: timeout))
-        XCTAssertTrue(app.buttons["View transactions"].firstMatch.waitForExistenceUsingPredicate(timeout: timeout))
+        XCTAssertTrue(
+            app.staticTexts["Holdings Net Worth"].firstMatch.waitForExistenceUsingPredicate(timeout: timeout) ||
+                app.descendants(matching: .any)
+                .matching(identifier: "portfolio-holding-Apple Inc.")
+                .firstMatch
+                .waitForExistenceUsingPredicate(timeout: timeout),
+        )
+        XCTAssertFalse(app.buttons["View transactions"].firstMatch.exists)
     }
 
     private func openTransactionsList(in app: XCUIApplication) {
@@ -51,13 +58,9 @@ final class KowalskiPortfolioUITests: XCTestCase {
             return
         }
 
-        if !app.buttons["View transactions"].firstMatch.exists {
-            returnToPortfolioSummary(in: app)
-        }
-
-        let netWorthCard = app.buttons["View transactions"].firstMatch
-        XCTAssertTrue(netWorthCard.waitForExistenceUsingPredicate(timeout: 3))
-        netWorthCard.tap()
+        let transactionsSidebarItem = app.buttons["Transactions"].firstMatch
+        XCTAssertTrue(transactionsSidebarItem.waitForExistenceUsingPredicate(timeout: 3))
+        transactionsSidebarItem.tap()
     }
 
     private func openAddTransaction(in app: XCUIApplication) {
@@ -179,10 +182,6 @@ final class KowalskiPortfolioUITests: XCTestCase {
             if isTransactionsListVisible(in: app, timeout: 0) {
                 return
             }
-            if app.buttons["View transactions"].firstMatch.exists {
-                openTransactionsList(in: app)
-                return
-            }
 
             tapBack(in: app)
             if isTransactionsListVisible(in: app, timeout: 3) {
@@ -190,19 +189,31 @@ final class KowalskiPortfolioUITests: XCTestCase {
             }
         }
 
+        openTransactionsList(in: app)
+        if isTransactionsListVisible(in: app, timeout: 3) {
+            return
+        }
+
         XCTFail("Expected to return to the transactions list")
     }
 
     private func returnToPortfolioSummary(in app: XCUIApplication) {
         for _ in 0 ..< 3 {
-            if app.buttons["View transactions"].firstMatch.exists {
+            if app.staticTexts["Holdings Net Worth"].firstMatch.exists {
                 return
             }
 
             tapBack(in: app)
-            if app.buttons["View transactions"].firstMatch.waitForExistenceUsingPredicate(timeout: 3) {
+            if app.staticTexts["Holdings Net Worth"].firstMatch.waitForExistenceUsingPredicate(timeout: 3) {
                 return
             }
+        }
+
+        let portfolioSidebarItem = app.buttons["Portfolio"].firstMatch
+        XCTAssertTrue(portfolioSidebarItem.waitForExistenceUsingPredicate(timeout: 3))
+        portfolioSidebarItem.tap()
+        if app.staticTexts["Holdings Net Worth"].firstMatch.waitForExistenceUsingPredicate(timeout: 3) {
+            return
         }
 
         XCTFail("Expected to return to the portfolio summary")
@@ -214,7 +225,6 @@ final class KowalskiPortfolioUITests: XCTestCase {
         }
 
         return app.navigationBars["Transactions"].firstMatch.waitForExistenceUsingPredicate(timeout: timeout) ||
-            app.staticTexts["Transactions"].firstMatch.waitForExistenceUsingPredicate(timeout: timeout) ||
             app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "portfolio-entry-")).firstMatch
             .waitForExistenceUsingPredicate(timeout: timeout) ||
             app.staticTexts["Apple Inc."].firstMatch.waitForExistenceUsingPredicate(timeout: timeout) ||
@@ -272,10 +282,9 @@ final class KowalskiPortfolioUITests: XCTestCase {
             replaceAmount(in: app, with: "10")
             app.buttons["Add Transaction"].firstMatch.tap()
 
-            assertPortfolioSummaryShown(in: app)
+            assertTransactionsListShown(in: app)
             XCTAssertFalse(app.buttons["Add Transaction"].firstMatch.exists)
             attachScreenshot(named: "successful-create", in: app)
-            assertTransactionsListShown(in: app)
         }
 
         XCTContext.runActivity(named: "Generic create failure keeps the editor open") { _ in

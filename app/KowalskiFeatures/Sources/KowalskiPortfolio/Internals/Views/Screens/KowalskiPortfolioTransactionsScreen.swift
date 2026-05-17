@@ -13,9 +13,7 @@ struct KowalskiPortfolioTransactionsScreen: View {
 
     var body: some View {
         List(portfolio.entries) { entry in
-            NavigationLink(destination: {
-                KowalskiPortfolioTransactionDetailScreen(entry: entry)
-            }) {
+            NavigationLink(value: KowalskiPortfolioTransactionNavigationItem.detail(entryID: entry.id)) {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(alignment: .firstTextBaseline) {
                         Text(entry.stock.symbol)
