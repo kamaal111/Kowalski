@@ -1,25 +1,20 @@
 import { arrays } from '@kamaalio/kamaal';
 
-import { getSessionWhereSessionIsRequired } from '@/auth';
-import { ASSET_TYPES, RESOLVED_TRANSACTION_TYPES } from '@/constants/common';
 import type { HonoContext } from '@/api/contexts';
-import { assertToFloat } from '@/utils/numbers';
+import { getSessionWhereSessionIsRequired } from '@/auth';
+import { ASSET_TYPES } from '@/constants/common';
 import { parseSyntheticTickerId } from '@/utils/tickers';
 import { FINAL_FALLBACK_CURRENCY } from '../constants';
 import { InvalidTickerId, StockPriceFetchFailed } from '../exceptions';
 import { findPortfolioEntriesByUserId } from '../repositories/list-entries';
 import type { PortfolioHolding } from '../schemas/responses';
+import { aggregateHoldings, type AggregatedHolding } from './aggregate-holdings';
 import { getCurrentStockValues } from './current-stock-values';
-import { resolveSplits, type ResolvedPortfolioEntry } from './resolve-splits';
+import { resolveSplits } from './resolve-splits';
 
 interface PortfolioHoldingsResult {
   netWorth: { currency: string; value: number };
   holdings: PortfolioHolding[];
-}
-
-interface HoldingAccumulator {
-  entry: ResolvedPortfolioEntry;
-  amount: number;
 }
 
 async function getPortfolioHoldings(c: HonoContext): Promise<PortfolioHoldingsResult> {
@@ -54,36 +49,9 @@ async function getPortfolioHoldings(c: HonoContext): Promise<PortfolioHoldingsRe
   return { netWorth: { currency: netWorthCurrency, value: netWorthValue }, holdings };
 }
 
-function aggregateHoldings(entries: ResolvedPortfolioEntry[]): HoldingAccumulator[] {
-  return entries
-    .reduce((holdingsByTickerId, entry) => {
-      const existingHolding = holdingsByTickerId.get(entry.tickerId);
-      const amountDelta = getHoldingAmountDelta(entry);
-      if (existingHolding == null) {
-        return holdingsByTickerId.set(entry.tickerId, { entry, amount: amountDelta });
-      }
-
-      existingHolding.amount += amountDelta;
-
-      return holdingsByTickerId.set(entry.tickerId, existingHolding);
-    }, new Map<string, HoldingAccumulator>())
-    .values()
-    .toArray();
-}
-
-function getHoldingAmountDelta(entry: ResolvedPortfolioEntry) {
-  const amount = assertToFloat(entry.amount);
-  switch (entry.transactionType) {
-    case RESOLVED_TRANSACTION_TYPES.BUY:
-      return amount;
-    case RESOLVED_TRANSACTION_TYPES.SELL:
-      return -amount;
-  }
-}
-
 function mapHoldingToResponse(
   c: HonoContext,
-  holding: HoldingAccumulator,
+  holding: AggregatedHolding,
   currentValues: Awaited<ReturnType<typeof getCurrentStockValues>>,
 ): PortfolioHolding {
   const unitValue = currentValues[holding.entry.stockSymbol];

@@ -7,7 +7,7 @@
 
 import ForexKit
 
-struct Money: Hashable {
+struct Money: Codable, Hashable {
     let currency: Currencies
     let value: Double
 }

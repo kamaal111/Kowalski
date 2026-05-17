@@ -1,3 +1,5 @@
+import { arrays } from '@kamaalio/kamaal';
+
 import { getSessionWhereSessionIsRequired } from '@/auth';
 import type { HonoContext } from '@/api/contexts';
 import { logInfo } from '@/logging';
@@ -19,6 +21,11 @@ interface EntryWithTickerIdAndStockSymbol {
   stockSymbol: string;
 }
 
+interface DailyPriceResolution {
+  resolvedTodayPrices: Map<string, PersistedStockPrice>;
+  missingEntries: EntryWithTickerIdAndStockSymbol[];
+}
+
 export async function getCurrentStockValues(
   c: HonoContext,
   entries: EntryWithTickerIdAndStockSymbol[],
@@ -29,37 +36,12 @@ export async function getCurrentStockValues(
 
   const uniqueEntries = getUniquePortfolioEntries(entries);
   const today = new Date().toISOString().slice(0, 10);
-  const todaysStockPrices = await findTodayStockPricesByTickerIds(
+  const { resolvedTodayPrices: resolvedPrices, missingEntries } = await findResolvedAndMissingDailyPrices(
     c,
-    uniqueEntries.map(entry => entry.tickerId),
+    uniqueEntries,
     today,
   );
-  const resolvedPrices = todaysStockPrices.reduce(
-    (acc, storedPrice) => acc.set(storedPrice.tickerId, storedPrice),
-    new Map<string, PersistedStockPrice>(),
-  );
-  const entriesMissingTodayPrice = uniqueEntries.filter(entry => !resolvedPrices.has(entry.tickerId));
-  const yahooQuotesBySymbol = await fetchYahooQuotes(
-    c,
-    entriesMissingTodayPrice.map(entry => entry.stockSymbol),
-  );
-  const freshPrices = entriesMissingTodayPrice.flatMap(entry => {
-    const yahooQuote = yahooQuotesBySymbol.get(entry.stockSymbol);
-    if (yahooQuote == null) {
-      return [];
-    }
-
-    return [
-      {
-        tickerId: entry.tickerId,
-        currency: yahooQuote.currency,
-        date: today,
-        close: yahooQuote.price,
-      },
-    ];
-  });
-
-  await insertStockPrices(c, freshPrices);
+  const freshPrices = await refreshMissingDailyPrices(c, missingEntries, today);
 
   for (const freshPrice of freshPrices) {
     resolvedPrices.set(freshPrice.tickerId, freshPrice);
@@ -114,6 +96,63 @@ export async function getCurrentStockValues(
   });
 
   return currentValues;
+}
+
+export async function findResolvedAndMissingDailyPrices(
+  c: HonoContext,
+  entries: EntryWithTickerIdAndStockSymbol[],
+  today: string,
+): Promise<DailyPriceResolution> {
+  const uniqueEntries = getUniquePortfolioEntries(entries);
+  const todaysStockPrices = await findTodayStockPricesByTickerIds(
+    c,
+    uniqueEntries.map(entry => entry.tickerId),
+    today,
+  );
+  const resolvedTodayPrices = todaysStockPrices.reduce(
+    (acc, storedPrice) => acc.set(storedPrice.tickerId, storedPrice),
+    new Map<string, PersistedStockPrice>(),
+  );
+
+  return {
+    resolvedTodayPrices,
+    missingEntries: uniqueEntries.filter(entry => !resolvedTodayPrices.has(entry.tickerId)),
+  };
+}
+
+export async function refreshMissingDailyPrices(
+  c: HonoContext,
+  missingEntries: EntryWithTickerIdAndStockSymbol[],
+  today: string,
+): Promise<PersistedStockPrice[]> {
+  const yahooQuotesBySymbol = await fetchYahooQuotes(
+    c,
+    missingEntries.map(entry => entry.stockSymbol),
+  );
+  const freshPrices = arrays.compactMap(missingEntries, entry => {
+    const yahooQuote = yahooQuotesBySymbol.get(entry.stockSymbol);
+    if (yahooQuote == null) {
+      return null;
+    }
+
+    return {
+      tickerId: entry.tickerId,
+      currency: yahooQuote.currency,
+      date: today,
+      close: yahooQuote.price,
+    };
+  });
+
+  await insertStockPrices(c, freshPrices);
+
+  return freshPrices;
+}
+
+export async function refreshPortfolioDailyPrices(c: HonoContext, entries: EntryWithTickerIdAndStockSymbol[]) {
+  const today = new Date().toISOString().slice(0, 10);
+  const { missingEntries } = await findResolvedAndMissingDailyPrices(c, entries, today);
+
+  await refreshMissingDailyPrices(c, missingEntries, today);
 }
 
 function getUniquePortfolioEntries<TEntry extends EntryWithTickerIdAndStockSymbol>(entries: TEntry[]) {

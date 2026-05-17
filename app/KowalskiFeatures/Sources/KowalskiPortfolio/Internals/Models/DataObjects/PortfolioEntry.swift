@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct PortfolioEntry: Identifiable {
+struct PortfolioEntry: Codable, Identifiable {
     let id: String
     let createdAt: Date
     let updatedAt: Date

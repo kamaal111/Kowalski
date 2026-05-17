@@ -22,7 +22,11 @@ public struct KowalskiPortfolioScreen: View {
 
     public var body: some View {
         KJustStack {
-            if portfolio.isLoading, portfolio.entries.isEmpty, portfolio.holdings.isEmpty {
+            if portfolio.isLoading,
+               portfolio.entries.isEmpty,
+               portfolio.holdings.isEmpty,
+               !portfolio.hasHydratedCachedSnapshot
+            {
                 loadingState
             } else if portfolio.entries.isEmpty, portfolio.holdings.isEmpty {
                 emptyState
@@ -58,13 +62,13 @@ public struct KowalskiPortfolioScreen: View {
             guard !hasLoadedEntries else { return }
 
             hasLoadedEntries = true
-            await handleFetchOverview()
+            await handleBootstrapPortfolio()
         }
         .onChange(of: auth.effectiveCurrency) { _, _ in
             guard hasLoadedEntries else { return }
 
             Task {
-                await handleFetchOverview()
+                await handleBootstrapPortfolio()
             }
         }
         .toastView(toast: $toast)
@@ -72,9 +76,22 @@ public struct KowalskiPortfolioScreen: View {
 
     private var content: some View {
         VStack(spacing: KowalskiSizes.medium.rawValue) {
+            if portfolio.isRefreshingLatestPrices {
+                latestPricesRefreshHint
+            }
             netWorthCard
             holdingsList
         }
+    }
+
+    private var latestPricesRefreshHint: some View {
+        Text("Updating latest prices…")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, .medium)
+            .padding(.top, .small)
+            .accessibilityLabel(Text("Updating latest prices"))
     }
 
     private var holdingsList: some View {
@@ -250,8 +267,11 @@ public struct KowalskiPortfolioScreen: View {
     }
 
     @MainActor
-    private func handleFetchOverview() async {
-        let result = await portfolio.fetchOverview()
+    private func handleBootstrapPortfolio() async {
+        let result = await portfolio.bootstrapPortfolio(
+            sessionEmail: auth.session?.email,
+            currencyCode: auth.effectiveCurrency.rawValue,
+        )
         if case .failure = result {
             toast = .error(message: NSLocalizedString("Failed to load portfolio entries", comment: ""))
         }

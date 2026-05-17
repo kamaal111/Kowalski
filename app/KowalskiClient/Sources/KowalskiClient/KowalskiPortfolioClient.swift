@@ -15,6 +15,10 @@ public protocol KowalskiPortfolioClient: Sendable {
     func listEntries() async -> Result<[KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientListEntriesErrors>
     func getOverview() async -> Result<KowalskiPortfolioOverviewResponse, KowalskiPortfolioClientOverviewErrors>
     func getHoldings() async -> Result<KowalskiPortfolioHoldingsResponse, KowalskiPortfolioClientHoldingsErrors>
+    func getHoldingsPreflight() async -> Result<
+        KowalskiPortfolioHoldingsPreflightResponse,
+        KowalskiPortfolioClientHoldingsPreflightErrors,
+    >
     func bulkCreateEntries(
         entries: [KowalskiPortfolioBulkCreateEntryItemPayload],
     ) async -> Result<[KowalskiPortfolioClientEntryResponse], KowalskiPortfolioClientBulkCreateEntriesErrors>
@@ -210,6 +214,31 @@ public enum KowalskiPortfolioClientHoldingsErrors: Error {
     case unauthorized
 }
 
+public enum KowalskiPortfolioClientHoldingsPreflightErrors: Error, Equatable {
+    public static func == (
+        lhs: KowalskiPortfolioClientHoldingsPreflightErrors,
+        rhs: KowalskiPortfolioClientHoldingsPreflightErrors,
+    ) -> Bool {
+        switch lhs {
+        case let .unknown(lhsStatusCode, lhsPayload, lhsContext):
+            if case let .unknown(rhsStatusCode, rhsPayload, rhsContext) = rhs {
+                return lhsStatusCode == rhsStatusCode &&
+                    lhsPayload == rhsPayload &&
+                    lhsContext?.localizedDescription == rhsContext?.localizedDescription
+            }
+        case .unauthorized:
+            if case .unauthorized = rhs {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    case unknown(statusCode: Int, payload: OpenAPIRuntime.UndocumentedPayload?, context: Error?)
+    case unauthorized
+}
+
 // MARK: Implementation
 
 struct KowalskiPortfolioClientImpl: KowalskiPortfolioClient {
@@ -308,6 +337,38 @@ struct KowalskiPortfolioClientImpl: KowalskiPortfolioClient {
         }
 
         return .success(mapper.mapHoldingsApiResponseToClient(jsonResponse))
+    }
+
+    func getHoldingsPreflight() async -> Result<
+        KowalskiPortfolioHoldingsPreflightResponse,
+        KowalskiPortfolioClientHoldingsPreflightErrors,
+    > {
+        let response: Operations.GetAppApiPortfolioHoldingsPreflight.Output
+        do {
+            response = try await client.getAppApiPortfolioHoldingsPreflight()
+        } catch {
+            return .failure(.unknown(statusCode: 503, payload: nil, context: error))
+        }
+
+        let okResponse: Operations.GetAppApiPortfolioHoldingsPreflight.Output.Ok
+        switch response {
+        case .unauthorized, .notFound:
+            return .failure(.unauthorized)
+        case .internalServerError:
+            return .failure(.unknown(statusCode: 500, payload: nil, context: nil))
+        case let .undocumented(statusCode, payload):
+            return .failure(.unknown(statusCode: statusCode, payload: payload, context: nil))
+        case let .ok(ok):
+            okResponse = ok
+        }
+        let jsonResponse: Components.Schemas.PortfolioHoldingsPreflightResponse
+        do {
+            jsonResponse = try okResponse.body.json
+        } catch {
+            return .failure(.unknown(statusCode: 500, payload: nil, context: error))
+        }
+
+        return .success(mapper.mapHoldingsPreflightApiResponseToClient(jsonResponse))
     }
 
     func bulkCreateEntries(
@@ -439,6 +500,10 @@ actor KowalskiPortfolioClientPreview: KowalskiPortfolioClient {
     private let listFailure: KowalskiPortfolioClientListEntriesErrors?
     private let overviewFailure: KowalskiPortfolioClientOverviewErrors?
     private let holdingsFailure: KowalskiPortfolioClientHoldingsErrors?
+    private var preflightResults: [Result<
+        KowalskiPortfolioHoldingsPreflightResponse,
+        KowalskiPortfolioClientHoldingsPreflightErrors,
+    >]
     private var overviewCurrentValues: [String: KowalskiClientMoney]
 
     fileprivate init(
@@ -448,6 +513,10 @@ actor KowalskiPortfolioClientPreview: KowalskiPortfolioClient {
         listFailure: KowalskiPortfolioClientListEntriesErrors? = nil,
         overviewFailure: KowalskiPortfolioClientOverviewErrors? = nil,
         holdingsFailure: KowalskiPortfolioClientHoldingsErrors? = nil,
+        preflightResults: [Result<
+            KowalskiPortfolioHoldingsPreflightResponse,
+            KowalskiPortfolioClientHoldingsPreflightErrors,
+        >] = [],
         overviewCurrentValues: [String: KowalskiClientMoney] = makePreviewCurrentValues(),
     ) {
         self.entries = entries
@@ -456,6 +525,7 @@ actor KowalskiPortfolioClientPreview: KowalskiPortfolioClient {
         self.listFailure = listFailure
         self.overviewFailure = overviewFailure
         self.holdingsFailure = holdingsFailure
+        self.preflightResults = preflightResults
         self.overviewCurrentValues = overviewCurrentValues
     }
 
@@ -489,6 +559,23 @@ actor KowalskiPortfolioClientPreview: KowalskiPortfolioClient {
         }
 
         return .success(makeHoldingsResponse(entries: sortedEntries(), currentValues: overviewCurrentValues))
+    }
+
+    func getHoldingsPreflight() async -> Result<
+        KowalskiPortfolioHoldingsPreflightResponse,
+        KowalskiPortfolioClientHoldingsPreflightErrors,
+    > {
+        guard !preflightResults.isEmpty else {
+            return .success(
+                KowalskiPortfolioHoldingsPreflightResponse(
+                    refreshState: .ready,
+                    pollAfterMilliseconds: nil,
+                    latestCachedPriceDate: nil,
+                ),
+            )
+        }
+
+        return preflightResults.removeFirst()
     }
 
     func bulkCreateEntries(

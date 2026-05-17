@@ -236,6 +236,33 @@ export const PortfolioHoldingSchema = z
 
 export type PortfolioHoldingsResponse = z.infer<typeof PortfolioHoldingsResponseSchema>;
 
+export const PortfolioHoldingsPreflightResponseSchema = z
+  .object({
+    refresh_state: z.enum(['ready', 'refreshing']).openapi({
+      description: 'Whether daily prices are ready for a full holdings fetch.',
+      example: 'refreshing',
+    }),
+    poll_after_ms: z.number().int().min(1).nullable().openapi({
+      description: 'Recommended client polling interval when refresh_state is refreshing.',
+      example: 1500,
+    }),
+    latest_cached_price_date: z.string().nullable().openapi({
+      description: 'Latest cached price date available across the active holdings ticker set.',
+      example: '2026-05-17',
+    }),
+  })
+  .openapi('PortfolioHoldingsPreflightResponse', {
+    title: 'Portfolio Holdings Preflight Response',
+    description: 'Readiness state for fetching fresh portfolio holdings.',
+    example: {
+      refresh_state: 'refreshing',
+      poll_after_ms: 1500,
+      latest_cached_price_date: '2026-05-16',
+    },
+  });
+
+export type PortfolioHoldingsPreflightResponse = z.infer<typeof PortfolioHoldingsPreflightResponseSchema>;
+
 export const PortfolioHoldingsResponseSchema = z
   .object({
     net_worth: PortfolioHoldingValueSchema.openapi({
