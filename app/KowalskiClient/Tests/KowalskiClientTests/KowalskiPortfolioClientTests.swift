@@ -236,6 +236,45 @@ struct KowalskiPortfolioClientTests {
         #expect(request.path == "/app-api/portfolio/overview")
         #expect(request.method == .get)
     }
+
+    @Test
+    func `Get holdings preflight should decode refreshing response`() async throws {
+        let transport = MockClientTransport(
+            queuedResponses: [
+                QueuedResponse(status: .ok, body: makeHoldingsPreflightResponseBody()),
+            ],
+        )
+        let client = try makeGeneratedClient(transport: transport)
+        let portfolioClient = KowalskiPortfolioClientFactory.default(client: client)
+
+        let preflight = try await portfolioClient.getHoldingsPreflight().get()
+
+        #expect(preflight.refreshState == .refreshing)
+        #expect(preflight.pollAfterMilliseconds == 1500)
+        #expect(preflight.latestCachedPriceDate == "2026-05-16")
+
+        let request = try #require(transport.capturedRequests.first)
+        #expect(request.path == "/app-api/portfolio/holdings/preflight")
+        #expect(request.method == .get)
+    }
+
+    @Test
+    func `Get holdings preflight should map unauthorized errors`() async throws {
+        let transport = MockClientTransport(
+            queuedResponses: [
+                QueuedResponse(status: .unauthorized, body: makeErrorResponseBody(
+                    message: "Authentication failed",
+                    code: "AUTHENTICATION_FAILED",
+                )),
+            ],
+        )
+        let client = try makeGeneratedClient(transport: transport)
+        let portfolioClient = KowalskiPortfolioClientFactory.default(client: client)
+
+        try await #require(throws: KowalskiPortfolioClientHoldingsPreflightErrors.unauthorized) {
+            try await portfolioClient.getHoldingsPreflight().get()
+        }
+    }
 }
 
 private func makeGeneratedClient(transport: some ClientTransport) throws -> Client {
@@ -379,6 +418,18 @@ private func makeBulkCreateEntriesResponseBody() -> Data {
             "transaction_date": "2025-12-21T10:30:00Z"
           }
         ]
+        """.utf8,
+    )
+}
+
+private func makeHoldingsPreflightResponseBody() -> Data {
+    Data(
+        """
+        {
+          "refresh_state": "refreshing",
+          "poll_after_ms": 1500,
+          "latest_cached_price_date": "2026-05-16"
+        }
         """.utf8,
     )
 }

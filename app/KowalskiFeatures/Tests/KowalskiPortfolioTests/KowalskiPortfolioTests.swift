@@ -49,6 +49,74 @@ struct KowalskiPortfolioTests {
     }
 
     @Test
+    func `Bootstrap should preflight and refresh portfolio when prices are ready`() async throws {
+        KowalskiPortfolio.resetPersistedSnapshot()
+        defer { KowalskiPortfolio.resetPersistedSnapshot() }
+        let entry = makePortfolioEntryResponse(amount: 10)
+        let overview = makePortfolioOverviewResponse(
+            transactions: [entry],
+            currentValues: ["AAPL": KowalskiClientMoney(currency: "USD", value: 185.45)],
+        )
+        let portfolioClient = MockPortfolioClient(overviewResult: .success(overview))
+        let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
+
+        try await portfolio.bootstrapPortfolio(sessionEmail: "yami@bull.io", currencyCode: "USD").get()
+
+        #expect(portfolio.entries.map(\.stock.symbol) == ["AAPL"])
+        #expect(portfolio.netWorth?.value == 1854.5)
+        #expect(!portfolio.isLoading)
+        #expect(!portfolio.isRefreshingLatestPrices)
+        #expect(await portfolioClient.getHoldingsPreflightCallCount == 1)
+        #expect(await portfolioClient.getHoldingsCallCount == 1)
+        #expect(await portfolioClient.listEntriesCallCount == 1)
+    }
+
+    @Test
+    func `Bootstrap should poll preflight until prices are ready`() async throws {
+        KowalskiPortfolio.resetPersistedSnapshot()
+        defer { KowalskiPortfolio.resetPersistedSnapshot() }
+        let entry = makePortfolioEntryResponse(amount: 10)
+        let overview = makePortfolioOverviewResponse(
+            transactions: [entry],
+            currentValues: ["AAPL": KowalskiClientMoney(currency: "USD", value: 185.45)],
+        )
+        let portfolioClient = MockPortfolioClient(
+            overviewResult: .success(overview),
+            preflightResults: [
+                .success(makeHoldingsPreflightResponse(refreshState: .refreshing, pollAfterMilliseconds: 1)),
+                .success(makeHoldingsPreflightResponse(refreshState: .ready)),
+            ],
+        )
+        let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
+
+        try await portfolio.bootstrapPortfolio(sessionEmail: "yami@bull.io", currencyCode: "USD").get()
+
+        #expect(await portfolioClient.getHoldingsPreflightCallCount == 2)
+        #expect(await portfolioClient.getHoldingsCallCount == 1)
+        #expect(!portfolio.isRefreshingLatestPrices)
+    }
+
+    @Test
+    func `Bootstrap cache should be scoped by session email and currency`() async throws {
+        KowalskiPortfolio.resetPersistedSnapshot()
+        defer { KowalskiPortfolio.resetPersistedSnapshot() }
+        let entry = makePortfolioEntryResponse(amount: 10)
+        let overview = makePortfolioOverviewResponse(
+            transactions: [entry],
+            currentValues: ["AAPL": KowalskiClientMoney(currency: "USD", value: 185.45)],
+        )
+        let firstClient = MockPortfolioClient(overviewResult: .success(overview))
+        let firstPortfolio = KowalskiPortfolio.testing(client: .testing(portfolio: firstClient))
+        try await firstPortfolio.bootstrapPortfolio(sessionEmail: "yami@bull.io", currencyCode: "USD").get()
+
+        let secondClient = MockPortfolioClient(overviewResult: .success(overview))
+        let secondPortfolio = KowalskiPortfolio.testing(client: .testing(portfolio: secondClient))
+        try await secondPortfolio.bootstrapPortfolio(sessionEmail: "yami@bull.io", currencyCode: "EUR").get()
+
+        #expect(!secondPortfolio.hasHydratedCachedSnapshot)
+    }
+
+    @Test
     func `Store transaction should turn the first validation issue into the message shown to the user`() async throws {
         let portfolioClient = MockPortfolioClient(
             createEntryResult: .failure(
@@ -1140,6 +1208,7 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
     private(set) var listEntriesCallCount = 0
     private(set) var getOverviewCallCount = 0
     private(set) var getHoldingsCallCount = 0
+    private(set) var getHoldingsPreflightCallCount = 0
     private(set) var bulkCreateEntriesPayloads: [[KowalskiPortfolioBulkCreateEntryItemPayload]] = []
 
     private let createEntryResult: Result<
@@ -1162,6 +1231,10 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
         KowalskiPortfolioHoldingsResponse,
         KowalskiPortfolioClientHoldingsErrors,
     >]
+    private var preflightResults: [Result<
+        KowalskiPortfolioHoldingsPreflightResponse,
+        KowalskiPortfolioClientHoldingsPreflightErrors,
+    >]
     private var overviewResults: [Result<
         KowalskiPortfolioOverviewResponse,
         KowalskiPortfolioClientOverviewErrors,
@@ -1183,6 +1256,10 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
             makePortfolioOverviewResponse(transactions: [], currentValues: [:]),
         ),
         overviewResults: [Result<KowalskiPortfolioOverviewResponse, KowalskiPortfolioClientOverviewErrors>] = [],
+        preflightResults: [Result<
+            KowalskiPortfolioHoldingsPreflightResponse,
+            KowalskiPortfolioClientHoldingsPreflightErrors,
+        >] = [],
     ) {
         self.createEntryResult = createEntryResult
         self.bulkCreateEntriesResult = bulkCreateEntriesResult
@@ -1198,6 +1275,8 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
         } else {
             self.overviewResults.map(mapOverviewResultToHoldingsResult)
         }
+        self.preflightResults = preflightResults
+            .isEmpty ? [.success(makeHoldingsPreflightResponse())] : preflightResults
     }
 
     func listEntries() async
@@ -1238,6 +1317,22 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
         }
 
         return holdingsResults.removeFirst()
+    }
+
+    func getHoldingsPreflight() async -> Result<
+        KowalskiPortfolioHoldingsPreflightResponse,
+        KowalskiPortfolioClientHoldingsPreflightErrors,
+    > {
+        getHoldingsPreflightCallCount += 1
+
+        guard !preflightResults.isEmpty else {
+            return .success(makeHoldingsPreflightResponse())
+        }
+        if preflightResults.count == 1 {
+            return preflightResults[0]
+        }
+
+        return preflightResults.removeFirst()
     }
 
     func bulkCreateEntries(
@@ -1304,6 +1399,18 @@ private func makePortfolioOverviewResponse(
     KowalskiPortfolioOverviewResponse(
         transactions: transactions,
         currentValues: currentValues,
+    )
+}
+
+private func makeHoldingsPreflightResponse(
+    refreshState: KowalskiPortfolioHoldingsPreflightResponse.RefreshState = .ready,
+    pollAfterMilliseconds: Int? = nil,
+    latestCachedPriceDate: String? = nil,
+) -> KowalskiPortfolioHoldingsPreflightResponse {
+    KowalskiPortfolioHoldingsPreflightResponse(
+        refreshState: refreshState,
+        pollAfterMilliseconds: pollAfterMilliseconds,
+        latestCachedPriceDate: latestCachedPriceDate,
     )
 }
 

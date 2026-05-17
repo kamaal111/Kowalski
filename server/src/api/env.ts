@@ -15,6 +15,7 @@ const EnvSchema = z.object({
   DATABASE_URL: z.string(),
   CACHE_DIR: z.string().trim().min(1).optional().default('.'),
   MODE: z.enum(Object.values(SERVER_MODES)).default(SERVER_MODES.SERVER),
+  PORTFOLIO_HOLDINGS_PREFLIGHT_POLL_INTERVAL_MS: z.coerce.number().int().positive().default(1500),
 
   // Auth
   BETTER_AUTH_SECRET: z.string().nonempty(),

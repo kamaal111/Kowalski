@@ -5,7 +5,7 @@
 //  Created by Kamaal M Farah on 11/17/25.
 //
 
-struct Stock: Hashable, Identifiable {
+struct Stock: Codable, Hashable, Identifiable {
     let id: String
     let symbol: String
     let exchange: String

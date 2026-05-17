@@ -99,6 +99,16 @@ struct KowalskiPortfolioMapper {
         )
     }
 
+    func mapHoldingsPreflightApiResponseToClient(
+        _ response: Components.Schemas.PortfolioHoldingsPreflightResponse,
+    ) -> KowalskiPortfolioHoldingsPreflightResponse {
+        KowalskiPortfolioHoldingsPreflightResponse(
+            refreshState: mapHoldingsPreflightRefreshState(response.refreshState),
+            pollAfterMilliseconds: response.pollAfterMs,
+            latestCachedPriceDate: response.latestCachedPriceDate,
+        )
+    }
+
     func mapResolvedEntryApiResponseToClient(
         _ response: Components.Schemas.ResolvedEntryResponse,
     ) -> KowalskiPortfolioClientEntryResponse {
@@ -155,6 +165,15 @@ struct KowalskiPortfolioMapper {
             unitValue: mapCurrentValue(response.unitValue.value1),
             totalValue: mapHoldingValue(response.totalValue.value1),
         )
+    }
+
+    private func mapHoldingsPreflightRefreshState(
+        _ response: Components.Schemas.PortfolioHoldingsPreflightResponse.RefreshStatePayload,
+    ) -> KowalskiPortfolioHoldingsPreflightResponse.RefreshState {
+        switch response {
+        case .ready: .ready
+        case .refreshing: .refreshing
+        }
     }
 
     private func mapHoldingAsset(

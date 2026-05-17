@@ -5,7 +5,7 @@
 //  Created by OpenAI Codex on 5/16/26.
 //
 
-struct PortfolioHolding: Hashable {
+struct PortfolioHolding: Codable, Hashable {
     let assetType: String
     let asset: PortfolioAsset
     let amount: Double

@@ -72,6 +72,25 @@ export async function findLatestStockPricesByTickerIds(
   return [...latestRows.values()];
 }
 
+export async function findLatestCachedPriceDateByTickerIds(
+  c: HonoContext,
+  tickerIds: string[],
+): Promise<string | null> {
+  if (tickerIds.length === 0) {
+    return null;
+  }
+
+  const rows = await c
+    .get('db')
+    .select({ date: stockInfo.date })
+    .from(stockInfo)
+    .where(inArray(stockInfo.tickerId, tickerIds))
+    .orderBy(desc(stockInfo.date))
+    .limit(1);
+
+  return rows[0]?.date ?? null;
+}
+
 export async function insertStockPrices(c: HonoContext, prices: InsertStockPriceInput[]) {
   if (prices.length === 0) {
     return;

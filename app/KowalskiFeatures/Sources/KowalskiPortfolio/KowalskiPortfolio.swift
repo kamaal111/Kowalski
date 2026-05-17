@@ -16,6 +16,9 @@ import Observation
 
 private let logger = KamaalLogger(from: KowalskiPortfolio.self, failOnError: true)
 private let moneyVisibilityPreferenceKey = "\(ModuleConfig.identifier).moneyVisibilityPreference"
+private let cachedPortfolioSnapshotKey = "\(ModuleConfig.identifier).cachedPortfolioSnapshot"
+private let fallbackPreflightPollMs = 500
+private let maxPreflightPollAttempts = 8
 
 @Observable
 @MainActor
@@ -26,12 +29,20 @@ public final class KowalskiPortfolio {
     private(set) var entries: [PortfolioEntry] = []
     private(set) var holdings: [PortfolioHolding] = []
     private(set) var isLoading = false
+    private(set) var isRefreshingLatestPrices = false
+    private(set) var hasHydratedCachedSnapshot = false
     private(set) var netWorth: Money?
     private(set) var allTimeProfit: AllTimeProfit?
     private(set) var showsMoneyValues = true
 
     @UserDefaultsValue(key: moneyVisibilityPreferenceKey)
     private static var moneyVisibilityPreference: Bool?
+
+    @UserDefaultsObject(key: cachedPortfolioSnapshotKey)
+    private static var cachedSnapshot: CachedPortfolioSnapshot?
+
+    private var activeSnapshotSessionEmail: String?
+    private var activeSnapshotCurrencyCode: String?
 
     var allTimeProfitPercentage: Double? {
         allTimeProfit?.percentage
@@ -159,33 +170,43 @@ public final class KowalskiPortfolio {
             .mapError { error in error as Error }
     }
 
-    func fetchOverview() async -> Result<Void, Error> {
-        await withLoading {
-            async let holdingsResult = client.portfolio.getHoldings()
-                .map(mapper.mapHoldingsResponse)
-            async let entriesResult = client.portfolio.listEntries()
-                .map(mapper.mapPortfolioEntries)
-
-            let holdingsState: PortfolioHoldingsState
-            switch await holdingsResult {
-            case let .failure(error): return .failure(error)
-            case let .success(success): holdingsState = success
-            }
-
-            let entries: [PortfolioEntry]
-            switch await entriesResult {
-            case let .failure(error): return .failure(error)
-            case let .success(success): entries = success
-            }
-
-            let profitResult = computeAllTimeProfit(for: entries, netWorth: holdingsState.netWorth)
-            setHoldings(holdingsState.holdings)
-            setEntries(entries)
-            setNetWorth(holdingsState.netWorth)
-            setAllTimeProfit(profitResult)
-
-            return .success(())
+    func bootstrapPortfolio(sessionEmail: String?, currencyCode: String) async -> Result<Void, Error> {
+        activeSnapshotSessionEmail = sessionEmail
+        activeSnapshotCurrencyCode = currencyCode
+        let hydratedSnapshot = hydrateCachedSnapshotIfAvailable(sessionEmail: sessionEmail, currencyCode: currencyCode)
+        if !hydratedSnapshot {
+            isLoading = true
         }
+        defer { isLoading = false }
+
+        let preflightResult = await client.portfolio.getHoldingsPreflight()
+        let preflight: KowalskiPortfolioHoldingsPreflightResponse
+        switch preflightResult {
+        case let .success(success):
+            preflight = success
+        case let .failure(error):
+            logger.error(label: "Failed to preflight portfolio holdings", error: error)
+            if hydratedSnapshot {
+                return await refreshFromServer(sessionEmail: sessionEmail, currencyCode: currencyCode)
+            }
+
+            return await refreshFromServer(sessionEmail: sessionEmail, currencyCode: currencyCode)
+        }
+
+        switch preflight.refreshState {
+        case .ready:
+            isRefreshingLatestPrices = false
+        case .refreshing:
+            isRefreshingLatestPrices = true
+            _ = await waitUntilHoldingsReady()
+            isRefreshingLatestPrices = false
+        }
+
+        return await refreshFromServer(sessionEmail: sessionEmail, currencyCode: currencyCode)
+    }
+
+    func fetchOverview() async -> Result<Void, Error> {
+        await withLoading { await refreshFromServer() }
     }
 
     func toggleMoneyVisibility() {
@@ -274,10 +295,6 @@ public final class KowalskiPortfolio {
         Self.moneyVisibilityPreference = showsMoneyValues
     }
 
-    private func refreshPortfolio() async -> Result<Void, Error> {
-        await fetchOverview()
-    }
-
     @MainActor
     private func withLoading<T>(_ block: () async -> T) async -> T {
         isLoading = true
@@ -356,6 +373,118 @@ public final class KowalskiPortfolio {
 
     static func resetPersistedMoneyVisibility() {
         _moneyVisibilityPreference.removeValue()
+    }
+
+    static func resetPersistedSnapshot() {
+        _cachedSnapshot.removeValue()
+    }
+}
+
+private extension KowalskiPortfolio {
+    func refreshPortfolio() async -> Result<Void, Error> {
+        await refreshFromServer(sessionEmail: activeSnapshotSessionEmail, currencyCode: activeSnapshotCurrencyCode)
+    }
+
+    func refreshFromServer(sessionEmail: String? = nil, currencyCode: String? = nil) async -> Result<Void, Error> {
+        async let holdingsResult = client.portfolio.getHoldings()
+            .map(mapper.mapHoldingsResponse)
+        async let entriesResult = client.portfolio.listEntries()
+            .map(mapper.mapPortfolioEntries)
+
+        let holdingsState: PortfolioHoldingsState
+        switch await holdingsResult {
+        case let .failure(error): return .failure(error)
+        case let .success(success): holdingsState = success
+        }
+
+        let entries: [PortfolioEntry]
+        switch await entriesResult {
+        case let .failure(error): return .failure(error)
+        case let .success(success): entries = success
+        }
+
+        let profitResult = computeAllTimeProfit(for: entries, netWorth: holdingsState.netWorth)
+        setHoldings(holdingsState.holdings)
+        setEntries(entries)
+        setNetWorth(holdingsState.netWorth)
+        setAllTimeProfit(profitResult)
+        persistCachedSnapshot(sessionEmail: sessionEmail, currencyCode: currencyCode)
+
+        return .success(())
+    }
+
+    func waitUntilHoldingsReady() async -> Result<Void, Error> {
+        for _ in 0 ..< maxPreflightPollAttempts {
+            let preflightResult = await client.portfolio.getHoldingsPreflight()
+            switch preflightResult {
+            case let .failure(error):
+                return .failure(error)
+            case let .success(preflight):
+                if preflight.refreshState == .ready {
+                    return .success(())
+                }
+
+                let pollAfterMilliseconds = preflight.pollAfterMilliseconds ?? fallbackPreflightPollMs
+                try? await Task.sleep(for: .milliseconds(pollAfterMilliseconds))
+            }
+        }
+
+        return .success(())
+    }
+
+    @discardableResult
+    func hydrateCachedSnapshotIfAvailable(sessionEmail: String?, currencyCode: String) -> Bool {
+        guard let cachedSnapshot = Self.cachedSnapshot else {
+            hasHydratedCachedSnapshot = false
+            return false
+        }
+        guard cachedSnapshot.sessionEmail == cacheSessionEmail(sessionEmail),
+              cachedSnapshot.currencyCode == currencyCode
+        else {
+            clearCachedSnapshotIfScopeMismatches(sessionEmail: sessionEmail, currencyCode: currencyCode)
+            hasHydratedCachedSnapshot = false
+            return false
+        }
+
+        setEntries(cachedSnapshot.entries)
+        setHoldings(cachedSnapshot.holdings)
+        setNetWorth(cachedSnapshot.netWorth)
+        if let netWorth = cachedSnapshot.netWorth {
+            setAllTimeProfit(computeAllTimeProfit(for: cachedSnapshot.entries, netWorth: netWorth))
+        } else {
+            setAllTimeProfit(nil)
+        }
+        hasHydratedCachedSnapshot = true
+
+        return true
+    }
+
+    func persistCachedSnapshot(sessionEmail: String?, currencyCode: String?) {
+        guard let currencyCode else { return }
+
+        Self.cachedSnapshot = CachedPortfolioSnapshot(
+            sessionEmail: cacheSessionEmail(sessionEmail),
+            currencyCode: currencyCode,
+            entries: entries,
+            holdings: holdings,
+            netWorth: netWorth,
+            cachedAt: .now,
+        )
+    }
+
+    func clearCachedSnapshotIfScopeMismatches(sessionEmail: String?, currencyCode: String) {
+        guard let cachedSnapshot = Self.cachedSnapshot else { return }
+        guard cachedSnapshot.sessionEmail != cacheSessionEmail(sessionEmail) ||
+            cachedSnapshot.currencyCode != currencyCode
+        else {
+            return
+        }
+
+        Self.resetPersistedSnapshot()
+    }
+
+    func cacheSessionEmail(_ sessionEmail: String?) -> String {
+        sessionEmail ?? ""
     }
 }
 

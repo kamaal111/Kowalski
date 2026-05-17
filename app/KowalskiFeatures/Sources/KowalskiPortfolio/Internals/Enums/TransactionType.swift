@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum TransactionType: CaseIterable, Identifiable {
+enum TransactionType: Codable, CaseIterable, Identifiable {
     struct PairedAction: Equatable {
         let transactionType: TransactionType
         let title: String

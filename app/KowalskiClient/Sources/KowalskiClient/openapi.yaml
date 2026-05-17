@@ -544,6 +544,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /app-api/portfolio/holdings/preflight:
+    get:
+      tags:
+        - Portfolio
+      summary: Check portfolio holdings price readiness
+      description: >-
+        Return whether daily prices are ready before fetching portfolio
+        holdings.
+      parameters:
+        - schema:
+            type: string
+            description: Bearer token for authentication
+            example: Bearer f21wcpz7Aokmlh2MB632MZpTgfruPc62
+          required: true
+          description: Bearer token for authentication
+          name: authorization
+          in: header
+      responses:
+        '200':
+          description: Portfolio holdings price readiness retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioHoldingsPreflightResponse'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Portfolio holdings preflight could not be retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /app-api/portfolio/entries/bulk:
     post:
       tags:
@@ -1410,6 +1452,43 @@ components:
         sector: Technology
         industry: Consumer Electronics
         exchange_dispatch: NASDAQ
+    PortfolioHoldingsPreflightResponse:
+      type: object
+      properties:
+        refresh_state:
+          type: string
+          enum:
+            - ready
+            - refreshing
+          description: Whether daily prices are ready for a full holdings fetch.
+          example: refreshing
+        poll_after_ms:
+          type:
+            - null
+            - integer
+          minimum: 1
+          description: >-
+            Recommended client polling interval when refresh_state is
+            refreshing.
+          example: 1500
+        latest_cached_price_date:
+          type:
+            - null
+            - string
+          description: >-
+            Latest cached price date available across the active holdings ticker
+            set.
+          example: '2026-05-17'
+      required:
+        - refresh_state
+        - poll_after_ms
+        - latest_cached_price_date
+      title: Portfolio Holdings Preflight Response
+      description: Readiness state for fetching fresh portfolio holdings.
+      example:
+        refresh_state: refreshing
+        poll_after_ms: 1500
+        latest_cached_price_date: '2026-05-16'
     CreateEntryResponse:
       type: object
       properties:
