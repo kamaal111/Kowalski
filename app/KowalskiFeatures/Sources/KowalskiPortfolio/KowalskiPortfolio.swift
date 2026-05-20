@@ -28,12 +28,13 @@ public final class KowalskiPortfolio {
 
     private(set) var entries: [PortfolioEntry] = []
     private(set) var holdings: [PortfolioHolding] = []
-    private(set) var isLoading = false
-    private(set) var isRefreshingLatestPrices = false
-    private(set) var hasHydratedCachedSnapshot = false
     private(set) var netWorth: Money?
     private(set) var allTimeProfit: AllTimeProfit?
     private(set) var showsMoneyValues = true
+
+    private var isLoading = false
+    private var isRefreshingLatestPrices = false
+    private var hasHydratedCachedSnapshot = false
 
     @UserDefaultsValue(key: moneyVisibilityPreferenceKey)
     private static var moneyVisibilityPreference: Bool?
@@ -46,6 +47,25 @@ public final class KowalskiPortfolio {
 
     var allTimeProfitPercentage: Double? {
         allTimeProfit?.percentage
+    }
+
+    var isShowingInitialLoadingState: Bool {
+        isLoading &&
+            entries.isEmpty &&
+            holdings.isEmpty &&
+            !hasHydratedCachedSnapshot
+    }
+
+    var isShowingEmptyState: Bool {
+        entries.isEmpty && holdings.isEmpty
+    }
+
+    var isShowingLatestPricesRefreshHint: Bool {
+        isRefreshingLatestPrices
+    }
+
+    var isShowingNetWorthLoadingState: Bool {
+        isLoading && !entries.isEmpty && netWorth == nil
     }
 
     private init(client: KowalskiClient) {
