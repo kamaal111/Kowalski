@@ -64,8 +64,8 @@ struct KowalskiPortfolioTests {
 
         #expect(portfolio.entries.map(\.stock.symbol) == ["AAPL"])
         #expect(portfolio.netWorth?.value == 1854.5)
-        #expect(!portfolio.isLoading)
-        #expect(!portfolio.isRefreshingLatestPrices)
+        #expect(!portfolio.isShowingInitialLoadingState)
+        #expect(!portfolio.isShowingLatestPricesRefreshHint)
         #expect(await portfolioClient.getOverviewPreflightCallCount == 1)
         #expect(await portfolioClient.getOverviewCallCount == 1)
     }
@@ -92,7 +92,7 @@ struct KowalskiPortfolioTests {
 
         #expect(await portfolioClient.getOverviewPreflightCallCount == 2)
         #expect(await portfolioClient.getOverviewCallCount == 1)
-        #expect(!portfolio.isRefreshingLatestPrices)
+        #expect(!portfolio.isShowingLatestPricesRefreshHint)
     }
 
     @Test
@@ -108,11 +108,17 @@ struct KowalskiPortfolioTests {
         let firstPortfolio = KowalskiPortfolio.testing(client: .testing(portfolio: firstClient))
         try await firstPortfolio.bootstrapPortfolio(sessionEmail: "yami@bull.io", currencyCode: "USD").get()
 
-        let secondClient = MockPortfolioClient(overviewResult: .success(overview))
+        let secondClient = MockPortfolioClient(overviewResult: .failure(.unauthorized))
         let secondPortfolio = KowalskiPortfolio.testing(client: .testing(portfolio: secondClient))
-        try await secondPortfolio.bootstrapPortfolio(sessionEmail: "yami@bull.io", currencyCode: "EUR").get()
+        let secondBootstrapResult = await secondPortfolio.bootstrapPortfolio(
+            sessionEmail: "yami@bull.io",
+            currencyCode: "EUR",
+        )
 
-        #expect(!secondPortfolio.hasHydratedCachedSnapshot)
+        #expect(throws: Error.self) {
+            try secondBootstrapResult.get()
+        }
+        #expect(secondPortfolio.isShowingEmptyState)
     }
 
     @Test

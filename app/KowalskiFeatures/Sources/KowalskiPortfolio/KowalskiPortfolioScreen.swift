@@ -19,9 +19,9 @@ public struct KowalskiPortfolioScreen: View {
 
     public var body: some View {
         KJustStack {
-            if isShowingInitialLoadingState {
+            if portfolio.isShowingInitialLoadingState {
                 loadingState
-            } else if portfolio.entries.isEmpty, portfolio.holdings.isEmpty {
+            } else if portfolio.isShowingEmptyState {
                 emptyState
             } else {
                 content
@@ -31,16 +31,9 @@ public struct KowalskiPortfolioScreen: View {
         .navigationTitle("My Portfolio")
     }
 
-    private var isShowingInitialLoadingState: Bool {
-        portfolio.isLoading &&
-            portfolio.entries.isEmpty &&
-            portfolio.holdings.isEmpty &&
-            !portfolio.hasHydratedCachedSnapshot
-    }
-
     private var content: some View {
         VStack(spacing: KowalskiSizes.medium.rawValue) {
-            if portfolio.isRefreshingLatestPrices {
+            if portfolio.isShowingLatestPricesRefreshHint {
                 latestPricesRefreshHint
             }
             netWorthCard
@@ -101,7 +94,7 @@ public struct KowalskiPortfolioScreen: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Holdings Net Worth")
                     .font(.headline)
-                if portfolio.isLoading, !portfolio.entries.isEmpty, portfolio.netWorth == nil {
+                if portfolio.isShowingNetWorthLoadingState {
                     ProgressView("Loading net worth")
                 } else if !portfolio.showsMoneyValues, portfolio.netWorth != nil {
                     Text(PortfolioMoneyValuePrivacy.maskedPlaceholder)
