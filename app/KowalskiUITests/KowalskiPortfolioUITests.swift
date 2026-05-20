@@ -54,7 +54,7 @@ final class KowalskiPortfolioUITests: XCTestCase {
     }
 
     private func openTransactionsList(in app: XCUIApplication) {
-        if isTransactionsListVisible(in: app, timeout: 1) {
+        if isTransactionsListVisible(in: app, timeout: 0) {
             return
         }
 
@@ -96,18 +96,17 @@ final class KowalskiPortfolioUITests: XCTestCase {
     }
 
     private func openTransactionDetail(named stockName: String, in app: XCUIApplication) {
-        if tapTransactionRow(named: stockName, in: app, timeout: 1) {
-            return
+        if !isTransactionsListVisible(in: app, timeout: 0) {
+            openTransactionsList(in: app)
         }
 
-        openTransactionsList(in: app)
         XCTAssertTrue(tapTransactionRow(named: stockName, in: app, timeout: 3))
     }
 
     private func tapTransactionRow(named stockName: String, in app: XCUIApplication, timeout: TimeInterval) -> Bool {
-        let entryButton = app.buttons["portfolio-entry-\(stockName)"].firstMatch
-        if entryButton.waitForExistenceUsingPredicate(timeout: timeout) {
-            entryButton.tap()
+        let entryText = transactionRow(named: stockName, in: app)
+        if entryText.exists || entryText.waitForExistenceUsingPredicate(timeout: timeout) {
+            entryText.tap()
             return true
         }
 
@@ -117,13 +116,7 @@ final class KowalskiPortfolioUITests: XCTestCase {
             return true
         }
 
-        let stockNameText = app.staticTexts[stockName].firstMatch
-        guard stockNameText.waitForExistenceUsingPredicate(timeout: timeout) else {
-            return false
-        }
-
-        stockNameText.tap()
-        return true
+        return false
     }
 
     private func assertPairedTransactionPrefill(
@@ -198,15 +191,8 @@ final class KowalskiPortfolioUITests: XCTestCase {
     }
 
     private func returnToPortfolioSummary(in app: XCUIApplication) {
-        for _ in 0 ..< 3 {
-            if app.staticTexts["Holdings Net Worth"].firstMatch.exists {
-                return
-            }
-
-            tapBack(in: app)
-            if app.staticTexts["Holdings Net Worth"].firstMatch.waitForExistenceUsingPredicate(timeout: 3) {
-                return
-            }
+        if app.staticTexts["Holdings Net Worth"].firstMatch.exists {
+            return
         }
 
         let portfolioSidebarItem = app.buttons["Portfolio"].firstMatch
@@ -224,12 +210,23 @@ final class KowalskiPortfolioUITests: XCTestCase {
             return false
         }
 
-        return app.navigationBars["Transactions"].firstMatch.waitForExistenceUsingPredicate(timeout: timeout) ||
-            app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "portfolio-entry-")).firstMatch
-            .waitForExistenceUsingPredicate(timeout: timeout) ||
-            app.staticTexts["Apple Inc."].firstMatch.waitForExistenceUsingPredicate(timeout: timeout) ||
-            app.staticTexts["Tesla, Inc."].firstMatch.waitForExistenceUsingPredicate(timeout: timeout) ||
-            app.staticTexts["NVIDIA Corporation"].firstMatch.waitForExistenceUsingPredicate(timeout: timeout)
+        let transactionsList = app.descendants(matching: .any)
+            .matching(identifier: "portfolio-transactions-list")
+            .firstMatch
+        if transactionsList.exists {
+            return true
+        }
+
+        let transactionRows = app.staticTexts
+            .matching(NSPredicate(format: "label IN %@", ["Apple Inc.", "Tesla, Inc.", "NVIDIA Corporation"]))
+        if transactionRows.firstMatch.exists {
+            return true
+        }
+
+        guard timeout > 0 else { return false }
+
+        return transactionRows.firstMatch.waitForExistenceUsingPredicate(timeout: timeout) ||
+            transactionsList.waitForExistenceUsingPredicate(timeout: timeout)
     }
 
     private func attachScreenshot(named name: String, in app: XCUIApplication) {
@@ -258,14 +255,15 @@ final class KowalskiPortfolioUITests: XCTestCase {
     }
 
     private func assertTransactionRowShown(named stockName: String, in app: XCUIApplication) {
-        if app.buttons["portfolio-entry-\(stockName)"].firstMatch.waitForExistenceUsingPredicate(timeout: 1) {
-            return
-        }
-        if app.buttons[stockName].firstMatch.waitForExistenceUsingPredicate(timeout: 1) {
+        if transactionRow(named: stockName, in: app).waitForExistenceUsingPredicate(timeout: 3) {
             return
         }
 
         XCTAssertTrue(app.staticTexts[stockName].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
+    }
+
+    private func transactionRow(named stockName: String, in app: XCUIApplication) -> XCUIElement {
+        app.staticTexts[stockName].firstMatch
     }
 
     func testTransactionCreationFeedbackFlows() {

@@ -44,6 +44,7 @@ struct KowalskiPortfolioTransactionsScreen: View {
         }
         .listStyle(.inset)
         .navigationTitle("Transactions")
+        .accessibilityIdentifier("portfolio-transactions-list")
     }
 }
 
