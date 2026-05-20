@@ -1,0 +1,27 @@
+app/KowalskiUITests/KowalskiPortfolioUITests.swift
+  s_645d6e836b4563::t_1bea2a715029f1 57
+  s_645d6e836b4563::t_c3bbef9e22cc07 99-100,107-109,119,220-222,228,266
+  s_645d6e836b4563::t_50bc761c9f59e2 213-219,223-227,258,265
+  s_645d6e836b4563::t_9fbbaf33d85f90 229
+  s_645d6e836b4563::t_233389fdf81758 194-195
+app/KowalskiFeatures/Sources/KowalskiPortfolio/Internals/Views/Screens/KowalskiPortfolioTransactionsScreen.swift
+  s_645d6e836b4563::t_20475377f974d5 47
+app/KowalskiUITests/XCUIElement+Waiting.swift
+  s_645d6e836b4563::t_4af1c2fce07135 13-16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "ee138039c936013d53dc5787f35921c8a13f30b8",
+  "prompts": {},
+  "sessions": {
+    "s_645d6e836b4563": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e377f-cfde-7950-874f-eaddd9193e00",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>"
+    }
+  }
+}
