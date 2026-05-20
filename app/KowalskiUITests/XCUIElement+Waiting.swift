@@ -10,6 +10,10 @@ extension XCUIElement {
     /// This avoids priority inversions caused by `waitForExistence`, which spins the main thread
     /// at user-interactive QoS while waiting for work that runs at a lower QoS.
     func waitForExistenceUsingPredicate(timeout: TimeInterval = 3) -> Bool {
+        if exists {
+            return true
+        }
+
         let predicate = NSPredicate(format: "exists == true")
         let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
         return XCTWaiter().wait(for: [expectation], timeout: timeout) == .completed
