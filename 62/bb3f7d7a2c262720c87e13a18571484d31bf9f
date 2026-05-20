@@ -1,0 +1,24 @@
+app/KowalskiFeatures/Sources/KowalskiPortfolio/KowalskiPortfolioNavigationStack.swift
+  s_645d6e836b4563::t_620abad22239a8 40-42,44-51,54-55,57-58,72-89,91
+  s_645d6e836b4563::t_a63655c5efd8a4 1-39,43,52-53,56,59-71,90,92-122
+app/KowalskiApp/Sources/KowalskiApp/KowalskiScene.swift
+  s_645d6e836b4563::t_a63655c5efd8a4 21
+app/KowalskiFeatures/Sources/KowalskiPortfolio/Internals/Views/Screens/KowalskiTransactionsScreen.swift
+  s_645d6e836b4563::t_a63655c5efd8a4 1-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "62bb3f7d7a2c262720c87e13a18571484d31bf9f",
+  "prompts": {},
+  "sessions": {
+    "s_645d6e836b4563": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e377f-cfde-7950-874f-eaddd9193e00",
+        "model": "gpt-5.5"
+      },
+      "human_author": null
+    }
+  }
+}
