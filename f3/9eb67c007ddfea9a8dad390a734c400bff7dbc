@@ -1,0 +1,23 @@
+app/KowalskiFeatures/Tests/KowalskiPortfolioTests/KowalskiPortfolioTests.swift
+  s_645d6e836b4563::t_28bdcac9de4483 67-68,95,111,113-116,118-121
+app/KowalskiFeatures/Sources/KowalskiPortfolio/KowalskiPortfolio.swift
+  s_645d6e836b4563::t_eef145833cb4cc 35-38,52-68
+app/KowalskiFeatures/Sources/KowalskiPortfolio/KowalskiPortfolioScreen.swift
+  s_645d6e836b4563::t_9e612f4ca97eda 22,24,36,97
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "f39eb67c007ddfea9a8dad390a734c400bff7dbc",
+  "prompts": {},
+  "sessions": {
+    "s_645d6e836b4563": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e377f-cfde-7950-874f-eaddd9193e00",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>"
+    }
+  }
+}
