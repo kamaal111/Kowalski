@@ -29,13 +29,22 @@
     "All-Time Profit" : {
 
     },
+    "Allocation" : {
+
+    },
     "Amount" : {
 
     },
     "Amount should be numeric" : {
 
     },
+    "Asset" : {
+
+    },
     "Audit" : {
+
+    },
+    "Average Buy Price" : {
 
     },
     "Buy" : {
@@ -47,10 +56,31 @@
     "Cancel" : {
 
     },
+    "Cost" : {
+
+    },
+    "Created" : {
+
+    },
+    "Current Value" : {
+
+    },
+    "Current vs Average Cost" : {
+
+    },
+    "Date" : {
+
+    },
     "Edit" : {
 
     },
     "Edit Transaction" : {
+
+    },
+    "Exchange" : {
+
+    },
+    "Exchange Code" : {
 
     },
     "Failed to add transaction" : {
@@ -77,10 +107,16 @@
     "Holdings Net Worth" : {
 
     },
+    "Industry" : {
+
+    },
     "Invalid information provided" : {
 
     },
     "Invalid purchase price" : {
+
+    },
+    "ISIN" : {
 
     },
     "Loading net worth" : {
@@ -92,6 +128,9 @@
     "My Portfolio" : {
 
     },
+    "Name" : {
+
+    },
     "Net Worth" : {
 
     },
@@ -99,6 +138,9 @@
 
     },
     "No portfolio entries yet" : {
+
+    },
+    "No related transactions" : {
 
     },
     "Please select a stock" : {
@@ -116,16 +158,28 @@
     "Purchase price" : {
 
     },
+    "Purchase Price" : {
+
+    },
     "Ratio" : {
 
     },
+    "Related Transactions" : {
+
+    },
     "Save Changes" : {
+
+    },
+    "Sector" : {
 
     },
     "Sell" : {
 
     },
     "Sell Transaction" : {
+
+    },
+    "Shares" : {
 
     },
     "Show money values" : {
@@ -138,6 +192,12 @@
 
     },
     "Stock" : {
+
+    },
+    "Summary" : {
+
+    },
+    "Symbol" : {
 
     },
     "Symbol or ISIN" : {
@@ -158,10 +218,22 @@
     "Transactions" : {
 
     },
+    "Type" : {
+
+    },
     "Unavailable" : {
 
     },
     "Unit %@" : {
+
+    },
+    "Unit Value" : {
+
+    },
+    "Unrealized Profit/Loss" : {
+
+    },
+    "Updated" : {
 
     },
     "Updating latest prices" : {

@@ -66,7 +66,7 @@ struct KowalskiPortfolioMappers {
             stock: mapStockQuoteItem(entry.stock),
             amount: entry.amount,
             purchasePrice: mapMoney(entry.purchasePrice),
-            preferredCurrencyPurchasePrice: mapOptionalMoney(entry.preferredCurrencyPurchasePrice),
+            preferredCurrencyPurchasePrice: mapMoney(entry.preferredCurrencyPurchasePrice),
             transactionType: transactionType,
             transactionDate: entry.transactionDate,
         )
@@ -107,12 +107,6 @@ struct KowalskiPortfolioMappers {
             currency: money.currency,
             value: money.value,
         )
-    }
-
-    private func mapOptionalMoney(_ money: KowalskiClientMoney?) -> Money? {
-        guard let money else { return nil }
-
-        return Money(currency: money.currency, value: money.value)
     }
 
     private func mapCurrentValues(_ currentValues: [String: KowalskiClientMoney]) -> [String: Money] {

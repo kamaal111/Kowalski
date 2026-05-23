@@ -54,40 +54,43 @@ public struct KowalskiPortfolioScreen: View {
 
     private var holdingsList: some View {
         List(portfolio.holdings, id: \.self) { holding in
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(holding.asset.symbol)
-                        .font(.headline)
-                    Text(holding.asset.name)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                HStack {
-                    Text("\(holding.amount.formatted(.number)) shares")
-                    Spacer()
-                    if portfolio.showsMoneyValues {
-                        Text(holding.totalValue.value, format: .currency(code: holding.totalValue.currency.rawValue))
-                    } else {
-                        Text(PortfolioMoneyValuePrivacy.maskedPlaceholder)
-                            .accessibilityIdentifier(PortfolioMoneyValuePrivacy.accessibilityIdentifier)
+            NavigationLink(value: KowalskiPortfolioNavigationPathItem.holding(symbol: holding.asset.symbol)) {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(holding.asset.symbol)
+                            .font(.headline)
+                        Text(holding.asset.name)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
                     }
-                }
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                if portfolio.showsMoneyValues {
                     HStack {
-                        Text(
-                            "Unit \(holding.unitValue.value, format: .currency(code: holding.unitValue.currency.rawValue))",
-                        )
+                        Text("\(holding.amount.formatted(.number)) shares")
                         Spacer()
-                        Text(formattedHoldingProfitLoss(holding))
-                            .foregroundStyle(holdingProfitLossColor(holding))
+                        if portfolio.showsMoneyValues {
+                            Text(
+                                holding.totalValue.value,
+                                format: .currency(code: holding.totalValue.currency.rawValue),
+                            )
+                        } else {
+                            Text(PortfolioMoneyValuePrivacy.maskedPlaceholder)
+                                .accessibilityIdentifier(PortfolioMoneyValuePrivacy.accessibilityIdentifier)
+                        }
                     }
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    if portfolio.showsMoneyValues {
+                        HStack {
+                            Text("Unit \(formattedHoldingUnitValue(holding))")
+                            Spacer()
+                            Text(formattedHoldingProfitLoss(holding))
+                                .foregroundStyle(holdingProfitLossColor(holding))
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                    }
                 }
+                .padding(.vertical, .extraSmall)
             }
-            .padding(.vertical, .extraSmall)
             .accessibilityElement(children: .combine)
             .accessibilityLabel(Text("\(holding.asset.name), \(holding.amount.formatted(.number)) shares"))
             .accessibilityIdentifier("portfolio-holding-\(holding.asset.name)")
@@ -210,7 +213,7 @@ public struct KowalskiPortfolioScreen: View {
         guard portfolio.showsMoneyValues else { return PortfolioMoneyValuePrivacy.maskedPlaceholder }
         guard let allTimeProfit = portfolio.allTimeProfit else { return "" }
 
-        return formattedSignedCurrency(
+        return PortfolioValueFormatting.signedCurrency(
             value: allTimeProfit.value,
             currency: allTimeProfit.currency,
         )
@@ -220,33 +223,7 @@ public struct KowalskiPortfolioScreen: View {
         guard portfolio.showsMoneyValues else { return PortfolioMoneyValuePrivacy.maskedPlaceholder }
         guard let allTimeProfitPercentage = portfolio.allTimeProfitPercentage else { return "" }
 
-        return "(\(formattedSignedPercent(allTimeProfitPercentage)))"
-    }
-
-    private func formattedSignedCurrency(value: Double, currency: KowalskiCurrency) -> String {
-        let sign = if value > 0 {
-            "+"
-        } else if value < 0 {
-            "-"
-        } else {
-            ""
-        }
-        let formattedValue = abs(value).formatted(.currency(code: currency.rawValue))
-
-        return "\(sign)\(formattedValue)"
-    }
-
-    private func formattedSignedPercent(_ value: Double) -> String {
-        let sign = if value > 0 {
-            "+"
-        } else if value < 0 {
-            "-"
-        } else {
-            ""
-        }
-        let formattedValue = (abs(value) / 100).formatted(.percent.precision(.fractionLength(0 ... 1)))
-
-        return "\(sign)\(formattedValue)"
+        return "(\(PortfolioValueFormatting.signedPercent(allTimeProfitPercentage)))"
     }
 
     private func formattedHoldingProfitLoss(_ holding: PortfolioHolding) -> String {
@@ -254,10 +231,17 @@ public struct KowalskiPortfolioScreen: View {
             return NSLocalizedString("Unavailable", bundle: .module, comment: "")
         }
 
-        let amount = formattedSignedCurrency(value: profitLoss.amount.value, currency: profitLoss.amount.currency)
+        let amount = PortfolioValueFormatting.signedCurrency(
+            value: profitLoss.amount.value,
+            currency: profitLoss.amount.currency,
+        )
         guard let percentage = profitLoss.percentage else { return amount }
 
-        return "\(amount) \(formattedSignedPercent(percentage))"
+        return "\(amount) \(PortfolioValueFormatting.signedPercent(percentage))"
+    }
+
+    private func formattedHoldingUnitValue(_ holding: PortfolioHolding) -> String {
+        holding.unitValue.value.formatted(.currency(code: holding.unitValue.currency.rawValue))
     }
 
     private func holdingProfitLossColor(_ holding: PortfolioHolding) -> Color {

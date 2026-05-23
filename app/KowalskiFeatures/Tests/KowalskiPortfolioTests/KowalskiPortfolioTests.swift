@@ -710,6 +710,211 @@ struct KowalskiPortfolioTests {
     }
 
     @Test
+    func `Holding detail should derive allocation and average purchase price`() throws {
+        let apple = makeAppleStock()
+        let detail = PortfolioHoldingDetail(
+            holding: makePortfolioHolding(
+                stock: apple,
+                amount: 3,
+                unitValue: Money(currency: .USD, value: 150),
+                totalValue: Money(currency: .USD, value: 450),
+            ),
+            entries: [
+                makePortfolioEntry(
+                    stock: apple,
+                    amount: 1,
+                    purchasePrice: Money(currency: .USD, value: 100),
+                    transactionType: .purchase,
+                    transactionDate: Date(timeIntervalSince1970: 100),
+                ),
+                makePortfolioEntry(
+                    stock: apple,
+                    amount: 2,
+                    purchasePrice: Money(currency: .USD, value: 130),
+                    transactionType: .purchase,
+                    transactionDate: Date(timeIntervalSince1970: 200),
+                ),
+                makePortfolioEntry(
+                    stock: makeTeslaStock(),
+                    amount: 4,
+                    purchasePrice: Money(currency: .USD, value: 200),
+                    transactionType: .purchase,
+                    transactionDate: Date(timeIntervalSince1970: 300),
+                ),
+            ],
+            netWorth: Money(currency: .USD, value: 900),
+        )
+
+        #expect(detail.allocationPercentage == 50)
+        let averagePurchasePrice = try #require(detail.averagePurchasePrice)
+        #expect(averagePurchasePrice.currency == .USD)
+        #expect(averagePurchasePrice.value == 120)
+        #expect(detail.currentPriceVsAverageCostPercentage == 25)
+    }
+
+    @Test
+    func `Holding detail should only use matching transactions sorted newest first`() {
+        let apple = makeAppleStock()
+        let oldestAppleEntry = makePortfolioEntry(
+            id: "oldest-apple-entry",
+            stock: apple,
+            amount: 1,
+            transactionType: .purchase,
+            transactionDate: Date(timeIntervalSince1970: 100),
+        )
+        let newestAppleEntry = makePortfolioEntry(
+            id: "newest-apple-entry",
+            stock: apple,
+            amount: 1,
+            transactionType: .sell,
+            transactionDate: Date(timeIntervalSince1970: 200),
+        )
+        let teslaEntry = makePortfolioEntry(
+            stock: makeTeslaStock(),
+            amount: 1,
+            transactionType: .purchase,
+            transactionDate: Date(timeIntervalSince1970: 300),
+        )
+        let detail = PortfolioHoldingDetail(
+            holding: makePortfolioHolding(stock: apple),
+            entries: [oldestAppleEntry, teslaEntry, newestAppleEntry],
+            netWorth: Money(currency: .USD, value: 100),
+        )
+
+        #expect(detail.relatedEntries.map(\.id) == [newestAppleEntry.id, oldestAppleEntry.id])
+    }
+
+    @Test
+    func `Holding detail should hide unavailable currency dependent metrics`() {
+        let apple = makeAppleStock()
+        let detail = PortfolioHoldingDetail(
+            holding: makePortfolioHolding(
+                stock: apple,
+                unitValue: Money(currency: .USD, value: 150),
+                totalValue: Money(currency: .USD, value: 450),
+            ),
+            entries: [
+                makePortfolioEntry(
+                    stock: apple,
+                    amount: 1,
+                    purchasePrice: Money(currency: .USD, value: 100),
+                    transactionType: .purchase,
+                ),
+                makePortfolioEntry(
+                    stock: apple,
+                    amount: 1,
+                    purchasePrice: Money(currency: .EUR, value: 90),
+                    transactionType: .purchase,
+                ),
+            ],
+            netWorth: Money(currency: .EUR, value: 900),
+        )
+
+        #expect(detail.allocationPercentage == nil)
+        #expect(detail.averagePurchasePrice == nil)
+        #expect(detail.currentPriceVsAverageCostPercentage == nil)
+    }
+
+    @Test
+    func `Holding detail should use preferred currency purchase prices for average cost`() throws {
+        let apple = makeAppleStock()
+        let detail = PortfolioHoldingDetail(
+            holding: makePortfolioHolding(
+                stock: apple,
+                amount: 3,
+                unitValue: Money(currency: .EUR, value: 140),
+                totalValue: Money(currency: .EUR, value: 420),
+            ),
+            entries: [
+                makePortfolioEntry(
+                    stock: apple,
+                    amount: 1,
+                    purchasePrice: Money(currency: .USD, value: 150),
+                    preferredCurrencyPurchasePrice: Money(currency: .EUR, value: 100),
+                    transactionType: .purchase,
+                ),
+                makePortfolioEntry(
+                    stock: apple,
+                    amount: 2,
+                    purchasePrice: Money(currency: .GBP, value: 110),
+                    preferredCurrencyPurchasePrice: Money(currency: .EUR, value: 130),
+                    transactionType: .purchase,
+                ),
+            ],
+            netWorth: Money(currency: .EUR, value: 840),
+        )
+
+        let averagePurchasePrice = try #require(detail.averagePurchasePrice)
+        #expect(averagePurchasePrice.currency == .EUR)
+        #expect(averagePurchasePrice.value == 120)
+        let currentPriceVsAverageCostPercentage = try #require(detail.currentPriceVsAverageCostPercentage)
+        #expect(abs(currentPriceVsAverageCostPercentage - 16.666_666_666_666_668) < 0.000_001)
+    }
+
+    @Test
+    func `Holding detail should hide average cost when converted prices are incomplete`() {
+        let apple = makeAppleStock()
+        let detail = PortfolioHoldingDetail(
+            holding: makePortfolioHolding(
+                stock: apple,
+                unitValue: Money(currency: .EUR, value: 140),
+                totalValue: Money(currency: .EUR, value: 140),
+            ),
+            entries: [
+                makePortfolioEntry(
+                    stock: apple,
+                    amount: 1,
+                    purchasePrice: Money(currency: .USD, value: 150),
+                    preferredCurrencyPurchasePrice: Money(currency: .EUR, value: 100),
+                    transactionType: .purchase,
+                ),
+                makePortfolioEntry(
+                    stock: apple,
+                    amount: 1,
+                    purchasePrice: Money(currency: .GBP, value: 110),
+                    transactionType: .purchase,
+                ),
+            ],
+            netWorth: Money(currency: .EUR, value: 840),
+        )
+
+        #expect(detail.averagePurchasePrice == nil)
+        #expect(detail.currentPriceVsAverageCostPercentage == nil)
+    }
+
+    @Test
+    func `Holding detail average purchase price should ignore sell and split transactions`() throws {
+        let apple = makeAppleStock()
+        let detail = PortfolioHoldingDetail(
+            holding: makePortfolioHolding(stock: apple),
+            entries: [
+                makePortfolioEntry(
+                    stock: apple,
+                    amount: 1,
+                    purchasePrice: Money(currency: .USD, value: 100),
+                    transactionType: .purchase,
+                ),
+                makePortfolioEntry(
+                    stock: apple,
+                    amount: 10,
+                    purchasePrice: Money(currency: .USD, value: 1000),
+                    transactionType: .sell,
+                ),
+                makePortfolioEntry(
+                    stock: apple,
+                    amount: 2,
+                    purchasePrice: Money(currency: .USD, value: 500),
+                    transactionType: .split,
+                ),
+            ],
+            netWorth: Money(currency: .USD, value: 100),
+        )
+
+        let averagePurchasePrice = try #require(detail.averagePurchasePrice)
+        #expect(averagePurchasePrice.value == 100)
+    }
+
+    @Test
     func `Export transactions should write the expected header row`() async throws {
         let entry = makePortfolioEntryResponse(amount: 10)
         let portfolio = KowalskiPortfolio.testing(
@@ -1403,6 +1608,7 @@ private func makePortfolioEntryResponse(
         stock: makeAppleStockResponse(),
         amount: amount,
         purchasePrice: KowalskiClientMoney(currency: .USD, value: 150.5),
+        preferredCurrencyPurchasePrice: KowalskiClientMoney(currency: .USD, value: 150.5),
         transactionType: transactionType,
         transactionDate: Date(timeIntervalSince1970: 1_766_246_840),
     )
@@ -1412,7 +1618,22 @@ private func makePortfolioEntryResponse(
     stock: KowalskiClientStockItem,
     amount: Double,
     purchasePrice: KowalskiClientMoney,
-    preferredCurrencyPurchasePrice: KowalskiClientMoney? = nil,
+    transactionType: KowalskiClientPortfolioTransactionTypes,
+) -> KowalskiPortfolioClientEntryResponse {
+    makePortfolioEntryResponse(
+        stock: stock,
+        amount: amount,
+        purchasePrice: purchasePrice,
+        preferredCurrencyPurchasePrice: purchasePrice,
+        transactionType: transactionType,
+    )
+}
+
+private func makePortfolioEntryResponse(
+    stock: KowalskiClientStockItem,
+    amount: Double,
+    purchasePrice: KowalskiClientMoney,
+    preferredCurrencyPurchasePrice: KowalskiClientMoney,
     transactionType: KowalskiClientPortfolioTransactionTypes,
 ) -> KowalskiPortfolioClientEntryResponse {
     KowalskiPortfolioClientEntryResponse(
@@ -1428,12 +1649,20 @@ private func makePortfolioEntryResponse(
     )
 }
 
-private func makePortfolioEntry(stock: Stock, amount: Double, transactionType: TransactionType) -> PortfolioEntry {
+private func makePortfolioEntry(
+    id: String = UUID(uuidString: "cd81dbd7-3efa-42b3-8127-c1589279542f")!.uuidString,
+    stock: Stock,
+    amount: Double,
+    transactionType: TransactionType,
+    transactionDate: Date = Date(timeIntervalSince1970: 1_766_246_840),
+) -> PortfolioEntry {
     makePortfolioEntry(
+        id: id,
         stock: stock,
         amount: amount,
         purchasePrice: Money(currency: .USD, value: 150.5),
         transactionType: transactionType,
+        transactionDate: transactionDate,
     )
 }
 
@@ -1474,20 +1703,67 @@ private final class TrackingSecurityScopedURL: SecurityScopedFileURL {
 }
 
 private func makePortfolioEntry(
+    id: String = UUID(uuidString: "cd81dbd7-3efa-42b3-8127-c1589279542f")!.uuidString,
     stock: Stock,
     amount: Double,
     purchasePrice: Money,
     transactionType: TransactionType,
+    transactionDate: Date = Date(timeIntervalSince1970: 1_766_246_840),
+) -> PortfolioEntry {
+    makePortfolioEntry(
+        id: id,
+        stock: stock,
+        amount: amount,
+        purchasePrice: purchasePrice,
+        preferredCurrencyPurchasePrice: purchasePrice,
+        transactionType: transactionType,
+        transactionDate: transactionDate,
+    )
+}
+
+private func makePortfolioEntry(
+    id: String = UUID(uuidString: "cd81dbd7-3efa-42b3-8127-c1589279542f")!.uuidString,
+    stock: Stock,
+    amount: Double,
+    purchasePrice: Money,
+    preferredCurrencyPurchasePrice: Money,
+    transactionType: TransactionType,
+    transactionDate: Date = Date(timeIntervalSince1970: 1_766_246_840),
 ) -> PortfolioEntry {
     PortfolioEntry(
-        id: UUID(uuidString: "cd81dbd7-3efa-42b3-8127-c1589279542f")!.uuidString,
+        id: id,
         createdAt: Date(timeIntervalSince1970: 1_766_246_840),
         updatedAt: Date(timeIntervalSince1970: 1_766_246_840),
         stock: stock,
         amount: amount,
         purchasePrice: purchasePrice,
+        preferredCurrencyPurchasePrice: preferredCurrencyPurchasePrice,
         transactionType: transactionType,
-        transactionDate: Date(timeIntervalSince1970: 1_766_246_840),
+        transactionDate: transactionDate,
+    )
+}
+
+private func makePortfolioHolding(
+    stock: Stock,
+    amount: Double = 1,
+    unitValue: Money = Money(currency: .USD, value: 150),
+    totalValue: Money = Money(currency: .USD, value: 150),
+) -> PortfolioHolding {
+    PortfolioHolding(
+        assetType: "stock",
+        asset: PortfolioAsset(
+            symbol: stock.symbol,
+            exchange: stock.exchange,
+            name: stock.name,
+            isin: stock.isin,
+            sector: stock.sector,
+            industry: stock.industry,
+            exchangeDispatch: stock.exchangeDispatch,
+        ),
+        amount: amount,
+        unitValue: unitValue,
+        totalValue: totalValue,
+        profitLoss: nil,
     )
 }
 

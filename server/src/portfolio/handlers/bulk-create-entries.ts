@@ -1,12 +1,13 @@
 import type { TypedResponse } from 'hono';
 
 import { STATUS_CODES } from '@/constants/http';
-import { logInfo } from '@/logging';
+import { logError, logInfo } from '@/logging';
 import { withRequestLogger } from '@/logging/http';
 import type { HonoContext } from '@/api/contexts';
 import { mapPortfolioEntryToResponse } from '../mappers/entry-response';
 import { addPreferredCurrencyPurchasePrices } from '../services/preferred-currency-purchase-price';
 import bulkCreatePortfolioEntries from '../services/bulk-create-entries';
+import { PreferredCurrencyPurchasePriceResolutionFailed } from '../exceptions';
 import type { BulkCreateEntriesPayload } from '../schemas/payloads';
 import type { BulkCreateEntriesResponse } from '../schemas/responses';
 
@@ -20,8 +21,25 @@ async function bulkCreateEntries(
     createdEntries.map(entry => entry.transaction),
   );
   const response = createdEntries.map((createdEntry, index) => {
-    const preferredCurrencyPurchasePrice =
-      preferredCurrencyPurchasePrices[index]?.preferredCurrencyPurchasePrice ?? null;
+    const preferredCurrencyPurchasePrice = preferredCurrencyPurchasePrices[index]?.preferredCurrencyPurchasePrice;
+    if (preferredCurrencyPurchasePrice == null) {
+      const error = new PreferredCurrencyPurchasePriceResolutionFailed(c);
+      logError(
+        withRequestLogger(c, { component: 'portfolio' }),
+        {
+          event: 'portfolio.entries.bulk_create.preferred_currency_purchase_price_resolution_failed',
+          entry_id: createdEntry.transaction.id,
+          missing_index: index,
+          created_count: createdEntries.length,
+          resolved_count: preferredCurrencyPurchasePrices.length,
+          outcome: 'failure',
+        },
+        error,
+        'Bulk create produced an entry without a preferred currency purchase price',
+      );
+
+      throw error;
+    }
 
     return mapPortfolioEntryToResponse({
       id: createdEntry.transaction.id,

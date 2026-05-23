@@ -302,6 +302,35 @@ struct KowalskiPortfolioTransactionFormValues {
         )
     }
 
+    static func holdingCreate(
+        from holding: PortfolioHolding,
+        transactionType: TransactionType,
+        preferredCurrency: KowalskiCurrency = KowalskiFeatureDefaults.fallbackCurrency,
+    ) -> Self {
+        let emptyValues = empty(preferredCurrency: preferredCurrency)
+        let amount = switch transactionType {
+        case .purchase, .split: ""
+        case .sell: formattedNumber(holding.amount)
+        }
+
+        return Self(
+            selectedStock: Stock(
+                symbol: holding.asset.symbol,
+                exchange: holding.asset.exchange,
+                name: holding.asset.name,
+                isin: holding.asset.isin,
+                sector: holding.asset.sector,
+                industry: holding.asset.industry,
+                exchangeDispatch: holding.asset.exchangeDispatch,
+            ),
+            amount: amount,
+            purchasePriceCurrency: holding.unitValue.currency,
+            purchasePriceValue: emptyValues.purchasePriceValue,
+            transactionType: transactionType,
+            transactionDate: emptyValues.transactionDate,
+        )
+    }
+
     private static func formattedNumber(_ value: Double) -> String {
         value.formatted(.number.precision(.fractionLength(0 ... 6)))
     }

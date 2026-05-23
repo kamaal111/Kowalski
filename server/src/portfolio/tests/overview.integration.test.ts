@@ -3,7 +3,7 @@ import { describe, expect } from 'vitest';
 
 import { PORTFOLIO_ROUTE_NAME } from '..';
 import { PortfolioOverviewResponseSchema, ResolvedEntryResponseSchema } from '../schemas/responses';
-import { seedExchangeRate, seedPortfolioEntry, seedStockInfo } from './helpers';
+import { seedExchangeRate, seedPortfolioEntry, seedStockInfo, type SeedPortfolioEntryResult } from './helpers';
 import { APP_API_BASE_PATH, type ResolvedtransactionType } from '@/constants/common';
 import { ErrorResponseSchema } from '@/schemas/errors';
 import { integrationTest } from '@/tests/fixtures';
@@ -11,6 +11,7 @@ import { yahooFinanceQuoteMock } from '@/tests/mocks/yahoo-finance';
 import { createTestUserAndSession } from '@/tests/utils';
 import * as schema from '@/db/schema';
 import { createSyntheticTickerId } from '@/utils/tickers';
+import type { Currency } from '@/forex/constants';
 
 const OVERVIEW_PATH = `${APP_API_BASE_PATH}${PORTFOLIO_ROUTE_NAME}/overview`;
 
@@ -332,8 +333,13 @@ describe('Portfolio Overview Route', () => {
   );
 
   integrationTest(
-    'returns overview with null profit loss when cost basis currency cannot be converted',
+    'returns overview with profit loss using the default preferred currency when no preference is saved',
     async ({ app, db, sessionToken, userId }) => {
+      await seedExchangeRate(db, {
+        base: 'USD',
+        date: '2026-03-29',
+        rates: { GBP: 0.8 },
+      });
       await seedPortfolioEntry(db, {
         userId,
         stock: {
@@ -360,7 +366,8 @@ describe('Portfolio Overview Route', () => {
         AAPL: { currency: 'USD', value: 150 },
       });
       expect(body.holdings[0]?.total_value).toEqual({ currency: 'USD', value: 300 });
-      expect(body.holdings[0]?.profit_loss).toBeNull();
+      expect(body.holdings[0]?.profit_loss?.amount).toEqual({ currency: 'USD', value: 50 });
+      expect(body.holdings[0]?.profit_loss?.percentage).toBeCloseTo(20);
       expect(body.net_worth).toEqual({ currency: 'USD', value: 300 });
     },
   );
@@ -641,6 +648,11 @@ describe('Portfolio Overview Route', () => {
   integrationTest(
     'returns an internal server error when no current stock price can be resolved',
     async ({ app, db, sessionToken, userId, getLogsForRequestId, withRequestId }) => {
+      await seedExchangeRate(db, {
+        base: 'USD',
+        date: '2026-03-29',
+        rates: { EUR: 0.9 },
+      });
       await seedPortfolioEntry(db, {
         userId,
         stock: {
@@ -709,8 +721,8 @@ async function expectSuccessfulOverviewResponse(response: Response) {
 }
 
 function withPreferredCurrencyPurchasePrice(
-  entry: { preferred_currency_purchase_price: unknown },
-  preferredCurrencyPurchasePrice: unknown = null,
+  entry: SeedPortfolioEntryResult,
+  preferredCurrencyPurchasePrice: { currency: Currency; value: number } = entry.preferred_currency_purchase_price,
 ) {
   return {
     ...entry,
@@ -726,7 +738,7 @@ function makeResolvedSplitEntry({
   transactionType,
 }: {
   id: string;
-  entry: Awaited<ReturnType<typeof seedPortfolioEntry>>;
+  entry: SeedPortfolioEntryResult;
   amount: number;
   purchasePrice: number;
   transactionType: ResolvedtransactionType;
@@ -735,11 +747,8 @@ function makeResolvedSplitEntry({
     ...entry,
     id,
     amount,
-    purchase_price: {
-      currency: entry.purchase_price.currency,
-      value: purchasePrice,
-    },
-    preferred_currency_purchase_price: null,
+    purchase_price: { currency: entry.purchase_price.currency, value: purchasePrice },
+    preferred_currency_purchase_price: { currency: entry.purchase_price.currency, value: purchasePrice },
     transaction_type: transactionType,
   });
 }

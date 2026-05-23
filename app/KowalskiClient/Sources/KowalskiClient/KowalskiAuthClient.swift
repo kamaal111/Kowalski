@@ -372,7 +372,8 @@ struct KowalskiAuthClientPreview: KowalskiAuthClient {
                 name: "Yami Sukehiro",
                 email: "yami@bulls.io",
                 expiresAt: Date(timeIntervalSince1970: 1_762_088_596),
-                preferredCurrency: nil,
+                preferredCurrency: .USD,
+                hasPreferredCurrencyPreference: true,
             ),
         )
     }
@@ -390,6 +391,7 @@ struct KowalskiAuthClientPreview: KowalskiAuthClient {
                 email: "yami@bulls.io",
                 expiresAt: Date(timeIntervalSince1970: 1_762_088_596),
                 preferredCurrency: preferredCurrency,
+                hasPreferredCurrencyPreference: true,
             ),
         )
     }

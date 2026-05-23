@@ -88,7 +88,7 @@ describe('Update Portfolio Entry Route', () => {
         },
         amount: 12,
         purchase_price: { currency: 'USD', value: 175.25 },
-        preferred_currency_purchase_price: null,
+        preferred_currency_purchase_price: { currency: 'USD', value: 175.25 },
         transaction_type: 'sell',
         transaction_date: '2025-12-21T00:00:00.000Z',
       });
@@ -183,8 +183,8 @@ describe('Update Portfolio Entry Route', () => {
       });
       const body = await expectSuccessfulUpdateEntryResponse(response);
 
-      expect(body.preferred_currency_purchase_price?.currency).toBe('EUR');
-      expect(body.preferred_currency_purchase_price?.value).toBeCloseTo(100);
+      expect(body.preferred_currency_purchase_price.currency).toBe('EUR');
+      expect(body.preferred_currency_purchase_price.value).toBeCloseTo(100);
     },
   );
 

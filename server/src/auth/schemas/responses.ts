@@ -1,7 +1,7 @@
 import * as z from 'zod';
 
 import { ApiCommonDatetimeShape } from '@/schemas/common';
-import { CurrencyShape } from '@/forex/constants';
+import { CurrencyShape, DEFAULT_PREFERRED_CURRENCY } from '@/forex/constants';
 
 export const AuthResponseSchema = z
   .object({
@@ -59,9 +59,10 @@ export const SessionResponseSchema = z
         description: 'User account creation timestamp',
         example: '2025-10-05T12:08:28.374Z',
       }),
-      preferred_currency: z.union([CurrencyShape, z.null()]).openapi({
-        description: 'ISO 4217 currency code the user prefers for new transactions',
-        example: 'USD',
+      preferred_currency: CurrencyShape,
+      has_preferred_currency_preference: z.boolean().openapi({
+        description: 'Whether preferred_currency comes from a saved user preference rather than the server default.',
+        example: false,
       }),
     }),
   })
@@ -80,7 +81,8 @@ export const SessionResponseSchema = z
         email: 'john@apple.com',
         email_verified: false,
         created_at: '2025-10-05T12:08:28.374Z',
-        preferred_currency: null,
+        preferred_currency: DEFAULT_PREFERRED_CURRENCY,
+        has_preferred_currency_preference: false,
       },
     },
   });

@@ -27,20 +27,16 @@ const PortfolioEntryResponseObjectSchema = z.object({
 
 export type CreateEntryResponse = z.infer<typeof CreateEntryResponseSchema>;
 
-const PreferredCurrencyPurchasePriceSchema = z
-  .union([MoneySchema, z.null()])
-  .openapi('PreferredCurrencyPurchasePrice', {
-    description:
-      "Entry purchase price converted into the signed-in user's preferred currency, or null when no preferred currency is set.",
-    example: { currency: 'EUR', value: 138.07 },
-  });
+const PreferredCurrencyPurchasePriceSchema = z.object(MoneySchema.shape).openapi('PreferredCurrencyPurchasePrice', {
+  description: "Entry purchase price converted into the signed-in user's resolved preferred currency.",
+  example: { currency: 'EUR', value: 138.07 },
+});
 
 export const CreateEntryResponseSchema = PortfolioEntryResponseObjectSchema.extend({
   preferred_currency_purchase_price: PreferredCurrencyPurchasePriceSchema,
 }).openapi('CreateEntryResponse', {
   title: 'Create Portfolio Entry Response',
-  description:
-    "Persisted portfolio entry enriched with the signed-in user's preferred-currency purchase price when a preferred currency is configured.",
+  description: "Persisted portfolio entry enriched with the signed-in user's preferred-currency purchase price.",
   example: {
     id: '550e8400-e29b-41d4-a716-446655440000',
     stock: {

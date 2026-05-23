@@ -80,7 +80,8 @@ struct KowalskiAuthClientTests {
                 "email": "test@example.com",
                 "email_verified": true,
                 "created_at": "2025-01-01T00:00:00Z",
-                "preferred_currency": "EUR"
+                "preferred_currency": "EUR",
+                "has_preferred_currency_preference": true
               }
             }
             """.utf8,
@@ -101,6 +102,7 @@ struct KowalskiAuthClientTests {
         let response = try await authClient.updatePreferences(preferredCurrency: .USD).get()
 
         #expect(response.preferredCurrency == .EUR)
+        #expect(response.hasPreferredCurrencyPreference)
         #expect(response.name == "Test User")
         #expect(response.email == "test@example.com")
         #expect(response.expiresAt == Date(timeIntervalSince1970: 1_767_139_200))

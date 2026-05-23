@@ -56,27 +56,31 @@ struct KowalskiPortfolioTransactionDetailScreen: View {
     private var detailView: some View {
         List {
             Section("Stock") {
-                detailRow(title: "Symbol", value: entry.stock.symbol)
-                detailRow(title: "Name", value: entry.stock.name)
-                detailRow(title: "Exchange", value: entry.stock.exchangeDispatch ?? unavailableValue)
-                detailRow(title: "Exchange Code", value: entry.stock.exchange)
-                detailRow(title: "ISIN", value: entry.stock.isin ?? unavailableValue)
-                detailRow(title: "Sector", value: entry.stock.sector ?? unavailableValue)
-                detailRow(title: "Industry", value: entry.stock.industry ?? unavailableValue)
+                KowalskiDetailsRow(detailTitle: "Symbol", value: entry.stock.symbol)
+                KowalskiDetailsRow(detailTitle: "Name", value: entry.stock.name)
+                KowalskiDetailsRow(detailTitle: "Exchange", value: entry.stock.exchangeDispatch ?? unavailableValue)
+                KowalskiDetailsRow(detailTitle: "Exchange Code", value: entry.stock.exchange)
+                KowalskiDetailsRow(detailTitle: "ISIN", value: entry.stock.isin ?? unavailableValue)
+                KowalskiDetailsRow(detailTitle: "Sector", value: entry.stock.sector ?? unavailableValue)
+                KowalskiDetailsRow(detailTitle: "Industry", value: entry.stock.industry ?? unavailableValue)
             }
             Section("Transaction") {
-                detailRow(title: "Type", value: entry.transactionType.label)
-                detailRow(title: "Amount", value: entry.amount.formatted(.number))
-                detailRow(title: "Purchase Price", value: purchasePriceValue)
-                detailRow(title: "Date", value: formatDate(entry.transactionDate))
+                KowalskiDetailsRow(detailTitle: "Type", value: entry.transactionType.label)
+                KowalskiDetailsRow(detailTitle: "Amount", value: entry.amount.formatted(.number))
+                KowalskiDetailsRow(
+                    detailTitle: "Purchase Price",
+                    value: purchasePriceValue,
+                    valueAccessibilityIdentifier: purchasePriceAccessibilityIdentifier,
+                )
+                KowalskiDetailsRow(detailTitle: "Date", value: formatDate(entry.transactionDate))
             }
             Section("Audit") {
-                detailRow(
-                    title: "Created",
+                KowalskiDetailsRow(
+                    detailTitle: "Created",
                     value: formatDate(entry.createdAt),
                 )
-                detailRow(
-                    title: "Updated",
+                KowalskiDetailsRow(
+                    detailTitle: "Updated",
                     value: formatDate(entry.updatedAt),
                 )
             }
@@ -116,23 +120,12 @@ struct KowalskiPortfolioTransactionDetailScreen: View {
         return "\(entry.purchasePrice.currency.rawValue) \(entry.purchasePrice.value.formatted(.number))"
     }
 
-    private func formatDate(_ date: Date) -> String {
-        date.formatted(.dateTime.year().month().day().hour().minute())
+    private var purchasePriceAccessibilityIdentifier: String {
+        portfolio.showsMoneyValues ? "" : PortfolioMoneyValuePrivacy.accessibilityIdentifier
     }
 
-    private func detailRow(title: String, value: String) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            Text(title)
-                .foregroundStyle(.secondary)
-            Spacer()
-            Text(value)
-                .multilineTextAlignment(.trailing)
-                .accessibilityIdentifier(
-                    value == PortfolioMoneyValuePrivacy.maskedPlaceholder
-                        ? PortfolioMoneyValuePrivacy.accessibilityIdentifier
-                        : "",
-                )
-        }
+    private func formatDate(_ date: Date) -> String {
+        date.formatted(.dateTime.year().month().day().hour().minute())
     }
 }
 
@@ -154,6 +147,7 @@ struct KowalskiPortfolioTransactionDetailScreen: View {
                 ),
                 amount: 10,
                 purchasePrice: Money(currency: .USD, value: 150.5),
+                preferredCurrencyPurchasePrice: Money(currency: .USD, value: 150.5),
                 transactionType: .purchase,
                 transactionDate: Date(timeIntervalSince1970: 1_766_246_840),
             ),

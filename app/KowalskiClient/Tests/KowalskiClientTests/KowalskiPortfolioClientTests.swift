@@ -182,8 +182,8 @@ struct KowalskiPortfolioClientTests {
 
         #expect(overview.transactions.count == 1)
         #expect(overview.transactions.first?.purchasePrice.currency == .USD)
-        #expect(overview.transactions.first?.preferredCurrencyPurchasePrice?.currency == .EUR)
-        #expect(overview.transactions.first?.preferredCurrencyPurchasePrice?.value == 138.07)
+        #expect(overview.transactions.first?.preferredCurrencyPurchasePrice.currency == .EUR)
+        #expect(overview.transactions.first?.preferredCurrencyPurchasePrice.value == 138.07)
     }
 
     @Test

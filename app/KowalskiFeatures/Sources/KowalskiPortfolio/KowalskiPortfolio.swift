@@ -241,7 +241,7 @@ public final class KowalskiPortfolio {
 
         var costBasis = 0.0
         for entry in entries {
-            let costBasisMoney = entry.preferredCurrencyPurchasePrice ?? entry.purchasePrice
+            let costBasisMoney = entry.preferredCurrencyPurchasePrice
             guard costBasisMoney.currency == netWorth.currency else {
                 logger.warning("Portfolio cost basis should use a consistent currency")
                 return nil

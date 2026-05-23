@@ -49,7 +49,7 @@ describe('Create Portfolio Entry Route', () => {
         },
         amount: 10,
         purchase_price: { currency: 'USD', value: 150.5 },
-        preferred_currency_purchase_price: null,
+        preferred_currency_purchase_price: { currency: 'USD', value: 150.5 },
         transaction_type: 'buy',
         transaction_date: '2025-12-20T00:00:00.000Z',
       });
@@ -123,8 +123,34 @@ describe('Create Portfolio Entry Route', () => {
       });
       const body = await expectSuccessfulCreateEntryResponse(response);
 
-      expect(body.preferred_currency_purchase_price?.currency).toBe('EUR');
-      expect(body.preferred_currency_purchase_price?.value).toBeCloseTo(100);
+      expect(body.preferred_currency_purchase_price.currency).toBe('EUR');
+      expect(body.preferred_currency_purchase_price.value).toBeCloseTo(100);
+    },
+  );
+
+  integrationTest(
+    'converts preferred_currency_purchase_price to USD when no preference is saved',
+    async ({ app, db, sessionToken }) => {
+      await seedExchangeRate(db, {
+        base: 'USD',
+        date: '2026-03-29',
+        rates: { EUR: 0.9 },
+      });
+
+      const response = await sendCreateEntryRequest(app, {
+        payload: {
+          ...createValidCreateEntryPayload(),
+          purchase_price: {
+            currency: 'EUR',
+            value: 90,
+          },
+        },
+        sessionToken,
+      });
+      const body = await expectSuccessfulCreateEntryResponse(response);
+
+      expect(body.preferred_currency_purchase_price.currency).toBe('USD');
+      expect(body.preferred_currency_purchase_price.value).toBeCloseTo(100);
     },
   );
 

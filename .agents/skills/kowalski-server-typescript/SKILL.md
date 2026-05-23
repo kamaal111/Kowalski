@@ -29,6 +29,13 @@ Load [typescript-server-best-practices](../typescript-server-best-practices/SKIL
 - Use the shared logging module in `server/src/logging/`, including helpers such as `getComponentLogger(...)`, `logInfo(...)`, `logWarn(...)`, and `logError(...)`.
 - Never assume a client-supplied portfolio, transaction, or other resource ID belongs to the requester just because the user is authenticated.
 
+## Throw Documented API Exceptions With Context
+
+- Throw standard API exceptions, usually feature-specific `APIException` subclasses, instead of raw `Error` objects from API request paths.
+- Log with `logError(...)` or the nearest appropriate shared logging helper immediately before throwing when a server-side failure is detected. Include a clear custom message plus useful debugging context such as ids, currencies, dependency names, counts, or branch decisions. Do not log secrets, tokens, cookies, or raw sensitive payloads.
+- Document every thrown API exception status in the affected OpenAPI route responses with `ErrorResponseSchema` or `ValidationErrorResponseSchema`, and update response descriptions so the failure mode is discoverable from the spec.
+- When adding a new exception code, keep the exception message, code, HTTP status, logs, route docs, and tests aligned.
+
 ## Follow Kowalski's Persistence And Test Setup
 
 - Keep database access in feature repositories and business orchestration in feature services.

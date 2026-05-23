@@ -24,7 +24,11 @@ async function preferencesHandler(
 
   const response = SessionResponseSchema.parse({
     ...session,
-    user: { ...session.user, preferred_currency: updatedPreferredCurrency },
+    user: {
+      ...session.user,
+      preferred_currency: updatedPreferredCurrency,
+      has_preferred_currency_preference: true,
+    },
   });
 
   logInfo(withRequestLogger(c, { component: 'auth' }), {

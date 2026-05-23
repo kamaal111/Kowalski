@@ -14,26 +14,7 @@ struct KowalskiPortfolioTransactionsScreen: View {
     var body: some View {
         List(portfolio.entries) { entry in
             NavigationLink(value: KowalskiPortfolioTransactionNavigationItem.detail(entryID: entry.id)) {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(alignment: .firstTextBaseline) {
-                        Text(entry.stock.symbol)
-                            .font(.headline)
-                        Text(entry.stock.name)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    HStack {
-                        Text(entry.transactionType.label)
-                        Spacer()
-                        Text("\(entry.amount.formatted(.number)) shares")
-                    }
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    Text(entry.transactionDate.formatted(.dateTime.year().month().day()))
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                }
-                .padding(.vertical, .extraSmall)
+                KowalskiDetailsRow(entry: entry, presentation: .transactionList)
             }
             .accessibilityLabel(Text(entry.stock.name))
             .accessibilityIdentifier("portfolio-entry-\(entry.stock.name)")

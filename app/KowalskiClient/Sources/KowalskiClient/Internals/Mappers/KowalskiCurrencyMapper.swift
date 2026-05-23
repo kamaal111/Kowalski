@@ -24,9 +24,3 @@ extension Components.Schemas.Currency {
         return currency
     }
 }
-
-extension Components.Schemas.SessionResponse.UserPayload.PreferredCurrencyPayload {
-    var kowalskiCurrency: KowalskiCurrency? {
-        value1?.kowalskiCurrency
-    }
-}
