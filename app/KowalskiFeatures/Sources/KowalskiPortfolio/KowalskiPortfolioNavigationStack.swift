@@ -19,12 +19,19 @@ enum KowalskiPortfolioTransactionNavigationItem: Hashable {
     case pairedTransaction(entryID: String, transactionType: TransactionType)
 }
 
+enum KowalskiPortfolioNavigationPathItem: Hashable {
+    case holding(symbol: String)
+    case transactionDetail(entryID: String)
+    case holdingTransaction(symbol: String, transactionType: TransactionType)
+}
+
 public struct KowalskiPortfolioNavigationStack: View {
     @Environment(KowalskiAuth.self) private var auth
     @Environment(KowalskiPortfolio.self) private var portfolio
 
     @State private var hasLoadedEntries = false
     @State private var selectedNavigationItem: KowalskiPortfolioNavigationItem? = .portfolio
+    @State private var portfolioNavigationPath: [KowalskiPortfolioNavigationPathItem] = []
     @State private var transactionNavigationPath: [KowalskiPortfolioTransactionNavigationItem] = []
     @State private var toast: Toast?
 
@@ -36,13 +43,47 @@ public struct KowalskiPortfolioNavigationStack: View {
         } detail: {
             switch selectedNavigationItem ?? .portfolio {
             case .portfolio:
-                NavigationStack {
+                NavigationStack(path: $portfolioNavigationPath) {
                     KowalskiPortfolioScreen()
                         .toolbar {
                             portfolioToolbar
                         }
                         .frame(minSize: ModuleConfig.screenMinSize)
                         .toastView(toast: $toast)
+                        .navigationDestination(for: KowalskiPortfolioNavigationPathItem.self) { item in
+                            switch item {
+                            case let .holding(symbol):
+                                if let holding = portfolio.holdings.first(where: { $0.asset.symbol == symbol }) {
+                                    KowalskiPortfolioHoldingDetailScreen(holding: holding)
+                                }
+                            case let .transactionDetail(entryID):
+                                if let entry = portfolio.entries.first(where: { $0.id == entryID }) {
+                                    KowalskiPortfolioTransactionDetailScreen(
+                                        entry: entry,
+                                        onPairedTransaction: { entry, transactionType in
+                                            portfolioNavigationPath.append(
+                                                .holdingTransaction(
+                                                    symbol: entry.stock.symbol,
+                                                    transactionType: transactionType,
+                                                ),
+                                            )
+                                        },
+                                    )
+                                }
+                            case let .holdingTransaction(symbol, transactionType):
+                                if let holding = portfolio.holdings.first(where: { $0.asset.symbol == symbol }) {
+                                    KowalskiPortfolioTransactionScreen(
+                                        initialValues: .holdingCreate(
+                                            from: holding,
+                                            transactionType: transactionType,
+                                            preferredCurrency: auth.effectiveCurrency,
+                                        ),
+                                        editorConfiguration: .pairedCreate(transactionType: transactionType),
+                                        onTransactionAdd: handleTransactionAdd,
+                                    )
+                                }
+                            }
+                        }
                 }
             case .transactions:
                 NavigationStack(path: $transactionNavigationPath) {

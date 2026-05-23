@@ -14,7 +14,7 @@ public struct KowalskiPortfolioClientEntryResponse: Codable, Sendable {
     public let stock: KowalskiClientStockItem
     public let amount: Double
     public let purchasePrice: KowalskiClientMoney
-    public let preferredCurrencyPurchasePrice: KowalskiClientMoney?
+    public let preferredCurrencyPurchasePrice: KowalskiClientMoney
     public let transactionType: KowalskiClientPortfolioTransactionTypes
     public let transactionDate: Date
 
@@ -25,7 +25,7 @@ public struct KowalskiPortfolioClientEntryResponse: Codable, Sendable {
         stock: KowalskiClientStockItem,
         amount: Double,
         purchasePrice: KowalskiClientMoney,
-        preferredCurrencyPurchasePrice: KowalskiClientMoney? = nil,
+        preferredCurrencyPurchasePrice: KowalskiClientMoney,
         transactionType: KowalskiClientPortfolioTransactionTypes,
         transactionDate: Date,
     ) {

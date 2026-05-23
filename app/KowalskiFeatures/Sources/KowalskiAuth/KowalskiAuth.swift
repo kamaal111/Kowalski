@@ -50,6 +50,8 @@ public final class KowalskiAuth {
                 name: "Yami Sukehiro",
                 email: "yami@bull.io",
                 expiresAt: Date.now.addingTimeInterval(oneDay),
+                preferredCurrency: KowalskiFeatureDefaults.fallbackCurrency,
+                hasPreferredCurrencyPreference: true,
             )
         }
         Task { await loadSession() }
@@ -60,12 +62,12 @@ public final class KowalskiAuth {
     }
 
     /// The currency the app should use for new transaction defaults.
-    /// Priority: server-stored preference → device locale currency (if supported) → app fallback currency.
+    /// Priority: server-resolved preference → app fallback currency.
     public var effectiveCurrency: KowalskiCurrency {
-        let defaultCurrency = Self.localeCurrency ?? KowalskiFeatureDefaults.fallbackCurrency
-        guard let preferredCurrency = session?.preferredCurrency else { return defaultCurrency }
+        guard let preferredCurrency = session?.preferredCurrency
+        else { return KowalskiFeatureDefaults.fallbackCurrency }
 
-        return KowalskiCurrency(rawValue: preferredCurrency) ?? defaultCurrency
+        return preferredCurrency
     }
 
     // MARK: - Sign Up
@@ -180,9 +182,10 @@ public final class KowalskiAuth {
     }
 
     @discardableResult
-    private func loadSession() async -> Result<Void, KowalskiAuthFeatureSessionError> {
+    package func loadSession() async -> Result<Void, KowalskiAuthFeatureSessionError> {
         if let cachedSession = getCachedSessionIfLoadedToday() {
             setSession(cachedSession)
+            await seedPreferredCurrencyIfNeeded(for: cachedSession)
             return .success(())
         }
 
@@ -204,10 +207,7 @@ public final class KowalskiAuth {
 
         setSession(session)
         cacheSession(session)
-
-        if session.preferredCurrency == nil {
-            await seedPreferredCurrency()
-        }
+        await seedPreferredCurrencyIfNeeded(for: session)
 
         return .success(())
     }
@@ -233,9 +233,12 @@ public final class KowalskiAuth {
         Self.cachedSession = CachedUserSession(session: session, cachedAt: .now)
     }
 
-    private func seedPreferredCurrency() async {
-        let currency = effectiveCurrency
-        let result = await updatePreferredCurrency(currency)
+    private func seedPreferredCurrencyIfNeeded(for session: UserSession) async {
+        guard !session.hasPreferredCurrencyPreference else { return }
+        guard let localeCurrency = Self.localeCurrency else { return }
+        guard localeCurrency != session.preferredCurrency else { return }
+
+        let result = await updatePreferredCurrency(localeCurrency)
         switch result {
         case let .failure(failure):
             logger.error(label: "Failed to seed preferred currency; will retry next session load", error: failure)
@@ -244,6 +247,10 @@ public final class KowalskiAuth {
     }
 
     static var localeCurrency: KowalskiCurrency? {
+        localeCurrencyProvider()
+    }
+
+    static var localeCurrencyProvider: () -> KowalskiCurrency? = {
         guard let currencyCode = Locale.current.currency?.identifier else { return nil }
 
         return KowalskiCurrency(rawValue: currencyCode)
@@ -289,7 +296,7 @@ enum KowalskiAuthFeatureSignUpError: Error {
     }
 }
 
-private enum KowalskiAuthFeatureSessionError: Error {
+package enum KowalskiAuthFeatureSessionError: Error {
     case serverUnavailable(context: Error?)
     case unauthorized(context: Error?)
 }

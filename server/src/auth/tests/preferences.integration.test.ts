@@ -18,14 +18,15 @@ interface AppRequestClient {
 }
 
 describe('Session preferred currency integration', () => {
-  integrationTest('returns preferred_currency as null for a new user', async ({ app, db }) => {
+  integrationTest('returns default preferred_currency for a new user', async ({ app, db }) => {
     const { token } = await createTestUserAndSession(db);
     const response = await sendSessionRequest(app, { authToken: token });
 
     const session = SessionResponseSchema.parse(await response.json());
 
     expect(response.status).toBe(200);
-    expect(session.user.preferred_currency).toBeNull();
+    expect(session.user.preferred_currency).toBe('USD');
+    expect(session.user.has_preferred_currency_preference).toBe(false);
   });
 
   integrationTest('returns preferred_currency when set in user preferences', async ({ app, db }) => {
@@ -38,6 +39,7 @@ describe('Session preferred currency integration', () => {
 
     expect(response.status).toBe(200);
     expect(session.user.preferred_currency).toBe('EUR');
+    expect(session.user.has_preferred_currency_preference).toBe(true);
   });
 
   integrationTest('returns preferred_currency via cookie-based session lookup', async ({ app }) => {
@@ -60,7 +62,8 @@ describe('Session preferred currency integration', () => {
     const sessionResponse = await sendSessionRequest(app, { sessionToken: sessionToken ?? undefined });
     const session = SessionResponseSchema.parse(await sessionResponse.json());
 
-    expect(session.user.preferred_currency).toBeNull();
+    expect(session.user.preferred_currency).toBe('USD');
+    expect(session.user.has_preferred_currency_preference).toBe(false);
   });
 });
 
@@ -82,6 +85,7 @@ describe('PATCH /auth/preferences integration', () => {
       expect(response.status).toBe(200);
       const body = SessionResponseSchema.parse(await response.json());
       expect(body.user.preferred_currency).toBe('EUR');
+      expect(body.user.has_preferred_currency_preference).toBe(true);
       expect(body.user.name).toBe(sessionBeforeUpdate.user.name);
       expect(body.user.email).toBe(sessionBeforeUpdate.user.email);
       expect(body.session.expires_at).toBe(sessionBeforeUpdate.session.expires_at);

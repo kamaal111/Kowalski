@@ -158,7 +158,7 @@ final class KowalskiPortfolioUITests: XCTestCase {
     }
 
     private func tapBack(in app: XCUIApplication) {
-        let candidates = ["Transaction Details", "Transactions", "Back"]
+        let candidates = ["Transaction Details", "Transactions", "Back", "chevron.backward", "AAPL", "TSLA", "NVDA"]
 
         for button in app.windows.firstMatch.buttons.allElementsBoundByIndex {
             if candidates.contains(button.label) {
@@ -191,15 +191,22 @@ final class KowalskiPortfolioUITests: XCTestCase {
     }
 
     private func returnToPortfolioSummary(in app: XCUIApplication) {
-        if app.staticTexts["Holdings Net Worth"].firstMatch.exists {
-            return
-        }
+        for _ in 0 ..< 4 {
+            if app.staticTexts["Holdings Net Worth"].firstMatch.exists {
+                return
+            }
 
-        let portfolioSidebarItem = app.buttons["Portfolio"].firstMatch
-        XCTAssertTrue(portfolioSidebarItem.waitForExistenceUsingPredicate(timeout: 3))
-        portfolioSidebarItem.tap()
-        if app.staticTexts["Holdings Net Worth"].firstMatch.waitForExistenceUsingPredicate(timeout: 3) {
-            return
+            let portfolioSidebarItem = app.buttons["Portfolio"].firstMatch
+            XCTAssertTrue(portfolioSidebarItem.waitForExistenceUsingPredicate(timeout: 3))
+            portfolioSidebarItem.tap()
+            if app.staticTexts["Holdings Net Worth"].firstMatch.waitForExistenceUsingPredicate(timeout: 1) {
+                return
+            }
+
+            tapBack(in: app)
+            if app.staticTexts["Holdings Net Worth"].firstMatch.waitForExistenceUsingPredicate(timeout: 1) {
+                return
+            }
         }
 
         XCTFail("Expected to return to the portfolio summary")
@@ -245,6 +252,21 @@ final class KowalskiPortfolioUITests: XCTestCase {
             .matching(identifier: "portfolio-holding-\(stockName)")
             .firstMatch
         XCTAssertTrue(holding.waitForExistenceUsingPredicate(timeout: 3))
+    }
+
+    private func openHoldingDetail(named stockName: String, symbol: String, in app: XCUIApplication) {
+        returnToPortfolioSummary(in: app)
+
+        let holding = app.descendants(matching: .any)
+            .matching(identifier: "portfolio-holding-\(stockName)")
+            .firstMatch
+        XCTAssertTrue(holding.waitForExistenceUsingPredicate(timeout: 3))
+        holding.tap()
+
+        let holdingDetail = app.descendants(matching: .any)
+            .matching(identifier: "portfolio-holding-detail-\(symbol)")
+            .firstMatch
+        XCTAssertTrue(holdingDetail.waitForExistenceUsingPredicate(timeout: 3))
     }
 
     private func assertToastShown(message: String, in app: XCUIApplication, timeout: TimeInterval = 3) {
@@ -400,6 +422,27 @@ final class KowalskiPortfolioUITests: XCTestCase {
             XCTAssertTrue(app.staticTexts["15"].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
 
             returnToTransactionsList(in: app)
+        }
+
+        XCTContext.runActivity(named: "Holding detail shows metrics and related transactions") { _ in
+            openHoldingDetail(named: "Apple Inc.", symbol: "AAPL", in: app)
+
+            XCTAssertTrue(app.staticTexts["Allocation"].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
+            XCTAssertTrue(app.staticTexts["Average Buy Price"].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
+            XCTAssertTrue(
+                app.staticTexts["Current vs Average Cost"].firstMatch.waitForExistenceUsingPredicate(timeout: 3),
+            )
+            XCTAssertTrue(app.buttons["Buy"].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
+            XCTAssertTrue(app.buttons["Sell"].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
+
+            let purchaseTransaction = app.buttons["Purchase, 15 shares"].firstMatch
+            XCTAssertTrue(purchaseTransaction.waitForExistenceUsingPredicate(timeout: 3))
+            purchaseTransaction.tap()
+
+            XCTAssertTrue(app.staticTexts["US0378331005"].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
+            XCTAssertTrue(app.buttons["Split"].firstMatch.waitForExistenceUsingPredicate(timeout: 3))
+
+            returnToPortfolioSummary(in: app)
         }
 
         XCTContext

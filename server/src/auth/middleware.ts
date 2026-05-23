@@ -13,7 +13,7 @@ import { JWKS_URL } from './better-auth';
 import env, { IS_TEST } from '../api/env';
 import { jwks } from '../db/schema/better-auth';
 import { findUserPreferredCurrencyByUserId } from './repositories/preferences';
-import type { Currency } from '@/forex/constants';
+import { DEFAULT_PREFERRED_CURRENCY, type Currency } from '@/forex/constants';
 import { logInfo, logWarn } from '@/logging';
 import { withRequestLogger } from '@/logging/http';
 
@@ -56,7 +56,7 @@ async function verifySession(c: HonoContext): Promise<SessionResponse> {
     outcome: 'success',
   });
 
-  const preferredCurrency = await getPreferredCurrency(c, sessionResponse.user.id);
+  const preferredCurrency = await resolvePreferredCurrency(c, sessionResponse.user.id);
   const response: SessionResponse = {
     session: {
       expires_at: toISO8601String(sessionResponse.session.expiresAt),
@@ -69,7 +69,8 @@ async function verifySession(c: HonoContext): Promise<SessionResponse> {
       email: sessionResponse.user.email,
       email_verified: sessionResponse.user.emailVerified,
       created_at: toISO8601String(sessionResponse.user.createdAt),
-      preferred_currency: preferredCurrency,
+      preferred_currency: preferredCurrency.currency,
+      has_preferred_currency_preference: preferredCurrency.hasPreference,
     },
   };
 
@@ -114,7 +115,7 @@ async function verifyJwt(c: HonoContext): Promise<SessionResponse | null> {
     outcome: 'success',
   });
 
-  const preferredCurrency = await getPreferredCurrency(c, jwtPayload.sub);
+  const preferredCurrency = await resolvePreferredCurrency(c, jwtPayload.sub);
 
   return {
     session: {
@@ -128,7 +129,8 @@ async function verifyJwt(c: HonoContext): Promise<SessionResponse | null> {
       email: jwtPayload.email,
       email_verified: jwtPayload.emailVerified,
       created_at: toISO8601String(new Date((payload.iat ?? 0) * 1000)),
-      preferred_currency: preferredCurrency,
+      preferred_currency: preferredCurrency.currency,
+      has_preferred_currency_preference: preferredCurrency.hasPreference,
     },
   };
 }
@@ -142,8 +144,15 @@ async function getJwksForVerification(c: HonoContext) {
   return createLocalJWKSet({ keys });
 }
 
-async function getPreferredCurrency(c: HonoContext, userId: string): Promise<Currency | null> {
+async function resolvePreferredCurrency(
+  c: HonoContext,
+  userId: string,
+): Promise<{ currency: Currency; hasPreference: boolean }> {
   const preferences = await findUserPreferredCurrencyByUserId(c, userId);
 
-  return preferences?.preferredCurrency ?? null;
+  if (preferences?.preferredCurrency == null) {
+    return { currency: DEFAULT_PREFERRED_CURRENCY, hasPreference: false };
+  }
+
+  return { currency: preferences.preferredCurrency, hasPreference: true };
 }

@@ -554,7 +554,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '500':
-          description: Bulk portfolio entry persistence failed
+          description: >-
+            Bulk portfolio entry persistence or preferred currency purchase
+            price resolution failed
           content:
             application/json:
               schema:
@@ -819,11 +821,13 @@ components:
               description: User account creation timestamp
               example: '2025-10-05T12:08:28.374Z'
             preferred_currency:
-              anyOf:
-                - $ref: '#/components/schemas/Currency'
-                - {}
-              description: ISO 4217 currency code the user prefers for new transactions
-              example: USD
+              $ref: '#/components/schemas/Currency'
+            has_preferred_currency_preference:
+              type: boolean
+              description: >-
+                Whether preferred_currency comes from a saved user preference
+                rather than the server default.
+              example: false
           required:
             - id
             - name
@@ -831,6 +835,7 @@ components:
             - email_verified
             - created_at
             - preferred_currency
+            - has_preferred_currency_preference
       required:
         - session
         - user
@@ -847,7 +852,8 @@ components:
           email: john@apple.com
           email_verified: false
           created_at: '2025-10-05T12:08:28.374Z'
-          preferred_currency: null
+          preferred_currency: USD
+          has_preferred_currency_preference: false
     Currency:
       type: string
       enum:
@@ -1247,12 +1253,21 @@ components:
         currency: USD
         value: 150.5
     PreferredCurrencyPurchasePrice:
-      anyOf:
-        - $ref: '#/components/schemas/Money'
-        - {}
+      type: object
+      properties:
+        currency:
+          $ref: '#/components/schemas/Currency'
+        value:
+          type: number
+          minimum: 0
+          description: Monetary value (non-negative)
+          example: 150.5
+      required:
+        - currency
+        - value
       description: >-
-        Entry purchase price converted into the signed-in user's preferred
-        currency, or null when no preferred currency is set.
+        Entry purchase price converted into the signed-in user's resolved
+        preferred currency.
       example:
         currency: EUR
         value: 138.07
@@ -1535,8 +1550,7 @@ components:
       title: Create Portfolio Entry Response
       description: >-
         Persisted portfolio entry enriched with the signed-in user's
-        preferred-currency purchase price when a preferred currency is
-        configured.
+        preferred-currency purchase price.
       example:
         id: 550e8400-e29b-41d4-a716-446655440000
         stock:

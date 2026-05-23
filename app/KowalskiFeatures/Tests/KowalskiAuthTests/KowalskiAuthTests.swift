@@ -21,10 +21,31 @@ struct KowalskiAuthTests {
         )
         let auth = KowalskiAuth.testing(
             client: .testing(auth: authClient),
-            session: makeSession(preferredCurrency: "USD"),
+            session: makeSession(preferredCurrency: .USD),
         )
 
         try await auth.updatePreferredCurrency(.EUR).get()
+
+        #expect(auth.effectiveCurrency == .EUR)
+        #expect(await authClient.updatePreferencesCallCount == 1)
+        #expect(await authClient.lastPreferredCurrency == .EUR)
+    }
+
+    @Test
+    func `Load session should seed locale currency when no preference is saved`() async throws {
+        let previousLocaleCurrencyProvider = KowalskiAuth.localeCurrencyProvider
+        KowalskiAuth.localeCurrencyProvider = { .EUR }
+        defer { KowalskiAuth.localeCurrencyProvider = previousLocaleCurrencyProvider }
+
+        let authClient = MockAuthClient(
+            sessionResult: .success(
+                makeSessionResponse(preferredCurrency: .USD, hasPreferredCurrencyPreference: false),
+            ),
+            updatePreferencesResult: .success(makeSessionResponse(preferredCurrency: .EUR)),
+        )
+        let auth = KowalskiAuth.testing(client: .testing(auth: authClient))
+
+        try await auth.loadSession().get()
 
         #expect(auth.effectiveCurrency == .EUR)
         #expect(await authClient.updatePreferencesCallCount == 1)
@@ -36,11 +57,16 @@ private actor MockAuthClient: KowalskiAuthClient {
     private(set) var updatePreferencesCallCount = 0
     private(set) var lastPreferredCurrency: KowalskiCurrency?
 
+    private let sessionResult: Result<KowalskiAuthSessionResponse, KowalskiAuthSessionErrors>
     private let updatePreferencesResult: Result<KowalskiAuthSessionResponse, KowalskiAuthPreferencesErrors>
 
     init(
+        sessionResult: Result<KowalskiAuthSessionResponse, KowalskiAuthSessionErrors> = .success(
+            makeSessionResponse(preferredCurrency: .USD),
+        ),
         updatePreferencesResult: Result<KowalskiAuthSessionResponse, KowalskiAuthPreferencesErrors>,
     ) {
+        self.sessionResult = sessionResult
         self.updatePreferencesResult = updatePreferencesResult
     }
 
@@ -53,7 +79,7 @@ private actor MockAuthClient: KowalskiAuthClient {
     }
 
     func session() async -> Result<KowalskiAuthSessionResponse, KowalskiAuthSessionErrors> {
-        .success(makeSessionResponse(preferredCurrency: .USD))
+        sessionResult
     }
 
     func refreshToken() async -> Result<Void, KowalskiAuthRefreshErrors> {
@@ -70,20 +96,25 @@ private actor MockAuthClient: KowalskiAuthClient {
     }
 }
 
-private func makeSession(preferredCurrency: String?) -> UserSession {
+private func makeSession(preferredCurrency: KowalskiCurrency) -> UserSession {
     UserSession(
         name: "Test User",
         email: "test@example.com",
         expiresAt: Date(timeIntervalSince1970: 1_767_139_200),
         preferredCurrency: preferredCurrency,
+        hasPreferredCurrencyPreference: true,
     )
 }
 
-private func makeSessionResponse(preferredCurrency: KowalskiCurrency?) -> KowalskiAuthSessionResponse {
+private func makeSessionResponse(
+    preferredCurrency: KowalskiCurrency,
+    hasPreferredCurrencyPreference: Bool = true,
+) -> KowalskiAuthSessionResponse {
     KowalskiAuthSessionResponse(
         name: "Test User",
         email: "test@example.com",
         expiresAt: Date(timeIntervalSince1970: 1_767_139_200),
         preferredCurrency: preferredCurrency,
+        hasPreferredCurrencyPreference: hasPreferredCurrencyPreference,
     )
 }

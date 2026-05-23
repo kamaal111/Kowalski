@@ -5,7 +5,6 @@ import { getSessionWhereSessionIsRequired } from '@/auth';
 import { ASSET_TYPES, RESOLVED_TRANSACTION_TYPES } from '@/constants/common';
 import { parseSyntheticTickerId } from '@/utils/tickers';
 import { assertToFloat } from '@/utils/numbers';
-import { FINAL_FALLBACK_CURRENCY } from '../constants';
 import { InvalidTickerId, StockPriceFetchFailed } from '../exceptions';
 import { findPortfolioEntriesByUserId } from '../repositories/list-entries';
 import type { PortfolioHolding } from '../schemas/responses';
@@ -33,7 +32,7 @@ async function getPortfolioOverview(c: HonoContext): Promise<PortfolioOverviewRe
       transactions: [],
       currentValues: {},
       holdings: [],
-      netWorth: { currency: preferredCurrency ?? FINAL_FALLBACK_CURRENCY, value: 0 },
+      netWorth: { currency: preferredCurrency, value: 0 },
     };
   }
 
@@ -43,10 +42,7 @@ async function getPortfolioOverview(c: HonoContext): Promise<PortfolioOverviewRe
   ]);
   const holdings = mapHoldings(c, entries, transactions, currentValues);
   const netWorthCurrency =
-    holdings[0]?.total_value.currency ??
-    Object.values(currentValues)[0]?.currency ??
-    preferredCurrency ??
-    FINAL_FALLBACK_CURRENCY;
+    holdings[0]?.total_value.currency ?? Object.values(currentValues)[0]?.currency ?? preferredCurrency;
   const netWorthValue = holdings.reduce((total, holding) => total + holding.total_value.value, 0);
 
   return {
@@ -143,10 +139,7 @@ function getCostBasisDelta(
   transaction: EntryWithPreferredCurrencyPurchasePrice<ResolvedPortfolioEntry>,
   targetCurrency: string,
 ) {
-  const costBasisMoney = transaction.preferredCurrencyPurchasePrice ?? {
-    currency: transaction.entry.purchasePriceCurrency,
-    value: assertToFloat(transaction.entry.purchasePrice),
-  };
+  const costBasisMoney = transaction.preferredCurrencyPurchasePrice;
   if (costBasisMoney.currency !== targetCurrency) {
     return null;
   }

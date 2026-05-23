@@ -176,12 +176,12 @@ function convertStockPriceToPreferredCurrency({
 }: {
   c: HonoContext;
   price: PersistedStockPrice;
-  preferredCurrency: Currency | null;
+  preferredCurrency: Currency;
   exchangeRateSnapshot: PersistedExchangeRateSnapshot | undefined;
 }): CurrentValue {
-  if (preferredCurrency == null || price.currency === preferredCurrency) {
+  if (price.currency === preferredCurrency) {
     return {
-      currency: preferredCurrency ?? price.currency,
+      currency: preferredCurrency,
       value: price.close,
     };
   }
@@ -203,13 +203,9 @@ function convertStockPriceToPreferredCurrency({
 
 async function resolveExchangeRateSnapshotForPreferredCurrency(
   c: HonoContext,
-  preferredCurrency: Currency | null,
+  preferredCurrency: Currency,
   resolvedPrices: Iterable<PersistedStockPrice>,
 ) {
-  if (preferredCurrency == null) {
-    return undefined;
-  }
-
   for (const resolvedPrice of resolvedPrices) {
     if (resolvedPrice.currency === preferredCurrency) {
       continue;

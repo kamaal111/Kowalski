@@ -1,3 +1,5 @@
+import '@hono/zod-openapi';
+
 import db from '../src/db';
 import {
   collectLatestExchangeRates,

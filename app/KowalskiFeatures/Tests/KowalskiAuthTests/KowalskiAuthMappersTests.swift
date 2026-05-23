@@ -7,7 +7,7 @@
 
 import Foundation
 @testable import KowalskiAuth
-import KowalskiClient
+@testable import KowalskiClient
 import Testing
 
 @Suite("Auth Mappers Tests")
@@ -21,26 +21,30 @@ struct KowalskiAuthMappersTests {
             email: "test@example.com",
             expiresAt: Date(timeIntervalSince1970: 1_766_246_840),
             preferredCurrency: .EUR,
+            hasPreferredCurrencyPreference: true,
         )
 
         let session = mapper.mapSessionResponse(response)
 
-        #expect(session.preferredCurrency == "EUR")
+        #expect(session.preferredCurrency == .EUR)
+        #expect(session.hasPreferredCurrencyPreference)
         #expect(session.name == "Test User")
         #expect(session.email == "test@example.com")
     }
 
     @Test
-    func `Map session response should preserve nil preferred currency`() {
+    func `Map session response should preserve default preferred currency`() {
         let response = KowalskiAuthSessionResponse(
             name: "Test User",
             email: "test@example.com",
             expiresAt: Date(timeIntervalSince1970: 1_766_246_840),
-            preferredCurrency: nil,
+            preferredCurrency: .USD,
+            hasPreferredCurrencyPreference: false,
         )
 
         let session = mapper.mapSessionResponse(response)
 
-        #expect(session.preferredCurrency == nil)
+        #expect(session.preferredCurrency == .USD)
+        #expect(!session.hasPreferredCurrencyPreference)
     }
 }

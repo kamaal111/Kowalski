@@ -117,8 +117,14 @@ describe('Portfolio Overview Preflight Route', () => {
       const bodies = await Promise.all(responses.map(expectSuccessfulOverviewPreflightResponse));
 
       expect(bodies.map(body => body.refresh_state)).toEqual(['refreshing', 'refreshing']);
-      expect(yahooFinanceQuoteMock).toHaveBeenCalledOnce();
+      await vi.waitFor(() => expect(yahooFinanceQuoteMock).toHaveBeenCalledOnce());
       resolveQuotes([{ symbol: 'AAPL', regularMarketPrice: 190, currency: 'USD' }]);
+      await vi.waitFor(async () => {
+        const readyResponse = await sendOverviewPreflightRequest(app, { sessionToken });
+        const readyBody = await expectSuccessfulOverviewPreflightResponse(readyResponse);
+
+        expect(readyBody.refresh_state).toBe('ready');
+      });
     },
   );
 

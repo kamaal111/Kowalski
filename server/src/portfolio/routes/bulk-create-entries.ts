@@ -59,7 +59,7 @@ const bulkCreateEntriesRoute = createRoute({
       },
     },
     [STATUS_CODES.INTERNAL_SERVER_ERROR]: {
-      description: 'Bulk portfolio entry persistence failed',
+      description: 'Bulk portfolio entry persistence or preferred currency purchase price resolution failed',
       content: {
         [MIME_TYPES.APPLICATION_JSON]: {
           schema: ErrorResponseSchema,

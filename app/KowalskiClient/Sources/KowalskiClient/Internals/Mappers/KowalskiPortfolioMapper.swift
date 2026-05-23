@@ -223,9 +223,10 @@ struct KowalskiPortfolioMapper {
 
     private func mapPreferredCurrencyPurchasePrice(
         _ response: Components.Schemas.PreferredCurrencyPurchasePrice,
-    ) -> KowalskiClientMoney? {
-        guard let money = response.value1 else { return nil }
-
-        return mapMoney(money)
+    ) -> KowalskiClientMoney {
+        KowalskiClientMoney(
+            currency: response.currency.kowalskiCurrency,
+            value: response.value,
+        )
     }
 }

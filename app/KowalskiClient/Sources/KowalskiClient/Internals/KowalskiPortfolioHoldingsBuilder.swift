@@ -33,7 +33,7 @@ struct KowalskiPortfolioHoldingsBuilder {
             } else {
                 0
             }
-            let costBasisMoney = entry.preferredCurrencyPurchasePrice ?? entry.purchasePrice
+            let costBasisMoney = entry.preferredCurrencyPurchasePrice
             let profitLoss = makeProfitLoss(
                 previousCostBasis: previousCostBasis,
                 costBasisMoney: costBasisMoney,

@@ -52,6 +52,8 @@ export const CURRENCIES = [
 
 export type Currency = (typeof CURRENCIES)[number];
 
+export const DEFAULT_PREFERRED_CURRENCY: Currency = 'USD';
+
 export const CURRENCY_SET: ReadonlySet<string> = new Set(CURRENCIES);
 
 export const CurrencyShape = z.enum(CURRENCIES).openapi('Currency', {

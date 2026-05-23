@@ -33,6 +33,8 @@ interface SeedPortfolioEntryInput {
   updatedAt?: Date;
 }
 
+export type SeedPortfolioEntryResult = Awaited<ReturnType<typeof seedPortfolioEntry>>;
+
 export async function seedPortfolioEntry(db: Database, input: SeedPortfolioEntryInput) {
   const defaultPortfolio = await getOrCreateDefaultPortfolio(db, input.userId);
   const ticker = await getOrCreateTicker(db, input.stock);
@@ -69,7 +71,10 @@ export async function seedPortfolioEntry(db: Database, input: SeedPortfolioEntry
       currency: input.purchasePrice.currency,
       value: input.purchasePrice.value,
     },
-    preferred_currency_purchase_price: null,
+    preferred_currency_purchase_price: {
+      currency: input.purchasePrice.currency,
+      value: input.purchasePrice.value,
+    },
     transaction_type: input.transactionType,
     transaction_date: dateOnlyStringToISO8601String(input.transactionDate.slice(0, 10)),
     created_at: createdAt.toISOString(),

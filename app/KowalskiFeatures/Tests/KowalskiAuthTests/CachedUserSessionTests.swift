@@ -18,7 +18,8 @@ struct CachedUserSessionTests {
                 name: "Test User",
                 email: "test@example.com",
                 expiresAt: Date(timeIntervalSince1970: 1_767_139_200),
-                preferredCurrency: "EUR",
+                preferredCurrency: .EUR,
+                hasPreferredCurrencyPreference: true,
             ),
             cachedAt: Date(timeIntervalSince1970: 1_744_764_800),
         )
@@ -28,17 +29,20 @@ struct CachedUserSessionTests {
         let encodedSession = try #require(object["session"] as? [String: Any])
 
         #expect(encodedSession["preferredCurrency"] as? String == "EUR")
+        #expect(encodedSession["hasPreferredCurrencyPreference"] as? Bool == true)
     }
 
     @Test
-    func `Cached user session should decode older payloads without preferred currency`() throws {
+    func `Cached user session should decode preferred currency from cached payloads`() throws {
         let data = Data(
             """
             {
               "session": {
                 "name": "Test User",
                 "email": "test@example.com",
-                "expiresAt": 768960000
+                "expiresAt": 768960000,
+                "preferredCurrency": "USD",
+                "hasPreferredCurrencyPreference": false
               },
               "cachedAt": 765504000
             }
@@ -49,6 +53,7 @@ struct CachedUserSessionTests {
 
         #expect(decoded.session.name == "Test User")
         #expect(decoded.session.email == "test@example.com")
-        #expect(decoded.session.preferredCurrency == nil)
+        #expect(decoded.session.preferredCurrency == .USD)
+        #expect(!decoded.session.hasPreferredCurrencyPreference)
     }
 }

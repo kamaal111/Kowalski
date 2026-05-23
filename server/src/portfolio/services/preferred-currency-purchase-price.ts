@@ -43,13 +43,9 @@ function convertPurchasePriceToPreferredCurrency<TEntry extends EntryWithPurchas
 }: {
   c: HonoContext;
   entry: TEntry;
-  preferredCurrency: Currency | null;
+  preferredCurrency: Currency;
   exchangeRateSnapshot: PersistedExchangeRateSnapshot | undefined;
 }): CreateEntryResponse['preferred_currency_purchase_price'] {
-  if (preferredCurrency == null) {
-    return null;
-  }
-
   const purchasePrice = assertToFloat(entry.purchasePrice);
   if (entry.purchasePriceCurrency === preferredCurrency) {
     return {
@@ -72,13 +68,9 @@ function convertPurchasePriceToPreferredCurrency<TEntry extends EntryWithPurchas
 
 async function resolveExchangeRateSnapshotForPreferredCurrency<TEntry extends EntryWithPurchasePrice>(
   c: HonoContext,
-  preferredCurrency: Currency | null,
+  preferredCurrency: Currency,
   entries: TEntry[],
 ) {
-  if (preferredCurrency == null) {
-    return undefined;
-  }
-
   for (const entry of entries) {
     if (entry.purchasePriceCurrency === preferredCurrency) {
       continue;
