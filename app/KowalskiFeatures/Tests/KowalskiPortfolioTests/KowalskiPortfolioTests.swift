@@ -96,6 +96,53 @@ struct KowalskiPortfolioTests {
     }
 
     @Test
+    func `Bootstrap should show cached snapshot while waiting for refreshed prices`() async throws {
+        KowalskiPortfolio.resetPersistedSnapshot()
+        defer { KowalskiPortfolio.resetPersistedSnapshot() }
+        let cachedEntry = makePortfolioEntryResponse(amount: 1)
+        let cachedOverview = makePortfolioOverviewResponse(
+            transactions: [cachedEntry],
+            currentValues: ["AAPL": KowalskiClientMoney(currency: .USD, value: 100)],
+        )
+        let firstClient = MockPortfolioClient(overviewResult: .success(cachedOverview))
+        let firstPortfolio = KowalskiPortfolio.testing(client: .testing(portfolio: firstClient))
+        try await firstPortfolio.bootstrapPortfolio(sessionEmail: "yami@bull.io", currencyCode: "USD").get()
+
+        let refreshedEntry = makePortfolioEntryResponse(amount: 2)
+        let refreshedOverview = makePortfolioOverviewResponse(
+            transactions: [refreshedEntry],
+            currentValues: ["AAPL": KowalskiClientMoney(currency: .USD, value: 200)],
+        )
+        let secondClient = MockPortfolioClient(
+            overviewResult: .success(refreshedOverview),
+            preflightResults: [
+                .success(makeOverviewPreflightResponse(refreshState: .refreshing, pollAfterMilliseconds: 1)),
+                .success(makeOverviewPreflightResponse(refreshState: .refreshing, pollAfterMilliseconds: 500)),
+                .success(makeOverviewPreflightResponse(refreshState: .ready)),
+            ],
+        )
+        let secondPortfolio = KowalskiPortfolio.testing(client: .testing(portfolio: secondClient))
+
+        let bootstrapTask = Task {
+            await secondPortfolio.bootstrapPortfolio(sessionEmail: "yami@bull.io", currencyCode: "USD")
+        }
+        try await waitUntil { await secondClient.getOverviewPreflightCallCount >= 2 }
+
+        #expect(secondPortfolio.entries.map(\.amount) == [1])
+        #expect(secondPortfolio.netWorth?.value == 100)
+        #expect(!secondPortfolio.isShowingInitialLoadingState)
+        #expect(secondPortfolio.isShowingLatestPricesRefreshHint)
+        #expect(await secondClient.getOverviewCallCount == 0)
+
+        try await bootstrapTask.value.get()
+
+        #expect(secondPortfolio.entries.map(\.amount) == [2])
+        #expect(secondPortfolio.netWorth?.value == 400)
+        #expect(!secondPortfolio.isShowingLatestPricesRefreshHint)
+        #expect(await secondClient.events == [.preflight, .preflight, .preflight, .overview])
+    }
+
+    @Test
     func `Bootstrap cache should be scoped by session email and currency`() async throws {
         KowalskiPortfolio.resetPersistedSnapshot()
         defer { KowalskiPortfolio.resetPersistedSnapshot() }
@@ -1404,12 +1451,18 @@ struct KowalskiPortfolioTests {
     }
 }
 
+private enum PortfolioClientEvent: Equatable {
+    case overview
+    case preflight
+}
+
 private actor MockPortfolioClient: KowalskiPortfolioClient {
     private(set) var createEntryCallCount = 0
     private(set) var bulkCreateEntriesCallCount = 0
     private(set) var updateEntryCallCount = 0
     private(set) var getOverviewCallCount = 0
     private(set) var getOverviewPreflightCallCount = 0
+    private(set) var events: [PortfolioClientEvent] = []
     private(set) var bulkCreateEntriesPayloads: [[KowalskiPortfolioBulkCreateEntryItemPayload]] = []
 
     private let createEntryResult: Result<
@@ -1461,6 +1514,7 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
 
     func getOverview() async -> Result<KowalskiPortfolioOverviewResponse, KowalskiPortfolioClientOverviewErrors> {
         getOverviewCallCount += 1
+        events.append(.overview)
 
         guard !overviewResults.isEmpty else {
             return .success(makePortfolioOverviewResponse(transactions: [], currentValues: [:]))
@@ -1477,6 +1531,7 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
         KowalskiPortfolioClientOverviewPreflightErrors,
     > {
         getOverviewPreflightCallCount += 1
+        events.append(.preflight)
 
         guard !preflightResults.isEmpty else {
             return .success(makeOverviewPreflightResponse())
@@ -1526,6 +1581,24 @@ private actor MockStocksClient: KowalskiStocksClient {
         searchResult
     }
 }
+
+@MainActor
+private func waitUntil(
+    attempts: Int = 100,
+    condition: () async -> Bool,
+) async throws {
+    for _ in 0 ..< attempts {
+        if await condition() {
+            return
+        }
+
+        try await Task.sleep(for: .milliseconds(10))
+    }
+
+    throw WaitUntilTimeout()
+}
+
+private struct WaitUntilTimeout: Error {}
 
 private func makeTransactionPayload(amount: Double) -> TransactionPayload {
     TransactionPayload(
