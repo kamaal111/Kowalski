@@ -169,6 +169,48 @@ struct KowalskiPortfolioTests {
     }
 
     @Test
+    func `Fetch dashboards should store portfolio growth points`() async throws {
+        let dashboards = makePortfolioDashboardsResponse()
+        let portfolioClient = MockPortfolioClient(dashboardsResult: .success(dashboards))
+        let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
+
+        try await portfolio.fetchDashboards().get()
+
+        #expect(portfolio.dashboards?.portfolioGrowthOverTime.currency == .USD)
+        #expect(portfolio.dashboards?.portfolioGrowthOverTime.points.map(\.value) == [1500, 1854.5])
+        #expect(portfolio.dashboards?.portfolioGrowthOverTime.points.last?.isCurrent == true)
+        #expect(!portfolio.isShowingDashboardLoadingState)
+        #expect(await portfolioClient.getDashboardsCallCount == 1)
+    }
+
+    @Test
+    func `Fetch dashboards should return failure when request fails`() async {
+        let portfolioClient = MockPortfolioClient(dashboardsResult: .failure(.unauthorized))
+        let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
+
+        let result = await portfolio.fetchDashboards()
+
+        #expect(throws: Error.self) {
+            try result.get()
+        }
+        #expect(!portfolio.isShowingDashboardLoadingState)
+        #expect(portfolio.dashboards == nil)
+    }
+
+    @Test
+    func `Empty dashboards should expose dashboard empty state`() async throws {
+        let dashboards = KowalskiPortfolioDashboardsResponse(
+            portfolioGrowthOverTime: KowalskiPortfolioGrowthOverTimeResponse(currency: .USD, points: []),
+        )
+        let portfolioClient = MockPortfolioClient(dashboardsResult: .success(dashboards))
+        let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
+
+        try await portfolio.fetchDashboards().get()
+
+        #expect(portfolio.isShowingDashboardEmptyState)
+    }
+
+    @Test
     func `Store transaction should turn the first validation issue into the message shown to the user`() async throws {
         let portfolioClient = MockPortfolioClient(
             createEntryResult: .failure(
@@ -1452,6 +1494,7 @@ struct KowalskiPortfolioTests {
 }
 
 private enum PortfolioClientEvent: Equatable {
+    case dashboards
     case overview
     case preflight
 }
@@ -1460,6 +1503,7 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
     private(set) var createEntryCallCount = 0
     private(set) var bulkCreateEntriesCallCount = 0
     private(set) var updateEntryCallCount = 0
+    private(set) var getDashboardsCallCount = 0
     private(set) var getOverviewCallCount = 0
     private(set) var getOverviewPreflightCallCount = 0
     private(set) var events: [PortfolioClientEvent] = []
@@ -1476,6 +1520,10 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
     private let updateEntryResult: Result<
         KowalskiPortfolioClientEntryResponse,
         KowalskiPortfolioClientUpdateEntryErrors,
+    >
+    private let dashboardsResult: Result<
+        KowalskiPortfolioDashboardsResponse,
+        KowalskiPortfolioClientDashboardsErrors,
     >
     private var preflightResults: [Result<
         KowalskiPortfolioOverviewPreflightResponse,
@@ -1495,6 +1543,10 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
         > = .success([]),
         updateEntryResult: Result<KowalskiPortfolioClientEntryResponse, KowalskiPortfolioClientUpdateEntryErrors> =
             .success(makePortfolioEntryResponse(amount: 10)),
+        dashboardsResult: Result<
+            KowalskiPortfolioDashboardsResponse,
+            KowalskiPortfolioClientDashboardsErrors,
+        > = .success(makePortfolioDashboardsResponse()),
         overviewResult: Result<KowalskiPortfolioOverviewResponse, KowalskiPortfolioClientOverviewErrors> = .success(
             makePortfolioOverviewResponse(transactions: [], currentValues: [:]),
         ),
@@ -1507,9 +1559,17 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
         self.createEntryResult = createEntryResult
         self.bulkCreateEntriesResult = bulkCreateEntriesResult
         self.updateEntryResult = updateEntryResult
+        self.dashboardsResult = dashboardsResult
         self.overviewResults = overviewResults.isEmpty ? [overviewResult] : overviewResults
         self.preflightResults = preflightResults
             .isEmpty ? [.success(makeOverviewPreflightResponse())] : preflightResults
+    }
+
+    func getDashboards() async -> Result<KowalskiPortfolioDashboardsResponse, KowalskiPortfolioClientDashboardsErrors> {
+        getDashboardsCallCount += 1
+        events.append(.dashboards)
+
+        return dashboardsResult
     }
 
     func getOverview() async -> Result<KowalskiPortfolioOverviewResponse, KowalskiPortfolioClientOverviewErrors> {
@@ -1632,6 +1692,26 @@ private func makePortfolioOverviewResponse(
         netWorth: makePortfolioNetWorth(
             transactions: transactions,
             currentValues: currentValues,
+        ),
+    )
+}
+
+private func makePortfolioDashboardsResponse() -> KowalskiPortfolioDashboardsResponse {
+    KowalskiPortfolioDashboardsResponse(
+        portfolioGrowthOverTime: KowalskiPortfolioGrowthOverTimeResponse(
+            currency: .USD,
+            points: [
+                KowalskiPortfolioGrowthPointResponse(
+                    date: Date(timeIntervalSince1970: 1_766_160_440),
+                    value: 1500,
+                    isCurrent: false,
+                ),
+                KowalskiPortfolioGrowthPointResponse(
+                    date: Date(timeIntervalSince1970: 1_766_246_840),
+                    value: 1854.5,
+                    isCurrent: true,
+                ),
+            ],
         ),
     )
 }

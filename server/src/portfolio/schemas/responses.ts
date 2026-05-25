@@ -357,3 +357,58 @@ export const PortfolioOverviewResponseSchema = z
       net_worth: { currency: 'EUR', value: 1854.5 },
     },
   });
+
+const PortfolioGrowthPointSchema = z
+  .object({
+    date: z.string().openapi({
+      description: 'Snapshot date for this portfolio value point.',
+      example: '2025-12-20',
+    }),
+    value: z.number().openapi({
+      description: "Total portfolio value in the signed-in user's preferred currency.",
+      example: 1854.5,
+    }),
+    is_current: z.boolean().openapi({
+      description: 'Whether this point represents the current portfolio value.',
+      example: false,
+    }),
+  })
+  .openapi('PortfolioGrowthPoint', {
+    title: 'Portfolio Growth Point',
+    description: 'Sparse portfolio total value snapshot for charting growth over time.',
+  });
+
+const PortfolioGrowthOverTimeSchema = z
+  .object({
+    currency: CurrencyShape.openapi({
+      description: "Currency used for all portfolio growth values, resolved from the signed-in user's preference.",
+      example: 'USD',
+    }),
+    points: z.array(PortfolioGrowthPointSchema).openapi({
+      description: 'Sparse growth points at transaction dates plus the current value point when entries exist.',
+    }),
+  })
+  .openapi('PortfolioGrowthOverTime', {
+    title: 'Portfolio Growth Over Time',
+    description: 'Portfolio total value over sparse transaction-date snapshots.',
+  });
+
+export type PortfolioDashboardsResponse = z.infer<typeof PortfolioDashboardsResponseSchema>;
+
+export const PortfolioDashboardsResponseSchema = z
+  .object({
+    portfolio_growth_over_time: PortfolioGrowthOverTimeSchema,
+  })
+  .openapi('PortfolioDashboardsResponse', {
+    title: 'Portfolio Dashboards Response',
+    description: 'Dashboard data for the signed-in user default portfolio.',
+    example: {
+      portfolio_growth_over_time: {
+        currency: 'USD',
+        points: [
+          { date: '2025-12-19', value: 750, is_current: false },
+          { date: '2025-12-20', value: 1854.5, is_current: true },
+        ],
+      },
+    },
+  });

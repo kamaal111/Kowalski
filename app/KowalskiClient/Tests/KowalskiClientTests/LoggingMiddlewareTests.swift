@@ -7,6 +7,7 @@
 
 import Foundation
 @testable import KowalskiClient
+import OpenAPIRuntime
 import Testing
 
 @Suite("Logging Middleware Tests")
@@ -49,6 +50,33 @@ struct LoggingMiddlewareTests {
         let formattedElapsedTime = LoggingMiddleware.formatElapsedTime(elapsedTime)
 
         #expect(formattedElapsedTime == "1250ms")
+    }
+
+    @Test
+    func `Unknown response body larger than log limit should log exact byte count instead of unknown length`() async {
+        let responseData = Data(repeating: 0, count: 2048)
+        let responseBody = HTTPBody(responseData, length: .unknown)
+
+        let processedBody = await BodyLoggingPolicy.upTo(maxBytes: 1024).process(
+            responseBody,
+        ).bodyToLog
+
+        #expect(processedBody == .tooManyBytesToLog(byteCount: 2048))
+    }
+
+    @Test
+    func `Unknown response body within log limit should be logged and replayed`() async throws {
+        let responseData = Data(#"{"net_worth":{"currency":"USD","value":0}}"#.utf8)
+        let responseBody = HTTPBody(responseData, length: .unknown)
+
+        let processedBody = await BodyLoggingPolicy.upTo(maxBytes: 1024).process(
+            responseBody,
+        )
+
+        #expect(processedBody.bodyToLog == .complete(data: responseData))
+        let replayedBody = try #require(processedBody.bodyForNext)
+        let replayedData = try await Data(collecting: replayedBody, upTo: 1024)
+        #expect(replayedData == responseData)
     }
 
     private func bodyData(from bodyLog: BodyLoggingPolicy.BodyLog) -> Data? {

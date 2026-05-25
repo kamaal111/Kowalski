@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, lte } from 'drizzle-orm';
 
 import type { HonoContext } from '@/api/contexts';
 import { stockInfo } from '@/db/schema';
@@ -71,6 +71,64 @@ export async function findLatestStockPricesByTickerIds(
   }, new Map<string, PersistedStockPrice>());
 
   return [...latestRows.values()];
+}
+
+export async function findStockPricesByTickerIdsOnOrBeforeDate(
+  c: HonoContext,
+  tickerIds: string[],
+  date: string,
+): Promise<PersistedStockPrice[]> {
+  if (tickerIds.length === 0) {
+    return [];
+  }
+
+  const rows = await c
+    .get('db')
+    .select({
+      tickerId: stockInfo.tickerId,
+      currency: stockInfo.currency,
+      date: stockInfo.date,
+      close: stockInfo.close,
+    })
+    .from(stockInfo)
+    .where(and(inArray(stockInfo.tickerId, tickerIds), lte(stockInfo.date, date)))
+    .orderBy(asc(stockInfo.tickerId), desc(stockInfo.date));
+
+  return rows
+    .reduce((acc, row) => {
+      if (acc.has(row.tickerId)) {
+        return acc;
+      }
+
+      return acc.set(row.tickerId, mapStockPriceRow(row));
+    }, new Map<string, PersistedStockPrice>())
+    .values()
+    .toArray();
+}
+
+export async function findStockPricesByTickerIdsBetweenDates(
+  c: HonoContext,
+  tickerIds: string[],
+  startDate: string,
+  endDate: string,
+): Promise<PersistedStockPrice[]> {
+  if (tickerIds.length === 0) {
+    return [];
+  }
+
+  const rows = await c
+    .get('db')
+    .select({
+      tickerId: stockInfo.tickerId,
+      currency: stockInfo.currency,
+      date: stockInfo.date,
+      close: stockInfo.close,
+    })
+    .from(stockInfo)
+    .where(and(inArray(stockInfo.tickerId, tickerIds), gte(stockInfo.date, startDate), lte(stockInfo.date, endDate)))
+    .orderBy(asc(stockInfo.tickerId), desc(stockInfo.date));
+
+  return rows.map(mapStockPriceRow);
 }
 
 export async function findLatestCachedPriceDateByTickerIds(

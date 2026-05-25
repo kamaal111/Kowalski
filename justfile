@@ -324,7 +324,7 @@ install-modules:
     #!/usr/bin/env zsh
 
     . ~/.zshrc || true
-    echo "Y" | {{ PN }} i
+    {{ PN }} i
 
 [private]
 install-modules-ci:
@@ -337,4 +337,4 @@ install-modules-server:
     #!/usr/bin/env zsh
 
     . ~/.zshrc || true
-    echo "Y" | {{ PN }} i
+    {{ PN }} i

@@ -6,7 +6,6 @@ import { ASSET_TYPES, RESOLVED_TRANSACTION_TYPES } from '@/constants/common';
 import { parseSyntheticTickerId } from '@/utils/tickers';
 import { assertToFloat } from '@/utils/numbers';
 import { InvalidTickerId, StockPriceFetchFailed } from '../exceptions';
-import { findPortfolioEntriesByUserId } from '../repositories/list-entries';
 import type { PortfolioHolding } from '../schemas/responses';
 import { aggregateHoldings, type AggregatedHolding } from './aggregate-holdings';
 import {
@@ -14,7 +13,8 @@ import {
   type EntryWithPreferredCurrencyPurchasePrice,
 } from './preferred-currency-purchase-price';
 import { getCurrentStockValues } from './current-stock-values';
-import { resolveSplits, type ResolvedPortfolioEntry } from './resolve-splits';
+import { findResolvedPortfolioEntriesByUserId } from './resolved-portfolio-entries';
+import type { ResolvedPortfolioEntry } from './resolve-splits';
 
 interface PortfolioOverviewResult {
   transactions: EntryWithPreferredCurrencyPurchasePrice<ResolvedPortfolioEntry>[];
@@ -24,8 +24,7 @@ interface PortfolioOverviewResult {
 }
 
 async function getPortfolioOverview(c: HonoContext): Promise<PortfolioOverviewResult> {
-  const portfolioEntries = await findPortfolioEntriesByUserId(c);
-  const entries = resolveSplits(portfolioEntries);
+  const entries = await findResolvedPortfolioEntriesByUserId(c);
   const preferredCurrency = getSessionWhereSessionIsRequired(c).user.preferred_currency;
   if (entries.length === 0) {
     return {

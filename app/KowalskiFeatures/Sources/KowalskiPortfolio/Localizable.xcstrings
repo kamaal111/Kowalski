@@ -68,6 +68,12 @@
     "Current vs Average Cost" : {
 
     },
+    "Dashboard unavailable" : {
+
+    },
+    "Dashboards" : {
+
+    },
     "Date" : {
 
     },
@@ -119,6 +125,9 @@
     "ISIN" : {
 
     },
+    "Loading dashboards" : {
+
+    },
     "Loading net worth" : {
 
     },
@@ -137,6 +146,12 @@
     "Net worth unavailable" : {
 
     },
+    "No dashboard data yet" : {
+
+    },
+    "No growth points" : {
+
+    },
     "No portfolio entries yet" : {
 
     },
@@ -147,6 +162,12 @@
 
     },
     "Portfolio" : {
+
+    },
+    "Portfolio Growth Over Time" : {
+
+    },
+    "Portfolio growth will appear after transactions are available." : {
 
     },
     "Price before split" : {
@@ -171,6 +192,12 @@
 
     },
     "Sector" : {
+
+    },
+    "Selected date" : {
+
+    },
+    "Selected value" : {
 
     },
     "Sell" : {
@@ -218,6 +245,9 @@
     "Transactions" : {
 
     },
+    "Try again later." : {
+
+    },
     "Type" : {
 
     },
@@ -243,6 +273,9 @@
 
     },
     "Use the add button to record your first stock transaction." : {
+
+    },
+    "Value" : {
 
     }
   },

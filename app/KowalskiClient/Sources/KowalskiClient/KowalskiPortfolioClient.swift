@@ -12,6 +12,7 @@ import OpenAPIRuntime
 // MARK: Protocol
 
 public protocol KowalskiPortfolioClient: Sendable {
+    func getDashboards() async -> Result<KowalskiPortfolioDashboardsResponse, KowalskiPortfolioClientDashboardsErrors>
     func getOverview() async -> Result<KowalskiPortfolioOverviewResponse, KowalskiPortfolioClientOverviewErrors>
     func getOverviewPreflight() async -> Result<
         KowalskiPortfolioOverviewPreflightResponse,
@@ -202,6 +203,11 @@ public enum KowalskiPortfolioClientOverviewErrors: Error {
     case unauthorized
 }
 
+public enum KowalskiPortfolioClientDashboardsErrors: Error {
+    case unknown(statusCode: Int, payload: OpenAPIRuntime.UndocumentedPayload?, context: Error?)
+    case unauthorized
+}
+
 public enum KowalskiPortfolioClientOverviewPreflightErrors: Error, Equatable {
     public static func == (
         lhs: KowalskiPortfolioClientOverviewPreflightErrors,
@@ -236,6 +242,35 @@ struct KowalskiPortfolioClientImpl: KowalskiPortfolioClient {
     fileprivate init(client: Client) {
         self.client = client
         mapper = KowalskiPortfolioMapper()
+    }
+
+    func getDashboards() async -> Result<KowalskiPortfolioDashboardsResponse, KowalskiPortfolioClientDashboardsErrors> {
+        let response: Operations.GetAppApiPortfolioDashboards.Output
+        do {
+            response = try await client.getAppApiPortfolioDashboards()
+        } catch {
+            return .failure(.unknown(statusCode: 503, payload: nil, context: error))
+        }
+
+        let okResponse: Operations.GetAppApiPortfolioDashboards.Output.Ok
+        switch response {
+        case .unauthorized, .notFound:
+            return .failure(.unauthorized)
+        case .internalServerError:
+            return .failure(.unknown(statusCode: 500, payload: nil, context: nil))
+        case let .undocumented(statusCode, payload):
+            return .failure(.unknown(statusCode: statusCode, payload: payload, context: nil))
+        case let .ok(ok):
+            okResponse = ok
+        }
+        let jsonResponse: Components.Schemas.PortfolioDashboardsResponse
+        do {
+            jsonResponse = try okResponse.body.json
+        } catch {
+            return .failure(.unknown(statusCode: 500, payload: nil, context: error))
+        }
+
+        return .success(mapper.mapDashboardsApiResponseToClient(jsonResponse))
     }
 
     func getOverview() async -> Result<KowalskiPortfolioOverviewResponse, KowalskiPortfolioClientOverviewErrors> {
@@ -449,6 +484,10 @@ actor KowalskiPortfolioClientPreview: KowalskiPortfolioClient {
         self.overviewFailure = overviewFailure
         self.preflightResults = preflightResults
         self.overviewCurrentValues = overviewCurrentValues
+    }
+
+    func getDashboards() async -> Result<KowalskiPortfolioDashboardsResponse, KowalskiPortfolioClientDashboardsErrors> {
+        .success(makePreviewDashboards())
     }
 
     func getOverview() async -> Result<KowalskiPortfolioOverviewResponse, KowalskiPortfolioClientOverviewErrors> {
@@ -704,6 +743,31 @@ private func makePreviewNetWorth(
     let netWorthValue = holdings.sum(by: \.totalValue.value)
 
     return KowalskiClientMoney(currency: netWorthCurrency, value: netWorthValue)
+}
+
+private func makePreviewDashboards() -> KowalskiPortfolioDashboardsResponse {
+    KowalskiPortfolioDashboardsResponse(
+        portfolioGrowthOverTime: KowalskiPortfolioGrowthOverTimeResponse(
+            currency: .USD,
+            points: [
+                KowalskiPortfolioGrowthPointResponse(
+                    date: Date(timeIntervalSince1970: 1_766_074_040),
+                    value: 540,
+                    isCurrent: false,
+                ),
+                KowalskiPortfolioGrowthPointResponse(
+                    date: Date(timeIntervalSince1970: 1_766_160_440),
+                    value: 1420,
+                    isCurrent: false,
+                ),
+                KowalskiPortfolioGrowthPointResponse(
+                    date: Date(timeIntervalSince1970: 1_766_246_840),
+                    value: 3536.5,
+                    isCurrent: true,
+                ),
+            ],
+        ),
+    )
 }
 
 private func makePreviewValidationIssue() -> KowalskiClientValidationIssue {

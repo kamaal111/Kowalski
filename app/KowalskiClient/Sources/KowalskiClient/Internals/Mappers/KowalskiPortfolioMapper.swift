@@ -5,7 +5,9 @@
 //  Created by Kamaal M Farah on 12/20/25.
 //
 
+import Foundation
 import KamaalExtensions
+import KowalskiModels
 
 struct KowalskiPortfolioMapper {
     let stocksMapper: KowalskiStocksMapper
@@ -92,6 +94,17 @@ struct KowalskiPortfolioMapper {
         )
     }
 
+    func mapDashboardsApiResponseToClient(
+        _ response: Components.Schemas.PortfolioDashboardsResponse,
+    ) -> KowalskiPortfolioDashboardsResponse {
+        KowalskiPortfolioDashboardsResponse(
+            portfolioGrowthOverTime: KowalskiPortfolioGrowthOverTimeResponse(
+                currency: mapPortfolioGrowthCurrency(response.portfolioGrowthOverTime.currency),
+                points: response.portfolioGrowthOverTime.points.map(mapPortfolioGrowthPoint),
+            ),
+        )
+    }
+
     func mapOverviewPreflightApiResponseToClient(
         _ response: Components.Schemas.PortfolioOverviewPreflightResponse,
     ) -> KowalskiPortfolioOverviewPreflightResponse {
@@ -139,6 +152,36 @@ struct KowalskiPortfolioMapper {
             currency: response.currency.kowalskiCurrency,
             value: response.value,
         )
+    }
+
+    private func mapPortfolioGrowthPoint(
+        _ response: Components.Schemas.PortfolioGrowthPoint,
+    ) -> KowalskiPortfolioGrowthPointResponse {
+        KowalskiPortfolioGrowthPointResponse(
+            date: mapDateOnly(response.date),
+            value: response.value,
+            isCurrent: response.isCurrent,
+        )
+    }
+
+    private func mapPortfolioGrowthCurrency(
+        _ response: Components.Schemas.PortfolioGrowthOverTime.CurrencyPayload,
+    ) -> KowalskiCurrency {
+        response.value1.kowalskiCurrency
+    }
+
+    private func mapDateOnly(_ response: String) -> Date {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyy-MM-dd"
+
+        guard let date = formatter.date(from: response) else {
+            preconditionFailure("Unsupported date-only string: \(response)")
+        }
+
+        return date
     }
 
     private func mapCurrentValue(_ response: Components.Schemas.CurrentValue) -> KowalskiClientMoney {

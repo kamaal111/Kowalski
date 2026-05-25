@@ -194,6 +194,7 @@ xcuserdata/
 # End of https://www.toptal.com/developers/gitignore/api/node,macos,xcode
 
 .build
+.pnpm-store
 
 # Xcode test result bundles
 *.xcresult/

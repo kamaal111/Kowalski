@@ -13,7 +13,7 @@ import KowalskiClient
 import KowalskiUtils
 import Observation
 
-private let logger = KamaalLogger(from: KowalskiPortfolio.self, failOnError: true)
+private let logger = KamaalLogger(from: KowalskiPortfolio.self, failOnError: false)
 private let moneyVisibilityPreferenceKey = "\(ModuleConfig.identifier).moneyVisibilityPreference"
 private let cachedPortfolioSnapshotKey = "\(ModuleConfig.identifier).cachedPortfolioSnapshot"
 private let fallbackPreflightPollMs = 500
@@ -29,10 +29,12 @@ public final class KowalskiPortfolio {
     private(set) var holdings: [PortfolioHolding] = []
     private(set) var netWorth: Money?
     private(set) var allTimeProfit: AllTimeProfit?
+    private(set) var dashboards: PortfolioDashboards?
     private(set) var showsMoneyValues = true
 
     private var isLoading = false
     private var isRefreshingLatestPrices = false
+    private var isLoadingDashboards = false
     private var hasHydratedCachedSnapshot = false
 
     @UserDefaultsValue(key: moneyVisibilityPreferenceKey)
@@ -65,6 +67,14 @@ public final class KowalskiPortfolio {
 
     var isShowingNetWorthLoadingState: Bool {
         isLoading && !entries.isEmpty && netWorth == nil
+    }
+
+    var isShowingDashboardLoadingState: Bool {
+        isLoadingDashboards && dashboards == nil
+    }
+
+    var isShowingDashboardEmptyState: Bool {
+        dashboards?.portfolioGrowthOverTime.points.isEmpty ?? false
     }
 
     private init(client: KowalskiClient) {
@@ -230,6 +240,21 @@ public final class KowalskiPortfolio {
         await withLoading { await refreshFromServer() }
     }
 
+    func fetchDashboards() async -> Result<Void, Error> {
+        await withDashboardLoading {
+            let dashboardsResult = await client.portfolio.getDashboards()
+                .map(mapper.mapDashboardsResponse)
+            switch dashboardsResult {
+            case let .failure(error):
+                logger.error("Failed to fetch portfolio dashboards: \(error.localizedDescription)")
+                return .failure(error)
+            case let .success(dashboards):
+                setDashboards(dashboards)
+                return .success(())
+            }
+        }
+    }
+
     func toggleMoneyVisibility() {
         setMoneyVisibility(!showsMoneyValues)
     }
@@ -311,6 +336,11 @@ public final class KowalskiPortfolio {
     }
 
     @MainActor
+    private func setDashboards(_ dashboards: PortfolioDashboards) {
+        self.dashboards = dashboards
+    }
+
+    @MainActor
     private func setMoneyVisibility(_ showsMoneyValues: Bool) {
         self.showsMoneyValues = showsMoneyValues
         Self.moneyVisibilityPreference = showsMoneyValues
@@ -321,6 +351,15 @@ public final class KowalskiPortfolio {
         isLoading = true
         let result = await block()
         isLoading = false
+
+        return result
+    }
+
+    @MainActor
+    private func withDashboardLoading<T>(_ block: () async -> T) async -> T {
+        isLoadingDashboards = true
+        let result = await block()
+        isLoadingDashboards = false
 
         return result
     }
