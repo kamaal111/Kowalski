@@ -215,13 +215,15 @@ public final class KowalskiPortfolio {
         switch preflight.refreshState {
         case .ready:
             isRefreshingLatestPrices = false
+            return await refreshFromServer(sessionEmail: sessionEmail, currencyCode: currencyCode)
         case .refreshing:
             isRefreshingLatestPrices = true
             _ = await waitUntilHoldingsReady()
+            let refreshResult = await refreshFromServer(sessionEmail: sessionEmail, currencyCode: currencyCode)
             isRefreshingLatestPrices = false
-        }
 
-        return await refreshFromServer(sessionEmail: sessionEmail, currencyCode: currencyCode)
+            return refreshResult
+        }
     }
 
     func fetchOverview() async -> Result<Void, Error> {
