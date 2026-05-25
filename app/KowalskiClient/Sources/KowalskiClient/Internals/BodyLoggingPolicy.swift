@@ -56,7 +56,7 @@ enum BodyLoggingPolicy: Equatable {
         let length = body.length
         switch length {
         case .unknown:
-            return (.unknownLength, body)
+            return await processUpToUnknownLength(body, maxBytes: maxBytes)
         case let .known(length):
             return await processUpToKnownLength(body, maxBytes: maxBytes, length: length)
         }
@@ -71,6 +71,19 @@ enum BodyLoggingPolicy: Equatable {
         guard let bodyData = try? await Data(collecting: body, upTo: maxBytes) else { return (.none, body) }
 
         return (.complete(data: bodyData), HTTPBody(bodyData))
+    }
+
+    private func processUpToUnknownLength(
+        _ body: HTTPBody,
+        maxBytes: Int,
+    ) async -> (bodyToLog: BodyLog, bodyForNext: HTTPBody) {
+        guard let bodyData = try? await Data(collecting: body, upTo: Int.max) else { return (.unknownLength, body) }
+
+        let replayBody = HTTPBody(bodyData)
+        let byteCount = Int64(bodyData.count)
+        guard bodyData.count <= maxBytes else { return (.tooManyBytesToLog(byteCount: byteCount), replayBody) }
+
+        return (.complete(data: bodyData), replayBody)
     }
 
     private func processNever(_ body: HTTPBody) -> (bodyToLog: BodyLog, bodyForNext: HTTPBody) {

@@ -19,6 +19,15 @@ struct KowalskiPortfolioMappers {
         )
     }
 
+    func mapDashboardsResponse(_ response: KowalskiPortfolioDashboardsResponse) -> PortfolioDashboards {
+        PortfolioDashboards(
+            portfolioGrowthOverTime: PortfolioGrowthOverTime(
+                currency: response.portfolioGrowthOverTime.currency,
+                points: response.portfolioGrowthOverTime.points.map(mapPortfolioGrowthPoint),
+            ),
+        )
+    }
+
     func mapPortfolioEntries(_ entries: [KowalskiPortfolioClientEntryResponse]) -> [PortfolioEntry] {
         entries.map(mapPortfolioEntry)
     }
@@ -69,6 +78,14 @@ struct KowalskiPortfolioMappers {
             preferredCurrencyPurchasePrice: mapMoney(entry.preferredCurrencyPurchasePrice),
             transactionType: transactionType,
             transactionDate: entry.transactionDate,
+        )
+    }
+
+    private func mapPortfolioGrowthPoint(_ point: KowalskiPortfolioGrowthPointResponse) -> PortfolioGrowthPoint {
+        PortfolioGrowthPoint(
+            date: point.date,
+            value: point.value,
+            isCurrent: point.isCurrent,
         )
     }
 

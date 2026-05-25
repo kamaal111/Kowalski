@@ -367,6 +367,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /app-api/portfolio/dashboards:
+    get:
+      tags:
+        - Portfolio
+      summary: Get portfolio dashboards
+      description: Return sparse dashboard data for the signed-in user default portfolio.
+      parameters:
+        - schema:
+            type: string
+            description: Bearer token for authentication
+            example: Bearer f21wcpz7Aokmlh2MB632MZpTgfruPc62
+          required: true
+          description: Bearer token for authentication
+          name: authorization
+          in: header
+      responses:
+        '200':
+          description: Portfolio dashboards retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioDashboardsResponse'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Portfolio dashboards could not be retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /app-api/portfolio/overview:
     get:
       tags:
@@ -1040,6 +1080,67 @@ components:
         sector: Technology
         industry: Consumer Electronics
         exchange_dispatch: NASDAQ
+    PortfolioDashboardsResponse:
+      type: object
+      properties:
+        portfolio_growth_over_time:
+          $ref: '#/components/schemas/PortfolioGrowthOverTime'
+      required:
+        - portfolio_growth_over_time
+      title: Portfolio Dashboards Response
+      description: Dashboard data for the signed-in user default portfolio.
+      example:
+        portfolio_growth_over_time:
+          currency: USD
+          points:
+            - date: '2025-12-19'
+              value: 750
+              is_current: false
+            - date: '2025-12-20'
+              value: 1854.5
+              is_current: true
+    PortfolioGrowthOverTime:
+      type: object
+      properties:
+        currency:
+          allOf:
+            - $ref: '#/components/schemas/Currency'
+            - description: >-
+                Currency used for all portfolio growth values, resolved from the
+                signed-in user's preference.
+        points:
+          type: array
+          items:
+            $ref: '#/components/schemas/PortfolioGrowthPoint'
+          description: >-
+            Sparse growth points at transaction dates plus the current value
+            point when entries exist.
+      required:
+        - currency
+        - points
+      title: Portfolio Growth Over Time
+      description: Portfolio total value over sparse transaction-date snapshots.
+    PortfolioGrowthPoint:
+      type: object
+      properties:
+        date:
+          type: string
+          description: Snapshot date for this portfolio value point.
+          example: '2025-12-20'
+        value:
+          type: number
+          description: Total portfolio value in the signed-in user's preferred currency.
+          example: 1854.5
+        is_current:
+          type: boolean
+          description: Whether this point represents the current portfolio value.
+          example: false
+      required:
+        - date
+        - value
+        - is_current
+      title: Portfolio Growth Point
+      description: Sparse portfolio total value snapshot for charting growth over time.
     PortfolioOverviewResponse:
       type: object
       properties:

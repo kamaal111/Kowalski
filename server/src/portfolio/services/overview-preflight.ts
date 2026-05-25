@@ -5,7 +5,6 @@ import type { HonoContext } from '@/api/contexts';
 import { getSessionWhereSessionIsRequired } from '@/auth';
 import { logError, logInfo } from '@/logging';
 import { withRequestLogger } from '@/logging/http';
-import { findPortfolioEntriesByUserId } from '../repositories/list-entries';
 import { findLatestCachedPriceDateByTickerIds } from '../repositories/stock-prices';
 import type { PortfolioOverviewPreflightResponse } from '../schemas/responses';
 import { aggregateHoldings } from './aggregate-holdings';
@@ -17,7 +16,8 @@ import {
   runHoldingsRefreshOnce,
   RUN_ONCE_RESULTS,
 } from './holdings-refresh-coordinator';
-import { resolveSplits, type ResolvedPortfolioEntry } from './resolve-splits';
+import { findResolvedPortfolioEntriesByUserId } from './resolved-portfolio-entries';
+import type { ResolvedPortfolioEntry } from './resolve-splits';
 
 interface ActiveTickerEntry {
   tickerId: string;
@@ -29,7 +29,7 @@ export async function getPortfolioOverviewPreflight(c: HonoContext): Promise<Por
   const today = new Date().toISOString().slice(0, 10);
   clearExpiredHoldingsRefreshStates(today);
 
-  const entries = resolveSplits(await findPortfolioEntriesByUserId(c));
+  const entries = await findResolvedPortfolioEntriesByUserId(c);
   const activeEntries = getActiveTickerEntries(entries);
   if (activeEntries.length === 0) {
     return logAndReturnPreflight(c, {

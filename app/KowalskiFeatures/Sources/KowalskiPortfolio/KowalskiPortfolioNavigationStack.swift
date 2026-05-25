@@ -20,6 +20,7 @@ enum KowalskiPortfolioTransactionNavigationItem: Hashable {
 }
 
 enum KowalskiPortfolioNavigationPathItem: Hashable {
+    case dashboards
     case holding(symbol: String)
     case transactionDetail(entryID: String)
     case holdingTransaction(symbol: String, transactionType: TransactionType)
@@ -52,6 +53,8 @@ public struct KowalskiPortfolioNavigationStack: View {
                         .toastView(toast: $toast)
                         .navigationDestination(for: KowalskiPortfolioNavigationPathItem.self) { item in
                             switch item {
+                            case .dashboards:
+                                KowalskiPortfolioDashboardsScreen()
                             case let .holding(symbol):
                                 if let holding = portfolio.holdings.first(where: { $0.asset.symbol == symbol }) {
                                     KowalskiPortfolioHoldingDetailScreen(holding: holding)

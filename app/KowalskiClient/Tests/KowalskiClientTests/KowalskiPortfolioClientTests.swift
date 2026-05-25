@@ -216,6 +216,52 @@ struct KowalskiPortfolioClientTests {
     }
 
     @Test
+    func `Get dashboards should decode portfolio growth points`() async throws {
+        let transport = MockClientTransport(
+            queuedResponses: [
+                QueuedResponse(status: .ok, body: makeDashboardsResponseBody()),
+            ],
+        )
+        let client = try makeGeneratedClient(transport: transport)
+        let portfolioClient = KowalskiPortfolioClientFactory.default(client: client)
+
+        let dashboards = try await portfolioClient.getDashboards().get()
+        let points = dashboards.portfolioGrowthOverTime.points
+
+        #expect(dashboards.portfolioGrowthOverTime.currency == .EUR)
+        #expect(points.map(\.value) == [1500, 1854.5])
+        #expect(points.map(\.isCurrent) == [false, true])
+        #expect(points.first?.date == Date(timeIntervalSince1970: 1_766_102_400))
+
+        let request = try #require(transport.capturedRequests.first)
+        #expect(request.path == "/app-api/portfolio/dashboards")
+        #expect(request.method == .get)
+    }
+
+    @Test
+    func `Get dashboards should map unauthorized errors`() async throws {
+        let transport = MockClientTransport(
+            queuedResponses: [
+                QueuedResponse(status: .unauthorized, body: makeErrorResponseBody(
+                    message: "Authentication failed",
+                    code: "AUTHENTICATION_FAILED",
+                )),
+            ],
+        )
+        let client = try makeGeneratedClient(transport: transport)
+        let portfolioClient = KowalskiPortfolioClientFactory.default(client: client)
+
+        let result = await portfolioClient.getDashboards()
+        let isUnauthorizedFailure = if case .failure(.unauthorized) = result {
+            true
+        } else {
+            false
+        }
+
+        #expect(isUnauthorizedFailure)
+    }
+
+    @Test
     func `Get overview preflight should decode refreshing response`() async throws {
         let transport = MockClientTransport(
             queuedResponses: [
@@ -369,6 +415,30 @@ private func makeOverviewResponseBody() -> Data {
           "net_worth": {
             "currency": "EUR",
             "value": 1854.5
+          }
+        }
+        """.utf8,
+    )
+}
+
+private func makeDashboardsResponseBody() -> Data {
+    Data(
+        """
+        {
+          "portfolio_growth_over_time": {
+            "currency": "EUR",
+            "points": [
+              {
+                "date": "2025-12-19",
+                "value": 1500,
+                "is_current": false
+              },
+              {
+                "date": "2025-12-20",
+                "value": 1854.5,
+                "is_current": true
+              }
+            ]
           }
         }
         """.utf8,

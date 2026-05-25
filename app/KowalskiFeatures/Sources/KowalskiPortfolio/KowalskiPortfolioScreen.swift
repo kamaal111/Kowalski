@@ -99,41 +99,49 @@ public struct KowalskiPortfolioScreen: View {
     }
 
     private var netWorthCard: some View {
-        HStack(alignment: .top, spacing: KowalskiSizes.medium.rawValue) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Holdings Net Worth")
-                    .font(.headline)
-                if portfolio.isShowingNetWorthLoadingState {
-                    ProgressView("Loading net worth")
-                } else if !portfolio.showsMoneyValues, portfolio.netWorth != nil {
-                    Text(PortfolioMoneyValuePrivacy.maskedPlaceholder)
-                        .font(.largeTitle.weight(.semibold))
-                        .accessibilityLabel(Text(PortfolioMoneyValuePrivacy.maskedPlaceholder))
-                        .accessibilityIdentifier(PortfolioMoneyValuePrivacy.accessibilityIdentifier)
-                    Text(displayedNetWorthCurrencyLabel)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else if let netWorth = portfolio.netWorth?.value {
-                    Text(netWorth, format: .currency(code: displayedNetWorthCurrency.rawValue))
-                        .font(.largeTitle.weight(.semibold))
-                    Text(displayedNetWorthCurrencyLabel)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text("Net worth unavailable")
-                        .foregroundStyle(.secondary)
+        NavigationLink(value: KowalskiPortfolioNavigationPathItem.dashboards) {
+            HStack(alignment: .top, spacing: KowalskiSizes.medium.rawValue) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Holdings Net Worth")
+                        .font(.headline)
+                    if portfolio.isShowingNetWorthLoadingState {
+                        ProgressView("Loading net worth")
+                    } else if !portfolio.showsMoneyValues, portfolio.netWorth != nil {
+                        Text(PortfolioMoneyValuePrivacy.maskedPlaceholder)
+                            .font(.largeTitle.weight(.semibold))
+                            .accessibilityLabel(Text(PortfolioMoneyValuePrivacy.maskedPlaceholder))
+                            .accessibilityIdentifier(PortfolioMoneyValuePrivacy.accessibilityIdentifier)
+                        Text(displayedNetWorthCurrencyLabel)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else if let netWorth = portfolio.netWorth?.value {
+                        Text(netWorth, format: .currency(code: displayedNetWorthCurrency.rawValue))
+                            .font(.largeTitle.weight(.semibold))
+                        Text(displayedNetWorthCurrencyLabel)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("Net worth unavailable")
+                            .foregroundStyle(.secondary)
+                    }
                 }
-            }
-            .accessibilityElement(children: .contain)
-            .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityElement(children: .contain)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-            if portfolio.allTimeProfit != nil {
-                profitView
+                if portfolio.allTimeProfit != nil {
+                    profitView
+                }
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
             }
+            .padding(.horizontal, .medium)
+            .padding(.vertical, .medium)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(RoundedRectangle(cornerRadius: 16))
         }
-        .padding(.horizontal, .medium)
-        .padding(.vertical, .medium)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .buttonStyle(.plain)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Text("Holdings Net Worth"))
