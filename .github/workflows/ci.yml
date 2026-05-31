@@ -47,20 +47,6 @@ jobs:
     if: needs.changes.outputs.server == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_DB: kowalski
-          POSTGRES_USER: kowalski_user
-          POSTGRES_PASSWORD: kowalski_password
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U kowalski_user -d kowalski"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
     steps:
       - name: Check out code
         uses: actions/checkout@v6

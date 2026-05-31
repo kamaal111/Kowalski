@@ -22,7 +22,7 @@ Kowalski is a monorepo project consisting of a TypeScript/Node.js backend server
 
 ### Infrastructure
 
-- **Containerization**: Docker Compose
+- **Containerization**: Docker Compose with PostgreSQL 18
 - **Task Runner**: [Just](https://github.com/casey/just)
 - **Package Manager**: pnpm
 
@@ -69,7 +69,8 @@ Kowalski is a monorepo project consisting of a TypeScript/Node.js backend server
    That generates isolated root and `server/` env files plus a non-`5432` database port so agents do not collide with local development services.
 
 3. **Start Services**
-   Start the PostgreSQL database container.
+   Start the PostgreSQL database container. Local development and CI both use
+   `docker-compose.yml` as the PostgreSQL runtime definition.
 
    ```bash
    just start-services

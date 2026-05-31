@@ -1,16 +1,16 @@
 services:
   db:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${KOWALSKI_DB_NAME:-kowalski}
       POSTGRES_USER: ${KOWALSKI_DB_USER:-kowalski_user}
       POSTGRES_PASSWORD: ${KOWALSKI_DB_PASSWORD:-kowalski_password}
-      PGDATA: /var/lib/postgresql/data/pgdata
+      PGDATA: /var/lib/postgresql/18/docker
     ports:
       - '${KOWALSKI_DB_PORT:-5432}:5432'
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${KOWALSKI_DB_USER:-kowalski_user} -d ${KOWALSKI_DB_NAME:-kowalski}']
       interval: 30s
