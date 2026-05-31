@@ -92,7 +92,8 @@ quality-server: check-spec lint-server format-check-server typecheck-server
 
 # Prepare server for Linux CI
 [linux]
-prepare-server-ci: install-modules-ci
+[parallel]
+prepare-server-ci: install-modules-ci start-services
 
 # Run verification checks including ui tests
 heavy: heavy-tasks
@@ -133,7 +134,7 @@ push-schema: prepare-server
 
 # Start services
 start-services:
-    docker compose up -d
+    docker compose up -d --wait
 
 # Stop services
 stop-services:
