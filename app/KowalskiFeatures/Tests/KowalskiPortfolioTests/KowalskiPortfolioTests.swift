@@ -49,6 +49,29 @@ struct KowalskiPortfolioTests {
     }
 
     @Test
+    func `Dashboard period should default to one year for a fresh portfolio instance`() {
+        KowalskiPortfolio.resetPersistedDashboardPeriod()
+        defer { KowalskiPortfolio.resetPersistedDashboardPeriod() }
+
+        let portfolio = KowalskiPortfolio.testing(client: .testing())
+
+        #expect(portfolio.dashboardPeriod == .oneYear)
+    }
+
+    @Test
+    func `Dashboard period preference should persist across portfolio instances`() async throws {
+        KowalskiPortfolio.resetPersistedDashboardPeriod()
+        defer { KowalskiPortfolio.resetPersistedDashboardPeriod() }
+        let firstPortfolioClient = MockPortfolioClient()
+        let firstPortfolio = KowalskiPortfolio.testing(client: .testing(portfolio: firstPortfolioClient))
+
+        try await firstPortfolio.setDashboardPeriod(.yearToDate).get()
+        let secondPortfolio = KowalskiPortfolio.testing(client: .testing())
+
+        #expect(secondPortfolio.dashboardPeriod == .yearToDate)
+    }
+
+    @Test
     func `Bootstrap should preflight and refresh portfolio when prices are ready`() async throws {
         KowalskiPortfolio.resetPersistedSnapshot()
         defer { KowalskiPortfolio.resetPersistedSnapshot() }
@@ -181,6 +204,7 @@ struct KowalskiPortfolioTests {
         #expect(portfolio.dashboards?.portfolioGrowthOverTime.points.last?.isCurrent == true)
         #expect(!portfolio.isShowingDashboardLoadingState)
         #expect(await portfolioClient.getDashboardsCallCount == 1)
+        #expect(await portfolioClient.dashboardPeriods == [.oneYear])
     }
 
     @Test
@@ -195,6 +219,20 @@ struct KowalskiPortfolioTests {
         }
         #expect(!portfolio.isShowingDashboardLoadingState)
         #expect(portfolio.dashboards == nil)
+    }
+
+    @Test
+    func `Changing dashboard period should fetch dashboards with selected period`() async throws {
+        KowalskiPortfolio.resetPersistedDashboardPeriod()
+        defer { KowalskiPortfolio.resetPersistedDashboardPeriod() }
+        let portfolioClient = MockPortfolioClient()
+        let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
+
+        try await portfolio.setDashboardPeriod(.yearToDate).get()
+
+        #expect(portfolio.dashboardPeriod == .yearToDate)
+        #expect(await portfolioClient.dashboardPeriods == [.yearToDate])
+        #expect(await portfolioClient.getDashboardsCallCount == 1)
     }
 
     @Test
@@ -1508,6 +1546,7 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
     private(set) var getOverviewPreflightCallCount = 0
     private(set) var events: [PortfolioClientEvent] = []
     private(set) var bulkCreateEntriesPayloads: [[KowalskiPortfolioBulkCreateEntryItemPayload]] = []
+    private(set) var dashboardPeriods: [KowalskiPortfolioDashboardPeriod] = []
 
     private let createEntryResult: Result<
         KowalskiPortfolioClientEntryResponse,
@@ -1565,8 +1604,11 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
             .isEmpty ? [.success(makeOverviewPreflightResponse())] : preflightResults
     }
 
-    func getDashboards() async -> Result<KowalskiPortfolioDashboardsResponse, KowalskiPortfolioClientDashboardsErrors> {
+    func getDashboards(
+        period: KowalskiPortfolioDashboardPeriod,
+    ) async -> Result<KowalskiPortfolioDashboardsResponse, KowalskiPortfolioClientDashboardsErrors> {
         getDashboardsCallCount += 1
+        dashboardPeriods.append(period)
         events.append(.dashboards)
 
         return dashboardsResult

@@ -375,6 +375,12 @@ paths:
       description: Return sparse dashboard data for the signed-in user default portfolio.
       parameters:
         - schema:
+            $ref: '#/components/schemas/PortfolioDashboardPeriod'
+          required: false
+          description: Dashboard period to return. Defaults to one year when omitted.
+          name: period
+          in: query
+        - schema:
             type: string
             description: Bearer token for authentication
             example: Bearer f21wcpz7Aokmlh2MB632MZpTgfruPc62
@@ -389,6 +395,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PortfolioDashboardsResponse'
+        '400':
+          description: Dashboard query validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
         '401':
           description: Authentication failed
           content:
@@ -1141,6 +1153,23 @@ components:
         - is_current
       title: Portfolio Growth Point
       description: Sparse portfolio total value snapshot for charting growth over time.
+    PortfolioDashboardPeriod:
+      type: string
+      enum:
+        - 1w
+        - 1m
+        - 3m
+        - 6m
+        - ytd
+        - 1y
+        - 2y
+        - 5y
+        - 10y
+        - all
+      default: 1y
+      title: Portfolio Dashboard Period
+      description: Dashboard period to return. Defaults to one year when omitted.
+      example: 1y
     PortfolioOverviewResponse:
       type: object
       properties:

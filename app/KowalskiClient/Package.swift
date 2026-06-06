@@ -5,6 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "KowalskiClient",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "KowalskiClient", targets: ["KowalskiClient"]),
@@ -32,6 +33,9 @@ let package = Package(
                 "ForexKit",
                 "KowalskiModels",
                 "KowalskiUtils",
+            ],
+            resources: [
+                .process("Localizable.xcstrings"),
             ],
             swiftSettings: [
                 .treatAllWarnings(as: .error),

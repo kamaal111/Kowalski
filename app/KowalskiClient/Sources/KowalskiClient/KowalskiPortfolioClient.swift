@@ -12,7 +12,9 @@ import OpenAPIRuntime
 // MARK: Protocol
 
 public protocol KowalskiPortfolioClient: Sendable {
-    func getDashboards() async -> Result<KowalskiPortfolioDashboardsResponse, KowalskiPortfolioClientDashboardsErrors>
+    func getDashboards(
+        period: KowalskiPortfolioDashboardPeriod,
+    ) async -> Result<KowalskiPortfolioDashboardsResponse, KowalskiPortfolioClientDashboardsErrors>
     func getOverview() async -> Result<KowalskiPortfolioOverviewResponse, KowalskiPortfolioClientOverviewErrors>
     func getOverviewPreflight() async -> Result<
         KowalskiPortfolioOverviewPreflightResponse,
@@ -244,16 +246,20 @@ struct KowalskiPortfolioClientImpl: KowalskiPortfolioClient {
         mapper = KowalskiPortfolioMapper()
     }
 
-    func getDashboards() async -> Result<KowalskiPortfolioDashboardsResponse, KowalskiPortfolioClientDashboardsErrors> {
+    func getDashboards(
+        period: KowalskiPortfolioDashboardPeriod,
+    ) async -> Result<KowalskiPortfolioDashboardsResponse, KowalskiPortfolioClientDashboardsErrors> {
         let response: Operations.GetAppApiPortfolioDashboards.Output
         do {
-            response = try await client.getAppApiPortfolioDashboards()
+            response = try await client.getAppApiPortfolioDashboards(query: .init(period: period.apiValue))
         } catch {
             return .failure(.unknown(statusCode: 503, payload: nil, context: error))
         }
 
         let okResponse: Operations.GetAppApiPortfolioDashboards.Output.Ok
         switch response {
+        case .badRequest:
+            return .failure(.unknown(statusCode: 400, payload: nil, context: nil))
         case .unauthorized, .notFound:
             return .failure(.unauthorized)
         case .internalServerError:
@@ -454,6 +460,23 @@ struct KowalskiPortfolioClientImpl: KowalskiPortfolioClient {
     }
 }
 
+private extension KowalskiPortfolioDashboardPeriod {
+    var apiValue: Components.Schemas.PortfolioDashboardPeriod {
+        switch self {
+        case .oneWeek: ._1w
+        case .oneMonth: ._1m
+        case .threeMonths: ._3m
+        case .sixMonths: ._6m
+        case .yearToDate: .ytd
+        case .oneYear: ._1y
+        case .twoYears: ._2y
+        case .fiveYears: ._5y
+        case .tenYears: ._10y
+        case .all: .all
+        }
+    }
+}
+
 // MARK: Preview
 
 actor KowalskiPortfolioClientPreview: KowalskiPortfolioClient {
@@ -486,7 +509,9 @@ actor KowalskiPortfolioClientPreview: KowalskiPortfolioClient {
         self.overviewCurrentValues = overviewCurrentValues
     }
 
-    func getDashboards() async -> Result<KowalskiPortfolioDashboardsResponse, KowalskiPortfolioClientDashboardsErrors> {
+    func getDashboards(
+        period _: KowalskiPortfolioDashboardPeriod,
+    ) async -> Result<KowalskiPortfolioDashboardsResponse, KowalskiPortfolioClientDashboardsErrors> {
         .success(makePreviewDashboards())
     }
 

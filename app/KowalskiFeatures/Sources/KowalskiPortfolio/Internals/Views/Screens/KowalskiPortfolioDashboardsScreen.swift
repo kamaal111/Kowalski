@@ -17,6 +17,8 @@ struct KowalskiPortfolioDashboardsScreen: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: KowalskiSizes.medium.rawValue) {
+                KowalskiPortfolioDashboardPeriodPicker(dashboardLoadFailed: $dashboardLoadFailed, toast: $toast)
+
                 if portfolio.isShowingDashboardLoadingState {
                     KowalskiPortfolioDashboardStatusView(status: .loading)
                 } else if dashboardLoadFailed {

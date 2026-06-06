@@ -40,7 +40,7 @@ public struct KowalskiPortfolioNavigationStack: View {
 
     public var body: some View {
         NavigationSplitView {
-            KowalskiPortfolioSidebar(selectedNavigationItem: $selectedNavigationItem)
+            KowalskiPortfolioSidebar(selectedNavigationItem: sidebarSelection)
         } detail: {
             switch selectedNavigationItem ?? .portfolio {
             case .portfolio:
@@ -163,6 +163,20 @@ public struct KowalskiPortfolioNavigationStack: View {
         portfolio.showsMoneyValues
             ? NSLocalizedString("Hide money values", bundle: .module, comment: "")
             : NSLocalizedString("Show money values", bundle: .module, comment: "")
+    }
+
+    private var sidebarSelection: Binding<KowalskiPortfolioNavigationItem?> {
+        Binding(
+            get: { selectedNavigationItem },
+            set: { newValue in
+                selectedNavigationItem = newValue
+
+                switch newValue {
+                case .portfolio, .none: portfolioNavigationPath.removeAll()
+                case .transactions: transactionNavigationPath.removeAll()
+                }
+            },
+        )
     }
 
     private func handleTransactionAdd(_ payload: TransactionPayload) {

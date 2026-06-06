@@ -8,6 +8,7 @@ import { logWarn } from '@/logging';
 import { withRequestLogger } from '@/logging/http';
 import { ExchangeRateResolutionFailed, StockPriceFetchFailed } from '../exceptions';
 import { assertToFloat } from '@/utils/numbers';
+import type { PortfolioDashboardPeriod } from '../schemas/queries';
 import { findLatestExchangeRateSnapshotByBase, type PersistedExchangeRateSnapshot } from '../repositories/list-entries';
 import {
   findStockPricesByTickerIdsBetweenDates,
@@ -19,7 +20,7 @@ import { getCurrentStockValues } from './current-stock-values';
 import { findResolvedPortfolioEntriesByUserId } from './resolved-portfolio-entries';
 import type { ResolvedPortfolioEntry } from './resolve-splits';
 import { fetchYahooChartPrices } from './yahoo-chart';
-import { DATE_SHAPE } from '../constants';
+import { DATE_SHAPE, MAX_PORTFOLIO_DASHBOARD_GROWTH_POINTS } from '../constants';
 
 const YAHOO_CHART_LOOKBACK_DAYS = 10;
 const YAHOO_CHART_LOOKAHEAD_DAYS = 5;
@@ -55,12 +56,24 @@ interface SnapshotHolding {
   tickerId: string;
   stockSymbol: string;
   amount: number;
+  fallbackPrice: PersistedStockPrice | null;
 }
 
-async function getPortfolioDashboards(c: HonoContext): Promise<PortfolioDashboardsResult> {
+interface PortfolioDashboardsOptions {
+  period: PortfolioDashboardPeriod;
+}
+
+type CalendarDateShift = { days: number } | { months: number } | { years: number };
+
+async function getPortfolioDashboards(
+  c: HonoContext,
+  options: PortfolioDashboardsOptions,
+): Promise<PortfolioDashboardsResult> {
   const session = getSessionWhereSessionIsRequired(c);
   const preferredCurrency = session.user.preferred_currency;
-  const entries = (await findResolvedPortfolioEntriesByUserId(c)).toSorted(compareEntriesAscending);
+  const entries = await findResolvedPortfolioEntriesByUserId(c).then(entries => {
+    return entries.toSorted(compareEntriesAscending);
+  });
   if (entries.length === 0) {
     return {
       portfolioGrowthOverTime: {
@@ -70,24 +83,30 @@ async function getPortfolioDashboards(c: HonoContext): Promise<PortfolioDashboar
     };
   }
 
-  const snapshotDates = getUniqueTransactionDates(entries);
+  const currentDate = new Date().toISOString().slice(0, DATE_SHAPE.length);
+  const periodStartDate = getPeriodStartDate(options.period, currentDate);
+  const snapshotDates = downsampleSnapshotDates(
+    getSnapshotDatesForPeriod(entries, periodStartDate),
+    MAX_PORTFOLIO_DASHBOARD_GROWTH_POINTS - 1,
+  );
+  const snapshotHoldingsByDate = getSnapshotHoldingsByDate(entries, snapshotDates);
   const historicalPriceRequests = snapshotDates.flatMap(date => {
-    return getSnapshotHoldings(entries, date).map(holding => ({ ...holding, date }));
+    return snapshotHoldingsByDate.get(date)?.map(holding => ({ ...holding, date })) ?? [];
   });
-  const historicalPrices = await resolveHistoricalPrices(c, historicalPriceRequests);
-  const [exchangeRateSnapshot, currentPoint] = await Promise.all([
-    resolveExchangeRateSnapshotForPrices(c, preferredCurrency, historicalPrices),
-    makeCurrentPoint(c, entries),
+  const [[historicalPrices, exchangeRateSnapshot], currentPoint] = await Promise.all([
+    resolveHistoricalPricesAndExchangeRateSnapshots(c, { snapshotHoldingsByDate, historicalPriceRequests }),
+    makeCurrentPoint(c, entries, currentDate),
   ]);
   const { omittedSnapshotDates, points } = snapshotDates.reduce<{
     omittedSnapshotDates: string[];
     points: { date: string; value: number; is_current: boolean }[];
   }>(
     (acc, date) => {
-      const prices = getSnapshotHoldings(entries, date).map(holding => ({
-        holding,
-        price: getClosestPriceForTicker(historicalPrices, holding.tickerId, date),
-      }));
+      const prices =
+        snapshotHoldingsByDate.get(date)?.map(holding => ({
+          holding,
+          price: getClosestPriceForTicker(historicalPrices, holding.tickerId, date) ?? holding.fallbackPrice,
+        })) ?? [];
       if (prices.some(({ price }) => price == null)) {
         return { ...acc, omittedSnapshotDates: [...acc.omittedSnapshotDates, date] };
       }
@@ -115,6 +134,30 @@ async function getPortfolioDashboards(c: HonoContext): Promise<PortfolioDashboar
       points: mergeCurrentPoint(points, currentPoint),
     },
   };
+}
+
+async function resolveHistoricalPricesAndExchangeRateSnapshots(
+  c: HonoContext,
+  options: {
+    snapshotHoldingsByDate: Map<string, SnapshotHolding[]>;
+    historicalPriceRequests: HistoricalPriceRequest[];
+  },
+) {
+  const session = getSessionWhereSessionIsRequired(c);
+  const preferredCurrency = session.user.preferred_currency;
+  const fallbackPrices = options.snapshotHoldingsByDate
+    .values()
+    .toArray()
+    .flatMap(holdings => arrays.compactMap(holdings, holding => holding.fallbackPrice));
+  const historicalPrices = await resolveHistoricalPrices(c, options.historicalPriceRequests);
+
+  const exchangeRateSnapshot = await resolveExchangeRateSnapshotForPrices(
+    c,
+    preferredCurrency,
+    historicalPrices.concat(fallbackPrices),
+  );
+
+  return [historicalPrices, exchangeRateSnapshot] as const;
 }
 
 async function resolveHistoricalPrices(
@@ -179,7 +222,11 @@ async function fetchAndStoreMissingPrices(
   return uniquePrices(fetchedPrices);
 }
 
-async function makeCurrentPoint(c: HonoContext, entries: ResolvedPortfolioEntry[]): Promise<PortfolioGrowthPoint> {
+async function makeCurrentPoint(
+  c: HonoContext,
+  entries: ResolvedPortfolioEntry[],
+  currentDate: string,
+): Promise<PortfolioGrowthPoint> {
   const currentValues = await getCurrentStockValues(c, entries);
   const value = aggregateHoldings(entries).reduce((total, holding) => {
     if (holding.amount === 0) {
@@ -195,7 +242,7 @@ async function makeCurrentPoint(c: HonoContext, entries: ResolvedPortfolioEntry[
   }, 0);
 
   return {
-    date: new Date().toISOString().slice(0, DATE_SHAPE.length),
+    date: currentDate,
     value,
     is_current: true,
   };
@@ -258,11 +305,17 @@ function getSnapshotHoldings(entries: ResolvedPortfolioEntry[], date: string): S
       const amount = assertToFloat(entry.amount);
       const amountDelta = entry.transactionType === RESOLVED_TRANSACTION_TYPES.BUY ? amount : -amount;
       const existingHolding = holdings.get(entry.tickerId);
+      const existingAmount = existingHolding?.amount ?? 0;
+      const nextAmount = existingAmount + amountDelta;
 
       return holdings.set(entry.tickerId, {
         tickerId: entry.tickerId,
         stockSymbol: entry.stockSymbol,
-        amount: (existingHolding?.amount ?? 0) + amountDelta,
+        amount: nextAmount,
+        fallbackPrice:
+          entry.transactionType === RESOLVED_TRANSACTION_TYPES.BUY
+            ? getUpdatedFallbackPrice(existingHolding, entry, amount, nextAmount)
+            : (existingHolding?.fallbackPrice ?? null),
       });
     }, new Map<string, SnapshotHolding>())
     .values()
@@ -270,8 +323,113 @@ function getSnapshotHoldings(entries: ResolvedPortfolioEntry[], date: string): S
     .toArray();
 }
 
+function getSnapshotHoldingsByDate(entries: ResolvedPortfolioEntry[], dates: string[]) {
+  return new Map(dates.map(date => [date, getSnapshotHoldings(entries, date)]));
+}
+
+function getUpdatedFallbackPrice(
+  existingHolding: SnapshotHolding | undefined,
+  entry: ResolvedPortfolioEntry,
+  amount: number,
+  nextAmount: number,
+): PersistedStockPrice | null {
+  const purchasePrice = assertToFloat(entry.purchasePrice);
+  if (existingHolding == null) {
+    return {
+      tickerId: entry.tickerId,
+      currency: entry.purchasePriceCurrency,
+      date: entry.transactionDate,
+      close: purchasePrice,
+    };
+  }
+
+  const existingFallbackPrice = existingHolding.fallbackPrice;
+  if (existingFallbackPrice == null) {
+    return null;
+  }
+  if (existingFallbackPrice.currency !== entry.purchasePriceCurrency) {
+    return null;
+  }
+
+  return {
+    tickerId: entry.tickerId,
+    currency: entry.purchasePriceCurrency,
+    date: entry.transactionDate,
+    close: (existingFallbackPrice.close * existingHolding.amount + purchasePrice * amount) / nextAmount,
+  };
+}
+
 function getUniqueTransactionDates(entries: ResolvedPortfolioEntry[]) {
-  return [...new Set(entries.map(entry => entry.transactionDate))].toSorted();
+  return new Set(entries.map(entry => entry.transactionDate)).values().toArray().toSorted();
+}
+
+function getSnapshotDatesForPeriod(entries: ResolvedPortfolioEntry[], periodStartDate: string | null) {
+  const transactionDates = getUniqueTransactionDates(entries).filter(date => {
+    return periodStartDate == null || date >= periodStartDate;
+  });
+  if (periodStartDate == null) {
+    return transactionDates;
+  }
+
+  const baselineHoldings = getSnapshotHoldings(entries, periodStartDate);
+  if (baselineHoldings.length === 0) {
+    return transactionDates;
+  }
+
+  return new Set([periodStartDate, ...transactionDates]).values().toArray().toSorted();
+}
+
+function downsampleSnapshotDates(dates: string[], maxDateCount: number) {
+  if (dates.length <= maxDateCount) {
+    return dates;
+  }
+  if (maxDateCount <= 0) {
+    return [];
+  }
+  if (maxDateCount === 1) {
+    return [dates[0]];
+  }
+
+  const selectedIndexes = new Set<number>();
+  for (let index = 0; index < maxDateCount; index += 1) {
+    selectedIndexes.add(Math.round((index * (dates.length - 1)) / (maxDateCount - 1)));
+  }
+
+  for (let index = dates.length - 1; selectedIndexes.size < maxDateCount && index >= 0; index -= 1) {
+    selectedIndexes.add(index);
+  }
+
+  return selectedIndexes
+    .values()
+    .toArray()
+    .toSorted((left, right) => left - right)
+    .map(index => dates[index])
+    .filter(date => date != null);
+}
+
+function getPeriodStartDate(period: PortfolioDashboardPeriod, currentDate: string): string | null {
+  switch (period) {
+    case '1w':
+      return shiftDateByCalendarParts(currentDate, { days: -7 });
+    case '1m':
+      return shiftDateByCalendarParts(currentDate, { months: -1 });
+    case '3m':
+      return shiftDateByCalendarParts(currentDate, { months: -3 });
+    case '6m':
+      return shiftDateByCalendarParts(currentDate, { months: -6 });
+    case 'ytd':
+      return `${currentDate.slice(0, 4)}-01-01`;
+    case '1y':
+      return shiftDateByCalendarParts(currentDate, { years: -1 });
+    case '2y':
+      return shiftDateByCalendarParts(currentDate, { years: -2 });
+    case '5y':
+      return shiftDateByCalendarParts(currentDate, { years: -5 });
+    case '10y':
+      return shiftDateByCalendarParts(currentDate, { years: -10 });
+    case 'all':
+      return null;
+  }
 }
 
 function mergeCurrentPoint(points: PortfolioGrowthPoint[], currentPoint: PortfolioGrowthPoint): PortfolioGrowthPoint[] {
@@ -361,7 +519,7 @@ function logUnresolvedHistoricalPriceTimelines(c: HonoContext, requests: Histori
       partial: true,
       outcome: 'success',
     },
-    'Portfolio dashboard could not resolve every historical close price; affected snapshots will be omitted.',
+    'Portfolio dashboard could not resolve every historical close price; purchase price fallbacks may be used.',
   );
 }
 
@@ -389,6 +547,38 @@ function shiftDateByDays(date: string, days: number) {
   shiftedDate.setUTCDate(shiftedDate.getUTCDate() + days);
 
   return shiftedDate.toISOString().slice(0, DATE_SHAPE.length);
+}
+
+function shiftDateByCalendarParts(date: string, shift: CalendarDateShift) {
+  const shiftedDate = new Date(`${date}T00:00:00.000Z`);
+
+  function formatShiftedDate() {
+    return shiftedDate.toISOString().slice(0, DATE_SHAPE.length);
+  }
+
+  function shiftMonthAndYear(args: { months: number; years: number }) {
+    const targetYear = shiftedDate.getUTCFullYear() + args.years;
+    const targetMonth = shiftedDate.getUTCMonth() + args.months;
+    const targetDay = Math.min(shiftedDate.getUTCDate(), daysInMonth(targetYear, targetMonth));
+    shiftedDate.setUTCFullYear(targetYear, targetMonth, targetDay);
+  }
+
+  if ('years' in shift) {
+    shiftMonthAndYear({ years: shift.years, months: 0 });
+    return formatShiftedDate();
+  }
+  if ('months' in shift) {
+    shiftMonthAndYear({ months: shift.months, years: 0 });
+    return formatShiftedDate();
+  }
+
+  shiftedDate.setUTCDate(shiftedDate.getUTCDate() + shift.days);
+
+  return formatShiftedDate();
+}
+
+function daysInMonth(year: number, month: number) {
+  return new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
 }
 
 function compareEntriesAscending(left: ResolvedPortfolioEntry, right: ResolvedPortfolioEntry) {

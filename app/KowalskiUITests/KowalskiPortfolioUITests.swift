@@ -43,13 +43,7 @@ final class KowalskiPortfolioUITests: XCTestCase {
 
     private func assertPortfolioSummaryShown(in app: XCUIApplication, timeout: TimeInterval = 5) {
         XCTAssertTrue(app.buttons["Add entry"].firstMatch.waitForExistenceUsingPredicate(timeout: timeout))
-        XCTAssertTrue(
-            app.staticTexts["Holdings Net Worth"].firstMatch.waitForExistenceUsingPredicate(timeout: timeout) ||
-                app.descendants(matching: .any)
-                .matching(identifier: "portfolio-holding-Apple Inc.")
-                .firstMatch
-                .waitForExistenceUsingPredicate(timeout: timeout),
-        )
+        XCTAssertTrue(isPortfolioSummaryVisible(in: app, timeout: timeout))
         XCTAssertFalse(app.buttons["View transactions"].firstMatch.exists)
     }
 
@@ -158,7 +152,7 @@ final class KowalskiPortfolioUITests: XCTestCase {
     }
 
     private func tapBack(in app: XCUIApplication) {
-        let candidates = ["Transaction Details", "Transactions", "Back", "chevron.backward", "AAPL", "TSLA", "NVDA"]
+        let candidates = ["Transaction Details", "Back", "chevron.backward", "AAPL", "TSLA", "NVDA"]
 
         for button in app.windows.firstMatch.buttons.allElementsBoundByIndex {
             if candidates.contains(button.label) {
@@ -192,24 +186,43 @@ final class KowalskiPortfolioUITests: XCTestCase {
 
     private func returnToPortfolioSummary(in app: XCUIApplication) {
         for _ in 0 ..< 4 {
-            if app.staticTexts["Holdings Net Worth"].firstMatch.exists {
+            if isPortfolioSummaryVisible(in: app, timeout: 0) {
                 return
             }
 
             let portfolioSidebarItem = app.buttons["Portfolio"].firstMatch
             XCTAssertTrue(portfolioSidebarItem.waitForExistenceUsingPredicate(timeout: 3))
             portfolioSidebarItem.tap()
-            if app.staticTexts["Holdings Net Worth"].firstMatch.waitForExistenceUsingPredicate(timeout: 1) {
+            if isPortfolioSummaryVisible(in: app, timeout: 1) {
                 return
             }
 
             tapBack(in: app)
-            if app.staticTexts["Holdings Net Worth"].firstMatch.waitForExistenceUsingPredicate(timeout: 1) {
+            if isPortfolioSummaryVisible(in: app, timeout: 1) {
                 return
             }
         }
 
         XCTFail("Expected to return to the portfolio summary")
+    }
+
+    private func isPortfolioSummaryVisible(in app: XCUIApplication, timeout: TimeInterval) -> Bool {
+        let netWorthCard = app.staticTexts["Holdings Net Worth"].firstMatch
+        if netWorthCard.exists {
+            return true
+        }
+
+        let appleHolding = app.descendants(matching: .any)
+            .matching(identifier: "portfolio-holding-Apple Inc.")
+            .firstMatch
+        if appleHolding.exists {
+            return true
+        }
+
+        guard timeout > 0 else { return false }
+
+        return netWorthCard.waitForExistenceUsingPredicate(timeout: timeout) ||
+            appleHolding.waitForExistenceUsingPredicate(timeout: timeout)
     }
 
     private func isTransactionsListVisible(in app: XCUIApplication, timeout: TimeInterval) -> Bool {
