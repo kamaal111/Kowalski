@@ -225,7 +225,7 @@ struct KowalskiPortfolioClientTests {
         let client = try makeGeneratedClient(transport: transport)
         let portfolioClient = KowalskiPortfolioClientFactory.default(client: client)
 
-        let dashboards = try await portfolioClient.getDashboards().get()
+        let dashboards = try await portfolioClient.getDashboards(period: .oneYear).get()
         let points = dashboards.portfolioGrowthOverTime.points
 
         #expect(dashboards.portfolioGrowthOverTime.currency == .EUR)
@@ -234,7 +234,24 @@ struct KowalskiPortfolioClientTests {
         #expect(points.first?.date == Date(timeIntervalSince1970: 1_766_102_400))
 
         let request = try #require(transport.capturedRequests.first)
-        #expect(request.path == "/app-api/portfolio/dashboards")
+        #expect(request.path == "/app-api/portfolio/dashboards?period=1y")
+        #expect(request.method == .get)
+    }
+
+    @Test
+    func `Get dashboards should send selected dashboard period`() async throws {
+        let transport = MockClientTransport(
+            queuedResponses: [
+                QueuedResponse(status: .ok, body: makeDashboardsResponseBody()),
+            ],
+        )
+        let client = try makeGeneratedClient(transport: transport)
+        let portfolioClient = KowalskiPortfolioClientFactory.default(client: client)
+
+        _ = try await portfolioClient.getDashboards(period: .yearToDate).get()
+
+        let request = try #require(transport.capturedRequests.first)
+        #expect(request.path == "/app-api/portfolio/dashboards?period=ytd")
         #expect(request.method == .get)
     }
 
@@ -251,7 +268,7 @@ struct KowalskiPortfolioClientTests {
         let client = try makeGeneratedClient(transport: transport)
         let portfolioClient = KowalskiPortfolioClientFactory.default(client: client)
 
-        let result = await portfolioClient.getDashboards()
+        let result = await portfolioClient.getDashboards(period: .oneYear)
         let isUnauthorizedFailure = if case .failure(.unauthorized) = result {
             true
         } else {

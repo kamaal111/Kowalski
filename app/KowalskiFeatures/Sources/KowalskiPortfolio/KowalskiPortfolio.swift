@@ -15,6 +15,7 @@ import Observation
 
 private let logger = KamaalLogger(from: KowalskiPortfolio.self, failOnError: false)
 private let moneyVisibilityPreferenceKey = "\(ModuleConfig.identifier).moneyVisibilityPreference"
+private let dashboardPeriodPreferenceKey = "\(ModuleConfig.identifier).dashboardPeriodPreference"
 private let cachedPortfolioSnapshotKey = "\(ModuleConfig.identifier).cachedPortfolioSnapshot"
 private let fallbackPreflightPollMs = 500
 private let maxPreflightPollAttempts = 8
@@ -31,6 +32,7 @@ public final class KowalskiPortfolio {
     private(set) var allTimeProfit: AllTimeProfit?
     private(set) var dashboards: PortfolioDashboards?
     private(set) var showsMoneyValues = true
+    private(set) var dashboardPeriod: KowalskiPortfolioDashboardPeriod = .oneYear
 
     private var isLoading = false
     private var isRefreshingLatestPrices = false
@@ -39,6 +41,9 @@ public final class KowalskiPortfolio {
 
     @UserDefaultsValue(key: moneyVisibilityPreferenceKey)
     private static var moneyVisibilityPreference: Bool?
+
+    @UserDefaultsValue(key: dashboardPeriodPreferenceKey)
+    private static var dashboardPeriodPreference: String?
 
     @UserDefaultsObject(key: cachedPortfolioSnapshotKey)
     private static var cachedSnapshot: CachedPortfolioSnapshot?
@@ -80,6 +85,7 @@ public final class KowalskiPortfolio {
     private init(client: KowalskiClient) {
         self.client = client
         showsMoneyValues = Self.moneyVisibilityPreference ?? true
+        dashboardPeriod = Self.persistedDashboardPeriod
     }
 
     @MainActor
@@ -242,7 +248,7 @@ public final class KowalskiPortfolio {
 
     func fetchDashboards() async -> Result<Void, Error> {
         await withDashboardLoading {
-            let dashboardsResult = await client.portfolio.getDashboards()
+            let dashboardsResult = await client.portfolio.getDashboards(period: dashboardPeriod)
                 .map(mapper.mapDashboardsResponse)
             switch dashboardsResult {
             case let .failure(error):
@@ -257,6 +263,15 @@ public final class KowalskiPortfolio {
 
     func toggleMoneyVisibility() {
         setMoneyVisibility(!showsMoneyValues)
+    }
+
+    func setDashboardPeriod(_ period: KowalskiPortfolioDashboardPeriod) async -> Result<Void, Error> {
+        guard dashboardPeriod != period else { return .success(()) }
+
+        setDashboardPeriodPreference(period)
+        clearDashboards()
+
+        return await fetchDashboards()
     }
 
     private func computeAllTimeProfit(
@@ -341,9 +356,20 @@ public final class KowalskiPortfolio {
     }
 
     @MainActor
+    private func clearDashboards() {
+        dashboards = nil
+    }
+
+    @MainActor
     private func setMoneyVisibility(_ showsMoneyValues: Bool) {
         self.showsMoneyValues = showsMoneyValues
         Self.moneyVisibilityPreference = showsMoneyValues
+    }
+
+    @MainActor
+    private func setDashboardPeriodPreference(_ period: KowalskiPortfolioDashboardPeriod) {
+        dashboardPeriod = period
+        Self.dashboardPeriodPreference = period.rawValue
     }
 
     @MainActor
@@ -430,9 +456,15 @@ public final class KowalskiPortfolio {
     }
 
     // - MARK: Private
+}
 
+extension KowalskiPortfolio {
     static func resetPersistedMoneyVisibility() {
         _moneyVisibilityPreference.removeValue()
+    }
+
+    static func resetPersistedDashboardPeriod() {
+        _dashboardPeriodPreference.removeValue()
     }
 
     static func resetPersistedSnapshot() {
@@ -441,6 +473,12 @@ public final class KowalskiPortfolio {
 }
 
 private extension KowalskiPortfolio {
+    static var persistedDashboardPeriod: KowalskiPortfolioDashboardPeriod {
+        guard let rawValue = dashboardPeriodPreference else { return .oneYear }
+
+        return KowalskiPortfolioDashboardPeriod(rawValue: rawValue) ?? .oneYear
+    }
+
     func refreshPortfolio() async -> Result<Void, Error> {
         await refreshFromServer(sessionEmail: activeSnapshotSessionEmail, currencyCode: activeSnapshotCurrencyCode)
     }

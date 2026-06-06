@@ -19,6 +19,7 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/*.test.ts'],
     setupFiles: ['./src/tests/setup.ts'],
+    testTimeout: 15_000,
     env: {
       DATABASE_URL: databaseUrl,
       MODE: 'TEST',

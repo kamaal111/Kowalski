@@ -1,10 +1,11 @@
 import { createRoute } from '@hono/zod-openapi';
 
 import { OPENAPI_TAG } from '../constants';
+import { PortfolioDashboardsQuerySchema } from '../schemas/queries';
 import { PortfolioDashboardsResponseSchema } from '../schemas/responses';
 import { STATUS_CODES } from '@/constants/http';
 import { MIME_TYPES } from '@/constants/request';
-import { ErrorResponseSchema } from '@/schemas/errors';
+import { ErrorResponseSchema, ValidationErrorResponseSchema } from '@/schemas/errors';
 import { AuthenticationHeaders } from '@/schemas/headers';
 
 const dashboardsRoute = createRoute({
@@ -15,6 +16,7 @@ const dashboardsRoute = createRoute({
   description: 'Return sparse dashboard data for the signed-in user default portfolio.',
   request: {
     headers: AuthenticationHeaders,
+    query: PortfolioDashboardsQuerySchema,
   },
   responses: {
     [STATUS_CODES.OK]: {
@@ -30,6 +32,14 @@ const dashboardsRoute = createRoute({
       content: {
         [MIME_TYPES.APPLICATION_JSON]: {
           schema: ErrorResponseSchema,
+        },
+      },
+    },
+    [STATUS_CODES.BAD_REQUEST]: {
+      description: 'Dashboard query validation failed',
+      content: {
+        [MIME_TYPES.APPLICATION_JSON]: {
+          schema: ValidationErrorResponseSchema,
         },
       },
     },
