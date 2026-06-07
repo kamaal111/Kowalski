@@ -23,6 +23,7 @@ struct KowalskiPortfolioDashboardPeriodPicker: View {
             }
         }
         .pickerStyle(.segmented)
+        .disabled(portfolio.isLoadingDashboardData)
     }
 
     private var periodSelection: Binding<KowalskiPortfolioDashboardPeriod> {

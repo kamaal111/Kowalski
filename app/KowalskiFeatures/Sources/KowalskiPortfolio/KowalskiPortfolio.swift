@@ -74,6 +74,10 @@ public final class KowalskiPortfolio {
         isLoading && !entries.isEmpty && netWorth == nil
     }
 
+    var isLoadingDashboardData: Bool {
+        isLoadingDashboards
+    }
+
     var isShowingDashboardLoadingState: Bool {
         isLoadingDashboards && dashboards == nil
     }
@@ -389,10 +393,12 @@ public final class KowalskiPortfolio {
 
         return result
     }
+}
 
-    // MARK: Factory
+// MARK: Factory
 
-    public static func forEnvironment() -> KowalskiPortfolio {
+public extension KowalskiPortfolio {
+    static func forEnvironment() -> KowalskiPortfolio {
         guard KowalskiEnvironment.isUiTesting else { return `default`() }
         if KowalskiEnvironment.shouldResetPortfolioMoneyVisibility {
             resetPersistedMoneyVisibility()
@@ -409,25 +415,25 @@ public final class KowalskiPortfolio {
         }
     }
 
-    public static func `default`() -> KowalskiPortfolio {
+    static func `default`() -> KowalskiPortfolio {
         let client = KowalskiClient.default()
 
         return KowalskiPortfolio(client: client)
     }
 
-    public static func preview() -> KowalskiPortfolio {
+    static func preview() -> KowalskiPortfolio {
         let client = KowalskiClient.preview(withCredentials: true)
 
         return KowalskiPortfolio(client: client)
     }
 
-    public static func createEntryFailingPreview() -> KowalskiPortfolio {
+    static func createEntryFailingPreview() -> KowalskiPortfolio {
         let client = KowalskiClient.previewWithFailingPortfolioCreateEntry(withCredentials: true)
 
         return KowalskiPortfolio(client: client)
     }
 
-    public static func createEntryValidationFailingPreview() -> KowalskiPortfolio {
+    static func createEntryValidationFailingPreview() -> KowalskiPortfolio {
         let client = KowalskiClient.previewWithValidationFailingPortfolioCreateEntry(withCredentials: true)
 
         return KowalskiPortfolio(client: client)
@@ -445,17 +451,15 @@ public final class KowalskiPortfolio {
         return KowalskiPortfolio(client: client)
     }
 
-    public static func overviewFailingPreview() -> KowalskiPortfolio {
+    static func overviewFailingPreview() -> KowalskiPortfolio {
         let client = KowalskiClient.previewWithFailingPortfolioListEntries(withCredentials: true)
 
         return KowalskiPortfolio(client: client)
     }
 
-    static func testing(client: KowalskiClient) -> KowalskiPortfolio {
+    internal static func testing(client: KowalskiClient) -> KowalskiPortfolio {
         KowalskiPortfolio(client: client)
     }
-
-    // - MARK: Private
 }
 
 extension KowalskiPortfolio {

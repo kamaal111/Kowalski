@@ -208,6 +208,25 @@ struct KowalskiPortfolioTests {
     }
 
     @Test
+    func `Fetch dashboards should expose loading state while request is in flight`() async throws {
+        let portfolioClient = MockPortfolioClient(dashboardDelay: .milliseconds(100))
+        let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
+
+        let fetchTask = Task {
+            await portfolio.fetchDashboards()
+        }
+        try await waitUntil {
+            await portfolioClient.getDashboardsCallCount == 1
+        }
+
+        #expect(portfolio.isLoadingDashboardData)
+
+        try await fetchTask.value.get()
+
+        #expect(!portfolio.isLoadingDashboardData)
+    }
+
+    @Test
     func `Fetch dashboards should return failure when request fails`() async {
         let portfolioClient = MockPortfolioClient(dashboardsResult: .failure(.unauthorized))
         let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
@@ -1564,6 +1583,7 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
         KowalskiPortfolioDashboardsResponse,
         KowalskiPortfolioClientDashboardsErrors,
     >
+    private let dashboardDelay: Duration?
     private var preflightResults: [Result<
         KowalskiPortfolioOverviewPreflightResponse,
         KowalskiPortfolioClientOverviewPreflightErrors,
@@ -1586,6 +1606,7 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
             KowalskiPortfolioDashboardsResponse,
             KowalskiPortfolioClientDashboardsErrors,
         > = .success(makePortfolioDashboardsResponse()),
+        dashboardDelay: Duration? = nil,
         overviewResult: Result<KowalskiPortfolioOverviewResponse, KowalskiPortfolioClientOverviewErrors> = .success(
             makePortfolioOverviewResponse(transactions: [], currentValues: [:]),
         ),
@@ -1599,6 +1620,7 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
         self.bulkCreateEntriesResult = bulkCreateEntriesResult
         self.updateEntryResult = updateEntryResult
         self.dashboardsResult = dashboardsResult
+        self.dashboardDelay = dashboardDelay
         self.overviewResults = overviewResults.isEmpty ? [overviewResult] : overviewResults
         self.preflightResults = preflightResults
             .isEmpty ? [.success(makeOverviewPreflightResponse())] : preflightResults
@@ -1610,6 +1632,9 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
         getDashboardsCallCount += 1
         dashboardPeriods.append(period)
         events.append(.dashboards)
+        if let dashboardDelay {
+            try? await Task.sleep(for: dashboardDelay)
+        }
 
         return dashboardsResult
     }
