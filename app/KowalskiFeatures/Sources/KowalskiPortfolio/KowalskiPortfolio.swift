@@ -5,11 +5,13 @@
 //  Created by Kamaal M Farah on 11/1/25.
 //
 
+import CryptoKit
 import Foundation
 import KamaalExtensions
 import KamaalLogger
 import KamaalUtils
 import KowalskiClient
+import KowalskiFeaturesConfig
 import KowalskiUtils
 import Observation
 
@@ -24,6 +26,7 @@ private let maxPreflightPollAttempts = 8
 @MainActor
 public final class KowalskiPortfolio {
     private let client: KowalskiClient
+    private let dashboardCache: PortfolioDashboardCache
     private let mapper = KowalskiPortfolioMappers()
 
     private(set) var entries: [PortfolioEntry] = []
@@ -33,6 +36,7 @@ public final class KowalskiPortfolio {
     private(set) var dashboards: PortfolioDashboards?
     private(set) var showsMoneyValues = true
     private(set) var dashboardPeriod: KowalskiPortfolioDashboardPeriod = .oneYear
+    private(set) var isRefreshingStaleDashboards = false
 
     private var isLoading = false
     private var isRefreshingLatestPrices = false
@@ -82,12 +86,17 @@ public final class KowalskiPortfolio {
         isLoadingDashboards && dashboards == nil
     }
 
+    var isShowingDashboardRefreshHint: Bool {
+        isRefreshingStaleDashboards
+    }
+
     var isShowingDashboardEmptyState: Bool {
         dashboards?.portfolioGrowthOverTime.points.isEmpty ?? false
     }
 
-    private init(client: KowalskiClient) {
+    private init(client: KowalskiClient, dashboardCache: PortfolioDashboardCache? = nil) {
         self.client = client
+        self.dashboardCache = dashboardCache ?? PortfolioDashboardCache()
         showsMoneyValues = Self.moneyVisibilityPreference ?? true
         dashboardPeriod = Self.persistedDashboardPeriod
     }
@@ -251,18 +260,31 @@ public final class KowalskiPortfolio {
     }
 
     func fetchDashboards() async -> Result<Void, Error> {
-        await withDashboardLoading {
-            let dashboardsResult = await client.portfolio.getDashboards(period: dashboardPeriod)
-                .map(mapper.mapDashboardsResponse)
-            switch dashboardsResult {
-            case let .failure(error):
-                logger.error("Failed to fetch portfolio dashboards: \(error.localizedDescription)")
-                return .failure(error)
-            case let .success(dashboards):
-                setDashboards(dashboards)
-                return .success(())
-            }
+        let transactionHash = makeTransactionsHash(entries)
+        let cacheScope = dashboardCacheScope()
+        let cachedDashboard = dashboardCache.read(
+            sessionEmail: cacheScope.sessionEmail,
+            currencyCode: cacheScope.currencyCode,
+            period: dashboardPeriod,
+        )
+        if let cachedDashboard {
+            setDashboards(cachedDashboard.dashboards)
+            guard cachedDashboard.transactionHash != transactionHash else { return .success(()) }
+
+            return await refreshDashboards(
+                transactionHash: transactionHash,
+                cacheScope: cacheScope,
+                refreshesStaleCache: true,
+            )
         }
+
+        clearDashboards()
+
+        return await refreshDashboards(
+            transactionHash: transactionHash,
+            cacheScope: cacheScope,
+            refreshesStaleCache: false,
+        )
     }
 
     func toggleMoneyVisibility() {
@@ -273,8 +295,6 @@ public final class KowalskiPortfolio {
         guard dashboardPeriod != period else { return .success(()) }
 
         setDashboardPeriodPreference(period)
-        clearDashboards()
-
         return await fetchDashboards()
     }
 
@@ -362,6 +382,11 @@ public final class KowalskiPortfolio {
     @MainActor
     private func clearDashboards() {
         dashboards = nil
+    }
+
+    @MainActor
+    private func setDashboardRefreshHint(_ isVisible: Bool) {
+        isRefreshingStaleDashboards = isVisible
     }
 
     @MainActor
@@ -457,8 +482,12 @@ public extension KowalskiPortfolio {
         return KowalskiPortfolio(client: client)
     }
 
-    internal static func testing(client: KowalskiClient) -> KowalskiPortfolio {
-        KowalskiPortfolio(client: client)
+    static func testing(client: KowalskiClient, dashboardCacheDirectoryURL: URL? = nil) -> KowalskiPortfolio {
+        let dashboardCacheDirectoryURL = dashboardCacheDirectoryURL ?? FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let dashboardCache = PortfolioDashboardCache(directoryURL: dashboardCacheDirectoryURL)
+
+        return KowalskiPortfolio(client: client, dashboardCache: dashboardCache)
     }
 }
 
@@ -506,6 +535,37 @@ private extension KowalskiPortfolio {
         return .success(())
     }
 
+    func refreshDashboards(
+        transactionHash: String,
+        cacheScope: DashboardCacheScope,
+        refreshesStaleCache: Bool,
+    ) async -> Result<Void, Error> {
+        setDashboardRefreshHint(refreshesStaleCache)
+        defer { setDashboardRefreshHint(false) }
+
+        return await withDashboardLoading {
+            let dashboardsResult = await client.portfolio.getDashboards(period: dashboardPeriod)
+                .map(mapper.mapDashboardsResponse)
+            let dashboards: PortfolioDashboards
+            switch dashboardsResult {
+            case let .failure(error):
+                logger.error("Failed to fetch portfolio dashboards: \(error.localizedDescription)")
+                return .failure(error)
+            case let .success(success):
+                dashboards = success
+            }
+
+            setDashboards(dashboards)
+            persistCachedDashboard(
+                dashboards,
+                transactionHash: transactionHash,
+                cacheScope: cacheScope,
+            )
+
+            return .success(())
+        }
+    }
+
     func waitUntilHoldingsReady() async -> Result<Void, Error> {
         for _ in 0 ..< maxPreflightPollAttempts {
             let preflightResult = await client.portfolio.getOverviewPreflight()
@@ -531,9 +591,10 @@ private extension KowalskiPortfolio {
             hasHydratedCachedSnapshot = false
             return false
         }
-        guard cachedSnapshot.sessionEmail == cacheSessionEmail(sessionEmail),
-              cachedSnapshot.currencyCode == currencyCode
-        else {
+
+        let shouldHydrate = cachedSnapshot.sessionEmail == cacheSessionEmail(sessionEmail) &&
+            cachedSnapshot.currencyCode == currencyCode
+        guard shouldHydrate else {
             clearCachedSnapshotIfScopeMismatches(sessionEmail: sessionEmail, currencyCode: currencyCode)
             hasHydratedCachedSnapshot = false
             return false
@@ -567,17 +628,111 @@ private extension KowalskiPortfolio {
 
     func clearCachedSnapshotIfScopeMismatches(sessionEmail: String?, currencyCode: String) {
         guard let cachedSnapshot = Self.cachedSnapshot else { return }
-        guard cachedSnapshot.sessionEmail != cacheSessionEmail(sessionEmail) ||
+
+        let shouldReset = cachedSnapshot.sessionEmail != cacheSessionEmail(sessionEmail) ||
             cachedSnapshot.currencyCode != currencyCode
-        else {
-            return
-        }
+        guard shouldReset else { return }
 
         Self.resetPersistedSnapshot()
     }
 
     func cacheSessionEmail(_ sessionEmail: String?) -> String {
         sessionEmail ?? ""
+    }
+
+    func dashboardCacheScope() -> DashboardCacheScope {
+        let currencyCode = activeSnapshotCurrencyCode
+            ?? netWorth?.currency.rawValue
+            ?? KowalskiFeatureDefaults.fallbackCurrency.rawValue
+
+        return DashboardCacheScope(
+            sessionEmail: cacheSessionEmail(activeSnapshotSessionEmail),
+            currencyCode: currencyCode,
+        )
+    }
+
+    func persistCachedDashboard(
+        _ dashboards: PortfolioDashboards,
+        transactionHash: String,
+        cacheScope: DashboardCacheScope,
+    ) {
+        do {
+            try dashboardCache.write(
+                CachedPortfolioDashboard(
+                    sessionEmail: cacheScope.sessionEmail,
+                    currencyCode: cacheScope.currencyCode,
+                    period: dashboardPeriod,
+                    transactionHash: transactionHash,
+                    dashboards: dashboards,
+                    cachedAt: .now,
+                ),
+            )
+        } catch {
+            logger.warning("Failed to persist portfolio dashboard cache")
+        }
+    }
+
+    func makeTransactionsHash(_ entries: [PortfolioEntry]) -> String {
+        let canonicalEntries = entries
+            .sorted { first, second in
+                if first.id == second.id {
+                    return first.updatedAt < second.updatedAt
+                }
+
+                return first.id < second.id
+            }
+            .map(CanonicalTransaction.fromEntry(_:))
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .secondsSince1970
+        encoder.outputFormatting = [.sortedKeys]
+        let data: Data
+        do {
+            data = try encoder.encode(canonicalEntries)
+        } catch {
+            logger.error(label: "Failed to encode canonical transactions for portfolio hash", error: error)
+            data = Data()
+        }
+
+        return SHA256.hash(data: data).hexString
+    }
+}
+
+private struct DashboardCacheScope {
+    let sessionEmail: String
+    let currencyCode: String
+}
+
+private struct CanonicalTransaction: Encodable {
+    let id: String
+    let updatedAt: Date
+    let stockSymbol: String
+    let stockExchange: String
+    let stockName: String
+    let stockISIN: String?
+    let amount: Double
+    let purchasePriceCurrency: String
+    let purchasePriceValue: Double
+    let preferredCurrencyPurchasePriceCurrency: String
+    let preferredCurrencyPurchasePriceValue: Double
+    let transactionType: String
+    let transactionDate: Date
+
+    static func fromEntry(_ entry: PortfolioEntry) -> CanonicalTransaction {
+        CanonicalTransaction(
+            id: entry.id,
+            updatedAt: entry.updatedAt,
+            stockSymbol: entry.stock.symbol,
+            stockExchange: entry.stock.exchange,
+            stockName: entry.stock.name,
+            stockISIN: entry.stock.isin,
+            amount: entry.amount,
+            purchasePriceCurrency: entry.purchasePrice.currency.rawValue,
+            purchasePriceValue: entry.purchasePrice.value,
+            preferredCurrencyPurchasePriceCurrency: entry.preferredCurrencyPurchasePrice.currency.rawValue,
+            preferredCurrencyPurchasePriceValue: entry.preferredCurrencyPurchasePrice.value,
+            transactionType: entry.transactionType.cacheValue,
+            transactionDate: entry.transactionDate,
+        )
     }
 }
 

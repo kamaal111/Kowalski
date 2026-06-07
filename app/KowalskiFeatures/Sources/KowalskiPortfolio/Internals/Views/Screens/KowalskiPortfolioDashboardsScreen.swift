@@ -19,6 +19,9 @@ struct KowalskiPortfolioDashboardsScreen: View {
             VStack(alignment: .leading, spacing: KowalskiSizes.medium.rawValue) {
                 KowalskiPortfolioDashboardPeriodPicker(dashboardLoadFailed: $dashboardLoadFailed, toast: $toast)
 
+                if portfolio.isRefreshingStaleDashboards {
+                    KowalskiPortfolioDashboardRefreshHintView()
+                }
                 if portfolio.isShowingDashboardLoadingState {
                     KowalskiPortfolioDashboardStatusView(status: .loading)
                 } else if dashboardLoadFailed {
@@ -37,8 +40,6 @@ struct KowalskiPortfolioDashboardsScreen: View {
         }
         .navigationTitle("Dashboards")
         .task {
-            guard portfolio.dashboards == nil else { return }
-
             await fetchDashboards()
         }
         .toastView(toast: $toast)

@@ -32,6 +32,8 @@ SERVER_RELATIVE_OUTPUT_SCHEMA_FILEPATH := ".." / OUTPUT_SCHEMA_FILEPATH
 AUTH_CONFIG := "src/auth/better-auth.ts"
 AUTH_SCHEMA := "src/db/schema/better-auth.ts"
 
+alias z := zed
+
 # List available commands
 default:
     just --list --unsorted
@@ -280,7 +282,7 @@ test-heavy: test-server test-app-heavy
 quality: check-spec lint format-check typecheck
 
 # Open project in zed
-z:
+zed:
     zed .
 
 # Open project in vscode

@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum TransactionType: Codable, CaseIterable, Identifiable {
+enum TransactionType: String, Codable, CaseIterable, Identifiable {
     struct PairedAction: Equatable {
         let transactionType: TransactionType
         let title: String
@@ -19,6 +19,10 @@ enum TransactionType: Codable, CaseIterable, Identifiable {
 
     var id: Self {
         self
+    }
+
+    var cacheValue: String {
+        rawValue
     }
 
     var pairedActions: [PairedAction] {
