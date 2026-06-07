@@ -8,16 +8,16 @@
 import Foundation
 import KowalskiModels
 
-struct PortfolioDashboards: Hashable {
+struct PortfolioDashboards: Codable, Hashable {
     let portfolioGrowthOverTime: PortfolioGrowthOverTime
 }
 
-struct PortfolioGrowthOverTime: Hashable {
+struct PortfolioGrowthOverTime: Codable, Hashable {
     let currency: KowalskiCurrency
     let points: [PortfolioGrowthPoint]
 }
 
-struct PortfolioGrowthPoint: Hashable {
+struct PortfolioGrowthPoint: Codable, Hashable {
     let date: Date
     let value: Double
     let isCurrent: Bool

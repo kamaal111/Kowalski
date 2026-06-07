@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-public enum KowalskiPortfolioDashboardPeriod: String, CaseIterable, Sendable {
+public enum KowalskiPortfolioDashboardPeriod: String, CaseIterable, Codable, Sendable {
     case oneWeek = "1w"
     case oneMonth = "1m"
     case threeMonths = "3m"
