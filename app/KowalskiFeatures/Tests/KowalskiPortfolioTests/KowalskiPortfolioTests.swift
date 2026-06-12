@@ -208,6 +208,190 @@ struct KowalskiPortfolioTests {
     }
 
     @Test
+    func `Fetch dashboards should write one scoped period cache file`() async throws {
+        let cacheDirectory = try makeDashboardCacheDirectory()
+        let entry = makePortfolioEntryResponse(amount: 10)
+        let overview = makePortfolioOverviewResponse(
+            transactions: [entry],
+            currentValues: ["AAPL": KowalskiClientMoney(currency: .USD, value: 185.45)],
+        )
+        let portfolioClient = MockPortfolioClient(overviewResult: .success(overview))
+        let portfolio = KowalskiPortfolio.testing(
+            client: .testing(portfolio: portfolioClient),
+            dashboardCacheDirectoryURL: cacheDirectory,
+        )
+
+        try await portfolio.bootstrapPortfolio(sessionEmail: "yami@bull.io", currencyCode: "USD").get()
+        try await portfolio.fetchDashboards().get()
+
+        let cacheFileURL = PortfolioDashboardCache(directoryURL: cacheDirectory).cacheFileURL(
+            sessionEmail: "yami@bull.io",
+            currencyCode: "USD",
+            period: .oneYear,
+        )
+        #expect(FileManager.default.fileExists(atPath: cacheFileURL.path()))
+        #expect(try dashboardCacheFileCount(in: cacheDirectory) == 1)
+    }
+
+    @Test
+    func `Fetch dashboards should use fresh cache without calling dashboards again`() async throws {
+        let cacheDirectory = try makeDashboardCacheDirectory()
+        let entry = makePortfolioEntryResponse(amount: 10)
+        let overview = makePortfolioOverviewResponse(
+            transactions: [entry],
+            currentValues: ["AAPL": KowalskiClientMoney(currency: .USD, value: 185.45)],
+        )
+        let portfolioClient = MockPortfolioClient(overviewResult: .success(overview))
+        let portfolio = KowalskiPortfolio.testing(
+            client: .testing(portfolio: portfolioClient),
+            dashboardCacheDirectoryURL: cacheDirectory,
+        )
+
+        try await portfolio.bootstrapPortfolio(sessionEmail: "yami@bull.io", currencyCode: "USD").get()
+        try await portfolio.fetchDashboards().get()
+        try await portfolio.fetchDashboards().get()
+
+        #expect(portfolio.dashboards?.portfolioGrowthOverTime.points.map(\.value) == [1500, 1854.5])
+        #expect(await portfolioClient.getDashboardsCallCount == 1)
+        #expect(try dashboardCacheFileCount(in: cacheDirectory) == 1)
+    }
+
+    @Test
+    func `Fetch dashboards should show stale cache while refreshing changed transactions`() async throws {
+        let cacheDirectory = try makeDashboardCacheDirectory()
+        let cachedEntry = makePortfolioEntryResponse(amount: 10)
+        let cachedOverview = makePortfolioOverviewResponse(
+            transactions: [cachedEntry],
+            currentValues: ["AAPL": KowalskiClientMoney(currency: .USD, value: 185.45)],
+        )
+        let cachedClient = MockPortfolioClient(
+            dashboardsResult: .success(makePortfolioDashboardsResponse(values: [100, 200])),
+            overviewResult: .success(cachedOverview),
+        )
+        let cachedPortfolio = KowalskiPortfolio.testing(
+            client: .testing(portfolio: cachedClient),
+            dashboardCacheDirectoryURL: cacheDirectory,
+        )
+        try await cachedPortfolio.bootstrapPortfolio(sessionEmail: "yami@bull.io", currencyCode: "USD").get()
+        try await cachedPortfolio.fetchDashboards().get()
+
+        let refreshedEntry = makePortfolioEntryResponse(amount: 12)
+        let refreshedOverview = makePortfolioOverviewResponse(
+            transactions: [refreshedEntry],
+            currentValues: ["AAPL": KowalskiClientMoney(currency: .USD, value: 200)],
+        )
+        let refreshedClient = MockPortfolioClient(
+            dashboardsResult: .success(makePortfolioDashboardsResponse(values: [300, 400])),
+            dashboardDelay: .milliseconds(100),
+            overviewResult: .success(refreshedOverview),
+        )
+        let refreshedPortfolio = KowalskiPortfolio.testing(
+            client: .testing(portfolio: refreshedClient),
+            dashboardCacheDirectoryURL: cacheDirectory,
+        )
+        try await refreshedPortfolio.bootstrapPortfolio(sessionEmail: "yami@bull.io", currencyCode: "USD").get()
+
+        let fetchTask = Task {
+            await refreshedPortfolio.fetchDashboards()
+        }
+        try await waitUntil {
+            await refreshedClient.getDashboardsCallCount == 1
+        }
+
+        #expect(refreshedPortfolio.dashboards?.portfolioGrowthOverTime.points.map(\.value) == [100, 200])
+        #expect(refreshedPortfolio.isShowingDashboardRefreshHint)
+
+        try await fetchTask.value.get()
+
+        #expect(refreshedPortfolio.dashboards?.portfolioGrowthOverTime.points.map(\.value) == [300, 400])
+        #expect(!refreshedPortfolio.isShowingDashboardRefreshHint)
+        #expect(try dashboardCacheFileCount(in: cacheDirectory) == 1)
+    }
+
+    @Test
+    func `Changing dashboard period should hydrate matching cache and fetch missing periods`() async throws {
+        KowalskiPortfolio.resetPersistedDashboardPeriod()
+        defer { KowalskiPortfolio.resetPersistedDashboardPeriod() }
+        let cacheDirectory = try makeDashboardCacheDirectory()
+        let entry = makePortfolioEntryResponse(amount: 10)
+        let overview = makePortfolioOverviewResponse(
+            transactions: [entry],
+            currentValues: ["AAPL": KowalskiClientMoney(currency: .USD, value: 185.45)],
+        )
+        let firstClient = MockPortfolioClient(
+            dashboardsResult: .success(makePortfolioDashboardsResponse(values: [100, 200])),
+            overviewResult: .success(overview),
+        )
+        let firstPortfolio = KowalskiPortfolio.testing(
+            client: .testing(portfolio: firstClient),
+            dashboardCacheDirectoryURL: cacheDirectory,
+        )
+        try await firstPortfolio.bootstrapPortfolio(sessionEmail: "yami@bull.io", currencyCode: "USD").get()
+        try await firstPortfolio.setDashboardPeriod(.yearToDate).get()
+
+        let secondClient = MockPortfolioClient(
+            dashboardsResult: .success(makePortfolioDashboardsResponse(values: [300, 400])),
+            overviewResult: .success(overview),
+        )
+        let secondPortfolio = KowalskiPortfolio.testing(
+            client: .testing(portfolio: secondClient),
+            dashboardCacheDirectoryURL: cacheDirectory,
+        )
+        try await secondPortfolio.bootstrapPortfolio(sessionEmail: "yami@bull.io", currencyCode: "USD").get()
+        try await secondPortfolio.fetchDashboards().get()
+
+        #expect(secondPortfolio.dashboards?.portfolioGrowthOverTime.points.map(\.value) == [100, 200])
+        #expect(await secondClient.getDashboardsCallCount == 0)
+
+        try await secondPortfolio.setDashboardPeriod(.oneMonth).get()
+
+        #expect(secondPortfolio.dashboards?.portfolioGrowthOverTime.points.map(\.value) == [300, 400])
+        #expect(await secondClient.getDashboardsCallCount == 1)
+        #expect(try dashboardCacheFileCount(in: cacheDirectory) == 2)
+    }
+
+    @Test
+    func `Fetch dashboards should delete corrupt cache and replace it after fresh fetch`() async throws {
+        let cacheDirectory = try makeDashboardCacheDirectory()
+        let cache = PortfolioDashboardCache(directoryURL: cacheDirectory)
+        let corruptFileURL = cache.cacheFileURL(sessionEmail: "yami@bull.io", currencyCode: "USD", period: .oneYear)
+        try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+        try Data("not-json".utf8).write(to: corruptFileURL)
+        let entry = makePortfolioEntryResponse(amount: 10)
+        let overview = makePortfolioOverviewResponse(
+            transactions: [entry],
+            currentValues: ["AAPL": KowalskiClientMoney(currency: .USD, value: 185.45)],
+        )
+        let portfolioClient = MockPortfolioClient(overviewResult: .success(overview))
+        let portfolio = KowalskiPortfolio.testing(
+            client: .testing(portfolio: portfolioClient),
+            dashboardCacheDirectoryURL: cacheDirectory,
+        )
+
+        try await portfolio.bootstrapPortfolio(sessionEmail: "yami@bull.io", currencyCode: "USD").get()
+        try await portfolio.fetchDashboards().get()
+
+        #expect(await portfolioClient.getDashboardsCallCount == 1)
+        #expect(cache.read(sessionEmail: "yami@bull.io", currencyCode: "USD", period: .oneYear) != nil)
+        #expect(try dashboardCacheFileCount(in: cacheDirectory) == 1)
+    }
+
+    @Test
+    func `Dashboard cache file names should be scoped by session currency and period`() throws {
+        let cacheDirectory = try makeDashboardCacheDirectory()
+        let cache = PortfolioDashboardCache(directoryURL: cacheDirectory)
+
+        let baseURL = cache.cacheFileURL(sessionEmail: "yami@bull.io", currencyCode: "USD", period: .oneYear)
+        let otherSessionURL = cache.cacheFileURL(sessionEmail: "ed@bull.io", currencyCode: "USD", period: .oneYear)
+        let otherCurrencyURL = cache.cacheFileURL(sessionEmail: "yami@bull.io", currencyCode: "EUR", period: .oneYear)
+        let otherPeriodURL = cache.cacheFileURL(sessionEmail: "yami@bull.io", currencyCode: "USD", period: .oneMonth)
+
+        #expect(baseURL.lastPathComponent != otherSessionURL.lastPathComponent)
+        #expect(baseURL.lastPathComponent != otherCurrencyURL.lastPathComponent)
+        #expect(baseURL.lastPathComponent != otherPeriodURL.lastPathComponent)
+    }
+
+    @Test
     func `Fetch dashboards should expose loading state while request is in flight`() async throws {
         let portfolioClient = MockPortfolioClient(dashboardDelay: .milliseconds(100))
         let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
@@ -1579,10 +1763,10 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
         KowalskiPortfolioClientEntryResponse,
         KowalskiPortfolioClientUpdateEntryErrors,
     >
-    private let dashboardsResult: Result<
+    private var dashboardsResults: [Result<
         KowalskiPortfolioDashboardsResponse,
         KowalskiPortfolioClientDashboardsErrors,
-    >
+    >]
     private let dashboardDelay: Duration?
     private var preflightResults: [Result<
         KowalskiPortfolioOverviewPreflightResponse,
@@ -1607,6 +1791,10 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
             KowalskiPortfolioClientDashboardsErrors,
         > = .success(makePortfolioDashboardsResponse()),
         dashboardDelay: Duration? = nil,
+        dashboardsResults: [Result<
+            KowalskiPortfolioDashboardsResponse,
+            KowalskiPortfolioClientDashboardsErrors,
+        >] = [],
         overviewResult: Result<KowalskiPortfolioOverviewResponse, KowalskiPortfolioClientOverviewErrors> = .success(
             makePortfolioOverviewResponse(transactions: [], currentValues: [:]),
         ),
@@ -1619,7 +1807,7 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
         self.createEntryResult = createEntryResult
         self.bulkCreateEntriesResult = bulkCreateEntriesResult
         self.updateEntryResult = updateEntryResult
-        self.dashboardsResult = dashboardsResult
+        self.dashboardsResults = dashboardsResults.isEmpty ? [dashboardsResult] : dashboardsResults
         self.dashboardDelay = dashboardDelay
         self.overviewResults = overviewResults.isEmpty ? [overviewResult] : overviewResults
         self.preflightResults = preflightResults
@@ -1636,7 +1824,14 @@ private actor MockPortfolioClient: KowalskiPortfolioClient {
             try? await Task.sleep(for: dashboardDelay)
         }
 
-        return dashboardsResult
+        guard !dashboardsResults.isEmpty else {
+            return .success(makePortfolioDashboardsResponse())
+        }
+        if dashboardsResults.count == 1 {
+            return dashboardsResults[0]
+        }
+
+        return dashboardsResults.removeFirst()
     }
 
     func getOverview() async -> Result<KowalskiPortfolioOverviewResponse, KowalskiPortfolioClientOverviewErrors> {
@@ -1763,24 +1958,34 @@ private func makePortfolioOverviewResponse(
     )
 }
 
-private func makePortfolioDashboardsResponse() -> KowalskiPortfolioDashboardsResponse {
+private func makePortfolioDashboardsResponse(values: [Double] = [1500, 1854.5]) -> KowalskiPortfolioDashboardsResponse {
     KowalskiPortfolioDashboardsResponse(
         portfolioGrowthOverTime: KowalskiPortfolioGrowthOverTimeResponse(
             currency: .USD,
-            points: [
+            points: values.enumerated().map { index, value in
                 KowalskiPortfolioGrowthPointResponse(
-                    date: Date(timeIntervalSince1970: 1_766_160_440),
-                    value: 1500,
-                    isCurrent: false,
-                ),
-                KowalskiPortfolioGrowthPointResponse(
-                    date: Date(timeIntervalSince1970: 1_766_246_840),
-                    value: 1854.5,
-                    isCurrent: true,
-                ),
-            ],
+                    date: Date(timeIntervalSince1970: 1_766_160_440 + Double(index * 86400)),
+                    value: value,
+                    isCurrent: index == values.count - 1,
+                )
+            },
         ),
     )
+}
+
+private func makeDashboardCacheDirectory() throws -> URL {
+    let directoryURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+
+    return directoryURL
+}
+
+private func dashboardCacheFileCount(in directoryURL: URL) throws -> Int {
+    guard FileManager.default.fileExists(atPath: directoryURL.path()) else { return 0 }
+
+    return try FileManager.default.contentsOfDirectory(at: directoryURL, includingPropertiesForKeys: nil)
+        .count(where: { $0.pathExtension == "json" })
 }
 
 private func makeOverviewPreflightResponse(
