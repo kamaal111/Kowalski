@@ -17,7 +17,11 @@ struct KowalskiPortfolioDashboardsScreen: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: KowalskiSizes.medium.rawValue) {
-                KowalskiPortfolioDashboardPeriodPicker(dashboardLoadFailed: $dashboardLoadFailed, toast: $toast)
+                KowalskiPortfolioDashboardTabPicker()
+
+                if portfolio.selectedDashboardTab == .progress {
+                    KowalskiPortfolioDashboardPeriodPicker(dashboardLoadFailed: $dashboardLoadFailed, toast: $toast)
+                }
 
                 if portfolio.isRefreshingStaleDashboards {
                     KowalskiPortfolioDashboardRefreshHintView()
@@ -28,11 +32,20 @@ struct KowalskiPortfolioDashboardsScreen: View {
                     KowalskiPortfolioDashboardStatusView(status: .error)
                 } else if portfolio.isShowingDashboardEmptyState {
                     KowalskiPortfolioDashboardStatusView(status: .empty)
-                } else if let growth = portfolio.dashboards?.portfolioGrowthOverTime {
-                    KowalskiPortfolioGrowthDashboardView(
-                        growth: growth,
-                        showsMoneyValues: portfolio.showsMoneyValues,
-                    )
+                } else if portfolio.selectedDashboardTab == .progress {
+                    if let growth = portfolio.dashboards?.portfolioGrowthOverTime {
+                        KowalskiPortfolioGrowthDashboardView(
+                            growth: growth,
+                            showsMoneyValues: portfolio.showsMoneyValues,
+                        )
+                    }
+                } else if portfolio.selectedDashboardTab == .holdings {
+                    if let distribution = portfolio.dashboards?.portfolioHoldingsDistribution {
+                        KowalskiPortfolioHoldingsDistributionDashboardView(
+                            distribution: distribution,
+                            showsMoneyValues: portfolio.showsMoneyValues,
+                        )
+                    }
                 }
             }
             .padding(.all, .medium)

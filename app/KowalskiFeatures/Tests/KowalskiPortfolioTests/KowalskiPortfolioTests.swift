@@ -72,6 +72,28 @@ struct KowalskiPortfolioTests {
     }
 
     @Test
+    func `Dashboard tab should default to progress for a fresh portfolio instance`() {
+        KowalskiPortfolio.resetPersistedDashboardTab()
+        defer { KowalskiPortfolio.resetPersistedDashboardTab() }
+
+        let portfolio = KowalskiPortfolio.testing(client: .testing())
+
+        #expect(portfolio.selectedDashboardTab == .progress)
+    }
+
+    @Test
+    func `Dashboard tab preference should persist across portfolio instances`() {
+        KowalskiPortfolio.resetPersistedDashboardTab()
+        defer { KowalskiPortfolio.resetPersistedDashboardTab() }
+        let firstPortfolio = KowalskiPortfolio.testing(client: .testing())
+
+        firstPortfolio.setDashboardTab(.holdings)
+        let secondPortfolio = KowalskiPortfolio.testing(client: .testing())
+
+        #expect(secondPortfolio.selectedDashboardTab == .holdings)
+    }
+
+    @Test
     func `Fresh uncached portfolio should show loading before bootstrap completes`() async throws {
         KowalskiPortfolio.resetPersistedSnapshot()
         defer { KowalskiPortfolio.resetPersistedSnapshot() }
@@ -523,6 +545,7 @@ struct KowalskiPortfolioTests {
     func `Empty dashboards should expose dashboard empty state`() async throws {
         let dashboards = KowalskiPortfolioDashboardsResponse(
             portfolioGrowthOverTime: KowalskiPortfolioGrowthOverTimeResponse(currency: .USD, points: []),
+            portfolioHoldingsDistribution: KowalskiPortfolioHoldingsDistributionResponse(currency: .USD, holdings: []),
         )
         let portfolioClient = MockPortfolioClient(dashboardsResult: .success(dashboards))
         let portfolio = KowalskiPortfolio.testing(client: .testing(portfolio: portfolioClient))
@@ -2050,6 +2073,7 @@ private func makePortfolioDashboardsResponse(values: [Double] = [1500, 1854.5]) 
                 )
             },
         ),
+        portfolioHoldingsDistribution: KowalskiPortfolioHoldingsDistributionResponse(currency: .USD, holdings: []),
     )
 }
 

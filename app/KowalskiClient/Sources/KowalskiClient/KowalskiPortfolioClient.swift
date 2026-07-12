@@ -792,6 +792,26 @@ private func makePreviewDashboards() -> KowalskiPortfolioDashboardsResponse {
                 ),
             ],
         ),
+        portfolioHoldingsDistribution: KowalskiPortfolioHoldingsDistributionResponse(
+            currency: .USD,
+            holdings: [
+                KowalskiPortfolioHoldingDistributionItemResponse(
+                    symbol: "AAPL",
+                    name: "Apple Inc.",
+                    marketValue: KowalskiClientMoney(currency: .USD, value: 1854.5),
+                ),
+                KowalskiPortfolioHoldingDistributionItemResponse(
+                    symbol: "TSLA",
+                    name: "Tesla, Inc.",
+                    marketValue: KowalskiClientMoney(currency: .USD, value: 840.99),
+                ),
+                KowalskiPortfolioHoldingDistributionItemResponse(
+                    symbol: "NVDA",
+                    name: "NVIDIA Corporation",
+                    marketValue: KowalskiClientMoney(currency: .USD, value: 841.01),
+                ),
+            ],
+        ),
     )
 }
 

@@ -716,10 +716,140 @@ describe('Portfolio Dashboards Route', () => {
         currency: 'USD',
         points: [],
       },
+      portfolio_holdings_distribution: {
+        currency: 'USD',
+        holdings: [],
+      },
     });
     expect(yahooFinanceChartMock).not.toHaveBeenCalled();
     expect(yahooFinanceQuoteMock).not.toHaveBeenCalled();
   });
+
+  integrationTest(
+    'includes holdings distribution reflecting current aggregated amounts and current prices',
+    async ({ app, db, sessionToken, userId }) => {
+      const today = new Date().toISOString().slice(0, 10);
+      await seedPortfolioEntry(db, {
+        userId,
+        stock: { symbol: 'AAPL', exchange: 'NMS', name: 'Apple Inc.' },
+        amount: 10,
+        purchasePrice: { currency: 'USD', value: 100 },
+        transactionType: 'buy',
+        transactionDate: '2025-12-19T10:30:00.000Z',
+      });
+      await seedPortfolioEntry(db, {
+        userId,
+        stock: { symbol: 'MSFT', exchange: 'NMS', name: 'Microsoft Corporation' },
+        amount: 2,
+        purchasePrice: { currency: 'USD', value: 300 },
+        transactionType: 'buy',
+        transactionDate: '2025-12-20T10:30:00.000Z',
+      });
+      await seedStockInfo(db, {
+        tickerId: createSyntheticTickerId('NMS', 'AAPL'),
+        currency: 'USD',
+        date: today,
+        price: 160,
+      });
+      await seedStockInfo(db, {
+        tickerId: createSyntheticTickerId('NMS', 'MSFT'),
+        currency: 'USD',
+        date: today,
+        price: 430,
+      });
+
+      const response = await sendDashboardsRequest(app, sessionToken, {}, 'all');
+      const body = await expectSuccessfulDashboardsResponse(response);
+
+      expect(body.portfolio_holdings_distribution).toEqual({
+        currency: 'USD',
+        holdings: expect.arrayContaining([
+          { asset: { symbol: 'AAPL', name: 'Apple Inc.' }, market_value: { currency: 'USD', value: 1600 } },
+          { asset: { symbol: 'MSFT', name: 'Microsoft Corporation' }, market_value: { currency: 'USD', value: 860 } },
+        ]),
+      });
+      expect(body.portfolio_holdings_distribution.holdings).toHaveLength(2);
+    },
+  );
+
+  integrationTest(
+    'nets a partially sold holding out of the distribution when fully sold',
+    async ({ app, db, sessionToken, userId }) => {
+      const today = new Date().toISOString().slice(0, 10);
+      await seedPortfolioEntry(db, {
+        userId,
+        stock: { symbol: 'AAPL', exchange: 'NMS', name: 'Apple Inc.' },
+        amount: 5,
+        purchasePrice: { currency: 'USD', value: 100 },
+        transactionType: 'buy',
+        transactionDate: '2025-12-19T10:30:00.000Z',
+      });
+      await seedPortfolioEntry(db, {
+        userId,
+        stock: { symbol: 'AAPL', exchange: 'NMS', name: 'Apple Inc.' },
+        amount: 5,
+        purchasePrice: { currency: 'USD', value: 150 },
+        transactionType: 'sell',
+        transactionDate: '2025-12-20T10:30:00.000Z',
+      });
+      await seedPortfolioEntry(db, {
+        userId,
+        stock: { symbol: 'MSFT', exchange: 'NMS', name: 'Microsoft Corporation' },
+        amount: 2,
+        purchasePrice: { currency: 'USD', value: 300 },
+        transactionType: 'buy',
+        transactionDate: '2025-12-20T10:30:00.000Z',
+      });
+      await seedStockInfo(db, {
+        tickerId: createSyntheticTickerId('NMS', 'MSFT'),
+        currency: 'USD',
+        date: today,
+        price: 430,
+      });
+
+      const response = await sendDashboardsRequest(app, sessionToken, {}, 'all');
+      const body = await expectSuccessfulDashboardsResponse(response);
+
+      expect(body.portfolio_holdings_distribution).toEqual({
+        currency: 'USD',
+        holdings: [
+          { asset: { symbol: 'MSFT', name: 'Microsoft Corporation' }, market_value: { currency: 'USD', value: 860 } },
+        ],
+      });
+    },
+  );
+
+  integrationTest(
+    'returns the same holdings distribution regardless of the period query param',
+    async ({ app, db, sessionToken, userId }) => {
+      const today = new Date().toISOString().slice(0, 10);
+      await seedPortfolioEntry(db, {
+        userId,
+        stock: { symbol: 'AAPL', exchange: 'NMS', name: 'Apple Inc.' },
+        amount: 10,
+        purchasePrice: { currency: 'USD', value: 100 },
+        transactionType: 'buy',
+        transactionDate: '2025-12-19T10:30:00.000Z',
+      });
+      await seedStockInfo(db, {
+        tickerId: createSyntheticTickerId('NMS', 'AAPL'),
+        currency: 'USD',
+        date: today,
+        price: 160,
+      });
+
+      const weekResponse = await sendDashboardsRequest(app, sessionToken, {}, '1w');
+      const allResponse = await sendDashboardsRequest(app, sessionToken, {}, 'all');
+      const weekBody = await expectSuccessfulDashboardsResponse(weekResponse);
+      const allBody = await expectSuccessfulDashboardsResponse(allResponse);
+
+      expect(weekBody.portfolio_holdings_distribution).toEqual(allBody.portfolio_holdings_distribution);
+      expect(weekBody.portfolio_holdings_distribution).toEqual({
+        currency: 'USD',
+        holdings: [{ asset: { symbol: 'AAPL', name: 'Apple Inc.' }, market_value: { currency: 'USD', value: 1600 } }],
+      });
+    },
+  );
 });
 
 async function sendDashboardsRequest(

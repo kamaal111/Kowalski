@@ -90,7 +90,7 @@ struct KowalskiPortfolioMapper {
             transactions: mapListEntriesApiResponseToClient(response.transactions),
             currentValues: currentValues,
             holdings: response.holdings.map(mapHoldingApiResponseToClient),
-            netWorth: mapHoldingValue(response.netWorth.value1),
+            netWorth: mapMoney(response.netWorth.value1),
         )
     }
 
@@ -101,6 +101,10 @@ struct KowalskiPortfolioMapper {
             portfolioGrowthOverTime: KowalskiPortfolioGrowthOverTimeResponse(
                 currency: mapPortfolioGrowthCurrency(response.portfolioGrowthOverTime.currency),
                 points: response.portfolioGrowthOverTime.points.map(mapPortfolioGrowthPoint),
+            ),
+            portfolioHoldingsDistribution: KowalskiPortfolioHoldingsDistributionResponse(
+                currency: response.portfolioHoldingsDistribution.currency.value1.kowalskiCurrency,
+                holdings: response.portfolioHoldingsDistribution.holdings.map(mapPortfolioHoldingDistributionItem),
             ),
         )
     }
@@ -170,6 +174,19 @@ struct KowalskiPortfolioMapper {
         response.value1.kowalskiCurrency
     }
 
+    private func mapPortfolioHoldingDistributionItem(
+        _ response: Components.Schemas.PortfolioHoldingDistributionItem,
+    ) -> KowalskiPortfolioHoldingDistributionItemResponse {
+        KowalskiPortfolioHoldingDistributionItemResponse(
+            symbol: response.asset.symbol,
+            name: response.asset.name,
+            marketValue: KowalskiClientMoney(
+                currency: response.marketValue.currency.kowalskiCurrency,
+                value: response.marketValue.value,
+            ),
+        )
+    }
+
     private func mapDateOnly(_ response: String) -> Date {
         let formatter = DateFormatter()
         formatter.calendar = Calendar(identifier: .gregorian)
@@ -199,7 +216,7 @@ struct KowalskiPortfolioMapper {
             asset: mapHoldingAsset(response.asset),
             amount: response.amount,
             unitValue: mapCurrentValue(response.unitValue.value1),
-            totalValue: mapHoldingValue(response.totalValue),
+            totalValue: mapMoney(response.totalValue.value1),
             profitLoss: mapHoldingProfitLoss(response.profitLoss),
         )
     }
@@ -227,20 +244,13 @@ struct KowalskiPortfolioMapper {
         )
     }
 
-    private func mapHoldingValue(_ response: Components.Schemas.PortfolioHoldingValue) -> KowalskiClientMoney {
-        KowalskiClientMoney(
-            currency: response.currency.kowalskiCurrency,
-            value: response.value,
-        )
-    }
-
     private func mapHoldingProfitLoss(
         _ response: Components.Schemas.PortfolioHoldingProfitLoss?,
     ) -> KowalskiPortfolioHoldingProfitLossResponse? {
         guard let response else { return nil }
 
         return KowalskiPortfolioHoldingProfitLossResponse(
-            amount: mapHoldingValue(response.amount.value1),
+            amount: mapMoney(response.amount.value1),
             percentage: response.percentage,
         )
     }

@@ -18,6 +18,7 @@ import Observation
 private let logger = KamaalLogger(from: KowalskiPortfolio.self, failOnError: false)
 private let moneyVisibilityPreferenceKey = "\(ModuleConfig.identifier).moneyVisibilityPreference"
 private let dashboardPeriodPreferenceKey = "\(ModuleConfig.identifier).dashboardPeriodPreference"
+private let dashboardTabPreferenceKey = "\(ModuleConfig.identifier).dashboardTabPreference"
 private let cachedPortfolioSnapshotKey = "\(ModuleConfig.identifier).cachedPortfolioSnapshot"
 private let fallbackPreflightPollMs = 500
 private let maxPreflightPollAttempts = 8
@@ -37,6 +38,7 @@ public final class KowalskiPortfolio {
     private(set) var dashboards: PortfolioDashboards?
     private(set) var showsMoneyValues = true
     private(set) var dashboardPeriod: KowalskiPortfolioDashboardPeriod = .oneYear
+    private(set) var selectedDashboardTab: KowalskiPortfolioDashboardTab = .progress
     private(set) var isRefreshingStaleDashboards = false
 
     private var isLoading = false
@@ -50,6 +52,9 @@ public final class KowalskiPortfolio {
 
     @UserDefaultsValue(key: dashboardPeriodPreferenceKey)
     private static var dashboardPeriodPreference: String?
+
+    @UserDefaultsValue(key: dashboardTabPreferenceKey)
+    private static var dashboardTabPreference: String?
 
     @UserDefaultsObject(key: cachedPortfolioSnapshotKey)
     private static var cachedSnapshot: CachedPortfolioSnapshot?
@@ -106,6 +111,7 @@ public final class KowalskiPortfolio {
         self.forceColdStartLoading = forceColdStartLoading
         showsMoneyValues = Self.moneyVisibilityPreference ?? true
         dashboardPeriod = Self.persistedDashboardPeriod
+        selectedDashboardTab = Self.persistedDashboardTab
     }
 
     @MainActor
@@ -310,6 +316,13 @@ public final class KowalskiPortfolio {
 
         setDashboardPeriodPreference(period)
         return await fetchDashboards()
+    }
+
+    func setDashboardTab(_ tab: KowalskiPortfolioDashboardTab) {
+        guard selectedDashboardTab != tab else { return }
+
+        selectedDashboardTab = tab
+        Self.dashboardTabPreference = tab.rawValue
     }
 
     private func computeAllTimeProfit(
@@ -522,6 +535,10 @@ extension KowalskiPortfolio {
         _dashboardPeriodPreference.removeValue()
     }
 
+    static func resetPersistedDashboardTab() {
+        _dashboardTabPreference.removeValue()
+    }
+
     static func resetPersistedSnapshot() {
         _cachedSnapshot.removeValue()
     }
@@ -532,6 +549,12 @@ private extension KowalskiPortfolio {
         guard let rawValue = dashboardPeriodPreference else { return .oneYear }
 
         return KowalskiPortfolioDashboardPeriod(rawValue: rawValue) ?? .oneYear
+    }
+
+    static var persistedDashboardTab: KowalskiPortfolioDashboardTab {
+        guard let rawValue = dashboardTabPreference else { return .progress }
+
+        return KowalskiPortfolioDashboardTab(rawValue: rawValue) ?? .progress
     }
 
     func refreshPortfolio() async -> Result<Void, Error> {

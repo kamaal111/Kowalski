@@ -10,6 +10,7 @@ import KowalskiModels
 
 struct PortfolioDashboards: Codable, Hashable {
     let portfolioGrowthOverTime: PortfolioGrowthOverTime
+    let portfolioHoldingsDistribution: PortfolioHoldingsDistribution
 }
 
 struct PortfolioGrowthOverTime: Codable, Hashable {
@@ -21,4 +22,15 @@ struct PortfolioGrowthPoint: Codable, Hashable {
     let date: Date
     let value: Double
     let isCurrent: Bool
+}
+
+struct PortfolioHoldingsDistribution: Codable, Hashable {
+    let currency: KowalskiCurrency
+    let holdings: [PortfolioHoldingDistributionItem]
+}
+
+struct PortfolioHoldingDistributionItem: Codable, Hashable {
+    let symbol: String
+    let name: String
+    let marketValue: Money
 }

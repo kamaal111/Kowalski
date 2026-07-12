@@ -3,21 +3,9 @@ import z from 'zod';
 import { TRANSACTION_TYPE_ARRAY } from '@/constants/common';
 import { ApiCommonDatetimeShape } from '@/schemas/common';
 import { StocksSearchQuoteItemResponseSchema } from '@/stocks';
-import { CurrencyShape } from '@/forex/constants';
+import { MoneySchema } from './common';
 
-export const MoneySchema = z
-  .object({
-    currency: CurrencyShape,
-    value: z.number().nonnegative().openapi({
-      description: 'Monetary value (non-negative)',
-      example: 150.5,
-    }),
-  })
-  .openapi('Money', {
-    title: 'Money',
-    description: 'Monetary value with currency',
-    example: { currency: 'USD', value: 150.5 },
-  });
+export { MoneySchema } from './common';
 
 export type CreateEntryPayload = z.infer<typeof CreateEntryPayloadSchema>;
 
