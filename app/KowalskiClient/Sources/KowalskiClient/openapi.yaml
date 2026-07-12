@@ -1097,8 +1097,11 @@ components:
       properties:
         portfolio_growth_over_time:
           $ref: '#/components/schemas/PortfolioGrowthOverTime'
+        portfolio_holdings_distribution:
+          $ref: '#/components/schemas/PortfolioHoldingsDistribution'
       required:
         - portfolio_growth_over_time
+        - portfolio_holdings_distribution
       title: Portfolio Dashboards Response
       description: Dashboard data for the signed-in user default portfolio.
       example:
@@ -1111,6 +1114,15 @@ components:
             - date: '2025-12-20'
               value: 1854.5
               is_current: true
+        portfolio_holdings_distribution:
+          currency: USD
+          holdings:
+            - asset:
+                symbol: AAPL
+                name: Apple Inc.
+              market_value:
+                currency: USD
+                value: 1854.5
     PortfolioGrowthOverTime:
       type: object
       properties:
@@ -1153,6 +1165,105 @@ components:
         - is_current
       title: Portfolio Growth Point
       description: Sparse portfolio total value snapshot for charting growth over time.
+    PortfolioHoldingsDistribution:
+      type: object
+      properties:
+        currency:
+          allOf:
+            - $ref: '#/components/schemas/Currency'
+            - description: >-
+                Currency used for all holding values, resolved from the
+                signed-in user's preference.
+        holdings:
+          type: array
+          items:
+            $ref: '#/components/schemas/PortfolioHoldingDistributionItem'
+          description: >-
+            Current holdings ordered by descending value, used to render
+            portfolio distribution charts.
+      required:
+        - currency
+        - holdings
+      title: Portfolio Holdings Distribution
+      description: >-
+        Current distribution of the signed-in user's default portfolio holdings
+        by value.
+      example:
+        currency: USD
+        holdings:
+          - asset:
+              symbol: AAPL
+              name: Apple Inc.
+            market_value:
+              currency: USD
+              value: 1854.5
+          - asset:
+              symbol: MSFT
+              name: Microsoft Corporation
+            market_value:
+              currency: USD
+              value: 926.2
+    PortfolioHoldingDistributionItem:
+      type: object
+      properties:
+        asset:
+          $ref: '#/components/schemas/PortfolioHoldingDistributionAsset'
+        market_value:
+          $ref: '#/components/schemas/PortfolioHoldingDistributionMarketValue'
+      required:
+        - asset
+        - market_value
+      title: Portfolio Holding Distribution Item
+      description: >-
+        A single holding's current value, used to render portfolio distribution
+        charts.
+      example:
+        asset:
+          symbol: AAPL
+          name: Apple Inc.
+        market_value:
+          currency: USD
+          value: 1854.5
+    PortfolioHoldingDistributionAsset:
+      type: object
+      properties:
+        symbol:
+          type: string
+          description: Ticker symbol for the holding.
+          example: AAPL
+        name:
+          type: string
+          description: Display name for the holding.
+          example: Apple Inc.
+      required:
+        - symbol
+        - name
+      title: Portfolio Holding Distribution Asset
+      description: >-
+        Minimal asset identity used to label a holdings distribution chart
+        slice.
+      example:
+        symbol: AAPL
+        name: Apple Inc.
+    PortfolioHoldingDistributionMarketValue:
+      type: object
+      properties:
+        currency:
+          $ref: '#/components/schemas/Currency'
+        value:
+          type: number
+          description: Monetary value
+          example: 150.5
+      required:
+        - currency
+        - value
+      title: Portfolio Holding Distribution Market Value
+      description: >-
+        Current total value of a holding in the signed-in user's preferred
+        currency.
+      example:
+        currency: USD
+        value: 1854.5
     PortfolioDashboardPeriod:
       type: string
       enum:
@@ -1194,8 +1305,11 @@ components:
           description: Aggregated holdings for the signed-in user default portfolio.
         net_worth:
           allOf:
-            - $ref: '#/components/schemas/PortfolioHoldingValue'
+            - $ref: '#/components/schemas/Money'
             - description: Sum of total holding values.
+              example:
+                currency: EUR
+                value: 1854.5
       required:
         - transactions
         - current_values
@@ -1371,8 +1485,7 @@ components:
           $ref: '#/components/schemas/Currency'
         value:
           type: number
-          minimum: 0
-          description: Monetary value (non-negative)
+          description: Monetary value
           example: 150.5
       required:
         - currency
@@ -1389,8 +1502,7 @@ components:
           $ref: '#/components/schemas/Currency'
         value:
           type: number
-          minimum: 0
-          description: Monetary value (non-negative)
+          description: Monetary value
           example: 150.5
       required:
         - currency
@@ -1408,8 +1520,7 @@ components:
           $ref: '#/components/schemas/Currency'
         value:
           type: number
-          minimum: 0
-          description: Monetary value (non-negative)
+          description: Monetary value
           example: 150.5
       required:
         - currency
@@ -1444,7 +1555,12 @@ components:
                 Current per-share value in the signed-in user's preferred
                 currency when configured, otherwise quote currency.
         total_value:
-          $ref: '#/components/schemas/PortfolioHoldingValue'
+          allOf:
+            - $ref: '#/components/schemas/Money'
+            - description: Total holding value calculated as amount times unit value.
+              example:
+                currency: EUR
+                value: 1854.5
         profit_loss:
           $ref: '#/components/schemas/PortfolioHoldingProfitLoss'
       required:
@@ -1537,23 +1653,6 @@ components:
         sector: Technology
         industry: Consumer Electronics
         exchange_dispatch: NASDAQ
-    PortfolioHoldingValue:
-      type: object
-      properties:
-        currency:
-          $ref: '#/components/schemas/Currency'
-        value:
-          type: number
-          description: Monetary value
-          example: 1854.5
-      required:
-        - currency
-        - value
-      title: Portfolio Holding Value
-      description: Total holding value calculated as amount times unit value.
-      example:
-        currency: EUR
-        value: 1854.5
     PortfolioHoldingProfitLoss:
       type:
         - null
@@ -1561,7 +1660,7 @@ components:
       properties:
         amount:
           allOf:
-            - $ref: '#/components/schemas/PortfolioHoldingValue'
+            - $ref: '#/components/schemas/Money'
             - description: Total unrealized profit or loss for the holding.
               example:
                 currency: EUR

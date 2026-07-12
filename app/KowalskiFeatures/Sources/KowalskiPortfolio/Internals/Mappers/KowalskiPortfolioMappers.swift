@@ -25,6 +25,10 @@ struct KowalskiPortfolioMappers {
                 currency: response.portfolioGrowthOverTime.currency,
                 points: response.portfolioGrowthOverTime.points.map(mapPortfolioGrowthPoint),
             ),
+            portfolioHoldingsDistribution: PortfolioHoldingsDistribution(
+                currency: response.portfolioHoldingsDistribution.currency,
+                holdings: response.portfolioHoldingsDistribution.holdings.map(mapPortfolioHoldingDistributionItem),
+            ),
         )
     }
 
@@ -86,6 +90,16 @@ struct KowalskiPortfolioMappers {
             date: point.date,
             value: point.value,
             isCurrent: point.isCurrent,
+        )
+    }
+
+    private func mapPortfolioHoldingDistributionItem(
+        _ item: KowalskiPortfolioHoldingDistributionItemResponse,
+    ) -> PortfolioHoldingDistributionItem {
+        PortfolioHoldingDistributionItem(
+            symbol: item.symbol,
+            name: item.name,
+            marketValue: mapMoney(item.marketValue),
         )
     }
 

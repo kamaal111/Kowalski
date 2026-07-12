@@ -20,6 +20,9 @@
         }
       }
     },
+    "%lld holdings" : {
+
+    },
     "Add entry" : {
 
     },
@@ -71,6 +74,9 @@
     "Dashboard period" : {
 
     },
+    "Dashboard tab" : {
+
+    },
     "Dashboard unavailable" : {
 
     },
@@ -116,6 +122,12 @@
     "Hide money values" : {
 
     },
+    "Holdings" : {
+
+    },
+    "Holdings Distribution" : {
+
+    },
     "Holdings Net Worth" : {
 
     },
@@ -155,6 +167,9 @@
     "No growth points" : {
 
     },
+    "No holdings" : {
+
+    },
     "No portfolio entries yet" : {
 
     },
@@ -174,6 +189,9 @@
 
     },
     "Price before split" : {
+
+    },
+    "Progress" : {
 
     },
     "Purchase" : {

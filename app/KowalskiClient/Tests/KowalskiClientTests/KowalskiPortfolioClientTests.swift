@@ -227,11 +227,15 @@ struct KowalskiPortfolioClientTests {
 
         let dashboards = try await portfolioClient.getDashboards(period: .oneYear).get()
         let points = dashboards.portfolioGrowthOverTime.points
+        let holdings = dashboards.portfolioHoldingsDistribution.holdings
 
         #expect(dashboards.portfolioGrowthOverTime.currency == .EUR)
         #expect(points.map(\.value) == [1500, 1854.5])
         #expect(points.map(\.isCurrent) == [false, true])
         #expect(points.first?.date == Date(timeIntervalSince1970: 1_766_102_400))
+        #expect(dashboards.portfolioHoldingsDistribution.currency == .EUR)
+        #expect(holdings.map(\.symbol) == ["AAPL"])
+        #expect(holdings.map(\.marketValue.value) == [1854.5])
 
         let request = try #require(transport.capturedRequests.first)
         #expect(request.path == "/app-api/portfolio/dashboards?period=1y")
@@ -454,6 +458,21 @@ private func makeDashboardsResponseBody() -> Data {
                 "date": "2025-12-20",
                 "value": 1854.5,
                 "is_current": true
+              }
+            ]
+          },
+          "portfolio_holdings_distribution": {
+            "currency": "EUR",
+            "holdings": [
+              {
+                "asset": {
+                  "symbol": "AAPL",
+                  "name": "Apple Inc."
+                },
+                "market_value": {
+                  "currency": "EUR",
+                  "value": 1854.5
+                }
               }
             ]
           }

@@ -9,6 +9,7 @@ import { withRequestLogger } from '@/logging/http';
 import { ExchangeRateResolutionFailed, StockPriceFetchFailed } from '../exceptions';
 import { assertToFloat } from '@/utils/numbers';
 import type { PortfolioDashboardPeriod } from '../schemas/queries';
+import type { PortfolioHoldingDistributionItem } from '../schemas/responses';
 import { findLatestExchangeRateSnapshotByBase, type PersistedExchangeRateSnapshot } from '../repositories/list-entries';
 import {
   findStockPricesByTickerIdsBetweenDates,
@@ -35,6 +36,10 @@ interface PortfolioDashboardsResult {
   portfolioGrowthOverTime: {
     currency: Currency;
     points: PortfolioGrowthPoint[];
+  };
+  portfolioHoldingsDistribution: {
+    currency: Currency;
+    holdings: PortfolioHoldingDistributionItem[];
   };
 }
 
@@ -80,6 +85,10 @@ async function getPortfolioDashboards(
         currency: preferredCurrency,
         points: [],
       },
+      portfolioHoldingsDistribution: {
+        currency: preferredCurrency,
+        holdings: [],
+      },
     };
   }
 
@@ -93,9 +102,9 @@ async function getPortfolioDashboards(
   const historicalPriceRequests = snapshotDates.flatMap(date => {
     return snapshotHoldingsByDate.get(date)?.map(holding => ({ ...holding, date })) ?? [];
   });
-  const [[historicalPrices, exchangeRateSnapshot], currentPoint] = await Promise.all([
+  const [[historicalPrices, exchangeRateSnapshot], { currentPoint, distribution }] = await Promise.all([
     resolveHistoricalPricesAndExchangeRateSnapshots(c, { snapshotHoldingsByDate, historicalPriceRequests }),
-    makeCurrentPoint(c, entries, currentDate),
+    makeCurrentPointAndDistribution(c, entries, currentDate),
   ]);
   const { omittedSnapshotDates, points } = snapshotDates.reduce<{
     omittedSnapshotDates: string[];
@@ -132,6 +141,10 @@ async function getPortfolioDashboards(
     portfolioGrowthOverTime: {
       currency: preferredCurrency,
       points: mergeCurrentPoint(points, currentPoint),
+    },
+    portfolioHoldingsDistribution: {
+      currency: preferredCurrency,
+      holdings: distribution,
     },
   };
 }
@@ -222,15 +235,15 @@ async function fetchAndStoreMissingPrices(
   return uniquePrices(fetchedPrices);
 }
 
-async function makeCurrentPoint(
+async function makeCurrentPointAndDistribution(
   c: HonoContext,
   entries: ResolvedPortfolioEntry[],
   currentDate: string,
-): Promise<PortfolioGrowthPoint> {
+): Promise<{ currentPoint: PortfolioGrowthPoint; distribution: PortfolioHoldingDistributionItem[] }> {
   const currentValues = await getCurrentStockValues(c, entries);
-  const value = aggregateHoldings(entries).reduce((total, holding) => {
+  const distribution = arrays.compactMap(aggregateHoldings(entries), holding => {
     if (holding.amount === 0) {
-      return total;
+      return null;
     }
 
     const currentValue = currentValues[holding.entry.stockSymbol];
@@ -238,13 +251,16 @@ async function makeCurrentPoint(
       throw new StockPriceFetchFailed(c);
     }
 
-    return total + holding.amount * currentValue.value;
-  }, 0);
+    return {
+      asset: { symbol: holding.entry.stockSymbol, name: holding.entry.stockName },
+      market_value: { currency: currentValue.currency, value: holding.amount * currentValue.value },
+    };
+  });
+  const value = distribution.reduce((total, item) => total + item.market_value.value, 0);
 
   return {
-    date: currentDate,
-    value,
-    is_current: true,
+    currentPoint: { date: currentDate, value, is_current: true },
+    distribution,
   };
 }
 

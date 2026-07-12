@@ -1,8 +1,9 @@
-import * as z from 'zod';
+import { z } from '@hono/zod-openapi';
 
 import { ASSET_TYPE_ARRAY, ASSET_TYPES, RESOLVED_TRANSACTION_TYPE_ARRAY } from '@/constants/common';
 import { ApiCommonDatetimeShape } from '@/schemas/common';
-import { CreateEntryPayloadSchema, MoneySchema } from './payloads';
+import { CreateEntryPayloadSchema } from './payloads';
+import { MoneySchema } from './common';
 import { CurrencyShape } from '@/forex/constants';
 
 const AuditFieldsSchema = z.object({
@@ -157,23 +158,9 @@ export const CurrentValueSchema = MoneySchema.openapi('CurrentValue', {
   example: { currency: 'EUR', value: 185.45 },
 });
 
-const PortfolioHoldingValueSchema = z
-  .object({
-    currency: CurrencyShape,
-    value: z.number().openapi({
-      description: 'Monetary value',
-      example: 1854.5,
-    }),
-  })
-  .openapi('PortfolioHoldingValue', {
-    title: 'Portfolio Holding Value',
-    description: 'Monetary value with currency for aggregated portfolio holdings.',
-    example: { currency: 'USD', value: 1854.5 },
-  });
-
 const PortfolioHoldingProfitLossSchema = z
   .object({
-    amount: PortfolioHoldingValueSchema.openapi({
+    amount: MoneySchema.openapi({
       description: 'Total unrealized profit or loss for the holding.',
       example: { currency: 'EUR', value: 469.8 },
     }),
@@ -224,7 +211,7 @@ export const PortfolioHoldingSchema = z
         "Current per-share value in the signed-in user's preferred currency when configured, otherwise quote currency.",
       example: { currency: 'EUR', value: 185.45 },
     }),
-    total_value: PortfolioHoldingValueSchema.openapi({
+    total_value: MoneySchema.openapi({
       description: 'Total holding value calculated as amount times unit value.',
       example: { currency: 'EUR', value: 1854.5 },
     }),
@@ -299,7 +286,7 @@ export const PortfolioOverviewResponseSchema = z
     holdings: z.array(PortfolioHoldingSchema).openapi({
       description: 'Aggregated holdings for the signed-in user default portfolio.',
     }),
-    net_worth: PortfolioHoldingValueSchema.openapi({
+    net_worth: MoneySchema.openapi({
       description: 'Sum of total holding values.',
       example: { currency: 'EUR', value: 1854.5 },
     }),
@@ -393,11 +380,73 @@ const PortfolioGrowthOverTimeSchema = z
     description: 'Portfolio total value over sparse transaction-date snapshots.',
   });
 
+const PortfolioHoldingDistributionAssetSchema = z
+  .object({
+    symbol: z.string().openapi({
+      description: 'Ticker symbol for the holding.',
+      example: 'AAPL',
+    }),
+    name: z.string().openapi({
+      description: 'Display name for the holding.',
+      example: 'Apple Inc.',
+    }),
+  })
+  .openapi('PortfolioHoldingDistributionAsset', {
+    title: 'Portfolio Holding Distribution Asset',
+    description: 'Minimal asset identity used to label a holdings distribution chart slice.',
+    example: { symbol: 'AAPL', name: 'Apple Inc.' },
+  });
+
+const PortfolioHoldingDistributionMarketValueSchema = MoneySchema.openapi('PortfolioHoldingDistributionMarketValue', {
+  title: 'Portfolio Holding Distribution Market Value',
+  description: "Current total value of a holding in the signed-in user's preferred currency.",
+  example: { currency: 'USD', value: 1854.5 },
+});
+
+const PortfolioHoldingDistributionItemSchema = z
+  .object({
+    asset: PortfolioHoldingDistributionAssetSchema,
+    market_value: PortfolioHoldingDistributionMarketValueSchema,
+  })
+  .openapi('PortfolioHoldingDistributionItem', {
+    title: 'Portfolio Holding Distribution Item',
+    description: "A single holding's current value, used to render portfolio distribution charts.",
+    example: {
+      asset: { symbol: 'AAPL', name: 'Apple Inc.' },
+      market_value: { currency: 'USD', value: 1854.5 },
+    },
+  });
+
+export type PortfolioHoldingDistributionItem = z.infer<typeof PortfolioHoldingDistributionItemSchema>;
+
+const PortfolioHoldingsDistributionSchema = z
+  .object({
+    currency: CurrencyShape.openapi({
+      description: "Currency used for all holding values, resolved from the signed-in user's preference.",
+      example: 'USD',
+    }),
+    holdings: z.array(PortfolioHoldingDistributionItemSchema).openapi({
+      description: 'Current holdings ordered by descending value, used to render portfolio distribution charts.',
+    }),
+  })
+  .openapi('PortfolioHoldingsDistribution', {
+    title: 'Portfolio Holdings Distribution',
+    description: "Current distribution of the signed-in user's default portfolio holdings by value.",
+    example: {
+      currency: 'USD',
+      holdings: [
+        { asset: { symbol: 'AAPL', name: 'Apple Inc.' }, market_value: { currency: 'USD', value: 1854.5 } },
+        { asset: { symbol: 'MSFT', name: 'Microsoft Corporation' }, market_value: { currency: 'USD', value: 926.2 } },
+      ],
+    },
+  });
+
 export type PortfolioDashboardsResponse = z.infer<typeof PortfolioDashboardsResponseSchema>;
 
 export const PortfolioDashboardsResponseSchema = z
   .object({
     portfolio_growth_over_time: PortfolioGrowthOverTimeSchema,
+    portfolio_holdings_distribution: PortfolioHoldingsDistributionSchema,
   })
   .openapi('PortfolioDashboardsResponse', {
     title: 'Portfolio Dashboards Response',
@@ -409,6 +458,10 @@ export const PortfolioDashboardsResponseSchema = z
           { date: '2025-12-19', value: 750, is_current: false },
           { date: '2025-12-20', value: 1854.5, is_current: true },
         ],
+      },
+      portfolio_holdings_distribution: {
+        currency: 'USD',
+        holdings: [{ asset: { symbol: 'AAPL', name: 'Apple Inc.' }, market_value: { currency: 'USD', value: 1854.5 } }],
       },
     },
   });
