@@ -15,7 +15,7 @@ export type OpenAPIRouter = OpenAPIHono<HonoEnvironment>;
 const SPEC_NAME = '/spec';
 export const OPENAPI_JSON_SPEC_PATH = `${SPEC_NAME}.json`;
 export const OPENAPI_YAML_SPEC_PATH = `${SPEC_NAME}.yaml`;
-export const OPENAPI_DEFAULT_SERVER_URL = 'http://127.0.0.1:8080';
+export const OPENAPI_DEFAULT_SERVER_URL = 'http://127.0.0.1:8082';
 const SPEC_SOURCE_OF_TRUTH_URL = OPENAPI_JSON_SPEC_PATH;
 const OPENAPI_INFO = {
   openapi: '3.1.1',

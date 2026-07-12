@@ -9,7 +9,7 @@ export const SERVER_MODES = {
 } as const;
 
 const EnvSchema = z.object({
-  PORT: z.coerce.number().gte(1000).lt(10_000).default(8080),
+  PORT: z.coerce.number().gte(1000).lt(10_000).default(8082),
   DEBUG: z.coerce.boolean().default(false),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   DATABASE_URL: z.string(),

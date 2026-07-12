@@ -57,7 +57,7 @@ Kowalski is a monorepo project consisting of a TypeScript/Node.js backend server
    ```env
    DATABASE_URL=postgresql://kowalski_user:kowalski_password@localhost:5432/kowalski
    BETTER_AUTH_SECRET=<generate-random-string>
-   BETTER_AUTH_URL=http://localhost:8080
+   BETTER_AUTH_URL=http://localhost:8082
    ```
 
    In a linked worktree, prefer:
@@ -83,9 +83,9 @@ Kowalski is a monorepo project consisting of a TypeScript/Node.js backend server
    just dev-server
    ```
 
-   The server will be available at `http://localhost:8080`.
-   - API Docs: `http://localhost:8080/doc`
-   - OpenAPI Spec: `http://localhost:8080/spec.json`
+   The server will be available at `http://localhost:8082`.
+   - API Docs: `http://localhost:8082/doc`
+   - OpenAPI Spec: `http://localhost:8082/spec.json`
 
 5. **Run the App**
    Open `app/Kowalski.xcodeproj` in Xcode and run the scheme `Kowalski`.

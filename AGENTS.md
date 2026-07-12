@@ -102,7 +102,7 @@ When a task matches one of these areas, load the skill and follow it instead of 
 ```bash
 DATABASE_URL=postgresql://kowalski_user:kowalski_password@localhost:5432/kowalski
 BETTER_AUTH_SECRET=<generate with: openssl rand -base64 32>
-BETTER_AUTH_URL=http://localhost:8080
+BETTER_AUTH_URL=http://localhost:8082
 ```
 
 - Database service defaults:
@@ -119,6 +119,6 @@ BETTER_AUTH_URL=http://localhost:8080
 
 ## Documentation Endpoints
 
-- Swagger UI: `http://localhost:8080/doc`
-- JSON spec: `http://localhost:8080/spec.json`
-- YAML spec: `http://localhost:8080/spec.yaml`
+- Swagger UI: `http://localhost:8082/doc`
+- JSON spec: `http://localhost:8082/spec.json`
+- YAML spec: `http://localhost:8082/spec.yaml`

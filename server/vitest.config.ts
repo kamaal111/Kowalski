@@ -4,7 +4,7 @@ import path from 'path';
 const databaseUrl =
   process.env.DATABASE_URL ??
   `postgresql://${process.env.KOWALSKI_DB_USER ?? 'kowalski_user'}:${process.env.KOWALSKI_DB_PASSWORD ?? 'kowalski_password'}@${process.env.KOWALSKI_DB_HOST ?? 'localhost'}:${process.env.KOWALSKI_DB_PORT ?? '5432'}/${process.env.KOWALSKI_DB_NAME ?? 'kowalski'}`;
-const port = process.env.PORT ?? process.env.KOWALSKI_SERVER_PORT ?? '8080';
+const port = process.env.PORT ?? process.env.KOWALSKI_SERVER_PORT ?? '8082';
 const betterAuthUrl = process.env.BETTER_AUTH_URL ?? `http://localhost:${port}`;
 const betterAuthSecret = process.env.BETTER_AUTH_SECRET ?? 'test-secret-for-testing-only';
 

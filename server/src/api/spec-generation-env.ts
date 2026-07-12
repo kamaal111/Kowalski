@@ -1,7 +1,7 @@
 export const SPEC_GENERATION_ENV_DEFAULTS = {
   DATABASE_URL: 'postgresql://kowalski_user:kowalski_password@localhost:5432/kowalski',
   BETTER_AUTH_SECRET: 'openapi-spec-generation-secret-2026',
-  BETTER_AUTH_URL: 'http://localhost:8080',
+  BETTER_AUTH_URL: 'http://localhost:8082',
 } as const;
 
 export function ensureSpecGenerationEnv(env: NodeJS.ProcessEnv = process.env) {

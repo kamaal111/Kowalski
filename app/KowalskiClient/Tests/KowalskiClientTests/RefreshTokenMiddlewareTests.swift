@@ -14,7 +14,7 @@ import Testing
 struct RefreshTokenMiddlewareTests {
     private let mockSessionToken = "mock-session-token-12345"
     private let mockAuthToken = "mock-jwt-token-67890"
-    private let baseURL = URL(string: "http://localhost:8080")!
+    private let baseURL = URL(string: "http://localhost:8082")!
 
     // MARK: - Test Session Token Injection
 
