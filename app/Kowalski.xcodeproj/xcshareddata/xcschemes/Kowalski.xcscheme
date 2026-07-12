@@ -55,6 +55,13 @@
             ReferencedContainer = "container:Kowalski.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <EnvironmentVariables>
+         <EnvironmentVariable
+            key = "FORCE_PORTFOLIO_COLD_START_LOADING"
+            value = "1"
+            isEnabled = "NO">
+         </EnvironmentVariable>
+      </EnvironmentVariables>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"

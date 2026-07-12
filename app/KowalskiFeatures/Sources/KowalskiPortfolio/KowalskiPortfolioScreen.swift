@@ -187,7 +187,7 @@ public struct KowalskiPortfolioScreen: View {
         VStack(spacing: KowalskiSizes.medium.rawValue) {
             ProgressView()
                 .controlSize(.large)
-            Text("Loading your portfolio", bundle: .module)
+            Text("Fetching your portfolio…", bundle: .module)
                 .font(.headline)
                 .foregroundStyle(.secondary)
         }

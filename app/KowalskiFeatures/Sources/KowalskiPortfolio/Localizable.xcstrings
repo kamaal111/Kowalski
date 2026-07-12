@@ -107,6 +107,9 @@
     "Failed to update transaction" : {
 
     },
+    "Fetching your portfolio…" : {
+
+    },
     "Fix" : {
 
     },
@@ -132,9 +135,6 @@
 
     },
     "Loading net worth" : {
-
-    },
-    "Loading your portfolio" : {
 
     },
     "My Portfolio" : {

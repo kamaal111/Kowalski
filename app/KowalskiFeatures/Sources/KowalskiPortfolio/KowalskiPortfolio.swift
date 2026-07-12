@@ -27,6 +27,7 @@ private let maxPreflightPollAttempts = 8
 public final class KowalskiPortfolio {
     private let client: KowalskiClient
     private let dashboardCache: PortfolioDashboardCache
+    private let forceColdStartLoading: Bool
     private let mapper = KowalskiPortfolioMappers()
 
     private(set) var entries: [PortfolioEntry] = []
@@ -42,6 +43,7 @@ public final class KowalskiPortfolio {
     private var isRefreshingLatestPrices = false
     private var isLoadingDashboards = false
     private var hasHydratedCachedSnapshot = false
+    private var hasCompletedInitialPortfolioBootstrap = false
 
     @UserDefaultsValue(key: moneyVisibilityPreferenceKey)
     private static var moneyVisibilityPreference: Bool?
@@ -60,10 +62,10 @@ public final class KowalskiPortfolio {
     }
 
     var isShowingInitialLoadingState: Bool {
-        isLoading &&
+        !hasHydratedCachedSnapshot &&
             entries.isEmpty &&
             holdings.isEmpty &&
-            !hasHydratedCachedSnapshot
+            (!hasCompletedInitialPortfolioBootstrap || isLoading)
     }
 
     var isShowingEmptyState: Bool {
@@ -94,9 +96,14 @@ public final class KowalskiPortfolio {
         dashboards?.portfolioGrowthOverTime.points.isEmpty ?? false
     }
 
-    private init(client: KowalskiClient, dashboardCache: PortfolioDashboardCache? = nil) {
+    private init(
+        client: KowalskiClient,
+        dashboardCache: PortfolioDashboardCache? = nil,
+        forceColdStartLoading: Bool = KowalskiEnvironment.shouldForcePortfolioColdStartLoading,
+    ) {
         self.client = client
         self.dashboardCache = dashboardCache ?? PortfolioDashboardCache()
+        self.forceColdStartLoading = forceColdStartLoading
         showsMoneyValues = Self.moneyVisibilityPreference ?? true
         dashboardPeriod = Self.persistedDashboardPeriod
     }
@@ -221,11 +228,18 @@ public final class KowalskiPortfolio {
     func bootstrapPortfolio(sessionEmail: String?, currencyCode: String) async -> Result<Void, Error> {
         activeSnapshotSessionEmail = sessionEmail
         activeSnapshotCurrencyCode = currencyCode
-        let hydratedSnapshot = hydrateCachedSnapshotIfAvailable(sessionEmail: sessionEmail, currencyCode: currencyCode)
+        let hydratedSnapshot = if forceColdStartLoading {
+            false
+        } else {
+            hydrateCachedSnapshotIfAvailable(sessionEmail: sessionEmail, currencyCode: currencyCode)
+        }
         if !hydratedSnapshot {
             isLoading = true
         }
-        defer { isLoading = false }
+        defer {
+            isLoading = false
+            hasCompletedInitialPortfolioBootstrap = true
+        }
 
         let preflightResult = await client.portfolio.getOverviewPreflight()
         let preflight: KowalskiPortfolioOverviewPreflightResponse
@@ -482,12 +496,20 @@ public extension KowalskiPortfolio {
         return KowalskiPortfolio(client: client)
     }
 
-    static func testing(client: KowalskiClient, dashboardCacheDirectoryURL: URL? = nil) -> KowalskiPortfolio {
+    static func testing(
+        client: KowalskiClient,
+        dashboardCacheDirectoryURL: URL? = nil,
+        forceColdStartLoading: Bool = false,
+    ) -> KowalskiPortfolio {
         let dashboardCacheDirectoryURL = dashboardCacheDirectoryURL ?? FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         let dashboardCache = PortfolioDashboardCache(directoryURL: dashboardCacheDirectoryURL)
 
-        return KowalskiPortfolio(client: client, dashboardCache: dashboardCache)
+        return KowalskiPortfolio(
+            client: client,
+            dashboardCache: dashboardCache,
+            forceColdStartLoading: forceColdStartLoading,
+        )
     }
 }
 
