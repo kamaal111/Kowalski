@@ -33,7 +33,7 @@ COPY --chown=node:node --from=production-deps /app/node_modules ./node_modules
 COPY --chown=node:node --from=build /app/dist ./dist
 COPY --chown=node:node package.json ./
 
-EXPOSE 8080
+EXPOSE 8082
 
 USER node
 
