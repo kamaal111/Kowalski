@@ -181,7 +181,11 @@ enum PortfolioTransactionsCSV {
             .map { pair in
                 let (offset, header) = pair
                 let contents = rows.map { row in
-                    if row.indices.contains(offset) { row[offset] } else { "" }
+                    if row.indices.contains(offset) {
+                        row[offset]
+                    } else {
+                        ""
+                    }
                 }
 
                 return Column(name: header.rawValue, contents: contents).eraseToAnyColumn()

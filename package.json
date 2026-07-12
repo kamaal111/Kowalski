@@ -10,7 +10,7 @@
   },
   "keywords": [],
   "author": "Kamaal Farah",
-  "packageManager": "pnpm@10.26.1",
+  "packageManager": "pnpm@11.11.0",
   "devDependencies": {
     "@kamaalio/prettier-config": "^0.1.2",
     "husky": "^9.1.7",
@@ -23,7 +23,7 @@
     "typescript": "^6.0.2"
   },
   "engines": {
-    "node": ">=25.0.0"
+    "node": ">=26.0.0"
   },
   "lint-staged": {
     "**/*.{cjs,js,mjs,ts,tsx}": [

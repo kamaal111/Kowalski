@@ -287,11 +287,19 @@ private struct FloatingFieldWrapper<Field: View>: View {
     }
 
     private var textColor: Color {
-        if text.isEmpty { .secondary } else { .accentColor }
+        if text.isEmpty {
+            .secondary
+        } else {
+            .accentColor
+        }
     }
 
     private var titleHorizontalPadding: CGFloat {
-        if text.isEmpty { 4 } else { 0 }
+        if text.isEmpty {
+            4
+        } else {
+            0
+        }
     }
 
     private func handleOnTextIsEmptyChange(_: Bool, _ newValue: Bool) {
@@ -300,11 +308,19 @@ private struct FloatingFieldWrapper<Field: View>: View {
     }
 
     private static func nextTextYOffsetValue(_ textIsEmpty: Bool) -> CGFloat {
-        if textIsEmpty { 0 } else { -25 }
+        if textIsEmpty {
+            0
+        } else {
+            -25
+        }
     }
 
     private static func nextTextScaleEffectValue(_ textIsEmpty: Bool) -> CGFloat {
-        if textIsEmpty { 1 } else { 0.75 }
+        if textIsEmpty {
+            1
+        } else {
+            0.75
+        }
     }
 }
 
