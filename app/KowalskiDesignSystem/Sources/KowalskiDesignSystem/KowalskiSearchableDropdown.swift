@@ -161,7 +161,11 @@ public struct KowalskiSearchableDropdown<Item: Identifiable & Hashable>: View {
     }
 
     private var titleHorizontalPadding: CGFloat {
-        if selectedItem == nil, searchText.isEmpty { 4 } else { 0 }
+        if selectedItem == nil, searchText.isEmpty {
+            4
+        } else {
+            0
+        }
     }
 
     private var dropdownBackgroundColor: Color {
@@ -251,11 +255,19 @@ public struct KowalskiSearchableDropdown<Item: Identifiable & Hashable>: View {
     }
 
     private static func nextTextYOffsetValue(_ isEmpty: Bool) -> CGFloat {
-        if isEmpty { 0 } else { -25 }
+        if isEmpty {
+            0
+        } else {
+            -25
+        }
     }
 
     private static func nextTextScaleEffectValue(_ isEmpty: Bool) -> CGFloat {
-        if isEmpty { 1 } else { 0.75 }
+        if isEmpty {
+            1
+        } else {
+            0.75
+        }
     }
 }
 

@@ -35,7 +35,9 @@ enum BodyLoggingPolicy: Equatable {
             case let .tooManyBytesToLog(byteCount):
                 return "<\(byteCount) bytes>"
             case let .complete(data):
-                if let string = String(data: data, encoding: .utf8) { return string }
+                if let string = String(data: data, encoding: .utf8) {
+                    return string
+                }
                 return String(describing: data)
             }
         }

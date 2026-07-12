@@ -7,7 +7,7 @@ on:
       - main
 
 env:
-  PNPM_VERSION: 10.26.1
+  PNPM_VERSION: 11.11.0
   XCODE_APP_NAME: Xcode_26.3.app
   PYTHON_VERSION: 3.12
 
