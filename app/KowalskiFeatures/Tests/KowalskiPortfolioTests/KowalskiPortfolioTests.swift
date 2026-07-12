@@ -72,6 +72,66 @@ struct KowalskiPortfolioTests {
     }
 
     @Test
+    func `Fresh uncached portfolio should show loading before bootstrap completes`() async throws {
+        KowalskiPortfolio.resetPersistedSnapshot()
+        defer { KowalskiPortfolio.resetPersistedSnapshot() }
+        let portfolio = KowalskiPortfolio.testing(client: .testing())
+
+        #expect(portfolio.isShowingInitialLoadingState)
+
+        try await portfolio.bootstrapPortfolio(sessionEmail: "yami@bull.io", currencyCode: "USD").get()
+
+        #expect(!portfolio.isShowingInitialLoadingState)
+        #expect(portfolio.isShowingEmptyState)
+    }
+
+    @Test
+    func `Forced cold start loading should bypass cache and end when bootstrap completes`() async throws {
+        KowalskiPortfolio.resetPersistedSnapshot()
+        defer { KowalskiPortfolio.resetPersistedSnapshot() }
+        let cachedEntry = makePortfolioEntryResponse(amount: 1)
+        let cachedOverview = makePortfolioOverviewResponse(
+            transactions: [cachedEntry],
+            currentValues: ["AAPL": KowalskiClientMoney(currency: .USD, value: 100)],
+        )
+        let cachedPortfolio = KowalskiPortfolio.testing(
+            client: .testing(portfolio: MockPortfolioClient(overviewResult: .success(cachedOverview))),
+        )
+        try await cachedPortfolio.bootstrapPortfolio(sessionEmail: "yami@bull.io", currencyCode: "USD").get()
+
+        let refreshedEntry = makePortfolioEntryResponse(amount: 2)
+        let refreshedOverview = makePortfolioOverviewResponse(
+            transactions: [refreshedEntry],
+            currentValues: ["AAPL": KowalskiClientMoney(currency: .USD, value: 200)],
+        )
+        let refreshedClient = MockPortfolioClient(
+            overviewResult: .success(refreshedOverview),
+            preflightResults: [
+                .success(makeOverviewPreflightResponse(refreshState: .refreshing, pollAfterMilliseconds: 500)),
+                .success(makeOverviewPreflightResponse(refreshState: .refreshing, pollAfterMilliseconds: 500)),
+                .success(makeOverviewPreflightResponse(refreshState: .ready)),
+            ],
+        )
+        let portfolio = KowalskiPortfolio.testing(
+            client: .testing(portfolio: refreshedClient),
+            forceColdStartLoading: true,
+        )
+
+        let bootstrapTask = Task {
+            await portfolio.bootstrapPortfolio(sessionEmail: "yami@bull.io", currencyCode: "USD")
+        }
+        try await waitUntil { await refreshedClient.getOverviewPreflightCallCount >= 2 }
+
+        #expect(portfolio.entries.isEmpty)
+        #expect(portfolio.isShowingInitialLoadingState)
+
+        try await bootstrapTask.value.get()
+
+        #expect(portfolio.entries.map(\.amount) == [2])
+        #expect(!portfolio.isShowingInitialLoadingState)
+    }
+
+    @Test
     func `Bootstrap should preflight and refresh portfolio when prices are ready`() async throws {
         KowalskiPortfolio.resetPersistedSnapshot()
         defer { KowalskiPortfolio.resetPersistedSnapshot() }

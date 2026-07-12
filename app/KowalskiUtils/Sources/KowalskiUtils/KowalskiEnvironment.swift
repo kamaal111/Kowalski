@@ -20,12 +20,16 @@ public enum KowalskiEnvironment {
             .flatMap(PortfolioUiTestScenario.init(rawValue:))
     public static let shouldResetPortfolioMoneyVisibility =
         ProcessInfo.processInfo[.resetPortfolioMoneyVisibility] == "1"
+    public static var shouldForcePortfolioColdStartLoading: Bool {
+        ProcessInfo.processInfo[.forcePortfolioColdStartLoading] == "1"
+    }
 }
 
 public enum KowalskiEnvironmentKeys: String {
     case isUiTesing = "IS_UI_TESTING"
     case isUiTestingPortfolioScenario = "IS_UI_TESTING_PORTFOLIO_SCENARIO"
     case resetPortfolioMoneyVisibility = "RESET_PORTFOLIO_MONEY_VISIBILITY"
+    case forcePortfolioColdStartLoading = "FORCE_PORTFOLIO_COLD_START_LOADING"
 }
 
 public extension ProcessInfo {
