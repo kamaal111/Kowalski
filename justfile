@@ -231,7 +231,7 @@ typecheck-server:
 
 # Run tests (excluding app UI tests)
 [parallel]
-test: test-server test-app test-skills
+test: test-server test-app
 
 # Run app tests (excluding UI tests)
 [working-directory("app")]
@@ -273,10 +273,6 @@ test-app-heavy:
 [working-directory("server")]
 test-server:
     {{ PNR }} test
-
-# Run dependency-upgrade skill script tests
-test-skills:
-    python3 -m unittest discover -s .agents/skills/dependency-upgrade-best-practices/tests -p 'test_*.py'
 
 # Run all tests
 [parallel]

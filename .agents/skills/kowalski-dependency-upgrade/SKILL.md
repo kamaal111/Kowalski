@@ -1,18 +1,18 @@
 ---
 name: kowalski-dependency-upgrade
-description: Repository-specific overlay for upgrading Kowalski dependencies across pnpm, Swift Package Manager, generated OpenAPI inputs, and related tooling. Use with `dependency-upgrade-best-practices` when auditing outdated packages, upgrading root or `server/` Node dependencies, updating Swift package requirements or resolved versions under `app/`, validating upgrade safety with `just` and `swift build`, diagnosing breaking changes introduced by newer versions, or repairing regressions caused by dependency updates.
+description: Repository-specific overlay for upgrading Kowalski dependencies across pnpm, Swift Package Manager, generated OpenAPI inputs, and related tooling. Use when auditing outdated packages, upgrading root or `server/` Node dependencies, updating Swift package requirements or resolved versions under `app/`, validating upgrade safety with `just` and `swift build`, diagnosing breaking changes introduced by newer versions, or repairing regressions caused by dependency updates.
 ---
 
 # Kowalski Dependency Upgrade
 
 ## Overview
 
-Load [dependency-upgrade-best-practices](../dependency-upgrade-best-practices/SKILL.md) first. Use this skill for Kowalski's dependency surfaces, generated artifacts, repo-standard commands, and project-specific breakage patterns.
+Use this skill for Kowalski's dependency surfaces, generated artifacts, repo-standard commands, and project-specific breakage patterns.
 
 ## Upgrade Kowalski's Surfaces Deliberately
 
 - Read [upgrade-surface.md](./references/upgrade-surface.md) for the current package map.
-- Use the shared scripts in [dependency-upgrade-best-practices](../dependency-upgrade-best-practices/SKILL.md) to shortlist versions before editing manifests, and keep the default minimum age in [config.json](../dependency-upgrade-best-practices/config.json).
+- Check registry publish dates and advisory databases directly before selecting a version to upgrade to.
 - Treat these manifests as the main edit surfaces:
   - root Node tooling in `package.json`
   - server Node dependencies in `server/package.json`
@@ -28,7 +28,6 @@ Load [dependency-upgrade-best-practices](../dependency-upgrade-best-practices/SK
 
 - Load [kowalski-server-typescript](../kowalski-server-typescript/SKILL.md) for `server/src/**` breakages.
 - Load [kowalski-app-swift](../kowalski-app-swift/SKILL.md) for `app/**` breakages.
-- Load [testing-best-practices](../testing-best-practices/SKILL.md) for regression coverage decisions.
 - Load [kowalski-git-worktree](../kowalski-git-worktree/SKILL.md) when the upgrade happens in a linked worktree.
 
 ## Check Security Before Upgrading
