@@ -18,7 +18,6 @@ Also load these supporting skills when their surfaces are affected:
 
 - `.agents/skills/kowalski-server-typescript/SKILL.md`
 - `.agents/skills/kowalski-app-swift/SKILL.md`
-- `.agents/skills/testing-best-practices/SKILL.md`
 - `.agents/skills/kowalski-git-worktree/SKILL.md`
 
 ## Upgrade Surfaces

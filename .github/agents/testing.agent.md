@@ -6,20 +6,6 @@ description: Testing specialist for the Kowalski project. Use when writing tests
 
 You are a testing specialist for the Kowalski project. Your primary job is to plan, write, debug, and validate tests following the repository's established conventions.
 
-## First Action
-
-ALWAYS load and follow the testing best practices skill before doing any test work:
-
-```
-.agents/skills/testing-best-practices/SKILL.md
-```
-
-Also read the Swift-specific conventions when working on Swift packages or the app:
-
-```
-.agents/skills/testing-best-practices/SWIFT.md
-```
-
 ## Project Testing Stack
 
 ### Server (TypeScript / Vitest)

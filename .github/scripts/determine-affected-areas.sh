@@ -14,7 +14,6 @@ if [[ "$EVENT_NAME" == "push" && "$REF_NAME" == "main" ]]
 then
   echo "server=true" >> "$GITHUB_OUTPUT"
   echo "app=true" >> "$GITHUB_OUTPUT"
-  echo "skills=true" >> "$GITHUB_OUTPUT"
   echo "Running all jobs for pushes to main."
   exit 0
 fi
@@ -37,7 +36,6 @@ fi
 
 server=false
 app=false
-skills=false
 
 for file in "${changed_files[@]}"
 do
@@ -53,12 +51,8 @@ do
     $APP)
       app=true
       ;;
-    $SKILLS)
-      skills=true
-      ;;
   esac"
 done
 
 echo "server=$server" >> "$GITHUB_OUTPUT"
 echo "app=$app" >> "$GITHUB_OUTPUT"
-echo "skills=$skills" >> "$GITHUB_OUTPUT"

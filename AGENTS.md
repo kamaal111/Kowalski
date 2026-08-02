@@ -4,7 +4,6 @@
 
 - Run `just` from the repository root first so you can discover the current command surface and prefer repo recipes over ad hoc commands.
 - Run commands from the repository root unless a command explicitly requires a package directory.
-- Look for existing patterns before writing code. Match surrounding structure, naming, validation, error handling, and test style unless there is a strong reason to introduce something new.
 
 ## Use The Relevant Skill
 
@@ -12,34 +11,20 @@ When a task matches one of these areas, load the skill and follow it instead of 
 
 - **Git worktree workflow:** `.agents/skills/kowalski-git-worktree/SKILL.md`
   - Use for detached `HEAD`, branch sync, rebasing, amending, force-pushing, upstream tracking, worktree env setup, or PR updates from a linked worktree.
-- **Git commit messages:** `.agents/skills/commit-message-best-practices/SKILL.md`
-  - Use when preparing commits, squashing history, or drafting review-friendly commit text.
-- **GitButler workflows:** `.agents/skills/gitbutler-workflows/SKILL.md`
-  - Use when creating branches, assigning changes, committing, amending, pushing, or opening pull requests through GitButler virtual branches.
 - **Server changes:** `.agents/skills/kowalski-server-typescript/SKILL.md`
   - Use for `server/src/**`, API endpoints, schemas, handlers, middleware, services, repositories, logging, OpenAPI-backed routes, and server integration tests.
 - **App and Swift package changes:** `.agents/skills/kowalski-app-swift/SKILL.md`
   - Use for `app/**`, SwiftUI screens, feature models, client wrappers, design-system components, previews, package manifests, and Swift tests.
-- **Testing workflow:** `.agents/skills/testing-best-practices/SKILL.md`
-  - Use when adding tests, fixing regressions, debugging failures, or deciding how to validate behavior.
 - **Dependency upgrades:** `.agents/skills/kowalski-dependency-upgrade/SKILL.md`
   - Use for pnpm, SwiftPM, generated OpenAPI client inputs, or cross-stack dependency churn.
 
 ## Critical Development Rules
 
 - **ALWAYS verify your work with relevant commands before claiming completion**
-  - Run the narrowest useful checks while iterating.
   - Run `just ready` from the repository root as the final verification for code changes.
   - For docs-only changes, such as `AGENTS.md`, `README.md`, or skill files, do not run `just ready` unless the user explicitly asks for it.
 - **NEVER claim code changes are done until `just ready` passes**
   - If `just ready` fails, fix the issues and rerun it until it succeeds.
-- **ALWAYS include proof of work in the final response**
-  - Tell the user exactly how you validated the work.
-  - List the commands, builds, tests, or manual checks you ran.
-  - If you skipped validation, say so explicitly and why.
-- **ALWAYS write review-friendly commit messages when a commit is requested or required**
-  - Use a declarative title.
-  - Include a body that explains the scope, important files, and intent.
 - **ONLY use non-destructive git operations in the main worktree**
   - Read-only inspection commands are fine.
   - Do not run destructive or state-changing git commands in the user's active worktree.
@@ -51,24 +36,8 @@ When a task matches one of these areas, load the skill and follow it instead of 
 - **NEVER start the server directly or as a background process**
   - Do not use `node ... &`, `pnpm start &`, `tsx ... &`, or similar patterns.
   - Only use `just dev-server` if the user explicitly asks you to start the server.
-- **NEVER suppress lint or type errors**
-  - Do not add lint-disable comments, `@ts-ignore`, or `@ts-expect-error`.
-- **NEVER use TypeScript type assertions or casting**
-  - Do not use `as Type` or `<Type>value`.
-- **ALWAYS validate unknown or external data**
-  - Use Zod at boundaries instead of forcing types through.
-- **ALWAYS enforce user ownership when querying user-scoped resources**
-  - Do not query by client-supplied resource IDs alone when the resource should belong to the authenticated user.
-  - Scope reads and writes through the requesting user's owned parent record or an equivalent ownership constraint in the query itself.
-  - Treat any uncertainty about ownership as a real security bug, not a follow-up cleanup.
-- **NEVER hide required dependency failures behind misleading success responses**
-  - If required derived data is missing, fail clearly instead of returning a superficially valid response that breaks downstream assumptions.
 - **NEVER manually edit `.xcstrings` files**
   - Update `NSLocalizedString` calls in Swift and let Xcode manage the localization catalogs.
-- **NEVER duplicate logic when a shared abstraction would keep the code clean**
-  - If you notice logic is being repeated or will be repeated, centralize it instead of copying it.
-  - Prefer the smallest clean abstraction that fits the existing architecture, such as a helper method, utility type, or service-level function.
-  - Do not take the easy way out by pasting nearly identical code into multiple places and treating cleanup as optional follow-up work.
 
 ## Verification Commands
 

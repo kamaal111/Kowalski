@@ -1,13 +1,13 @@
 ---
 name: kowalski-server-typescript
-description: Repository-specific overlay for Kowalski's TypeScript server built with Hono, Zod, Drizzle, and structured Pino logging. Use with `typescript-server-best-practices` when changing files under `server/src/**`, adding or updating API endpoints, request or response schemas, middleware, auth flows, services, repositories, database-backed behavior, or server integration tests.
+description: Repository-specific overlay for Kowalski's TypeScript server built with Hono, Zod, Drizzle, and structured Pino logging. Use when changing files under `server/src/**`, adding or updating API endpoints, request or response schemas, middleware, auth flows, services, repositories, database-backed behavior, or server integration tests.
 ---
 
 # Kowalski Server Typescript
 
 ## Overview
 
-Load [typescript-server-best-practices](../typescript-server-best-practices/SKILL.md) first. Use this skill for Kowalski's feature layout, helper names, logging entrypoints, test harness locations, and OpenAPI workflow.
+Use this skill for Kowalski's feature layout, helper names, logging entrypoints, test harness locations, and OpenAPI workflow.
 
 ## Follow Kowalski's Server Shape
 

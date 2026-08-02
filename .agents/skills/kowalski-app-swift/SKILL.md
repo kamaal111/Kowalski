@@ -1,13 +1,13 @@
 ---
 name: kowalski-app-swift
-description: Repository-specific overlay for Kowalski's Swift app stack built with SwiftUI, Observation, Swift Package Manager, and a generated OpenAPI client. Use with `swift-best-practices` when changing files under `app/**`, including feature packages, SwiftUI screens, feature models, OpenAPI client wrappers, design-system components, previews, package manifests, or Swift tests.
+description: Repository-specific overlay for Kowalski's Swift app stack built with SwiftUI, Observation, Swift Package Manager, and a generated OpenAPI client. Use when changing files under `app/**`, including feature packages, SwiftUI screens, feature models, OpenAPI client wrappers, design-system components, previews, package manifests, or Swift tests.
 ---
 
 # Kowalski App Swift
 
 ## Overview
 
-Load [swift-best-practices](../swift-best-practices/SKILL.md) first. Use this skill for Kowalski's package layout, helper names, concrete example files, and repo-specific verification details.
+Use this skill for Kowalski's package layout, helper names, concrete example files, and repo-specific verification details.
 
 ## Follow Kowalski's Package Shape
 
