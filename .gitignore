@@ -199,3 +199,5 @@ xcuserdata/
 # Xcode test result bundles
 *.xcresult/
 app/TestResults*
+
+.claude/settings.local.json

@@ -1,0 +1,61 @@
+{
+  "name": "Kowalski",
+  "dockerComposeFile": ["../docker-compose.yml", "docker-compose.yml"],
+  "service": "devcontainer",
+  "workspaceFolder": "/workspaces/kowalski",
+  "remoteUser": "node",
+  "remoteEnv": {
+    "SHELL": "/bin/zsh"
+  },
+  "containerEnv": {
+    "BETTER_AUTH_SECRET": "devcontainer-local-secret",
+    "BETTER_AUTH_URL": "http://localhost:8082"
+  },
+  "forwardPorts": [8081, 8082],
+  "portsAttributes": {
+    "8081": {
+      "label": "Kowalski daily API"
+    },
+    "8082": {
+      "label": "Kowalski API"
+    }
+  },
+  "postCreateCommand": "just prepare",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "oxc.oxc-vscode",
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-yaml",
+        "yoavbls.pretty-ts-errors",
+        "streetsidesoftware.code-spell-checker",
+        "eamodio.gitlens",
+        "aaron-bond.better-comments"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+          "zsh": {
+            "path": "/bin/zsh"
+          }
+        },
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.fixAll.oxc": "explicit"
+        },
+        "files.exclude": {
+          "**/.build": true,
+          "**/node_modules": true
+        }
+      }
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+      "version": "latest",
+      "moby": true,
+      "dockerDashComposeVersion": "v2"
+    },
+    "ghcr.io/guiyomh/features/just:0": {}
+  }
+}

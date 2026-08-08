@@ -1,0 +1,31 @@
+services:
+  devcontainer:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    user: root
+    command:
+      - /bin/sh
+      - -c
+      - >-
+        chown -R node:node /workspaces/kowalski/node_modules
+        /workspaces/kowalski/server/node_modules && exec sleep infinity
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${KOWALSKI_DB_USER:-kowalski_user}:${KOWALSKI_DB_PASSWORD:-kowalski_password}@db:5432/${KOWALSKI_DB_NAME:-kowalski}
+      KOWALSKI_DB_HOST: db
+      KOWALSKI_DB_PORT: '5432'
+      KOWALSKI_DB_NAME: ${KOWALSKI_DB_NAME:-kowalski}
+      KOWALSKI_DB_USER: ${KOWALSKI_DB_USER:-kowalski_user}
+      KOWALSKI_DB_PASSWORD: ${KOWALSKI_DB_PASSWORD:-kowalski_password}
+    volumes:
+      - .:/workspaces/kowalski:cached
+      - kowalski_node_modules:/workspaces/kowalski/node_modules
+      - kowalski_server_node_modules:/workspaces/kowalski/server/node_modules
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  kowalski_node_modules:
+  kowalski_server_node_modules:
