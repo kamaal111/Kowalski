@@ -1,5 +1,4 @@
 import { defineConfig } from 'vitest/config';
-import path from 'path';
 
 const databaseUrl =
   process.env.DATABASE_URL ??
@@ -9,11 +8,6 @@ const betterAuthUrl = process.env.BETTER_AUTH_URL ?? `http://localhost:${port}`;
 const betterAuthSecret = process.env.BETTER_AUTH_SECRET ?? 'test-secret-for-testing-only';
 
 export default defineConfig({
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
-  },
   test: {
     globals: true,
     environment: 'node',
@@ -34,7 +28,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      exclude: ['node_modules/', 'dist/'],
+      exclude: ['node_modules/'],
     },
   },
 });

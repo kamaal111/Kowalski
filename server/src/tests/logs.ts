@@ -1,5 +1,5 @@
-import { REQUEST_ID_HEADER_NAME } from '@/constants/common';
-import { createMemoryLogDestination, setRootLoggerDestination } from '@/logging';
+import { REQUEST_ID_HEADER_NAME } from '../constants/common.ts';
+import { createMemoryLogDestination, setRootLoggerDestination } from '../logging/index.ts';
 
 const rawLogs: string[] = [];
 

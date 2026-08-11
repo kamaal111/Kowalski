@@ -1,14 +1,14 @@
 import { describe, expect } from 'vitest';
 
-import { FOREX_ROUTE_NAME } from '..';
-import type { Database } from '@/db';
-import { exchangeRates } from '@/db/schema/forex';
-import { STATUS_CODES } from '@/constants/http';
-import { APP_API_BASE_PATH } from '@/constants/common';
-import { ErrorResponseSchema } from '@/schemas/errors';
-import { integrationTest } from '@/tests/fixtures';
-import { BASE_CURRENCY } from '../constants';
-import { ForexLatestResponseSchema } from '../schemas/latest';
+import { FOREX_ROUTE_NAME } from '../index.ts';
+import type { Database } from '../../db/index.ts';
+import { exchangeRates } from '../../db/schema/forex.ts';
+import { STATUS_CODES } from '../../constants/http.ts';
+import { APP_API_BASE_PATH } from '../../constants/common.ts';
+import { ErrorResponseSchema } from '../../schemas/errors.ts';
+import { integrationTest } from '../../tests/fixtures.ts';
+import { BASE_CURRENCY } from '../constants.ts';
+import { ForexLatestResponseSchema } from '../schemas/latest.ts';
 
 const LATEST_FOREX_PATH = `${APP_API_BASE_PATH}${FOREX_ROUTE_NAME}/latest`;
 

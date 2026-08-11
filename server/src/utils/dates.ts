@@ -1,4 +1,4 @@
-import { toISO8601String } from './strings';
+import { toISO8601String } from './strings.ts';
 
 const ISO_DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 

@@ -1,16 +1,16 @@
-import type { TypedResponse } from 'hono';
+import type { DashboardsRouteResponse } from '../routes/dashboards.ts';
 
-import type { HonoContext } from '@/api/contexts';
-import { STATUS_CODES } from '@/constants/http';
-import { logInfo } from '@/logging';
-import { withRequestLogger } from '@/logging/http';
-import type { PortfolioDashboardsQuery } from '../schemas/queries';
-import { PortfolioDashboardsResponseSchema, type PortfolioDashboardsResponse } from '../schemas/responses';
-import getPortfolioDashboards from '../services/dashboards';
+import type { HonoContext } from '../../api/contexts.ts';
+import { STATUS_CODES } from '../../constants/http.ts';
+import { logInfo } from '../../logging/index.ts';
+import { withRequestLogger } from '../../logging/http.ts';
+import type { PortfolioDashboardsQuery } from '../schemas/queries.ts';
+import { PortfolioDashboardsResponseSchema } from '../schemas/responses.ts';
+import getPortfolioDashboards from '../services/dashboards.ts';
 
 async function dashboards(
   c: HonoContext<string, { out: { query: PortfolioDashboardsQuery } }>,
-): Promise<TypedResponse<PortfolioDashboardsResponse, typeof STATUS_CODES.OK>> {
+): Promise<DashboardsRouteResponse> {
   const query = c.req.valid('query');
   const result = await getPortfolioDashboards(c, { period: query.period });
   const response = PortfolioDashboardsResponseSchema.parse({

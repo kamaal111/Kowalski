@@ -3,12 +3,12 @@ import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { describe, expect } from 'vitest';
 
-import { AUTH_ROUTE_NAME } from '..';
-import env from '@/api/env';
-import { APP_API_BASE_PATH, ONE_DAY_IN_SECONDS } from '@/constants/common';
-import { SessionResponseSchema } from '@/auth/schemas/responses';
-import { integrationTest } from '@/tests/fixtures';
-import { createTestUserAndSession } from '@/tests/utils';
+import { AUTH_ROUTE_NAME } from '../index.ts';
+import env from '../../api/env.ts';
+import { APP_API_BASE_PATH, ONE_DAY_IN_SECONDS } from '../../constants/common.ts';
+import { SessionResponseSchema } from '../index.ts';
+import { integrationTest } from '../../tests/fixtures.ts';
+import { createTestUserAndSession } from '../../tests/utils.ts';
 
 const SIGN_UP_PATH = `${APP_API_BASE_PATH}${AUTH_ROUTE_NAME}/sign-up/email`;
 const SESSION_PATH = `${APP_API_BASE_PATH}${AUTH_ROUTE_NAME}/session`;

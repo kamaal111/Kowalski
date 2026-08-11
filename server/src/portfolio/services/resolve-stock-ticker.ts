@@ -1,14 +1,14 @@
-import type { CreateEntryPayload } from '../schemas/payloads';
+import type { CreateEntryPayload } from '../schemas/payloads.ts';
 import {
   createStockTicker,
   findStockTickersByIds,
   upsertStockTickers,
   updateStockTicker,
-} from '../repositories/create-entry';
-import { logInfo } from '@/logging';
-import { withRequestLogger } from '@/logging/http';
-import type { HonoContext } from '@/api/contexts';
-import { createSyntheticTickerId, createSyntheticTickerIsin } from '@/utils/tickers';
+} from '../repositories/create-entry.ts';
+import { logInfo } from '../../logging/index.ts';
+import { withRequestLogger } from '../../logging/http.ts';
+import type { HonoContext } from '../../api/contexts.ts';
+import { createSyntheticTickerId, createSyntheticTickerIsin } from '../../utils/tickers.ts';
 
 type ResolvedStockTicker = Awaited<ReturnType<typeof findStockTickersByIds>>[number];
 type CreateStockTickerInput = Parameters<typeof upsertStockTickers>[1][number];

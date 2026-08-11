@@ -1,8 +1,9 @@
+import { defineRelationsPart } from 'drizzle-orm';
 import { pgTable, text } from 'drizzle-orm/pg-core';
 
-import { user } from './better-auth';
-import auditFields from '../helpers/audit-fields';
-import currency from '../helpers/currency';
+import { user } from './better-auth.ts';
+import auditFields from '../helpers/audit-fields.ts';
+import currency from '../helpers/currency.ts';
 
 /**
  * App-owned per-user preferences that extend Better Auth's user record.
@@ -20,3 +21,5 @@ export const userPreferences = pgTable('user_preferences', {
   // Default currency echoed in auth session responses and used to prefill new transactions.
   preferredCurrency: currency('preferred_currency'),
 });
+
+export const preferencesRelations = defineRelationsPart({ userPreferences });

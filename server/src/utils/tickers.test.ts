@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { createSyntheticTickerId, createSyntheticTickerIsin, parseSyntheticTickerId } from './tickers';
+import { createSyntheticTickerId, createSyntheticTickerIsin, parseSyntheticTickerId } from './tickers.ts';
 
 describe('ticker utils', () => {
   it('creates a normalized synthetic ticker id', () => {

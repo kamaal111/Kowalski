@@ -1,7 +1,10 @@
-export { auth, createAuth } from './better-auth';
-export { default as authApi } from './routes';
-export type { SessionResponse } from './schemas/responses';
-export type { Auth } from './better-auth';
-export { requireLoggedInSessionMiddleware } from './middleware';
-export { ROUTE_NAME as AUTH_ROUTE_NAME } from './constants';
-export { getSessionWhereSessionIsRequired } from './utils/session';
+export { auth, createAuth } from './better-auth.ts';
+export {
+  authModule,
+  getSessionWhereSessionIsRequired,
+  requireSessionMiddleware as requireLoggedInSessionMiddleware,
+  SessionResponseSchema,
+} from './module.ts';
+export type { SessionResponse } from './module.ts';
+export type { Auth } from './better-auth.ts';
+export { ROUTE_NAME as AUTH_ROUTE_NAME } from './constants.ts';

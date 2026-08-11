@@ -7,12 +7,6 @@
     "Choose how Kowalski behaves by default." : {
 
     },
-    "Confirm Password" : {
-
-    },
-    "Continue" : {
-
-    },
     "Create a CSV backup of your portfolio transactions." : {
 
     },
@@ -22,13 +16,7 @@
     "Data" : {
 
     },
-    "Don't have an account yet?" : {
-
-    },
     "Download CSV Template" : {
-
-    },
-    "Email" : {
 
     },
     "Export" : {
@@ -40,13 +28,7 @@
     "Export your transactions to CSV or import a backup." : {
 
     },
-    "Failed to log in." : {
-
-    },
     "Failed to save preferred currency." : {
-
-    },
-    "Failed to sign up." : {
 
     },
     "General" : {
@@ -58,37 +40,10 @@
     "Import Transactions" : {
 
     },
-    "Invalid credentials provided." : {
-
-    },
-    "Name" : {
-
-    },
-    "Name should contain at least 2 words" : {
-
-    },
-    "Not an valid email" : {
-
-    },
-    "Password" : {
-
-    },
-    "Password must be atleast 8 characters" : {
-
-    },
-    "Password must be the same as the password above" : {
-
-    },
     "Preferred Currency" : {
 
     },
     "Restore transactions from a CSV export or template file." : {
-
-    },
-    "Sign In" : {
-
-    },
-    "Sign Up" : {
 
     },
     "Transactions exported." : {
@@ -98,9 +53,6 @@
 
     },
     "Used as the default currency for new transactions." : {
-
-    },
-    "User already exists" : {
 
     }
   },

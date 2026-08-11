@@ -1,16 +1,11 @@
-import type { TypedResponse } from 'hono';
+import type { OverviewPreflightRouteResponse } from '../routes/overview-preflight.ts';
 
-import { STATUS_CODES } from '@/constants/http';
-import type { HonoContext } from '@/api/contexts';
-import {
-  PortfolioOverviewPreflightResponseSchema,
-  type PortfolioOverviewPreflightResponse,
-} from '../schemas/responses';
-import { getPortfolioOverviewPreflight } from '../services/overview-preflight';
+import { STATUS_CODES } from '../../constants/http.ts';
+import type { HonoContext } from '../../api/contexts.ts';
+import { PortfolioOverviewPreflightResponseSchema } from '../schemas/responses.ts';
+import { getPortfolioOverviewPreflight } from '../services/overview-preflight.ts';
 
-async function overviewPreflight(
-  c: HonoContext,
-): Promise<TypedResponse<PortfolioOverviewPreflightResponse, typeof STATUS_CODES.OK>> {
+async function overviewPreflight(c: HonoContext): Promise<OverviewPreflightRouteResponse> {
   const result = await getPortfolioOverviewPreflight(c);
   const response = PortfolioOverviewPreflightResponseSchema.parse(result);
 

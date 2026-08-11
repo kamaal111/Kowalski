@@ -1,6 +1,6 @@
-import { openAPIRouterFactory } from '@/api/open-api';
-import latestHandler from '../handlers/latest';
-import latestRoute from './latest';
+import { openAPIRouterFactory } from '../../api/open-api.ts';
+import latestHandler from '../handlers/latest.ts';
+import latestRoute from './latest.ts';
 
 const forexCompatApi = openAPIRouterFactory();
 

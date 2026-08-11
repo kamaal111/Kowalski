@@ -1,7 +1,7 @@
 import { asserts } from '@kamaalio/kamaal';
-import type { Currency } from '../constants';
+import type { Currency } from '../constants.ts';
 
-import { BASE_CURRENCY, CURRENCIES } from '../constants';
+import { BASE_CURRENCY, CURRENCIES } from '../constants.ts';
 
 export class ExchangeRateRecord {
   readonly date: Date;

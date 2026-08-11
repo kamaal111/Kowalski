@@ -1,12 +1,12 @@
-import { createRoute } from '@hono/zod-openapi';
+import { createRoute, type RouteConfigToTypedResponse } from '@kamaalio/hono-standard-openapi';
 
-import { OPENAPI_TAG } from '../constants';
-import { STATUS_CODES } from '@/constants/http';
-import { MIME_TYPES } from '@/constants/request';
-import { AuthenticationHeaders } from '@/schemas/headers';
-import { ErrorResponseSchema, ValidationErrorResponseSchema } from '@/schemas/errors';
-import { BulkCreateEntriesPayloadSchema } from '../schemas/payloads';
-import { BulkCreateEntriesResponseSchema } from '../schemas/responses';
+import { OPENAPI_TAG } from '../constants.ts';
+import { STATUS_CODES } from '../../constants/http.ts';
+import { MIME_TYPES } from '../../constants/request.ts';
+import { AuthenticationHeaders } from '../../schemas/headers.ts';
+import { ErrorResponseSchema, ValidationErrorResponseSchema } from '../../schemas/errors.ts';
+import { BulkCreateEntriesPayloadSchema } from '../schemas/payloads.ts';
+import { BulkCreateEntriesResponseSchema } from '../schemas/responses.ts';
 
 const bulkCreateEntriesRoute = createRoute({
   method: 'post',
@@ -68,5 +68,7 @@ const bulkCreateEntriesRoute = createRoute({
     },
   },
 });
+
+export type BulkCreateEntriesRouteResponse = RouteConfigToTypedResponse<typeof bulkCreateEntriesRoute>;
 
 export default bulkCreateEntriesRoute;

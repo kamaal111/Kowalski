@@ -1,6 +1,6 @@
-import type { HonoContext } from '@/api/contexts';
-import { APIException } from '@/api/exceptions';
-import { STATUS_CODES, type StatusCode } from '@/constants/http';
+import type { HonoContext } from '../api/contexts.ts';
+import { APIException } from '../api/exceptions.ts';
+import { STATUS_CODES, type StatusCode } from '../constants/http.ts';
 
 type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
 

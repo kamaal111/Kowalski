@@ -1,16 +1,16 @@
 import crypto from 'node:crypto';
 
-import type { HonoContext } from '@/api/contexts';
-import type { CreateEntryPayload } from '../schemas/payloads';
+import type { HonoContext } from '../../api/contexts.ts';
+import type { CreateEntryPayload } from '../schemas/payloads.ts';
 import {
   createPortfolio,
   createPortfolioTransaction,
   findDefaultPortfolioByUserId,
-} from '../repositories/create-entry';
-import { logInfo } from '@/logging';
-import { withRequestLogger } from '@/logging/http';
-import resolvePortfolioStockTicker from './resolve-stock-ticker';
-import { getSessionWhereSessionIsRequired } from '@/auth';
+} from '../repositories/create-entry.ts';
+import { logInfo } from '../../logging/index.ts';
+import { withRequestLogger } from '../../logging/http.ts';
+import resolvePortfolioStockTicker from './resolve-stock-ticker.ts';
+import { getSessionWhereSessionIsRequired } from '../../auth/index.ts';
 
 const DEFAULT_PORTFOLIO_NAME = 'Default Portfolio';
 

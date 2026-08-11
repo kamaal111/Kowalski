@@ -8,7 +8,7 @@ import {
   StocksSearchResponseSchema,
   type StocksSearchQuoteItemResponse,
   type StocksSearchResponse,
-} from '../schemas/search';
+} from '../schemas/search.ts';
 
 type YahooSearchType = SearchResult['quotes'][number];
 

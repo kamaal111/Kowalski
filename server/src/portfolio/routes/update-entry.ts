@@ -1,13 +1,13 @@
-import { createRoute } from '@hono/zod-openapi';
+import { createRoute, type RouteConfigToTypedResponse } from '@kamaalio/hono-standard-openapi';
 
-import { OPENAPI_TAG } from '../constants';
-import { AuthenticationHeaders } from '@/schemas/headers';
-import { ErrorResponseSchema, ValidationErrorResponseSchema } from '@/schemas/errors';
-import { STATUS_CODES } from '@/constants/http';
-import { MIME_TYPES } from '@/constants/request';
-import { CreateEntryPayloadSchema } from '../schemas/payloads';
-import { CreateEntryResponseSchema } from '../schemas/responses';
-import { PortfolioEntryPathParamsSchema } from '../schemas/params';
+import { OPENAPI_TAG } from '../constants.ts';
+import { AuthenticationHeaders } from '../../schemas/headers.ts';
+import { ErrorResponseSchema, ValidationErrorResponseSchema } from '../../schemas/errors.ts';
+import { STATUS_CODES } from '../../constants/http.ts';
+import { MIME_TYPES } from '../../constants/request.ts';
+import { CreateEntryPayloadSchema } from '../schemas/payloads.ts';
+import { CreateEntryResponseSchema } from '../schemas/responses.ts';
+import { PortfolioEntryPathParamsSchema } from '../schemas/params.ts';
 
 const updateEntryRoute = createRoute({
   method: 'put',
@@ -70,5 +70,7 @@ const updateEntryRoute = createRoute({
     },
   },
 });
+
+export type UpdateEntryRouteResponse = RouteConfigToTypedResponse<typeof updateEntryRoute>;
 
 export default updateEntryRoute;

@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import { describe } from 'vitest';
 import { z } from 'zod';
 
-import { integrationTest } from '@/tests/fixtures';
+import { integrationTest } from '../../tests/fixtures.ts';
 
 const StocksSearchResponseSchema = z.object({
   count: z.number(),
@@ -128,8 +128,8 @@ describe('Stocks Integration Tests', () => {
     },
   );
 
-  integrationTest('should return 404 without token', async ({ app, expect }) => {
+  integrationTest('should return 401 without token', async ({ app, expect }) => {
     const res = await app.request('/app-api/stocks/search?q=AAPL&cacheTest=missing-token');
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(401);
   });
 });

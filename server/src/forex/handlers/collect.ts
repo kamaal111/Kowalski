@@ -1,7 +1,7 @@
-import type { HonoContext } from '../../api/contexts';
-import { logInfo } from '@/logging';
-import { withRequestLogger } from '@/logging/http';
-import { collectLatestExchangeRates } from '../services/collect';
+import type { HonoContext } from '../../api/contexts.ts';
+import { logInfo } from '../../logging/index.ts';
+import { withRequestLogger } from '../../logging/http.ts';
+import { collectLatestExchangeRates } from '../services/collect.ts';
 
 export const FOREX_COLLECT_ROUTE_PATH = '/daily-api/forex/collect';
 

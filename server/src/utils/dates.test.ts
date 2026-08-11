@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { dateOnlyStringToISO8601String, parseDateOnlyStringAsUTC } from './dates';
+import { dateOnlyStringToISO8601String, parseDateOnlyStringAsUTC } from './dates.ts';
 
 describe('dates utils', () => {
   describe('parseDateOnlyStringAsUTC', () => {

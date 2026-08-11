@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { SERVER_MODES } from '../api/env';
-import { createCacheDbPath } from './cache';
+import { SERVER_MODES } from '../api/env.ts';
+import { createCacheDbPath } from './cache.ts';
 
 describe('createCacheDbPath', () => {
   it('uses the configured cache directory outside test mode', () => {

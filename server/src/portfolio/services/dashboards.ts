@@ -1,27 +1,30 @@
 import { arrays } from '@kamaalio/kamaal';
 
-import type { HonoContext } from '@/api/contexts';
-import { getSessionWhereSessionIsRequired } from '@/auth';
-import { RESOLVED_TRANSACTION_TYPES } from '@/constants/common';
-import type { Currency } from '@/forex/constants';
-import { logWarn } from '@/logging';
-import { withRequestLogger } from '@/logging/http';
-import { ExchangeRateResolutionFailed, StockPriceFetchFailed } from '../exceptions';
-import { assertToFloat } from '@/utils/numbers';
-import type { PortfolioDashboardPeriod } from '../schemas/queries';
-import type { PortfolioHoldingDistributionItem } from '../schemas/responses';
-import { findLatestExchangeRateSnapshotByBase, type PersistedExchangeRateSnapshot } from '../repositories/list-entries';
+import type { HonoContext } from '../../api/contexts.ts';
+import { getSessionWhereSessionIsRequired } from '../../auth/index.ts';
+import { RESOLVED_TRANSACTION_TYPES } from '../../constants/common.ts';
+import type { Currency } from '../../forex/constants.ts';
+import { logWarn } from '../../logging/index.ts';
+import { withRequestLogger } from '../../logging/http.ts';
+import { ExchangeRateResolutionFailed, StockPriceFetchFailed } from '../exceptions.ts';
+import { assertToFloat } from '../../utils/numbers.ts';
+import type { PortfolioDashboardPeriod } from '../schemas/queries.ts';
+import type { PortfolioHoldingDistributionItem } from '../schemas/responses.ts';
+import {
+  findLatestExchangeRateSnapshotByBase,
+  type PersistedExchangeRateSnapshot,
+} from '../repositories/list-entries.ts';
 import {
   findStockPricesByTickerIdsBetweenDates,
   insertStockPrices,
   type PersistedStockPrice,
-} from '../repositories/stock-prices';
-import { aggregateHoldings } from './aggregate-holdings';
-import { getCurrentStockValues } from './current-stock-values';
-import { findResolvedPortfolioEntriesByUserId } from './resolved-portfolio-entries';
-import type { ResolvedPortfolioEntry } from './resolve-splits';
-import { fetchYahooChartPrices } from './yahoo-chart';
-import { DATE_SHAPE, MAX_PORTFOLIO_DASHBOARD_GROWTH_POINTS } from '../constants';
+} from '../repositories/stock-prices.ts';
+import { aggregateHoldings } from './aggregate-holdings.ts';
+import { getCurrentStockValues } from './current-stock-values.ts';
+import { findResolvedPortfolioEntriesByUserId } from './resolved-portfolio-entries.ts';
+import type { ResolvedPortfolioEntry } from './resolve-splits.ts';
+import { fetchYahooChartPrices } from './yahoo-chart.ts';
+import { DATE_SHAPE, MAX_PORTFOLIO_DASHBOARD_GROWTH_POINTS } from '../constants.ts';
 
 const YAHOO_CHART_LOOKBACK_DAYS = 10;
 const YAHOO_CHART_LOOKAHEAD_DAYS = 5;

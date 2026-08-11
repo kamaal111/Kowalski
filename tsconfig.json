@@ -1,17 +1,15 @@
 {
-  "files": [],
-  "include": [],
-  "references": [
-    {
-      "path": "./server"
-    }
-  ],
   "compilerOptions": {
     "target": "ESNext",
     "module": "NodeNext",
+    "allowImportingTsExtensions": true,
     "strict": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
     "skipLibCheck": true,
     "allowJs": true,
-    "moduleResolution": "node16"
-  }
+    "types": ["node"]
+  },
+  "include": [".agents/**/*.ts"],
+  "exclude": ["node_modules", "server", "app"]
 }

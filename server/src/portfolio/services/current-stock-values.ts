@@ -1,21 +1,21 @@
 import { arrays } from '@kamaalio/kamaal';
 
-import { getSessionWhereSessionIsRequired } from '@/auth';
-import type { HonoContext } from '@/api/contexts';
-import type { Currency } from '@/forex/constants';
-import { logInfo } from '@/logging';
-import { withRequestLogger } from '@/logging/http';
-import type { PersistedExchangeRateSnapshot } from '../repositories/list-entries';
-import { findLatestExchangeRateSnapshotByBase } from '../repositories/list-entries';
+import { getSessionWhereSessionIsRequired } from '../../auth/index.ts';
+import type { HonoContext } from '../../api/contexts.ts';
+import type { Currency } from '../../forex/constants.ts';
+import { logInfo } from '../../logging/index.ts';
+import { withRequestLogger } from '../../logging/http.ts';
+import type { PersistedExchangeRateSnapshot } from '../repositories/list-entries.ts';
+import { findLatestExchangeRateSnapshotByBase } from '../repositories/list-entries.ts';
 import {
   findLatestStockPricesByTickerIds,
   findTodayStockPricesByTickerIds,
   insertStockPrices,
   type PersistedStockPrice,
-} from '../repositories/stock-prices';
-import { type CurrentValue } from '../schemas/responses';
-import { ExchangeRateResolutionFailed, StockPriceFetchFailed } from '../exceptions';
-import { fetchYahooQuotes } from './yahoo-quote';
+} from '../repositories/stock-prices.ts';
+import { type CurrentValue } from '../schemas/responses.ts';
+import { ExchangeRateResolutionFailed, StockPriceFetchFailed } from '../exceptions.ts';
+import { fetchYahooQuotes } from './yahoo-quote.ts';
 
 interface EntryWithTickerIdAndStockSymbol {
   tickerId: string;

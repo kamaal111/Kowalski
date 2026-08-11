@@ -1,0 +1,1422 @@
+{
+  "id": "01a281ff-7ce2-4e6a-a525-18dd39342d41",
+  "prevIds": [
+    "00000000-0000-0000-0000-000000000000"
+  ],
+  "version": "8",
+  "dialect": "postgres",
+  "ddl": [
+    {
+      "isRlsEnabled": false,
+      "name": "account",
+      "schema": "public",
+      "entityType": "tables"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "account_pkey",
+      "schema": "public",
+      "table": "account",
+      "entityType": "pks"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "schema": "public",
+      "table": "account",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "account_id",
+      "schema": "public",
+      "table": "account",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "provider_id",
+      "schema": "public",
+      "table": "account",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "schema": "public",
+      "table": "account",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "access_token",
+      "schema": "public",
+      "table": "account",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "refresh_token",
+      "schema": "public",
+      "table": "account",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id_token",
+      "schema": "public",
+      "table": "account",
+      "entityType": "columns"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "access_token_expires_at",
+      "schema": "public",
+      "table": "account",
+      "entityType": "columns"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "refresh_token_expires_at",
+      "schema": "public",
+      "table": "account",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "scope",
+      "schema": "public",
+      "table": "account",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "password",
+      "schema": "public",
+      "table": "account",
+      "entityType": "columns"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "schema": "public",
+      "table": "account",
+      "entityType": "columns"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "schema": "public",
+      "table": "account",
+      "entityType": "columns"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "user_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "user",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "account_user_id_user_id_fk",
+      "schema": "public",
+      "table": "account",
+      "entityType": "fks"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "jwks",
+      "schema": "public",
+      "entityType": "tables"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "jwks_pkey",
+      "schema": "public",
+      "table": "jwks",
+      "entityType": "pks"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "schema": "public",
+      "table": "jwks",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "public_key",
+      "schema": "public",
+      "table": "jwks",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "private_key",
+      "schema": "public",
+      "table": "jwks",
+      "entityType": "columns"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "schema": "public",
+      "table": "jwks",
+      "entityType": "columns"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "session",
+      "schema": "public",
+      "entityType": "tables"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "session_pkey",
+      "schema": "public",
+      "table": "session",
+      "entityType": "pks"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "schema": "public",
+      "table": "session",
+      "entityType": "columns"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "expires_at",
+      "schema": "public",
+      "table": "session",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "token",
+      "schema": "public",
+      "table": "session",
+      "entityType": "columns"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "schema": "public",
+      "table": "session",
+      "entityType": "columns"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "schema": "public",
+      "table": "session",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "ip_address",
+      "schema": "public",
+      "table": "session",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_agent",
+      "schema": "public",
+      "table": "session",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "schema": "public",
+      "table": "session",
+      "entityType": "columns"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "token"
+      ],
+      "nullsNotDistinct": false,
+      "name": "session_token_unique",
+      "schema": "public",
+      "table": "session",
+      "entityType": "uniques"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "user_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "user",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "session_user_id_user_id_fk",
+      "schema": "public",
+      "table": "session",
+      "entityType": "fks"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "user",
+      "schema": "public",
+      "entityType": "tables"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "user_pkey",
+      "schema": "public",
+      "table": "user",
+      "entityType": "pks"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "schema": "public",
+      "table": "user",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "schema": "public",
+      "table": "user",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "email",
+      "schema": "public",
+      "table": "user",
+      "entityType": "columns"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "email_verified",
+      "schema": "public",
+      "table": "user",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "image",
+      "schema": "public",
+      "table": "user",
+      "entityType": "columns"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "schema": "public",
+      "table": "user",
+      "entityType": "columns"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "schema": "public",
+      "table": "user",
+      "entityType": "columns"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "email"
+      ],
+      "nullsNotDistinct": false,
+      "name": "user_email_unique",
+      "schema": "public",
+      "table": "user",
+      "entityType": "uniques"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "verification",
+      "schema": "public",
+      "entityType": "tables"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "verification_pkey",
+      "schema": "public",
+      "table": "verification",
+      "entityType": "pks"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "schema": "public",
+      "table": "verification",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "identifier",
+      "schema": "public",
+      "table": "verification",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "value",
+      "schema": "public",
+      "table": "verification",
+      "entityType": "columns"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "expires_at",
+      "schema": "public",
+      "table": "verification",
+      "entityType": "columns"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "schema": "public",
+      "table": "verification",
+      "entityType": "columns"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "schema": "public",
+      "table": "verification",
+      "entityType": "columns"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "exchange_rates",
+      "schema": "public",
+      "entityType": "tables"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "exchange_rates_pkey",
+      "schema": "public",
+      "table": "exchange_rates",
+      "entityType": "pks"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "schema": "public",
+      "table": "exchange_rates",
+      "entityType": "columns"
+    },
+    {
+      "type": "date",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "date",
+      "schema": "public",
+      "table": "exchange_rates",
+      "entityType": "columns"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "collected_at",
+      "schema": "public",
+      "table": "exchange_rates",
+      "entityType": "columns"
+    },
+    {
+      "type": "char(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "base",
+      "schema": "public",
+      "table": "exchange_rates",
+      "entityType": "columns"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "rates",
+      "schema": "public",
+      "table": "exchange_rates",
+      "entityType": "columns"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "base",
+        "date"
+      ],
+      "nullsNotDistinct": false,
+      "name": "exchange_rates_base_date_unique",
+      "schema": "public",
+      "table": "exchange_rates",
+      "entityType": "uniques"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        "base",
+        "date"
+      ],
+      "nullsNotDistinct": false,
+      "name": "exchange_rate_entry",
+      "schema": "public",
+      "table": "exchange_rates",
+      "entityType": "uniques"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "stock_info",
+      "schema": "public",
+      "entityType": "tables"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "stock_info_pkey",
+      "schema": "public",
+      "table": "stock_info",
+      "entityType": "pks"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "schema": "public",
+      "table": "stock_info",
+      "entityType": "columns"
+    },
+    {
+      "type": "char(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "currency",
+      "schema": "public",
+      "table": "stock_info",
+      "entityType": "columns"
+    },
+    {
+      "type": "date",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "date",
+      "schema": "public",
+      "table": "stock_info",
+      "entityType": "columns"
+    },
+    {
+      "type": "numeric(20,10)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "rate",
+      "schema": "public",
+      "table": "stock_info",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "ticker_id",
+      "schema": "public",
+      "table": "stock_info",
+      "entityType": "columns"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "ticker_id",
+        "date"
+      ],
+      "nullsNotDistinct": false,
+      "name": "stock_info_ticker_id_date_unique",
+      "schema": "public",
+      "table": "stock_info",
+      "entityType": "uniques"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        "ticker_id",
+        "date"
+      ],
+      "nullsNotDistinct": false,
+      "name": "entry",
+      "schema": "public",
+      "table": "stock_info",
+      "entityType": "uniques"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "ticker_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "stock_ticker",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "stock_info_ticker_id_stock_ticker_id_fk",
+      "schema": "public",
+      "table": "stock_info",
+      "entityType": "fks"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "stock_ticker",
+      "schema": "public",
+      "entityType": "tables"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "stock_ticker_pkey",
+      "schema": "public",
+      "table": "stock_ticker",
+      "entityType": "pks"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "schema": "public",
+      "table": "stock_ticker",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "symbol",
+      "schema": "public",
+      "table": "stock_ticker",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "isin",
+      "schema": "public",
+      "table": "stock_ticker",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "schema": "public",
+      "table": "stock_ticker",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "sector",
+      "schema": "public",
+      "table": "stock_ticker",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "industry",
+      "schema": "public",
+      "table": "stock_ticker",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "exchange_dispatch",
+      "schema": "public",
+      "table": "stock_ticker",
+      "entityType": "columns"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "isin"
+      ],
+      "nullsNotDistinct": false,
+      "name": "stock_ticker_isin_unique",
+      "schema": "public",
+      "table": "stock_ticker",
+      "entityType": "uniques"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "isin",
+        "symbol"
+      ],
+      "nullsNotDistinct": false,
+      "name": "stock_ticker_isin_symbol_unique",
+      "schema": "public",
+      "table": "stock_ticker",
+      "entityType": "uniques"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        "isin",
+        "symbol"
+      ],
+      "nullsNotDistinct": false,
+      "name": "mapping",
+      "schema": "public",
+      "table": "stock_ticker",
+      "entityType": "uniques"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "portfolio",
+      "schema": "public",
+      "entityType": "tables"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "schema": "public",
+      "table": "portfolio",
+      "entityType": "columns"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "schema": "public",
+      "table": "portfolio",
+      "entityType": "columns"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "portfolio_pkey",
+      "schema": "public",
+      "table": "portfolio",
+      "entityType": "pks"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "schema": "public",
+      "table": "portfolio",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "schema": "public",
+      "table": "portfolio",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "schema": "public",
+      "table": "portfolio",
+      "entityType": "columns"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "user_id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "portfolio_user_id_unique",
+      "schema": "public",
+      "table": "portfolio",
+      "entityType": "uniques"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "user_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "user",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "portfolio_user_id_user_id_fk",
+      "schema": "public",
+      "table": "portfolio",
+      "entityType": "fks"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "portfolio_transaction",
+      "schema": "public",
+      "entityType": "tables"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "schema": "public",
+      "table": "portfolio_transaction",
+      "entityType": "columns"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "schema": "public",
+      "table": "portfolio_transaction",
+      "entityType": "columns"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "portfolio_transaction_pkey",
+      "schema": "public",
+      "table": "portfolio_transaction",
+      "entityType": "pks"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "schema": "public",
+      "table": "portfolio_transaction",
+      "entityType": "columns"
+    },
+    {
+      "type": "transaction_types",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "transaction_type",
+      "schema": "public",
+      "table": "portfolio_transaction",
+      "entityType": "columns"
+    },
+    {
+      "type": "date",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "transaction_date",
+      "schema": "public",
+      "table": "portfolio_transaction",
+      "entityType": "columns"
+    },
+    {
+      "type": "numeric(20,10)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "amount",
+      "schema": "public",
+      "table": "portfolio_transaction",
+      "entityType": "columns"
+    },
+    {
+      "type": "numeric(20,10)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "purchase_price",
+      "schema": "public",
+      "table": "portfolio_transaction",
+      "entityType": "columns"
+    },
+    {
+      "type": "char(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "purchase_price_currency",
+      "schema": "public",
+      "table": "portfolio_transaction",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "ticker_id",
+      "schema": "public",
+      "table": "portfolio_transaction",
+      "entityType": "columns"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "portfolio_id",
+      "schema": "public",
+      "table": "portfolio_transaction",
+      "entityType": "columns"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "portfolio_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "transaction_date",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "portfolio_transaction_portfolio_id_transaction_date_idx",
+      "schema": "public",
+      "table": "portfolio_transaction",
+      "entityType": "indexes"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "ticker_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "stock_ticker",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "portfolio_transaction_ticker_id_stock_ticker_id_fk",
+      "schema": "public",
+      "table": "portfolio_transaction",
+      "entityType": "fks"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "portfolio_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "portfolio",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "portfolio_transaction_portfolio_id_portfolio_id_fk",
+      "schema": "public",
+      "table": "portfolio_transaction",
+      "entityType": "fks"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "user_preferences",
+      "schema": "public",
+      "entityType": "tables"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "schema": "public",
+      "table": "user_preferences",
+      "entityType": "columns"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "schema": "public",
+      "table": "user_preferences",
+      "entityType": "columns"
+    },
+    {
+      "columns": [
+        "user_id"
+      ],
+      "nameExplicit": false,
+      "name": "user_preferences_pkey",
+      "schema": "public",
+      "table": "user_preferences",
+      "entityType": "pks"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "schema": "public",
+      "table": "user_preferences",
+      "entityType": "columns"
+    },
+    {
+      "type": "char(3)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "preferred_currency",
+      "schema": "public",
+      "table": "user_preferences",
+      "entityType": "columns"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "user_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "user",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "user_preferences_user_id_user_id_fk",
+      "schema": "public",
+      "table": "user_preferences",
+      "entityType": "fks"
+    },
+    {
+      "values": [
+        "buy",
+        "sell",
+        "split"
+      ],
+      "name": "transaction_types",
+      "schema": "public",
+      "entityType": "enums"
+    }
+  ],
+  "renames": []
+}

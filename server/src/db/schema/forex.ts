@@ -1,6 +1,7 @@
+import { defineRelationsPart } from 'drizzle-orm';
 import { date, jsonb, pgTable, text, timestamp, unique } from 'drizzle-orm/pg-core';
 
-import currency from '../helpers/currency';
+import currency from '../helpers/currency.ts';
 
 /**
  * Cached daily FX rates collected from the ECB feed by the forex collector.
@@ -21,3 +22,5 @@ export const exchangeRates = pgTable(
   },
   t => [unique().on(t.base, t.date), unique('exchange_rate_entry').on(t.base, t.date)],
 );
+
+export const forexRelations = defineRelationsPart({ exchangeRates });

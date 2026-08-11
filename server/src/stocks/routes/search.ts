@@ -1,9 +1,9 @@
-import { createRoute } from '@hono/zod-openapi';
+import { createRoute, type RouteConfigToTypedResponse } from '@kamaalio/hono-standard-openapi';
 
-import { OPENAPI_TAG } from '../constants';
-import { ErrorResponseSchema } from '../../schemas/errors';
-import { AuthenticationHeaders } from '../../schemas/headers';
-import { StocksSearchQuerySchema, StocksSearchResponseSchema } from '../schemas/search';
+import { OPENAPI_TAG } from '../constants.ts';
+import { ErrorResponseSchema } from '../../schemas/errors.ts';
+import { AuthenticationHeaders } from '../../schemas/headers.ts';
+import { StocksSearchQuerySchema, StocksSearchResponseSchema } from '../schemas/search.ts';
 
 const searchRoute = createRoute({
   method: 'get',
@@ -42,5 +42,7 @@ const searchRoute = createRoute({
     },
   },
 });
+
+export type SearchRouteResponse = RouteConfigToTypedResponse<typeof searchRoute>;
 
 export default searchRoute;

@@ -1,9 +1,9 @@
 import { and, asc, desc, eq, gte, inArray, lte } from 'drizzle-orm';
 
-import type { HonoContext } from '@/api/contexts';
-import { stockInfo } from '@/db/schema';
-import { CurrencyShape, type Currency } from '@/forex/constants';
-import { assertToFloat } from '@/utils/numbers';
+import type { HonoContext } from '../../api/contexts.ts';
+import { stockInfo } from '../../db/schema/index.ts';
+import { CurrencyShape, type Currency } from '../../forex/constants.ts';
+import { assertToFloat } from '../../utils/numbers.ts';
 
 export interface PersistedStockPrice {
   tickerId: string;

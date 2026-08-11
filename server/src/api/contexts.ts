@@ -1,9 +1,10 @@
+import type { AuthVariables } from '@kamaalio/kamaal-auth-hono';
 import type { Context, Input, Next } from 'hono';
 import type { RequestIdVariables } from 'hono/request-id';
 
-import type { Database } from '../db';
-import type { Auth, SessionResponse } from '../auth';
-import type { ServerLogger } from '../logging';
+import type { Database } from '../db/index.ts';
+import type { Auth } from '../auth/index.ts';
+import type { ServerLogger } from '../logging/index.ts';
 
 interface InjectedContext {
   db: Database;
@@ -14,14 +15,7 @@ interface LoggingVariables {
   logger: ServerLogger;
 }
 
-interface RequestLifecycleVariables {
-  requestFailed?: boolean;
-}
-
-export type HonoVariables = RequestIdVariables &
-  InjectedContext &
-  LoggingVariables &
-  RequestLifecycleVariables & { session?: SessionResponse };
+export type HonoVariables = RequestIdVariables & InjectedContext & LoggingVariables & AuthVariables;
 
 export interface HonoEnvironment {
   Variables: HonoVariables;

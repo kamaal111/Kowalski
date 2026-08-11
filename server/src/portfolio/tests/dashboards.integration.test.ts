@@ -1,14 +1,14 @@
 import { describe, expect } from 'vitest';
 
-import { PORTFOLIO_ROUTE_NAME } from '..';
-import { PortfolioDashboardsResponseSchema } from '../schemas/responses';
-import { seedExchangeRate, seedPortfolioEntry, seedStockInfo } from './helpers';
-import { APP_API_BASE_PATH } from '@/constants/common';
-import { ValidationErrorResponseSchema } from '@/schemas/errors';
-import { integrationTest } from '@/tests/fixtures';
-import { yahooFinanceChartMock, yahooFinanceQuoteMock } from '@/tests/mocks/yahoo-finance';
-import { createTestUserAndSession } from '@/tests/utils';
-import { createSyntheticTickerId } from '@/utils/tickers';
+import { PORTFOLIO_ROUTE_NAME } from '../index.ts';
+import { PortfolioDashboardsResponseSchema } from '../schemas/responses.ts';
+import { seedExchangeRate, seedPortfolioEntry, seedStockInfo } from './helpers.ts';
+import { APP_API_BASE_PATH } from '../../constants/common.ts';
+import { ValidationErrorResponseSchema } from '../../schemas/errors.ts';
+import { integrationTest } from '../../tests/fixtures.ts';
+import { yahooFinanceChartMock, yahooFinanceQuoteMock } from '../../tests/mocks/yahoo-finance.ts';
+import { createTestUserAndSession } from '../../tests/utils.ts';
+import { createSyntheticTickerId } from '../../utils/tickers.ts';
 
 const DASHBOARDS_PATH = `${APP_API_BASE_PATH}${PORTFOLIO_ROUTE_NAME}/dashboards`;
 

@@ -1,4 +1,8 @@
 allowBuilds:
   esbuild: true
-onlyBuiltDependencies:
-  - esbuild
+  better-sqlite3: true
+
+minimumReleaseAgeExclude:
+  - '@kamaalio/hono-standard-openapi@0.0.15'
+  - '@kamaalio/kamaal-auth-core@0.0.9'
+  - '@kamaalio/kamaal-auth-hono@0.0.9'

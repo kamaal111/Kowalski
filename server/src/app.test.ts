@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { generateOpenAPISpecYaml } from '@/app';
+import { generateOpenAPISpecYaml } from './app.ts';
 
 describe('generateOpenAPISpecYaml', () => {
   test('returns the documented YAML spec without a running server', async () => {

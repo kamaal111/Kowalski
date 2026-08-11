@@ -1,9 +1,10 @@
+import { AUTH_SESSION_CONTEXT_KEY } from '@kamaalio/kamaal-auth-hono';
 import { routePath } from 'hono/route';
 
-import type { HonoContext } from '@/api/contexts';
-import type { ServerMode } from '@/api/env';
-import env from '@/api/env';
-import { childLogger, createRequestLogger, type LogBindings, type ServerLogger } from '@/logging';
+import type { HonoContext } from '../api/contexts.ts';
+import type { ServerMode } from '../api/env.ts';
+import env from '../api/env.ts';
+import { childLogger, createRequestLogger, type LogBindings, type ServerLogger } from './index.ts';
 
 export function initializeRequestLogger(c: HonoContext, mode: ServerMode) {
   const logger = createRequestLogger({
@@ -32,14 +33,6 @@ export function getRouteForLog(c: HonoContext) {
   return getMatchedRoutePath(c);
 }
 
-export function markRequestFailed(c: HonoContext) {
-  c.set('requestFailed', true);
-}
-
-export function hasRequestFailed(c: HonoContext) {
-  return c.get('requestFailed') === true;
-}
-
 function getLoggerBindings(logger: ServerLogger): Record<string, unknown> {
   const bindings = logger.bindings();
   return bindings != null && typeof bindings === 'object' ? bindings : {};
@@ -51,7 +44,7 @@ function bindAuthenticatedUserIdFromContext(c: HonoContext, logger: ServerLogger
     return logger;
   }
 
-  const session = c.get('session');
+  const session = c.get(AUTH_SESSION_CONTEXT_KEY);
   const userId = session?.user.id;
   if (typeof userId !== 'string' || userId.length === 0) {
     return logger;

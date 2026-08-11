@@ -90,7 +90,7 @@ struct KowalskiPortfolioMapper {
             transactions: mapListEntriesApiResponseToClient(response.transactions),
             currentValues: currentValues,
             holdings: response.holdings.map(mapHoldingApiResponseToClient),
-            netWorth: mapMoney(response.netWorth.value1),
+            netWorth: mapMoney(response.netWorth),
         )
     }
 
@@ -99,11 +99,11 @@ struct KowalskiPortfolioMapper {
     ) -> KowalskiPortfolioDashboardsResponse {
         KowalskiPortfolioDashboardsResponse(
             portfolioGrowthOverTime: KowalskiPortfolioGrowthOverTimeResponse(
-                currency: mapPortfolioGrowthCurrency(response.portfolioGrowthOverTime.currency),
+                currency: response.portfolioGrowthOverTime.currency.kowalskiCurrency,
                 points: response.portfolioGrowthOverTime.points.map(mapPortfolioGrowthPoint),
             ),
             portfolioHoldingsDistribution: KowalskiPortfolioHoldingsDistributionResponse(
-                currency: response.portfolioHoldingsDistribution.currency.value1.kowalskiCurrency,
+                currency: response.portfolioHoldingsDistribution.currency.kowalskiCurrency,
                 holdings: response.portfolioHoldingsDistribution.holdings.map(mapPortfolioHoldingDistributionItem),
             ),
         )
@@ -168,12 +168,6 @@ struct KowalskiPortfolioMapper {
         )
     }
 
-    private func mapPortfolioGrowthCurrency(
-        _ response: Components.Schemas.PortfolioGrowthOverTime.CurrencyPayload,
-    ) -> KowalskiCurrency {
-        response.value1.kowalskiCurrency
-    }
-
     private func mapPortfolioHoldingDistributionItem(
         _ response: Components.Schemas.PortfolioHoldingDistributionItem,
     ) -> KowalskiPortfolioHoldingDistributionItemResponse {
@@ -215,8 +209,8 @@ struct KowalskiPortfolioMapper {
             assetType: response.assetType.rawValue,
             asset: mapHoldingAsset(response.asset),
             amount: response.amount,
-            unitValue: mapCurrentValue(response.unitValue.value1),
-            totalValue: mapMoney(response.totalValue.value1),
+            unitValue: mapCurrentValue(response.unitValue),
+            totalValue: mapMoney(response.totalValue),
             profitLoss: mapHoldingProfitLoss(response.profitLoss),
         )
     }
@@ -250,7 +244,7 @@ struct KowalskiPortfolioMapper {
         guard let response else { return nil }
 
         return KowalskiPortfolioHoldingProfitLossResponse(
-            amount: mapMoney(response.amount.value1),
+            amount: mapMoney(response.amount),
             percentage: response.percentage,
         )
     }

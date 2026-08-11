@@ -12,7 +12,7 @@ import {
   logInfo,
   resetRootLogger,
   setRootLoggerDestination,
-} from '@/logging';
+} from '../logging/index.ts';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '../../..');
 const OXLINT_CONFIG = path.join(REPO_ROOT, '.oxlintrc.json');

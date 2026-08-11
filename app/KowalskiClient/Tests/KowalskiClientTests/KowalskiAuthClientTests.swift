@@ -14,57 +14,6 @@ import Testing
 @Suite("Auth Client Tests")
 struct KowalskiAuthClientTests {
     @Test
-    func `Sign in should expose validation issues from a bad request response`() async throws {
-        let responseBody = Data(
-            """
-            {
-              "message": "Invalid payload",
-              "code": "INVALID_PAYLOAD",
-              "context": {
-                "validations": [
-                  {
-                    "code": "invalid_string",
-                    "path": ["email"],
-                    "message": "Invalid email address"
-                  }
-                ]
-              }
-            }
-            """.utf8,
-        )
-        let transport = MockClientTransport(
-            queuedResponses: [
-                QueuedResponse(status: .badRequest, body: responseBody),
-            ],
-        )
-        let client = try Client(
-            serverURL: #require(URL(string: "https://api.example.com")),
-            transport: transport,
-        )
-        let keychainKey = "kowalski-auth-client-tests-\(UUID().uuidString)"
-
-        let authClient = KowalskiAuthClientFactory.default(
-            client: client,
-            credentialsKeychainKey: keychainKey,
-            credentialsGetter: MockCredentialsGetter(credentials: nil),
-        )
-
-        try await #require(throws: KowalskiAuthSignInErrors.badRequest(validations: [
-            KowalskiClientValidationIssue(
-                code: "invalid_string",
-                path: ["email"],
-                message: "Invalid email address",
-            ),
-        ])) {
-            try await authClient.signIn(email: "not-an-email", password: "123456").get()
-        }
-
-        let request = try #require(transport.capturedRequests.first)
-        #expect(request.path == "/app-api/auth/sign-in/email")
-        #expect(request.method == .post)
-    }
-
-    @Test
     func `Update preferences should return mapped client session response`() async throws {
         let responseBody = Data(
             """
@@ -91,15 +40,10 @@ struct KowalskiAuthClientTests {
                 QueuedResponse(status: .ok, body: responseBody),
             ],
         )
-        let client = try makeGeneratedClient(transport: transport)
-        let keychainKey = "kowalski-auth-client-tests-\(UUID().uuidString)"
-        let authClient = KowalskiAuthClientFactory.default(
-            client: client,
-            credentialsKeychainKey: keychainKey,
-            credentialsGetter: MockCredentialsGetter(credentials: nil),
-        )
+        let client = try Client(serverURL: #require(URL(string: "https://api.example.com")), transport: transport)
+        let kowalskiClient = KowalskiClient.testing(client: client)
 
-        let response = try await authClient.updatePreferences(preferredCurrency: .USD).get()
+        let response = try await kowalskiClient.updatePreferences(preferredCurrency: .USD).get()
 
         #expect(response.preferredCurrency == .EUR)
         #expect(response.hasPreferredCurrencyPreference)
@@ -123,11 +67,4 @@ private struct UpdatePreferencesRequestBody: Decodable {
     enum CodingKeys: String, CodingKey {
         case preferredCurrency = "preferred_currency"
     }
-}
-
-private func makeGeneratedClient(transport: some ClientTransport) throws -> Client {
-    try Client(
-        serverURL: #require(URL(string: "https://api.example.com")),
-        transport: transport,
-    )
 }

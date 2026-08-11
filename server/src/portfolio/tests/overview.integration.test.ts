@@ -1,17 +1,17 @@
 import { eq } from 'drizzle-orm';
 import { describe, expect } from 'vitest';
 
-import { PORTFOLIO_ROUTE_NAME } from '..';
-import { PortfolioOverviewResponseSchema, ResolvedEntryResponseSchema } from '../schemas/responses';
-import { seedExchangeRate, seedPortfolioEntry, seedStockInfo, type SeedPortfolioEntryResult } from './helpers';
-import { APP_API_BASE_PATH, type ResolvedtransactionType } from '@/constants/common';
-import { ErrorResponseSchema } from '@/schemas/errors';
-import { integrationTest } from '@/tests/fixtures';
-import { yahooFinanceQuoteMock } from '@/tests/mocks/yahoo-finance';
-import { createTestUserAndSession } from '@/tests/utils';
-import * as schema from '@/db/schema';
-import { createSyntheticTickerId } from '@/utils/tickers';
-import type { Currency } from '@/forex/constants';
+import { PORTFOLIO_ROUTE_NAME } from '../index.ts';
+import { PortfolioOverviewResponseSchema, ResolvedEntryResponseSchema } from '../schemas/responses.ts';
+import { seedExchangeRate, seedPortfolioEntry, seedStockInfo, type SeedPortfolioEntryResult } from './helpers.ts';
+import { APP_API_BASE_PATH, type ResolvedtransactionType } from '../../constants/common.ts';
+import { ErrorResponseSchema } from '../../schemas/errors.ts';
+import { integrationTest } from '../../tests/fixtures.ts';
+import { yahooFinanceQuoteMock } from '../../tests/mocks/yahoo-finance.ts';
+import { createTestUserAndSession } from '../../tests/utils.ts';
+import * as schema from '../../db/schema/index.ts';
+import { createSyntheticTickerId } from '../../utils/tickers.ts';
+import type { Currency } from '../../forex/constants.ts';
 
 const OVERVIEW_PATH = `${APP_API_BASE_PATH}${PORTFOLIO_ROUTE_NAME}/overview`;
 
@@ -754,7 +754,7 @@ function makeResolvedSplitEntry({
 }
 
 async function expectNotFoundErrorResponse(response: Response) {
-  expect(response.status).toBe(404);
+  expect(response.status).toBe(401);
 
   return ErrorResponseSchema.parse(await response.json());
 }

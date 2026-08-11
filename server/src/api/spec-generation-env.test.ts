@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { ensureSpecGenerationEnv, SPEC_GENERATION_ENV_DEFAULTS } from './spec-generation-env';
+import { ensureSpecGenerationEnv, SPEC_GENERATION_ENV_DEFAULTS } from './spec-generation-env.ts';
 
 describe('ensureSpecGenerationEnv', () => {
   test('fills required env defaults for OpenAPI generation without overriding explicit values', () => {

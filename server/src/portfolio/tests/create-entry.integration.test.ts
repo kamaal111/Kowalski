@@ -2,15 +2,15 @@ import { eq } from 'drizzle-orm';
 import { describe, expect } from 'vitest';
 import type { z } from 'zod';
 
-import { PORTFOLIO_ROUTE_NAME } from '..';
-import { CreateEntryPayloadSchema } from '../schemas/payloads';
-import { CreateEntryResponseSchema } from '../schemas/responses';
-import { seedExchangeRate } from './helpers';
-import { APP_API_BASE_PATH } from '@/constants/common';
-import type { Database } from '@/db';
-import { portfolio, portfolioTransaction, stockTicker, user, userPreferences } from '@/db/schema';
-import { ErrorResponseSchema, ValidationErrorResponseSchema } from '@/schemas/errors';
-import { integrationTest } from '@/tests/fixtures';
+import { PORTFOLIO_ROUTE_NAME } from '../index.ts';
+import { CreateEntryPayloadSchema } from '../schemas/payloads.ts';
+import { CreateEntryResponseSchema } from '../schemas/responses.ts';
+import { seedExchangeRate } from './helpers.ts';
+import { APP_API_BASE_PATH } from '../../constants/common.ts';
+import type { Database } from '../../db/index.ts';
+import { portfolio, portfolioTransaction, stockTicker, user, userPreferences } from '../../db/schema/index.ts';
+import { ErrorResponseSchema, ValidationErrorResponseSchema } from '../../schemas/errors.ts';
+import { integrationTest } from '../../tests/fixtures.ts';
 
 const CREATE_ENTRY_PATH = `${APP_API_BASE_PATH}${PORTFOLIO_ROUTE_NAME}/entries`;
 const LEGACY_CREATE_ENTRY_PATH = `${APP_API_BASE_PATH}${PORTFOLIO_ROUTE_NAME}/entry`;
@@ -295,7 +295,7 @@ describe('Create Portfolio Entry Route', () => {
       payload: createValidCreateEntryPayload(),
     });
 
-    await expectNotFoundErrorResponse(response);
+    await expectUnauthorizedErrorResponse(response);
   });
 
   integrationTest('rejects a request with a non-positive amount', async ({ app, sessionToken }) => {
@@ -434,6 +434,12 @@ async function expectSuccessfulCreateEntryResponse(response: Response) {
 
 async function expectNotFoundErrorResponse(response: Response) {
   expect(response.status).toBe(404);
+
+  return ErrorResponseSchema.parse(await response.json());
+}
+
+async function expectUnauthorizedErrorResponse(response: Response) {
+  expect(response.status).toBe(401);
 
   return ErrorResponseSchema.parse(await response.json());
 }
