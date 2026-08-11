@@ -6,7 +6,6 @@ NVM_VERSION := "v0.40.3"
 PN := "pnpm"
 PNR := PN + " run"
 PNX := PN + " exec"
-TSX := PNX + " tsx"
 
 COMPOSE_PROJECT_NAME := env("COMPOSE_PROJECT_NAME", "kowalski")
 DATABASE_HOST := env("KOWALSKI_DB_HOST", "localhost")
@@ -61,7 +60,7 @@ dev-daily: prepare-server start-services migrate
 
 # Run server
 [working-directory("server")]
-run-server: prepare-server compile-server
+run-server: prepare-server
     #!/usr/bin/env zsh
 
     export PORT="{{ SERVER_PORT }}"
@@ -70,9 +69,8 @@ run-server: prepare-server compile-server
     {{ PNR }} start
 
 # Build server Docker image
-[working-directory("server")]
 docker-build-server tag=DOCKER_IMAGE:
-    docker build -t {{ tag }} .
+    docker build -f server/Dockerfile -t {{ tag }} .
 
 # Run server Docker image
 [working-directory("server")]
@@ -102,12 +100,12 @@ heavy: heavy-tasks
 
 # Generate isolated env files for a linked worktree
 setup-worktree-env:
-    {{ TSX }} .agents/skills/kowalski-git-worktree/scripts/setup-worktree-env.ts
+    node .agents/skills/kowalski-git-worktree/scripts/setup-worktree-env.ts
 
-# Compile server
+# Type check the server without emitting
 [working-directory("server")]
 compile-server:
-    {{ PNR }} compile
+    {{ PNR }} typecheck
 
 # Rebuild the native SQLite driver after a Node.js upgrade
 [working-directory("server")]
@@ -122,7 +120,7 @@ migrate: prepare-server
 # Fetch daily currencies unless today's snapshot is already stored
 [working-directory("server")]
 fetch-daily-currencies:
-    {{ TSX }} scripts/fetch-daily-currencies.ts
+    node scripts/fetch-daily-currencies.ts
 
 # Generate migrations
 [working-directory("server")]
@@ -158,7 +156,7 @@ tail-db:
 # Generate auth tables
 [working-directory("server")]
 make-auth-tables: prepare-server
-    npx @better-auth/cli generate --config {{ AUTH_CONFIG }} --output {{ AUTH_SCHEMA }} --yes
+    {{ PN }} dlx @better-auth/cli generate --config {{ AUTH_CONFIG }} --output {{ AUTH_SCHEMA }} --yes
 
 # Generate OpenAPI specification
 [working-directory("server")]
@@ -166,7 +164,7 @@ download-spec:
     #!/usr/bin/env bash
 
     echo "🚀 Generating OpenAPI spec to {{ SERVER_RELATIVE_OUTPUT_SCHEMA_FILEPATH }}..."
-    {{ TSX }} scripts/download-openapi-spec.ts {{ SERVER_RELATIVE_OUTPUT_SCHEMA_FILEPATH }}
+    node scripts/download-openapi-spec.ts {{ SERVER_RELATIVE_OUTPUT_SCHEMA_FILEPATH }}
 
 # Verify the committed OpenAPI specification is up to date
 check-spec: download-spec

@@ -6,13 +6,19 @@
 //
 
 struct KowalskiAuthMapper {
-    func mapSessionResponse(_ response: Components.Schemas.SessionResponse) -> KowalskiAuthSessionResponse {
+    /// Takes the parts rather than one generated type, since the preference overlay is a distinct
+    /// anonymous type per operation.
+    func mapSessionResponse(
+        _ response: Components.Schemas.SessionResponse,
+        preferredCurrency: Components.Schemas.Currency,
+        hasPreferredCurrencyPreference: Bool,
+    ) -> KowalskiAuthSessionResponse {
         KowalskiAuthSessionResponse(
             name: response.user.name,
             email: response.user.email,
             expiresAt: response.session.expiresAt,
-            preferredCurrency: response.user.preferredCurrency.kowalskiCurrency,
-            hasPreferredCurrencyPreference: response.user.hasPreferredCurrencyPreference,
+            preferredCurrency: preferredCurrency.kowalskiCurrency,
+            hasPreferredCurrencyPreference: hasPreferredCurrencyPreference,
         )
     }
 }

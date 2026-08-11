@@ -2,12 +2,12 @@ import { randomUUID } from 'crypto';
 
 import { eq } from 'drizzle-orm';
 
-import type { Database } from '@/db';
-import { exchangeRates, portfolio, portfolioTransaction, stockInfo, stockTicker } from '@/db/schema';
-import { dateOnlyStringToISO8601String } from '@/utils/dates';
-import { createSyntheticTickerId, createSyntheticTickerIsin } from '@/utils/tickers';
-import { CreateEntryResponseSchema } from '../schemas/responses';
-import type { TransactionType } from '@/constants/common';
+import type { Database } from '../../db/index.ts';
+import { exchangeRates, portfolio, portfolioTransaction, stockInfo, stockTicker } from '../../db/schema/index.ts';
+import { dateOnlyStringToISO8601String } from '../../utils/dates.ts';
+import { createSyntheticTickerId, createSyntheticTickerIsin } from '../../utils/tickers.ts';
+import { CreateEntryResponseSchema } from '../schemas/responses.ts';
+import type { TransactionType } from '../../constants/common.ts';
 
 const DEFAULT_PORTFOLIO_NAME = 'Default Portfolio';
 

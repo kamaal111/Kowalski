@@ -1,19 +1,19 @@
-import { SERVER_MODES } from '@/api/env';
-import { allowedModes } from '@/api/middleware';
-import { openAPIRouterFactory } from '@/api/open-api';
-import { requireLoggedInSessionMiddleware } from '@/auth';
-import createEntryRoute from './create-entry';
-import bulkCreateEntriesRoute from './bulk-create-entries';
-import dashboardsRoute from './dashboards';
-import overviewPreflightRoute from './overview-preflight';
-import overviewRoute from './overview';
-import updateEntryRoute from './update-entry';
-import bulkCreateEntries from '../handlers/bulk-create-entries';
-import createEntry from '../handlers/create-entry';
-import dashboards from '../handlers/dashboards';
-import overviewPreflight from '../handlers/overview-preflight';
-import overview from '../handlers/overview';
-import updateEntry from '../handlers/update-entry';
+import { SERVER_MODES } from '../../api/env.ts';
+import { allowedModes } from '../../api/middleware.ts';
+import { openAPIRouterFactory } from '../../api/open-api.ts';
+import { requireLoggedInSessionMiddleware } from '../../auth/index.ts';
+import createEntryRoute from './create-entry.ts';
+import bulkCreateEntriesRoute from './bulk-create-entries.ts';
+import dashboardsRoute from './dashboards.ts';
+import overviewPreflightRoute from './overview-preflight.ts';
+import overviewRoute from './overview.ts';
+import updateEntryRoute from './update-entry.ts';
+import bulkCreateEntries from '../handlers/bulk-create-entries.ts';
+import createEntry from '../handlers/create-entry.ts';
+import dashboards from '../handlers/dashboards.ts';
+import overviewPreflight from '../handlers/overview-preflight.ts';
+import overview from '../handlers/overview.ts';
+import updateEntry from '../handlers/update-entry.ts';
 
 const portfolioApi = openAPIRouterFactory();
 

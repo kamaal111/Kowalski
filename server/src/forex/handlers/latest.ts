@@ -1,19 +1,19 @@
-import type { TypedResponse } from 'hono';
+import type { LatestRouteResponse } from '../routes/latest.ts';
 import { desc, eq } from 'drizzle-orm';
 
-import { NotFound } from '@/api/exceptions';
-import type { HonoContext } from '@/api/contexts';
-import { STATUS_CODES } from '@/constants/http';
-import { exchangeRates } from '@/db/schema/forex';
-import { logInfo } from '@/logging';
-import { withRequestLogger } from '@/logging/http';
-import { BASE_CURRENCY, type Currency } from '../constants';
-import { ForexLatestResponseSchema, type ForexLatestQuery, type ForexLatestResponse } from '../schemas/latest';
-import isCurrency from '../utils/is-currency';
+import { NotFound } from '../../api/exceptions.ts';
+import type { HonoContext } from '../../api/contexts.ts';
+import { STATUS_CODES } from '../../constants/http.ts';
+import { exchangeRates } from '../../db/schema/forex.ts';
+import { logInfo } from '../../logging/index.ts';
+import { withRequestLogger } from '../../logging/http.ts';
+import { BASE_CURRENCY, type Currency } from '../constants.ts';
+import { ForexLatestResponseSchema, type ForexLatestQuery } from '../schemas/latest.ts';
+import isCurrency from '../utils/is-currency.ts';
 
 async function latestHandler(
   c: HonoContext<string, { out: { query: ForexLatestQuery } }>,
-): Promise<TypedResponse<ForexLatestResponse, typeof STATUS_CODES.OK>> {
+): Promise<LatestRouteResponse> {
   const logger = withRequestLogger(c, { component: 'forex' });
   const query = c.req.valid('query');
   const requestedBase = normalizeRequestedBase(query.base);

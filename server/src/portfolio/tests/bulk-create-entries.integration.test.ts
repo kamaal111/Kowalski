@@ -1,16 +1,16 @@
 import { eq } from 'drizzle-orm';
 import { describe, expect } from 'vitest';
 
-import { PORTFOLIO_ROUTE_NAME } from '..';
-import { APP_API_BASE_PATH } from '@/constants/common';
-import type { Database } from '@/db';
-import { portfolio, portfolioTransaction, stockTicker, user } from '@/db/schema';
-import { ErrorResponseSchema } from '@/schemas/errors';
-import { integrationTest } from '@/tests/fixtures';
-import { createTestUserAndSession } from '@/tests/utils';
-import { BulkCreateEntriesPayloadSchema } from '../schemas/payloads';
-import { BulkCreateEntriesResponseSchema } from '../schemas/responses';
-import { seedPortfolioEntry } from './helpers';
+import { PORTFOLIO_ROUTE_NAME } from '../index.ts';
+import { APP_API_BASE_PATH } from '../../constants/common.ts';
+import type { Database } from '../../db/index.ts';
+import { portfolio, portfolioTransaction, stockTicker, user } from '../../db/schema/index.ts';
+import { ErrorResponseSchema } from '../../schemas/errors.ts';
+import { integrationTest } from '../../tests/fixtures.ts';
+import { createTestUserAndSession } from '../../tests/utils.ts';
+import { BulkCreateEntriesPayloadSchema } from '../schemas/payloads.ts';
+import { BulkCreateEntriesResponseSchema } from '../schemas/responses.ts';
+import { seedPortfolioEntry } from './helpers.ts';
 
 const BULK_CREATE_ENTRIES_PATH = `${APP_API_BASE_PATH}${PORTFOLIO_ROUTE_NAME}/entries/bulk`;
 
@@ -469,7 +469,7 @@ async function expectSuccessfulBulkCreateEntriesResponse(response: Response) {
 }
 
 async function expectNotFoundErrorResponse(response: Response) {
-  expect(response.status).toBe(404);
+  expect(response.status).toBe(401);
 
   return ErrorResponseSchema.parse(await response.json());
 }

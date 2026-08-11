@@ -3,8 +3,8 @@ import { Writable } from 'node:stream';
 import pino from 'pino';
 import type { DestinationStream, LevelWithSilent, Logger, LoggerOptions } from 'pino';
 
-import env from '@/api/env';
-import type { ServerMode } from '@/api/env';
+import env from '../api/env.ts';
+import type { ServerMode } from '../api/env.ts';
 
 const SERVICE_NAME = 'kowalski-server';
 const DEFAULT_COMPONENT = 'server';

@@ -1,12 +1,12 @@
-import { createRoute } from '@hono/zod-openapi';
+import { createRoute, type RouteConfigToTypedResponse } from '@kamaalio/hono-standard-openapi';
 
-import { OPENAPI_TAG } from '../constants';
-import { PortfolioDashboardsQuerySchema } from '../schemas/queries';
-import { PortfolioDashboardsResponseSchema } from '../schemas/responses';
-import { STATUS_CODES } from '@/constants/http';
-import { MIME_TYPES } from '@/constants/request';
-import { ErrorResponseSchema, ValidationErrorResponseSchema } from '@/schemas/errors';
-import { AuthenticationHeaders } from '@/schemas/headers';
+import { OPENAPI_TAG } from '../constants.ts';
+import { PortfolioDashboardsQuerySchema } from '../schemas/queries.ts';
+import { PortfolioDashboardsResponseSchema } from '../schemas/responses.ts';
+import { STATUS_CODES } from '../../constants/http.ts';
+import { MIME_TYPES } from '../../constants/request.ts';
+import { ErrorResponseSchema, ValidationErrorResponseSchema } from '../../schemas/errors.ts';
+import { AuthenticationHeaders } from '../../schemas/headers.ts';
 
 const dashboardsRoute = createRoute({
   method: 'get',
@@ -61,5 +61,7 @@ const dashboardsRoute = createRoute({
     },
   },
 });
+
+export type DashboardsRouteResponse = RouteConfigToTypedResponse<typeof dashboardsRoute>;
 
 export default dashboardsRoute;

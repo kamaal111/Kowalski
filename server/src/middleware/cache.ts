@@ -1,12 +1,12 @@
 import { asserts } from '@kamaalio/kamaal';
 import type { Context } from 'hono';
 
-import { LRUCache } from '../utils/cache';
-import { ONE_MINUTE_IN_MILLISECONDS } from '../constants/common';
-import type { HonoContext } from '../api/contexts';
-import env, { SERVER_MODES, type ServerMode } from '../api/env';
-import { logInfo } from '@/logging';
-import { withRequestLogger } from '@/logging/http';
+import { LRUCache } from '../utils/cache.ts';
+import { ONE_MINUTE_IN_MILLISECONDS } from '../constants/common.ts';
+import type { HonoContext } from '../api/contexts.ts';
+import env, { SERVER_MODES, type ServerMode } from '../api/env.ts';
+import { logInfo } from '../logging/index.ts';
+import { withRequestLogger } from '../logging/http.ts';
 
 const DEFAULT_TTL = 5 * ONE_MINUTE_IN_MILLISECONDS;
 const DEFAULT_MAX_SIZE = 1000;

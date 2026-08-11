@@ -1,24 +1,24 @@
-import { z } from '@hono/zod-openapi';
+import * as z from 'zod';
 
-import { ASSET_TYPE_ARRAY, ASSET_TYPES, RESOLVED_TRANSACTION_TYPE_ARRAY } from '@/constants/common';
-import { ApiCommonDatetimeShape } from '@/schemas/common';
-import { CreateEntryPayloadSchema } from './payloads';
-import { MoneySchema } from './common';
-import { CurrencyShape } from '@/forex/constants';
+import { ASSET_TYPE_ARRAY, ASSET_TYPES, RESOLVED_TRANSACTION_TYPE_ARRAY } from '../../constants/common.ts';
+import { ApiCommonDatetimeShape } from '../../schemas/common.ts';
+import { CreateEntryPayloadSchema } from './payloads.ts';
+import { MoneySchema } from './common.ts';
+import { CurrencyShape } from '../../forex/constants.ts';
 
 const AuditFieldsSchema = z.object({
-  created_at: ApiCommonDatetimeShape.openapi({
+  created_at: ApiCommonDatetimeShape.meta({
     description: 'Timestamp when the entry was created',
     example: '2025-12-20T12:00:00.000Z',
   }),
-  updated_at: ApiCommonDatetimeShape.openapi({
+  updated_at: ApiCommonDatetimeShape.meta({
     description: 'Timestamp when the entry was last updated',
     example: '2025-12-20T12:00:00.000Z',
   }),
 });
 
 const PortfolioEntryResponseObjectSchema = z.object({
-  id: z.uuid().openapi({
+  id: z.uuid().meta({
     description: 'Unique identifier for the portfolio entry',
     example: '550e8400-e29b-41d4-a716-446655440000',
   }),
@@ -28,14 +28,16 @@ const PortfolioEntryResponseObjectSchema = z.object({
 
 export type CreateEntryResponse = z.infer<typeof CreateEntryResponseSchema>;
 
-const PreferredCurrencyPurchasePriceSchema = z.object(MoneySchema.shape).openapi('PreferredCurrencyPurchasePrice', {
+const PreferredCurrencyPurchasePriceSchema = z.object(MoneySchema.shape).meta({
+  $id: 'PreferredCurrencyPurchasePrice',
   description: "Entry purchase price converted into the signed-in user's resolved preferred currency.",
   example: { currency: 'EUR', value: 138.07 },
 });
 
 export const CreateEntryResponseSchema = PortfolioEntryResponseObjectSchema.extend({
   preferred_currency_purchase_price: PreferredCurrencyPurchasePriceSchema,
-}).openapi('CreateEntryResponse', {
+}).meta({
+  $id: 'CreateEntryResponse',
   title: 'Create Portfolio Entry Response',
   description: "Persisted portfolio entry enriched with the signed-in user's preferred-currency purchase price.",
   example: {
@@ -63,11 +65,12 @@ export type ResolvedEntryResponse = z.infer<typeof ResolvedEntryResponseSchema>;
 
 export const ResolvedEntryResponseSchema = PortfolioEntryResponseObjectSchema.extend({
   preferred_currency_purchase_price: PreferredCurrencyPurchasePriceSchema,
-  transaction_type: z.enum(RESOLVED_TRANSACTION_TYPE_ARRAY).openapi({
+  transaction_type: z.enum(RESOLVED_TRANSACTION_TYPE_ARRAY).meta({
     description: 'Resolved transaction type returned by portfolio list and overview responses',
     example: 'buy',
   }),
-}).openapi('ResolvedEntryResponse', {
+}).meta({
+  $id: 'ResolvedEntryResponse',
   title: 'Resolved Portfolio Entry Response',
   description:
     'Portfolio entry returned by portfolio list and overview responses after split transactions are resolved into buy and sell pairs.',
@@ -94,7 +97,8 @@ export const ResolvedEntryResponseSchema = PortfolioEntryResponseObjectSchema.ex
 
 export type ListEntriesResponse = z.infer<typeof ListEntriesResponseSchema>;
 
-export const ListEntriesResponseSchema = z.array(ResolvedEntryResponseSchema).openapi('ListEntriesResponse', {
+export const ListEntriesResponseSchema = z.array(ResolvedEntryResponseSchema).meta({
+  $id: 'ListEntriesResponse',
   title: 'List Portfolio Entries Response',
   description:
     'Response containing portfolio entries for the signed-in user after any stored split transactions are resolved into buy and sell entries.',
@@ -123,7 +127,8 @@ export const ListEntriesResponseSchema = z.array(ResolvedEntryResponseSchema).op
 
 export type BulkCreateEntriesResponse = z.infer<typeof BulkCreateEntriesResponseSchema>;
 
-export const BulkCreateEntriesResponseSchema = z.array(CreateEntryResponseSchema).openapi('BulkCreateEntriesResponse', {
+export const BulkCreateEntriesResponseSchema = z.array(CreateEntryResponseSchema).meta({
+  $id: 'BulkCreateEntriesResponse',
   title: 'Bulk Create Portfolio Entries Response',
   description: 'Response containing the portfolio entries created by a bulk create request',
   example: [
@@ -151,7 +156,8 @@ export const BulkCreateEntriesResponseSchema = z.array(CreateEntryResponseSchema
 
 export type CurrentValue = z.infer<typeof CurrentValueSchema>;
 
-export const CurrentValueSchema = MoneySchema.openapi('CurrentValue', {
+export const CurrentValueSchema = MoneySchema.meta({
+  $id: 'CurrentValue',
   title: 'Current Portfolio Value',
   description:
     "Current stock price in the signed-in user's preferred currency when conversion is required, or the native quote currency when no conversion is needed.",
@@ -160,17 +166,15 @@ export const CurrentValueSchema = MoneySchema.openapi('CurrentValue', {
 
 const PortfolioHoldingProfitLossSchema = z
   .object({
-    amount: MoneySchema.openapi({
-      description: 'Total unrealized profit or loss for the holding.',
-      example: { currency: 'EUR', value: 469.8 },
-    }),
-    percentage: z.number().nullable().openapi({
+    amount: MoneySchema,
+    percentage: z.number().nullable().meta({
       description: 'Profit or loss as a percentage of the holding cost basis, or null when cost basis is zero.',
       example: 33.9,
     }),
   })
   .nullable()
-  .openapi('PortfolioHoldingProfitLoss', {
+  .meta({
+    $id: 'PortfolioHoldingProfitLoss',
     title: 'Portfolio Holding Profit Loss',
     description: 'Unrealized profit or loss for an aggregated portfolio holding.',
     example: {
@@ -179,7 +183,8 @@ const PortfolioHoldingProfitLossSchema = z
     },
   });
 
-export const PortfolioHoldingAssetSchema = CreateEntryPayloadSchema.shape.stock.openapi('PortfolioHoldingAsset', {
+export const PortfolioHoldingAssetSchema = CreateEntryPayloadSchema.shape.stock.meta({
+  $id: 'PortfolioHoldingAsset',
   title: 'Portfolio Holding Asset',
   description: 'Asset metadata for an aggregated portfolio holding.',
   example: {
@@ -197,30 +202,21 @@ export type PortfolioHolding = z.infer<typeof PortfolioHoldingSchema>;
 
 export const PortfolioHoldingSchema = z
   .object({
-    asset_type: z.enum(ASSET_TYPE_ARRAY).openapi({
+    asset_type: z.enum(ASSET_TYPE_ARRAY).meta({
       description: 'Type of asset represented by the holding.',
       example: ASSET_TYPES.EQUITY,
     }),
     asset: PortfolioHoldingAssetSchema,
-    amount: z.number().openapi({
+    amount: z.number().meta({
       description: 'Net amount held for the asset.',
       example: 10,
     }),
-    unit_value: CurrentValueSchema.openapi({
-      description:
-        "Current per-share value in the signed-in user's preferred currency when configured, otherwise quote currency.",
-      example: { currency: 'EUR', value: 185.45 },
-    }),
-    total_value: MoneySchema.openapi({
-      description: 'Total holding value calculated as amount times unit value.',
-      example: { currency: 'EUR', value: 1854.5 },
-    }),
-    profit_loss: PortfolioHoldingProfitLossSchema.openapi({
-      description:
-        'Unrealized profit or loss calculated from the holding cost basis and current total value, or null when cost basis currency conversion is unavailable.',
-    }),
+    unit_value: CurrentValueSchema,
+    total_value: MoneySchema,
+    profit_loss: PortfolioHoldingProfitLossSchema,
   })
-  .openapi('PortfolioHolding', {
+  .meta({
+    $id: 'PortfolioHolding',
     title: 'Portfolio Holding',
     description: 'Aggregated portfolio holding for a single asset.',
     example: {
@@ -246,20 +242,21 @@ export const PortfolioHoldingSchema = z
 
 export const PortfolioOverviewPreflightResponseSchema = z
   .object({
-    refresh_state: z.enum(['ready', 'refreshing']).openapi({
+    refresh_state: z.enum(['ready', 'refreshing']).meta({
       description: 'Whether daily prices are ready for a full holdings fetch.',
       example: 'refreshing',
     }),
-    poll_after_ms: z.number().int().min(1).nullable().openapi({
+    poll_after_ms: z.number().int().min(1).nullable().meta({
       description: 'Recommended client polling interval when refresh_state is refreshing.',
       example: 1500,
     }),
-    latest_cached_price_date: z.string().nullable().openapi({
+    latest_cached_price_date: z.string().nullable().meta({
       description: 'Latest cached price date available across the active holdings ticker set.',
       example: '2026-05-17',
     }),
   })
-  .openapi('PortfolioOverviewPreflightResponse', {
+  .meta({
+    $id: 'PortfolioOverviewPreflightResponse',
     title: 'Portfolio Overview Preflight Response',
     description: 'Readiness state for fetching a fresh portfolio overview.',
     example: {
@@ -276,22 +273,20 @@ export type PortfolioOverviewResponse = z.infer<typeof PortfolioOverviewResponse
 export const PortfolioOverviewResponseSchema = z
   .object({
     transactions: ListEntriesResponseSchema,
-    current_values: z.record(z.string().min(1), CurrentValueSchema).openapi({
+    current_values: z.record(z.string().min(1), CurrentValueSchema).meta({
       description: 'Current stock values keyed by the transaction stock symbol.',
       example: {
         AAPL: { currency: 'EUR', value: 185.45 },
         MSFT: { currency: 'EUR', value: 420.5 },
       },
     }),
-    holdings: z.array(PortfolioHoldingSchema).openapi({
+    holdings: z.array(PortfolioHoldingSchema).meta({
       description: 'Aggregated holdings for the signed-in user default portfolio.',
     }),
-    net_worth: MoneySchema.openapi({
-      description: 'Sum of total holding values.',
-      example: { currency: 'EUR', value: 1854.5 },
-    }),
+    net_worth: MoneySchema,
   })
-  .openapi('PortfolioOverviewResponse', {
+  .meta({
+    $id: 'PortfolioOverviewResponse',
     title: 'Portfolio Overview Response',
     description:
       'Portfolio transactions, current stock values, aggregated holdings, and net worth for the signed-in user default portfolio.',
@@ -347,57 +342,60 @@ export const PortfolioOverviewResponseSchema = z
 
 const PortfolioGrowthPointSchema = z
   .object({
-    date: z.string().openapi({
+    date: z.string().meta({
       description: 'Snapshot date for this portfolio value point.',
       example: '2025-12-20',
     }),
-    value: z.number().openapi({
+    value: z.number().meta({
       description: "Total portfolio value in the signed-in user's preferred currency.",
       example: 1854.5,
     }),
-    is_current: z.boolean().openapi({
+    is_current: z.boolean().meta({
       description: 'Whether this point represents the current portfolio value.',
       example: false,
     }),
   })
-  .openapi('PortfolioGrowthPoint', {
+  .meta({
+    $id: 'PortfolioGrowthPoint',
     title: 'Portfolio Growth Point',
     description: 'Sparse portfolio total value snapshot for charting growth over time.',
   });
 
 const PortfolioGrowthOverTimeSchema = z
   .object({
-    currency: CurrencyShape.openapi({
-      description: "Currency used for all portfolio growth values, resolved from the signed-in user's preference.",
-      example: 'USD',
-    }),
-    points: z.array(PortfolioGrowthPointSchema).openapi({
+    currency: CurrencyShape,
+    points: z.array(PortfolioGrowthPointSchema).meta({
       description: 'Sparse growth points at transaction dates plus the current value point when entries exist.',
     }),
   })
-  .openapi('PortfolioGrowthOverTime', {
+  .meta({
+    $id: 'PortfolioGrowthOverTime',
     title: 'Portfolio Growth Over Time',
-    description: 'Portfolio total value over sparse transaction-date snapshots.',
+    description:
+      'Portfolio total value over sparse transaction-date snapshots. All values use the currency resolved from the ' +
+      "signed-in user's preference.",
   });
 
 const PortfolioHoldingDistributionAssetSchema = z
   .object({
-    symbol: z.string().openapi({
+    symbol: z.string().meta({
       description: 'Ticker symbol for the holding.',
       example: 'AAPL',
     }),
-    name: z.string().openapi({
+    name: z.string().meta({
       description: 'Display name for the holding.',
       example: 'Apple Inc.',
     }),
   })
-  .openapi('PortfolioHoldingDistributionAsset', {
+  .meta({
+    $id: 'PortfolioHoldingDistributionAsset',
     title: 'Portfolio Holding Distribution Asset',
     description: 'Minimal asset identity used to label a holdings distribution chart slice.',
     example: { symbol: 'AAPL', name: 'Apple Inc.' },
   });
 
-const PortfolioHoldingDistributionMarketValueSchema = MoneySchema.openapi('PortfolioHoldingDistributionMarketValue', {
+const PortfolioHoldingDistributionMarketValueSchema = MoneySchema.meta({
+  $id: 'PortfolioHoldingDistributionMarketValue',
   title: 'Portfolio Holding Distribution Market Value',
   description: "Current total value of a holding in the signed-in user's preferred currency.",
   example: { currency: 'USD', value: 1854.5 },
@@ -408,7 +406,8 @@ const PortfolioHoldingDistributionItemSchema = z
     asset: PortfolioHoldingDistributionAssetSchema,
     market_value: PortfolioHoldingDistributionMarketValueSchema,
   })
-  .openapi('PortfolioHoldingDistributionItem', {
+  .meta({
+    $id: 'PortfolioHoldingDistributionItem',
     title: 'Portfolio Holding Distribution Item',
     description: "A single holding's current value, used to render portfolio distribution charts.",
     example: {
@@ -421,17 +420,17 @@ export type PortfolioHoldingDistributionItem = z.infer<typeof PortfolioHoldingDi
 
 const PortfolioHoldingsDistributionSchema = z
   .object({
-    currency: CurrencyShape.openapi({
-      description: "Currency used for all holding values, resolved from the signed-in user's preference.",
-      example: 'USD',
-    }),
-    holdings: z.array(PortfolioHoldingDistributionItemSchema).openapi({
+    currency: CurrencyShape,
+    holdings: z.array(PortfolioHoldingDistributionItemSchema).meta({
       description: 'Current holdings ordered by descending value, used to render portfolio distribution charts.',
     }),
   })
-  .openapi('PortfolioHoldingsDistribution', {
+  .meta({
+    $id: 'PortfolioHoldingsDistribution',
     title: 'Portfolio Holdings Distribution',
-    description: "Current distribution of the signed-in user's default portfolio holdings by value.",
+    description:
+      "Current distribution of the signed-in user's default portfolio holdings by value. All values use the " +
+      "currency resolved from the signed-in user's preference.",
     example: {
       currency: 'USD',
       holdings: [
@@ -448,7 +447,8 @@ export const PortfolioDashboardsResponseSchema = z
     portfolio_growth_over_time: PortfolioGrowthOverTimeSchema,
     portfolio_holdings_distribution: PortfolioHoldingsDistributionSchema,
   })
-  .openapi('PortfolioDashboardsResponse', {
+  .meta({
+    $id: 'PortfolioDashboardsResponse',
     title: 'Portfolio Dashboards Response',
     description: 'Dashboard data for the signed-in user default portfolio.',
     example: {

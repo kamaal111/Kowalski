@@ -3,12 +3,12 @@ import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
 import { describe, expect } from 'vitest';
 
-import { AUTH_ROUTE_NAME } from '..';
-import { SessionResponseSchema } from '@/auth/schemas/responses';
-import { APP_API_BASE_PATH } from '@/constants/common';
-import { integrationTest } from '@/tests/fixtures';
-import { createTestUserAndSession } from '@/tests/utils';
-import * as schema from '@/db/schema';
+import { AUTH_ROUTE_NAME } from '../index.ts';
+import { SessionResponseSchema } from '../index.ts';
+import { APP_API_BASE_PATH } from '../../constants/common.ts';
+import { integrationTest } from '../../tests/fixtures.ts';
+import { createTestUserAndSession } from '../../tests/utils.ts';
+import * as schema from '../../db/schema/index.ts';
 
 const SESSION_PATH = `${APP_API_BASE_PATH}${AUTH_ROUTE_NAME}/session` as const;
 const PREFERENCES_PATH = `${APP_API_BASE_PATH}${AUTH_ROUTE_NAME}/preferences` as const;

@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, vi } from 'vitest';
 import { z } from 'zod';
 
-import { integrationTest } from '@/tests/fixtures';
-import { exchangeRates } from '@/db/schema/forex';
-import { FOREX_COLLECT_ROUTE_PATH } from '../handlers/collect';
-import { BASE_CURRENCY } from '../constants';
-import { getCurrentCollectionDay } from '../services/collect';
+import { integrationTest } from '../../tests/fixtures.ts';
+import { exchangeRates } from '../../db/schema/forex.ts';
+import { FOREX_COLLECT_ROUTE_PATH } from '../handlers/collect.ts';
+import { BASE_CURRENCY } from '../constants.ts';
+import { getCurrentCollectionDay } from '../services/collect.ts';
 
 const HOME_URL = 'https://www.ecb.europa.eu/home/html/rss.en.html';
 const SUCCESS_URL = 'https://www.ecb.europa.eu/stats/rss/fxref/eurofxref-usd.xml';

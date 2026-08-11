@@ -1,7 +1,7 @@
+import type { StandardSchemaV1 } from '@standard-schema/spec';
 import { HTTPException } from 'hono/http-exception';
-import type * as z from 'zod';
-import type { HonoContext } from './contexts';
-import { STATUS_CODES, type StatusCode } from '../constants/http';
+import type { HonoContext } from './contexts.ts';
+import { STATUS_CODES, type StatusCode } from '../constants/http.ts';
 
 type ExceptionContext = Pick<HonoContext, 'get'>;
 
@@ -39,8 +39,10 @@ export class InvalidPayload extends APIException {
 }
 
 export class InvalidValidation extends InvalidPayload {
-  constructor(c: ExceptionContext, validationError: z.ZodError) {
-    super(c, { context: { validations: validationError.issues } });
+  declare readonly context: { validations: readonly StandardSchemaV1.Issue[] };
+
+  constructor(c: ExceptionContext, issues: readonly StandardSchemaV1.Issue[]) {
+    super(c, { context: { validations: issues } });
   }
 }
 

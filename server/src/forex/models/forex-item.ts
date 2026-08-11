@@ -1,5 +1,5 @@
-import ForexItemExchangeRate from './forex-item-exchange-rate';
-import type { ForexItemECPResponse } from '../schemas/collect';
+import ForexItemExchangeRate from './forex-item-exchange-rate.ts';
+import type { ForexItemECPResponse } from '../schemas/collect.ts';
 
 class ForexItem {
   readonly rate: ForexItemExchangeRate;

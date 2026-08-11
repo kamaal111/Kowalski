@@ -10,9 +10,9 @@ This repository has two separate pnpm-managed dependency surfaces:
   - Tooling includes `oxlint`, `oxfmt`, `prettier`, `typescript`, `husky`, and `lint-staged`
 - Server package:
   - `server/package.json`
-  - `server/pnpm-lock.yaml`
-  - Runtime libraries include `hono`, `@hono/*`, `better-auth`, `drizzle-orm`, `pino`, `zod`, and `yahoo-finance2`
-  - Build and test tooling includes `tsx`, `typescript`, `vitest`, `drizzle-kit`, and `tsc-alias`
+  - `pnpm-lock.yaml` (the workspace root owns every version; `server/package.json` mirrors them as `workspace:*`)
+  - Runtime libraries include `hono`, `@hono/*`, `@kamaalio/hono-standard-openapi`, `@kamaalio/kamaal-auth-*`, `better-auth`, `drizzle-orm`, `pino`, `zod`, and `yahoo-finance2`
+  - Build and test tooling includes `typescript`, `vitest`, and `drizzle-kit`; Node runs the TypeScript sources directly, so there is no bundler or compile step
 
 Useful commands:
 

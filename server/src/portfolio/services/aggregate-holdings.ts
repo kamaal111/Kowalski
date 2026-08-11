@@ -1,6 +1,6 @@
-import { RESOLVED_TRANSACTION_TYPES } from '@/constants/common';
-import { assertToFloat } from '@/utils/numbers';
-import type { ResolvedPortfolioEntry } from './resolve-splits';
+import { RESOLVED_TRANSACTION_TYPES } from '../../constants/common.ts';
+import { assertToFloat } from '../../utils/numbers.ts';
+import type { ResolvedPortfolioEntry } from './resolve-splits.ts';
 
 export interface AggregatedHolding {
   entry: ResolvedPortfolioEntry;

@@ -6,9 +6,10 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { Pool, Client } from 'pg';
 import { z } from 'zod';
 
-import type { Database } from '../db';
-import { createAuth } from '../auth';
-import * as schema from '@/db/schema';
+import type { Database } from '../db/index.ts';
+import { createAuth } from '../auth/index.ts';
+import * as schema from '../db/schema/index.ts';
+import { appRelations } from '../db/schema/index.ts';
 
 const BASE_DATABASE_URL = process.env.DATABASE_URL;
 
@@ -29,7 +30,7 @@ export const createTestDatabase = async (): Promise<{
 
   const testDbUrl = BASE_DATABASE_URL.replace(/\/[^/]+$/, `/${dbName}`);
   const pool = new Pool({ connectionString: testDbUrl });
-  const testDb = drizzle(pool, { schema });
+  const testDb = drizzle<typeof appRelations>({ client: pool, relations: appRelations });
 
   await migrate(testDb, { migrationsFolder: './drizzle' });
 

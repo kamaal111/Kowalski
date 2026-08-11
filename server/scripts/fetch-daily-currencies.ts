@@ -1,11 +1,9 @@
-import '@hono/zod-openapi';
-
-import db from '../src/db';
+import db from '../src/db/index.ts';
 import {
   collectLatestExchangeRates,
   getCurrentCollectionDay,
   getLatestCollectedAt,
-} from '../src/forex/services/collect';
+} from '../src/forex/services/collect.ts';
 
 async function main() {
   const targetCollectionDay = getCurrentCollectionDay();

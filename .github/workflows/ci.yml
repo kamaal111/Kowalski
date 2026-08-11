@@ -8,7 +8,7 @@ on:
 
 env:
   PNPM_VERSION: 11.11.0
-  XCODE_APP_NAME: Xcode_26.3.app
+  XCODE_APP_NAME: Xcode_26.6.app
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref }}

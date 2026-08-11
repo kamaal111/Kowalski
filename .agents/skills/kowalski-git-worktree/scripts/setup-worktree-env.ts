@@ -1,4 +1,4 @@
-#!/usr/bin/env tsx
+#!/usr/bin/env node
 
 import { createHash, randomBytes } from 'node:crypto';
 import { promises as fs } from 'node:fs';

@@ -1,19 +1,18 @@
-import type { TypedResponse } from 'hono';
+import type { BulkCreateEntriesRouteResponse } from '../routes/bulk-create-entries.ts';
 
-import { STATUS_CODES } from '@/constants/http';
-import { logError, logInfo } from '@/logging';
-import { withRequestLogger } from '@/logging/http';
-import type { HonoContext } from '@/api/contexts';
-import { mapPortfolioEntryToResponse } from '../mappers/entry-response';
-import { addPreferredCurrencyPurchasePrices } from '../services/preferred-currency-purchase-price';
-import bulkCreatePortfolioEntries from '../services/bulk-create-entries';
-import { PreferredCurrencyPurchasePriceResolutionFailed } from '../exceptions';
-import type { BulkCreateEntriesPayload } from '../schemas/payloads';
-import type { BulkCreateEntriesResponse } from '../schemas/responses';
+import { STATUS_CODES } from '../../constants/http.ts';
+import { logError, logInfo } from '../../logging/index.ts';
+import { withRequestLogger } from '../../logging/http.ts';
+import type { HonoContext } from '../../api/contexts.ts';
+import { mapPortfolioEntryToResponse } from '../mappers/entry-response.ts';
+import { addPreferredCurrencyPurchasePrices } from '../services/preferred-currency-purchase-price.ts';
+import bulkCreatePortfolioEntries from '../services/bulk-create-entries.ts';
+import { PreferredCurrencyPurchasePriceResolutionFailed } from '../exceptions.ts';
+import type { BulkCreateEntriesPayload } from '../schemas/payloads.ts';
 
 async function bulkCreateEntries(
   c: HonoContext<string, { out: { json: BulkCreateEntriesPayload } }>,
-): Promise<TypedResponse<BulkCreateEntriesResponse, typeof STATUS_CODES.CREATED>> {
+): Promise<BulkCreateEntriesRouteResponse> {
   const payload = c.req.valid('json');
   const { createdEntries, skippedCount } = await bulkCreatePortfolioEntries(c, payload);
   const preferredCurrencyPurchasePrices = await addPreferredCurrencyPurchasePrices(

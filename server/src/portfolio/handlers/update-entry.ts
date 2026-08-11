@@ -1,20 +1,19 @@
-import type { TypedResponse } from 'hono';
+import type { UpdateEntryRouteResponse } from '../routes/update-entry.ts';
 
-import { STATUS_CODES } from '@/constants/http';
-import { createSyntheticTickerId } from '@/utils/tickers';
-import updatePortfolioEntry from '../services/update-entry';
-import { addPreferredCurrencyPurchasePrices } from '../services/preferred-currency-purchase-price';
-import { logInfo } from '@/logging';
-import { withRequestLogger } from '@/logging/http';
-import type { HonoContext } from '@/api/contexts';
-import type { CreateEntryPayload } from '../schemas/payloads';
-import type { PortfolioEntryPathParams } from '../schemas/params';
-import { mapPortfolioEntryToResponse } from '../mappers/entry-response';
-import type { CreateEntryResponse } from '../schemas/responses';
+import { STATUS_CODES } from '../../constants/http.ts';
+import { createSyntheticTickerId } from '../../utils/tickers.ts';
+import updatePortfolioEntry from '../services/update-entry.ts';
+import { addPreferredCurrencyPurchasePrices } from '../services/preferred-currency-purchase-price.ts';
+import { logInfo } from '../../logging/index.ts';
+import { withRequestLogger } from '../../logging/http.ts';
+import type { HonoContext } from '../../api/contexts.ts';
+import type { CreateEntryPayload } from '../schemas/payloads.ts';
+import type { PortfolioEntryPathParams } from '../schemas/params.ts';
+import { mapPortfolioEntryToResponse } from '../mappers/entry-response.ts';
 
 async function updateEntry(
   c: HonoContext<string, { out: { json: CreateEntryPayload; param: PortfolioEntryPathParams } }>,
-): Promise<TypedResponse<CreateEntryResponse, typeof STATUS_CODES.OK>> {
+): Promise<UpdateEntryRouteResponse> {
   const params = c.req.valid('param');
   const payload = c.req.valid('json');
   const updatedEntry = await updatePortfolioEntry(c, params.entryId, payload);

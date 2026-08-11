@@ -1,11 +1,11 @@
 import type { QuoteResponseArray } from 'yahoo-finance2/modules/quote';
 import z from 'zod';
 
-import type { HonoContext } from '@/api/contexts';
-import { CurrencyShape, type Currency } from '@/forex/constants';
-import { logError, logWarn } from '@/logging';
-import { withRequestLogger } from '@/logging/http';
-import yahooFinance from '@/utils/yahoo-finance';
+import type { HonoContext } from '../../api/contexts.ts';
+import { CurrencyShape, type Currency } from '../../forex/constants.ts';
+import { logError, logWarn } from '../../logging/index.ts';
+import { withRequestLogger } from '../../logging/http.ts';
+import yahooFinance from '../../utils/yahoo-finance.ts';
 
 const YahooQuoteSchema = z
   .object({

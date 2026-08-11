@@ -14,6 +14,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/Kamaalio/KamaalSwift", .upToNextMajor(from: "3.5.0")),
         .package(url: "https://github.com/kamaal111/ForexKit", .upToNextMajor(from: "5.0.0")),
+        .package(url: "https://github.com/Kamaalio/kamaal-auth", .upToNextMinor(from: "0.0.9")),
         .package(path: "../KowalskiClient"),
         .package(path: "../KowalskiDesignSystem"),
         .package(path: "../KowalskiModels"),
@@ -38,6 +39,7 @@ let package = Package(
                 .product(name: "KamaalLogger", package: "KamaalSwift"),
                 .product(name: "KamaalUI", package: "KamaalSwift"),
                 .product(name: "KamaalUtils", package: "KamaalSwift"),
+                .product(name: "KamaalAuth", package: "kamaal-auth"),
                 "KowalskiClient",
                 "KowalskiDesignSystem",
                 "KowalskiFeaturesConfig",
@@ -98,6 +100,8 @@ let package = Package(
                 "KowalskiClient",
                 "ForexKit",
                 "KowalskiModels",
+                .product(name: "KamaalAuth", package: "kamaal-auth"),
+                .product(name: "KamaalAuthTestSupport", package: "kamaal-auth"),
             ],
             swiftSettings: [
                 .treatAllWarnings(as: .error),

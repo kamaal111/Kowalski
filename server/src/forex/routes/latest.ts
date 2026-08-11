@@ -1,10 +1,10 @@
-import { createRoute } from '@hono/zod-openapi';
+import { createRoute, type RouteConfigToTypedResponse } from '@kamaalio/hono-standard-openapi';
 
-import { OPENAPI_TAG } from '../constants';
-import { ForexLatestQuerySchema, ForexLatestResponseSchema } from '../schemas/latest';
-import { STATUS_CODES } from '@/constants/http';
-import { MIME_TYPES } from '@/constants/request';
-import { ErrorResponseSchema } from '@/schemas/errors';
+import { OPENAPI_TAG } from '../constants.ts';
+import { ForexLatestQuerySchema, ForexLatestResponseSchema } from '../schemas/latest.ts';
+import { STATUS_CODES } from '../../constants/http.ts';
+import { MIME_TYPES } from '../../constants/request.ts';
+import { ErrorResponseSchema } from '../../schemas/errors.ts';
 
 const latestRoute = createRoute({
   method: 'get',
@@ -34,5 +34,7 @@ const latestRoute = createRoute({
     },
   },
 });
+
+export type LatestRouteResponse = RouteConfigToTypedResponse<typeof latestRoute>;
 
 export default latestRoute;

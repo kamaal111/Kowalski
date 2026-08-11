@@ -34,7 +34,7 @@ When a task matches one of these areas, load the skill and follow it instead of 
 - **ALWAYS use root `just` commands when they exist**
   - Prefer repo recipes over custom command sequences for build, test, quality, database, and OpenAPI workflows.
 - **NEVER start the server directly or as a background process**
-  - Do not use `node ... &`, `pnpm start &`, `tsx ... &`, or similar patterns.
+  - Do not use `node ... &`, `pnpm start &`, or similar patterns.
   - Only use `just dev-server` if the user explicitly asks you to start the server.
 - **NEVER manually edit `.xcstrings` files**
   - Update `NSLocalizedString` calls in Swift and let Xcode manage the localization catalogs.
@@ -44,7 +44,7 @@ When a task matches one of these areas, load the skill and follow it instead of 
 - Use `just lint` for linting changes.
 - Use `just format` or `just format-check` for formatting changes.
 - Use `just typecheck` for TypeScript type changes.
-- Use `just compile-server` for server compilation changes.
+- Use `just compile-server` to type-check the server; Node runs the TypeScript sources directly, so there is no build output.
 - Use `just test` for server or app behavior changes.
 - Use `swift build` in the affected package directory for Swift package changes.
 - Run `just test-ui` only when a human explicitly requests app UI test coverage.
@@ -83,7 +83,7 @@ BETTER_AUTH_URL=http://localhost:8082
   - Node.js `24+`
   - pnpm `10+`
   - Docker
-  - Xcode `16.3+`
+  - Xcode `26.6+`
   - `just`
 
 ## Documentation Endpoints

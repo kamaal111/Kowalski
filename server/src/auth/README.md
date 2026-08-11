@@ -19,7 +19,8 @@ Kowalski uses a **dual-token authentication system** powered by Better Auth:
 
 ### Protected Endpoint Access
 
-The authentication middleware (`getUserSession()`) attempts verification in this order:
+`requireSessionMiddleware` (from `module.ts`, supplied by `@kamaalio/kamaal-auth-hono`) resolves the session before
+the handler runs, and `getSessionWhereSessionIsRequired(c)` reads it back. Resolution is attempted in this order:
 
 1. **JWT Verification** (preferred):
    - Extracts JWT from `Authorization: Bearer <token>` header
@@ -34,7 +35,7 @@ The authentication middleware (`getUserSession()`) attempts verification in this
    - If successful → returns session
 
 3. **Rejection**:
-   - If both methods fail → returns 404
+   - If both methods fail → returns 401
 
 ## Client Implementation
 

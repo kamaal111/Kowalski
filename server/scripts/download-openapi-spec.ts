@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import * as z from 'zod';
 import { asserts } from '@kamaalio/kamaal';
 
-import { ensureSpecGenerationEnv } from '../src/api/spec-generation-env';
+import { ensureSpecGenerationEnv } from '../src/api/spec-generation-env.ts';
 
 const ArgsSchema = z.tuple([
   z
@@ -14,7 +14,7 @@ const ArgsSchema = z.tuple([
 
 async function downloadOpenAPISpec(outputFile: string) {
   ensureSpecGenerationEnv();
-  const { generateOpenAPISpecYaml } = await import('../src/app');
+  const { generateOpenAPISpecYaml } = await import('../src/app.ts');
 
   console.log('🔄 Generating OpenAPI spec from the server app...');
   const rawData = await generateOpenAPISpecYaml();

@@ -1,20 +1,20 @@
 import { arrays } from '@kamaalio/kamaal';
 
-import type { HonoContext } from '@/api/contexts';
-import { getSessionWhereSessionIsRequired } from '@/auth';
-import { ASSET_TYPES, RESOLVED_TRANSACTION_TYPES } from '@/constants/common';
-import { parseSyntheticTickerId } from '@/utils/tickers';
-import { assertToFloat } from '@/utils/numbers';
-import { InvalidTickerId, StockPriceFetchFailed } from '../exceptions';
-import type { PortfolioHolding } from '../schemas/responses';
-import { aggregateHoldings, type AggregatedHolding } from './aggregate-holdings';
+import type { HonoContext } from '../../api/contexts.ts';
+import { getSessionWhereSessionIsRequired } from '../../auth/index.ts';
+import { ASSET_TYPES, RESOLVED_TRANSACTION_TYPES } from '../../constants/common.ts';
+import { parseSyntheticTickerId } from '../../utils/tickers.ts';
+import { assertToFloat } from '../../utils/numbers.ts';
+import { InvalidTickerId, StockPriceFetchFailed } from '../exceptions.ts';
+import type { PortfolioHolding } from '../schemas/responses.ts';
+import { aggregateHoldings, type AggregatedHolding } from './aggregate-holdings.ts';
 import {
   addPreferredCurrencyPurchasePrices,
   type EntryWithPreferredCurrencyPurchasePrice,
-} from './preferred-currency-purchase-price';
-import { getCurrentStockValues } from './current-stock-values';
-import { findResolvedPortfolioEntriesByUserId } from './resolved-portfolio-entries';
-import type { ResolvedPortfolioEntry } from './resolve-splits';
+} from './preferred-currency-purchase-price.ts';
+import { getCurrentStockValues } from './current-stock-values.ts';
+import { findResolvedPortfolioEntriesByUserId } from './resolved-portfolio-entries.ts';
+import type { ResolvedPortfolioEntry } from './resolve-splits.ts';
 
 interface PortfolioOverviewResult {
   transactions: EntryWithPreferredCurrencyPurchasePrice<ResolvedPortfolioEntry>[];

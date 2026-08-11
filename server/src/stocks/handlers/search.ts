@@ -1,14 +1,14 @@
-import type { TypedResponse } from 'hono';
+import type { SearchRouteResponse } from '../routes/search.ts';
 
-import type { HonoContext } from '../../api/contexts';
-import type { StocksSearchQuery, StocksSearchResponse } from '../schemas/search';
-import { STATUS_CODES } from '../../constants/http';
-import { mapYahooFinanceSearchQuoteToEquitySearchResponse } from '../mappers/yahoo-finance';
-import { ONE_MINUTE_IN_MILLISECONDS } from '../../constants/common';
-import { withCache } from '../../middleware/cache';
-import { logInfo } from '@/logging';
-import { withRequestLogger } from '@/logging/http';
-import yahooFinance from '@/utils/yahoo-finance';
+import type { HonoContext } from '../../api/contexts.ts';
+import type { StocksSearchQuery } from '../schemas/search.ts';
+import { STATUS_CODES } from '../../constants/http.ts';
+import { mapYahooFinanceSearchQuoteToEquitySearchResponse } from '../mappers/yahoo-finance.ts';
+import { ONE_MINUTE_IN_MILLISECONDS } from '../../constants/common.ts';
+import { withCache } from '../../middleware/cache.ts';
+import { logInfo } from '../../logging/index.ts';
+import { withRequestLogger } from '../../logging/http.ts';
+import yahooFinance from '../../utils/yahoo-finance.ts';
 
 type SearchContext = HonoContext<string, { out: { query: StocksSearchQuery } }>;
 
@@ -26,11 +26,10 @@ async function searchHandlerImpl(c: SearchContext) {
   return c.json(response, STATUS_CODES.OK);
 }
 
-const searchHandler: (c: SearchContext) => Promise<TypedResponse<StocksSearchResponse, typeof STATUS_CODES.OK>> =
-  withCache(searchHandlerImpl, {
-    keyPrefix: 'stocks:search',
-    maxSize: 1000,
-    defaultTTL: 30 * ONE_MINUTE_IN_MILLISECONDS,
-  });
+const searchHandler: (c: SearchContext) => Promise<SearchRouteResponse> = withCache(searchHandlerImpl, {
+  keyPrefix: 'stocks:search',
+  maxSize: 1000,
+  defaultTTL: 30 * ONE_MINUTE_IN_MILLISECONDS,
+});
 
 export default searchHandler;

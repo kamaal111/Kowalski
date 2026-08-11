@@ -1,10 +1,10 @@
 import { describe, expect } from 'vitest';
 import type z from 'zod';
 
-import { AUTH_ROUTE_NAME } from '..';
-import { APP_API_BASE_PATH } from '@/constants/common';
-import { ValidationErrorResponseSchema } from '@/schemas/errors';
-import { integrationTest } from '@/tests/fixtures';
+import { AUTH_ROUTE_NAME } from '../index.ts';
+import { APP_API_BASE_PATH } from '../../constants/common.ts';
+import { ValidationErrorResponseSchema } from '../../schemas/errors.ts';
+import { integrationTest } from '../../tests/fixtures.ts';
 
 const SIGN_UP_PATH = `${APP_API_BASE_PATH}${AUTH_ROUTE_NAME}/sign-up/email`;
 

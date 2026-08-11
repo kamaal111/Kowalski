@@ -1,6 +1,7 @@
+import { defineRelationsPart } from 'drizzle-orm';
 import { date, numeric, pgTable, text, unique } from 'drizzle-orm/pg-core';
 
-import currency from '../helpers/currency';
+import currency from '../helpers/currency.ts';
 
 /**
  * Canonical stock metadata reused across portfolio transactions so we do not
@@ -51,3 +52,5 @@ export const stockInfo = pgTable(
   },
   t => [unique().on(t.tickerId, t.date), unique('entry').on(t.tickerId, t.date)],
 );
+
+export const stocksRelations = defineRelationsPart({ stockTicker, stockInfo });

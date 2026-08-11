@@ -1,3 +1,4 @@
+import { defineRelationsPart } from 'drizzle-orm';
 import { pgTable, text, timestamp, boolean } from 'drizzle-orm/pg-core';
 
 /**
@@ -127,4 +128,9 @@ export const jwks = pgTable('jwks', {
   privateKey: text('private_key').notNull(),
   // When the keypair was generated.
   createdAt: timestamp('created_at').notNull(),
+  expiresAt: timestamp('expires_at'),
+  alg: text('alg'),
+  crv: text('crv'),
 });
+
+export const authRelations = defineRelationsPart({ user, session, account, verification, jwks });

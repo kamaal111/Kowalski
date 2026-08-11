@@ -1,16 +1,17 @@
-import { z } from '@hono/zod-openapi';
+import * as z from 'zod';
 
-import { CurrencyShape } from '@/forex/constants';
+import { CurrencyShape } from '../../forex/constants.ts';
 
 export const MoneySchema = z
   .object({
     currency: CurrencyShape,
-    value: z.number().openapi({
+    value: z.number().meta({
       description: 'Monetary value',
       example: 150.5,
     }),
   })
-  .openapi('Money', {
+  .meta({
+    $id: 'Money',
     title: 'Money',
     description: 'Monetary value with currency',
     example: { currency: 'USD', value: 150.5 },

@@ -22,8 +22,9 @@ Use this skill for Kowalski's feature layout, helper names, logging entrypoints,
 
 ## Reuse Kowalski-Specific Server Helpers
 
-- Define route contracts with `@hono/zod-openapi`.
-- Type handlers with `HonoContext<..., { out: ... }>` so `c.req.valid(...)` stays strongly typed without casts.
+- Define route contracts with `createRoute` from `@kamaalio/hono-standard-openapi`, and build every router through `openAPIRouterFactory()` so the shared `defaultHook` governs validation errors.
+- Give a schema a component name with `.meta({ $id: 'Name', ... })`. A `$id` must be unique across the document, so reference a named schema directly rather than re-`.meta()`ing it with a field-local description.
+- Type handlers with `HonoContext<..., { out: ... }>` so `c.req.valid(...)` stays strongly typed without casts, and type the return with `RouteConfigToTypedResponse<typeof someRoute>` exported from the route module.
 - Reuse shared constants from `server/src/constants/` and shared schemas from `server/src/schemas/` when they fit.
 - Reuse auth and request-context helpers such as `getSessionWhereSessionIsRequired(...)`, `setRequestRoute(...)`, `setRequestUserId(...)`, `withRequestLogger(...)`, and `allowedModes(...)`.
 - Use the shared logging module in `server/src/logging/`, including helpers such as `getComponentLogger(...)`, `logInfo(...)`, `logWarn(...)`, and `logError(...)`.
@@ -55,7 +56,7 @@ Use this skill for Kowalski's feature layout, helper names, logging entrypoints,
 ## Verify In Kowalski's Workflow
 
 - Run the narrowest useful command while iterating:
-  - `just compile-server` for compile-level server changes
+  - `just compile-server` to type-check the server
   - `just typecheck` for type-driven changes
   - `just lint` or `just format-check` when relevant
   - `just test` for behavior changes

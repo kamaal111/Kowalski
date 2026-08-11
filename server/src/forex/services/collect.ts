@@ -2,13 +2,13 @@ import { load as cheerioLoad } from 'cheerio';
 import { desc, eq } from 'drizzle-orm';
 import { parseStringPromise } from 'xml2js';
 
-import type { Database } from '@/db';
-import { exchangeRates } from '@/db/schema/forex';
-import type { ServerLogger } from '@/logging';
-import { logWarn } from '@/logging';
-import { ExchangeRateRecord } from '../models/exchange-rate-record';
-import ForexItem from '../models/forex-item';
-import { ForexECPResponseSchema } from '../schemas/collect';
+import type { Database } from '../../db/index.ts';
+import { exchangeRates } from '../../db/schema/forex.ts';
+import type { ServerLogger } from '../../logging/index.ts';
+import { logWarn } from '../../logging/index.ts';
+import { ExchangeRateRecord } from '../models/exchange-rate-record.ts';
+import ForexItem from '../models/forex-item.ts';
+import { ForexECPResponseSchema } from '../schemas/collect.ts';
 
 const BASE_FOREX_URL = new URL('https://www.ecb.europa.eu');
 const HOME_URL = new URL('/home/html/rss.en.html', BASE_FOREX_URL);

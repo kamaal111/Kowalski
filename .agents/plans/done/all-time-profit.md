@@ -29,10 +29,11 @@ profitPercentage = (profit / netCostBasis) × 100   // nil when netCostBasis == 
 ```
 
 **Colour**
-| Condition | Colour |
-|---|---|
-| profit > 0 | `.green` |
-| profit < 0 | `.red` |
+
+| Condition   | Colour       |
+| ----------- | ------------ |
+| profit > 0  | `.green`     |
+| profit < 0  | `.red`       |
 | profit == 0 | `.secondary` |
 
 ---

@@ -1,10 +1,11 @@
+import { defineRelationsPart } from 'drizzle-orm';
 import { date, index, numeric, pgEnum, pgTable, text, unique } from 'drizzle-orm/pg-core';
 
-import { stockTicker } from './stocks';
-import { user } from './better-auth';
-import currency from '../helpers/currency';
-import auditFields from '../helpers/audit-fields';
-import { TRANSACTION_TYPE_ARRAY } from '@/constants/common';
+import { stockTicker } from './stocks.ts';
+import { user } from './better-auth.ts';
+import currency from '../helpers/currency.ts';
+import auditFields from '../helpers/audit-fields.ts';
+import { TRANSACTION_TYPE_ARRAY } from '../../constants/common.ts';
 
 export const transactionTypesEnum = pgEnum('transaction_types', TRANSACTION_TYPE_ARRAY);
 
@@ -62,3 +63,5 @@ export const portfolioTransaction = pgTable(
     index('portfolio_transaction_portfolio_id_transaction_date_idx').on(table.portfolioId, table.transactionDate),
   ],
 );
+
+export const portfolioRelations = defineRelationsPart({ portfolio, portfolioTransaction });

@@ -1,4 +1,4 @@
-import { integrationTest } from './fixtures';
+import { integrationTest } from './fixtures.ts';
 
 integrationTest('should handle 404', async ({ app, expect, getLogsForRequestId, withRequestId }) => {
   const { headers, requestId } = withRequestId();

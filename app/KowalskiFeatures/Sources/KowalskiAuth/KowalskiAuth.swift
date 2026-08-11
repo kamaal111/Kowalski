@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import KamaalAuth
 import KamaalLogger
 import KamaalUtils
 import KowalskiClient
@@ -14,51 +15,40 @@ import KowalskiModels
 import KowalskiUtils
 import Observation
 
+/// Owns Kowalski's own session state — the `preferred_currency` extension `KamaalAuth` knows nothing about.
+///
+/// `KamaalAuth` (from the shared `kamaal-auth` package) owns credentials, the refresh policy, and the shared
+/// sign-in/sign-up UI via `.kamaalAuth(auth.kamaalAuth)`. This wrapper observes it to know when a session became
+/// available, then loads Kowalski's richer session (with `preferred_currency`) over the same authorized client.
 @MainActor
 @Observable
 public final class KowalskiAuth {
-    package private(set) var session: UserSession?
+    public let kamaalAuth: KamaalAuth
 
-    private(set) var initiallyValidatingToken: Bool
+    package private(set) var session: UserSession?
 
     private let client: KowalskiClient
     private let mapper = KowalskiAuthMappers()
     private let logger = KamaalLogger(from: KowalskiAuth.self, failOnError: true)
+    @ObservationIgnored private var sessionStateTask: Task<Void, Never>?
 
     @UserDefaultsObject(key: "\(ModuleConfig.identifier).cachedSession")
     private static var cachedSession: CachedUserSession?
 
-    private init(client: KowalskiClient) {
+    private init(client: KowalskiClient, kamaalAuth: KamaalAuth, tracksSessionStates: Bool = true) {
         self.client = client
-        if client.hasValidCredentials {
-            initiallyValidatingToken = true
-            Task {
-                await loadSession()
-                initiallyValidatingToken = false
-            }
-        } else {
-            initiallyValidatingToken = false
+        self.kamaalAuth = kamaalAuth
+        if tracksSessionStates {
+            trackSessionStates()
         }
     }
 
-    private init(client: KowalskiClient, withCredentials: Bool) {
-        self.client = client
-        initiallyValidatingToken = false
-        if withCredentials {
-            let oneDay: TimeInterval = 86400
-            session = UserSession(
-                name: "Yami Sukehiro",
-                email: "yami@bull.io",
-                expiresAt: Date.now.addingTimeInterval(oneDay),
-                preferredCurrency: KowalskiFeatureDefaults.fallbackCurrency,
-                hasPreferredCurrencyPreference: true,
-            )
-        }
-        Task { await loadSession() }
+    var initiallyValidatingToken: Bool {
+        kamaalAuth.initiallyValidatingToken
     }
 
     package var isLoggedIn: Bool {
-        session != nil
+        kamaalAuth.isLoggedIn
     }
 
     /// The currency the app should use for new transaction defaults.
@@ -70,76 +60,12 @@ public final class KowalskiAuth {
         return preferredCurrency
     }
 
-    // MARK: - Sign Up
-
-    func signUp(_ payload: SignUpPayload) async -> Result<Void, KowalskiAuthFeatureSignUpError> {
-        let signUpResult = await client.auth.signUp(
-            name: payload.name,
-            email: payload.email,
-            password: payload.password,
-        )
-        .mapError { error -> KowalskiAuthFeatureSignUpError in
-            switch error {
-            case .unknown:
-                logger.error(label: "Failed to sign up", error: error)
-                return .generalFailure(context: error)
-            case let .badRequest(validations):
-                return .invalidCredentials(validations: validations, context: error)
-            case .conflict:
-                return .userAlreadyExists(context: error)
-            }
-        }
-        switch signUpResult {
-        case let .failure(failure): return .failure(failure)
-        case .success: break
-        }
-
-        return await loadSession()
-            .mapError { error -> KowalskiAuthFeatureSignUpError in
-                switch error {
-                case .serverUnavailable, .unauthorized:
-                    logger.error(label: "Failed to load session", error: error)
-                    return .generalFailure(context: error)
-                }
-            }
-    }
-
-    // MARK: - Sign In
-
-    func signIn(_ payload: SignInPayload) async -> Result<Void, KowalskiAuthFeatureSignInError> {
-        let signInResult = await client.auth.signIn(email: payload.email, password: payload.password)
-            .mapError { error -> KowalskiAuthFeatureSignInError in
-                switch error {
-                case .unknown:
-                    logger.error(label: "Failed to sign in", error: error)
-                    return .generalFailure(context: error)
-                case let .badRequest(validations):
-                    return .invalidCredentials(validations: validations, context: error)
-                case .unauthorized:
-                    return .invalidCredentials(validations: [], context: error)
-                }
-            }
-        switch signInResult {
-        case let .failure(failure): return .failure(failure)
-        case .success: break
-        }
-
-        return await loadSession()
-            .mapError { error -> KowalskiAuthFeatureSignInError in
-                switch error {
-                case .serverUnavailable, .unauthorized:
-                    logger.error(label: "Failed to load session", error: error)
-                    return .generalFailure(context: error)
-                }
-            }
-    }
-
     // MARK: - Preferences
 
     public func updatePreferredCurrency(
         _ currency: KowalskiCurrency,
     ) async -> Result<Void, KowalskiAuthPreferenceErrors> {
-        let result = await client.auth.updatePreferences(preferredCurrency: currency)
+        let result = await client.updatePreferences(preferredCurrency: currency)
         switch result {
         case let .failure(failure):
             logger.error(label: "Failed to update preferences", error: failure)
@@ -163,23 +89,51 @@ public final class KowalskiAuth {
 
     public static func `default`() -> KowalskiAuth {
         let client = KowalskiClient.default()
+        let kamaalAuth = KamaalAuth(
+            client: client.auth,
+            configuration: KamaalAuthConfiguration(appName: "Kowalski", storageNamespace: ModuleConfig.identifier),
+        )
 
-        return KowalskiAuth(client: client)
+        return KowalskiAuth(client: client, kamaalAuth: kamaalAuth)
     }
 
     public static func preview(withCredentials: Bool) -> KowalskiAuth {
         let client = KowalskiClient.preview(withCredentials: withCredentials)
-
-        return KowalskiAuth(client: client, withCredentials: withCredentials)
-    }
-
-    static func testing(client: KowalskiClient, session: UserSession? = nil) -> KowalskiAuth {
-        let auth = KowalskiAuth(client: client)
-        auth.session = session
-        auth.initiallyValidatingToken = false
+        let kamaalAuth = KamaalAuth(
+            client: client.auth,
+            configuration: KamaalAuthConfiguration(appName: "Kowalski", storageNamespace: ModuleConfig.identifier),
+        )
+        let auth = KowalskiAuth(client: client, kamaalAuth: kamaalAuth)
+        if withCredentials {
+            let oneDay: TimeInterval = 86400
+            auth.session = UserSession(
+                name: "Yami Sukehiro",
+                email: "yami@bull.io",
+                expiresAt: Date.now.addingTimeInterval(oneDay),
+                preferredCurrency: KowalskiFeatureDefaults.fallbackCurrency,
+                hasPreferredCurrencyPreference: true,
+            )
+        }
 
         return auth
     }
+
+    static func testing(
+        client: KowalskiClient, session: UserSession? = nil, tracksSessionStates: Bool = false,
+    ) -> KowalskiAuth {
+        let kamaalAuth = KamaalAuth(
+            client: client.auth,
+            configuration: KamaalAuthConfiguration(appName: "Kowalski", storageNamespace: ModuleConfig.identifier),
+        )
+        let auth = KowalskiAuth(
+            client: client, kamaalAuth: kamaalAuth, tracksSessionStates: tracksSessionStates,
+        )
+        auth.session = session
+
+        return auth
+    }
+
+    // MARK: - Session
 
     @discardableResult
     package func loadSession() async -> Result<Void, KowalskiAuthFeatureSessionError> {
@@ -189,7 +143,7 @@ public final class KowalskiAuth {
             return .success(())
         }
 
-        let result = await client.auth.session()
+        let result = await client.session()
             .map(mapper.mapSessionResponse)
             .mapError { error -> KowalskiAuthFeatureSessionError in
                 switch error {
@@ -212,7 +166,6 @@ public final class KowalskiAuth {
         return .success(())
     }
 
-    @MainActor
     private func setSession(_ session: UserSession) {
         self.session = session
     }
@@ -255,46 +208,37 @@ public final class KowalskiAuth {
 
         return KowalskiCurrency(rawValue: currencyCode)
     }
+
+    // MARK: - Authentication lifecycle
+
+    private func trackSessionStates() {
+        sessionStateTask = Task { @MainActor [weak self, kamaalAuth] in
+            for await state in kamaalAuth.sessionStates() {
+                guard let self else { return }
+
+                await handleSessionState(state)
+            }
+        }
+    }
+
+    private func handleSessionState(_ state: KamaalAuthSessionState) async {
+        switch state {
+        case .validatingCredentials:
+            break
+        case .unauthenticated:
+            session = nil
+            Self.cachedSession = nil
+        case .authenticated:
+            await loadSession()
+        }
+    }
+
+    deinit {
+        sessionStateTask?.cancel()
+    }
 }
 
 // MARK: - Errors
-
-enum KowalskiAuthFeatureSignInError: Error {
-    case invalidCredentials(validations: [KowalskiClientValidationIssue], context: Error)
-    case generalFailure(context: Error)
-
-    var errorDescription: String? {
-        switch self {
-        case let .invalidCredentials(validations, _):
-            validationErrorMessage(
-                validations,
-                fallback: NSLocalizedString("Invalid credentials provided.", bundle: .module, comment: ""),
-            )
-        case .generalFailure:
-            NSLocalizedString("Failed to log in.", bundle: .module, comment: "")
-        }
-    }
-}
-
-enum KowalskiAuthFeatureSignUpError: Error {
-    case invalidCredentials(validations: [KowalskiClientValidationIssue], context: Error)
-    case userAlreadyExists(context: Error)
-    case generalFailure(context: Error)
-
-    var errorDescription: String? {
-        switch self {
-        case let .invalidCredentials(validations, _):
-            validationErrorMessage(
-                validations,
-                fallback: NSLocalizedString("Invalid credentials provided.", bundle: .module, comment: ""),
-            )
-        case .userAlreadyExists:
-            NSLocalizedString("User already exists", bundle: .module, comment: "")
-        case .generalFailure:
-            NSLocalizedString("Failed to sign up.", bundle: .module, comment: "")
-        }
-    }
-}
 
 package enum KowalskiAuthFeatureSessionError: Error {
     case serverUnavailable(context: Error?)
@@ -304,11 +248,4 @@ package enum KowalskiAuthFeatureSessionError: Error {
 public enum KowalskiAuthPreferenceErrors: Error {
     case generalFailure(context: Error)
     case unsupportedCurrency
-}
-
-private func validationErrorMessage(_ validations: [KowalskiClientValidationIssue], fallback: String) -> String {
-    guard let firstValidation = validations.first else { return fallback }
-    guard let field = firstValidation.displayPath else { return fallback }
-
-    return "\(field): \(firstValidation.message)"
 }
