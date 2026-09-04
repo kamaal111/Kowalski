@@ -1,5 +1,5 @@
 import { defineRelationsPart } from 'drizzle-orm';
-import { pgTable, text, timestamp, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, boolean, uniqueIndex } from 'drizzle-orm/pg-core';
 
 /**
  * Better Auth's canonical user record.
@@ -58,38 +58,44 @@ export const session = pgTable('session', {
  * This stores credentials or provider identifiers for the enabled sign-in
  * methods. The app does not read it directly.
  */
-export const account = pgTable('account', {
-  // Primary identifier for the linked auth account row.
-  id: text('id').primaryKey(),
-  // Provider-side account identifier.
-  accountId: text('account_id').notNull(),
-  // Auth provider name, for example email/password or an OAuth provider.
-  providerId: text('provider_id').notNull(),
-  // App user that owns this linked account.
-  userId: text('user_id')
-    .notNull()
-    .references(() => user.id, { onDelete: 'cascade' }),
-  // Optional provider access token managed by Better Auth.
-  accessToken: text('access_token'),
-  // Optional provider refresh token managed by Better Auth.
-  refreshToken: text('refresh_token'),
-  // Optional provider id token for OpenID-based flows.
-  idToken: text('id_token'),
-  // When the provider access token expires, if applicable.
-  accessTokenExpiresAt: timestamp('access_token_expires_at'),
-  // When the provider refresh token expires, if applicable.
-  refreshTokenExpiresAt: timestamp('refresh_token_expires_at'),
-  // Provider-granted scopes associated with the account.
-  scope: text('scope'),
-  // Password hash for email/password auth when managed by Better Auth.
-  password: text('password'),
-  // When the linked account row was created.
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  // Last time Better Auth updated the linked account row.
-  updatedAt: timestamp('updated_at')
-    .$onUpdate(() => /* @__PURE__ */ new Date())
-    .notNull(),
-});
+export const account = pgTable(
+  'account',
+  {
+    // Primary identifier for the linked auth account row.
+    id: text('id').primaryKey(),
+    // Provider-side account identifier.
+    accountId: text('account_id').notNull(),
+    // Auth provider name, for example email/password or an OAuth provider.
+    providerId: text('provider_id').notNull(),
+    // Identity namespace paired with the provider account identifier.
+    issuer: text('issuer').notNull(),
+    // App user that owns this linked account.
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    // Optional provider access token managed by Better Auth.
+    accessToken: text('access_token'),
+    // Optional provider refresh token managed by Better Auth.
+    refreshToken: text('refresh_token'),
+    // Optional provider id token for OpenID-based flows.
+    idToken: text('id_token'),
+    // When the provider access token expires, if applicable.
+    accessTokenExpiresAt: timestamp('access_token_expires_at'),
+    // When the provider refresh token expires, if applicable.
+    refreshTokenExpiresAt: timestamp('refresh_token_expires_at'),
+    // Provider-granted scopes associated with the account.
+    scope: text('scope'),
+    // Password hash for email/password auth when managed by Better Auth.
+    password: text('password'),
+    // When the linked account row was created.
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    // Last time Better Auth updated the linked account row.
+    updatedAt: timestamp('updated_at')
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  table => [uniqueIndex('account_issuer_account_id_unique').on(table.issuer, table.accountId)],
+);
 
 /**
  * Better Auth verification records for short-lived auth flows such as email
