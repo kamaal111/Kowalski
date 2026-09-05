@@ -112,11 +112,17 @@ function describeError(error: Error) {
 }
 
 function formatValidationPathSegment(segment: PropertyKey | StandardSchemaV1.PathSegment) {
-  if (typeof segment === 'object') {
+  if (isPathSegmentObject(segment)) {
     return String(segment.key);
   }
 
   return String(segment);
+}
+
+function isPathSegmentObject(
+  segment: PropertyKey | StandardSchemaV1.PathSegment,
+): segment is StandardSchemaV1.PathSegment {
+  return typeof segment === 'object';
 }
 
 function roundDurationMs(durationMs: number) {

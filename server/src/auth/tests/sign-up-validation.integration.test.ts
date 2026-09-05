@@ -5,6 +5,7 @@ import { AUTH_ROUTE_NAME } from '../index.ts';
 import { APP_API_BASE_PATH } from '../../constants/common.ts';
 import { ValidationErrorResponseSchema } from '../../schemas/errors.ts';
 import { integrationTest } from '../../tests/fixtures.ts';
+import type { JsonValue } from '../../tests/json.ts';
 
 const SIGN_UP_PATH = `${APP_API_BASE_PATH}${AUTH_ROUTE_NAME}/sign-up/email`;
 
@@ -80,7 +81,7 @@ function createValidSignUpPayload() {
   };
 }
 
-async function sendSignUpRequest(app: AppRequestClient, payload: unknown, headers?: Headers) {
+async function sendSignUpRequest(app: AppRequestClient, payload: JsonValue, headers?: Headers) {
   return app.request(SIGN_UP_PATH, {
     method: 'POST',
     headers:

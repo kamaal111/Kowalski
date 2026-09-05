@@ -5,6 +5,7 @@ import type { HonoContext } from '../api/contexts.ts';
 import type { ServerMode } from '../api/env.ts';
 import env from '../api/env.ts';
 import { childLogger, createRequestLogger, type LogBindings, type ServerLogger } from './index.ts';
+import { isString } from '../utils/type-guards.ts';
 
 export function initializeRequestLogger(c: HonoContext, mode: ServerMode) {
   const logger = createRequestLogger({
@@ -33,20 +34,19 @@ export function getRouteForLog(c: HonoContext) {
   return getMatchedRoutePath(c);
 }
 
-function getLoggerBindings(logger: ServerLogger): Record<string, unknown> {
-  const bindings = logger.bindings();
-  return bindings != null && typeof bindings === 'object' ? bindings : {};
+function getLoggerBindings(logger: ServerLogger): LogBindings {
+  return logger.bindings();
 }
 
 function bindAuthenticatedUserIdFromContext(c: HonoContext, logger: ServerLogger) {
   const existingUserId = getLoggerBindings(logger).user_id;
-  if (typeof existingUserId === 'string' && existingUserId.length > 0) {
+  if (isString(existingUserId) && existingUserId.length > 0) {
     return logger;
   }
 
   const session = c.get(AUTH_SESSION_CONTEXT_KEY);
   const userId = session?.user.id;
-  if (typeof userId !== 'string' || userId.length === 0) {
+  if (userId == null || userId.length === 0) {
     return logger;
   }
 

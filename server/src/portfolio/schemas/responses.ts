@@ -1,17 +1,18 @@
 import * as z from 'zod';
 
 import { ASSET_TYPE_ARRAY, ASSET_TYPES, RESOLVED_TRANSACTION_TYPE_ARRAY } from '../../constants/common.ts';
-import { ApiCommonDatetimeShape } from '../../schemas/common.ts';
+import { ApiCommonDatetimeSchema } from '../../schemas/common.ts';
 import { CreateEntryPayloadSchema } from './payloads.ts';
 import { MoneySchema } from './common.ts';
-import { CurrencyShape } from '../../forex/constants.ts';
+import { CurrencySchema } from '../../forex/constants.ts';
+import { fieldsOf } from '../../utils/zod.ts';
 
 const AuditFieldsSchema = z.object({
-  created_at: ApiCommonDatetimeShape.meta({
+  created_at: ApiCommonDatetimeSchema.meta({
     description: 'Timestamp when the entry was created',
     example: '2025-12-20T12:00:00.000Z',
   }),
-  updated_at: ApiCommonDatetimeShape.meta({
+  updated_at: ApiCommonDatetimeSchema.meta({
     description: 'Timestamp when the entry was last updated',
     example: '2025-12-20T12:00:00.000Z',
   }),
@@ -22,13 +23,13 @@ const PortfolioEntryResponseObjectSchema = z.object({
     description: 'Unique identifier for the portfolio entry',
     example: '550e8400-e29b-41d4-a716-446655440000',
   }),
-  ...CreateEntryPayloadSchema.shape,
-  ...AuditFieldsSchema.shape,
+  ...fieldsOf(CreateEntryPayloadSchema),
+  ...fieldsOf(AuditFieldsSchema),
 });
 
 export type CreateEntryResponse = z.infer<typeof CreateEntryResponseSchema>;
 
-const PreferredCurrencyPurchasePriceSchema = z.object(MoneySchema.shape).meta({
+const PreferredCurrencyPurchasePriceSchema = z.object(fieldsOf(MoneySchema)).meta({
   $id: 'PreferredCurrencyPurchasePrice',
   description: "Entry purchase price converted into the signed-in user's resolved preferred currency.",
   example: { currency: 'EUR', value: 138.07 },
@@ -183,7 +184,7 @@ const PortfolioHoldingProfitLossSchema = z
     },
   });
 
-export const PortfolioHoldingAssetSchema = CreateEntryPayloadSchema.shape.stock.meta({
+export const PortfolioHoldingAssetSchema = fieldsOf(CreateEntryPayloadSchema).stock.meta({
   $id: 'PortfolioHoldingAsset',
   title: 'Portfolio Holding Asset',
   description: 'Asset metadata for an aggregated portfolio holding.',
@@ -363,7 +364,7 @@ const PortfolioGrowthPointSchema = z
 
 const PortfolioGrowthOverTimeSchema = z
   .object({
-    currency: CurrencyShape,
+    currency: CurrencySchema,
     points: z.array(PortfolioGrowthPointSchema).meta({
       description: 'Sparse growth points at transaction dates plus the current value point when entries exist.',
     }),
@@ -420,7 +421,7 @@ export type PortfolioHoldingDistributionItem = z.infer<typeof PortfolioHoldingDi
 
 const PortfolioHoldingsDistributionSchema = z
   .object({
-    currency: CurrencyShape,
+    currency: CurrencySchema,
     holdings: z.array(PortfolioHoldingDistributionItemSchema).meta({
       description: 'Current holdings ordered by descending value, used to render portfolio distribution charts.',
     }),

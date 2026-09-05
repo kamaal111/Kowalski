@@ -1,10 +1,10 @@
 import * as z from 'zod';
 
-import { CurrencyShape } from '../../forex/constants.ts';
+import { CurrencySchema } from '../../forex/constants.ts';
 
 export const MoneySchema = z
   .object({
-    currency: CurrencyShape,
+    currency: CurrencySchema,
     value: z.number().meta({
       description: 'Monetary value',
       example: 150.5,

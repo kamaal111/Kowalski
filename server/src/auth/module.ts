@@ -17,7 +17,7 @@ import { ONE_DAY_IN_SECONDS } from '../constants/common.ts';
 import { STATUS_CODES } from '../constants/http.ts';
 import { MIME_TYPES } from '../constants/request.ts';
 import { ErrorResponseSchema, ValidationErrorResponseSchema } from '../schemas/errors.ts';
-import { CurrencyShape, DEFAULT_PREFERRED_CURRENCY } from '../forex/constants.ts';
+import { CurrencySchema, DEFAULT_PREFERRED_CURRENCY } from '../forex/constants.ts';
 import { logInfo } from '../logging/index.ts';
 import { withRequestLogger } from '../logging/http.ts';
 import { JWKS_URL } from './better-auth.ts';
@@ -30,14 +30,16 @@ export const AUTH_BASE_PATH = `/app-api${ROUTE_NAME}`;
 
 const TRUSTED_ORIGINS = ['kowalski://'];
 
-const SessionExtrasSchema = z.object({
-  preferred_currency: CurrencyShape,
+const SessionExtrasSchemaObject = {
+  preferred_currency: CurrencySchema,
   has_preferred_currency_preference: z.boolean(),
-});
+};
+
+const SessionExtrasSchema = z.object(SessionExtrasSchemaObject);
 
 /** Parses at runtime what `authModule.schemas.SessionResponseSchema` only documents. */
 export const SessionResponseSchema = BaseSessionResponseSchema.extend({
-  user: BaseUserSchema.extend(SessionExtrasSchema.shape),
+  user: BaseUserSchema.extend(SessionExtrasSchemaObject),
 });
 
 export type SessionResponse = z.infer<typeof SessionResponseSchema>;

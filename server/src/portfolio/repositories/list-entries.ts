@@ -2,7 +2,7 @@ import { desc, eq } from 'drizzle-orm';
 
 import type { HonoContext } from '../../api/contexts.ts';
 import { exchangeRates, portfolio, portfolioTransaction, stockTicker } from '../../db/schema/index.ts';
-import { CurrencyShape, type Currency } from '../../forex/constants.ts';
+import { CurrencySchema, type Currency } from '../../forex/constants.ts';
 import { getSessionWhereSessionIsRequired } from '../../auth/index.ts';
 
 type PortfolioTransactionSelect = typeof portfolioTransaction.$inferSelect;
@@ -60,7 +60,7 @@ export async function findPortfolioEntriesByUserId(c: HonoContext): Promise<Pers
 
   return entries.map(entry => ({
     ...entry,
-    purchasePriceCurrency: CurrencyShape.parse(entry.purchasePriceCurrency),
+    purchasePriceCurrency: CurrencySchema.parse(entry.purchasePriceCurrency),
   }));
 }
 
@@ -82,9 +82,9 @@ export async function findLatestExchangeRateSnapshotByBase(
 
   return {
     date: latestRate.date,
-    base: CurrencyShape.parse(latestRate.base),
+    base: CurrencySchema.parse(latestRate.base),
     rates: Object.fromEntries(
-      Object.entries(latestRate.rates).map(([currency, value]) => [CurrencyShape.parse(currency), value]),
+      Object.entries(latestRate.rates).map(([currency, value]) => [CurrencySchema.parse(currency), value]),
     ),
   };
 }

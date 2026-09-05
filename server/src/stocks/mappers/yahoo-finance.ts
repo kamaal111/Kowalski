@@ -4,6 +4,8 @@ import z from 'zod';
 import type { SearchResult } from 'yahoo-finance2/modules/search';
 import { arrays } from '@kamaalio/kamaal';
 
+import { isString } from '../../utils/type-guards.ts';
+
 import {
   StocksSearchResponseSchema,
   type StocksSearchQuoteItemResponse,
@@ -12,10 +14,12 @@ import {
 
 type YahooSearchType = SearchResult['quotes'][number];
 
-type SupportedEquityType = typeof SUPPORTED_EQUITY_TYPES extends Set<infer T> ? T : never;
+const SUPPORTED_EQUITY_TYPE_VALUES = ['EQUITY', 'CURRENCY', 'CRYPTOCURRENCY'] as const;
 
-const SUPPORTED_EQUITY_TYPES = new Set(['EQUITY', 'CURRENCY', 'CRYPTOCURRENCY'] as const);
-const SearchQuoteIsinShape = z
+type SupportedEquityType = (typeof SUPPORTED_EQUITY_TYPE_VALUES)[number];
+
+const SUPPORTED_EQUITY_TYPES: ReadonlySet<string> = new Set(SUPPORTED_EQUITY_TYPE_VALUES);
+const SearchQuoteIsinSchema = z
   .string()
   .trim()
   .transform(value => (value === '' ? null : value));
@@ -45,7 +49,7 @@ function mapYahooFinanceQuoteToResponseQuote(quote: YahooSearchType): StocksSear
 }
 
 function getQuoteIsin(quote: YahooSearchType): string | null {
-  const result = SearchQuoteIsinShape.safeParse(quote.isin);
+  const result = SearchQuoteIsinSchema.safeParse(quote.isin);
   if (!result.success) {
     return null;
   }
@@ -57,11 +61,11 @@ function getQuoteName(quote: YahooSearchType): string | null {
   if (!quote.longname && !quote.shortname) return null;
 
   const name = quote.longname ?? quote.shortname;
-  assert(typeof name === 'string');
+  assert(isString(name));
 
   return name;
 }
 
 function isSupportedEquityType(quoteType: string): quoteType is SupportedEquityType {
-  return SUPPORTED_EQUITY_TYPES.has(quoteType as SupportedEquityType);
+  return SUPPORTED_EQUITY_TYPES.has(quoteType);
 }

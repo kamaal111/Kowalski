@@ -1,1 +1,1 @@
-export type GetRecordValues<T extends Record<string, unknown>> = T[keyof T];
+export type GetRecordValues<T extends object> = T[keyof T];

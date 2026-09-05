@@ -5,7 +5,7 @@ import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 
 import type { HonoContext } from '../../api/contexts.ts';
 import { portfolio, portfolioTransaction, stockTicker } from '../../db/schema/index.ts';
-import { CurrencyShape, type Currency } from '../../forex/constants.ts';
+import { CurrencySchema, type Currency } from '../../forex/constants.ts';
 import { DefaultPortfolioCreateFailed, PortfolioEntryCreateFailed, StockTickerCreateFailed } from '../exceptions.ts';
 import { getSessionWhereSessionIsRequired } from '../../auth/index.ts';
 
@@ -55,7 +55,7 @@ function mapCreatedPortfolioTransaction<TTransaction extends { purchasePriceCurr
 ): TTransaction & { purchasePriceCurrency: Currency } {
   return {
     ...transaction,
-    purchasePriceCurrency: CurrencyShape.parse(transaction.purchasePriceCurrency),
+    purchasePriceCurrency: CurrencySchema.parse(transaction.purchasePriceCurrency),
   };
 }
 

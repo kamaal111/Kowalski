@@ -65,7 +65,7 @@ export class LRUCache<K = unknown, V = unknown> {
 
     this.db.prepare('UPDATE cache SET lastAccessed = ? WHERE key = ?').run(now, keyStr);
 
-    return JSON.parse(row.value) as V;
+    return JSON.parse(row.value);
   }
 
   set(key: K, value: V, ttl?: number): void {

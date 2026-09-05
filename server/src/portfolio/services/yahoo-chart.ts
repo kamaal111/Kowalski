@@ -2,11 +2,11 @@ import type { ChartResultArray } from 'yahoo-finance2/modules/chart';
 import z from 'zod';
 
 import type { HonoContext } from '../../api/contexts.ts';
-import { CurrencyShape, type Currency } from '../../forex/constants.ts';
+import { CurrencySchema, type Currency } from '../../forex/constants.ts';
 import { logError, logWarn } from '../../logging/index.ts';
 import { withRequestLogger } from '../../logging/http.ts';
-import yahooFinance from '../../utils/yahoo-finance.ts';
-import { DATE_SHAPE } from '../constants.ts';
+import { yahooFinanceClient } from '../../utils/yahoo-finance.ts';
+import { DATE_FORMAT } from '../constants.ts';
 
 const YahooChartQuoteSchema = z
   .object({
@@ -19,7 +19,7 @@ const YahooChartSchema = z
   .object({
     meta: z
       .object({
-        currency: CurrencyShape,
+        currency: CurrencySchema,
       })
       .loose(),
     quotes: z.array(YahooChartQuoteSchema),
@@ -46,7 +46,7 @@ export async function fetchYahooChartPrices(
 ): Promise<YahooChartPrice[]> {
   let chartResult: ChartResultArray;
   try {
-    chartResult = await yahooFinance.chart(symbol, {
+    chartResult = await yahooFinanceClient.chart(symbol, {
       period1,
       period2,
       interval: '1d',
@@ -83,7 +83,7 @@ export async function fetchYahooChartPrices(
 
   return parsedChart.data.quotes.map(quote => ({
     currency: parsedChart.data.meta.currency,
-    date: quote.date.toISOString().slice(0, DATE_SHAPE.length),
+    date: quote.date.toISOString().slice(0, DATE_FORMAT.length),
     price: quote.close,
   }));
 }

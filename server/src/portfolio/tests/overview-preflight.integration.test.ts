@@ -5,7 +5,8 @@ import { PortfolioOverviewPreflightResponseSchema } from '../schemas/responses.t
 import { seedPortfolioEntry, seedStockInfo } from './helpers.ts';
 import { APP_API_BASE_PATH } from '../../constants/common.ts';
 import { integrationTest } from '../../tests/fixtures.ts';
-import { yahooFinanceQuoteMock } from '../../tests/mocks/yahoo-finance.ts';
+import { buildQuoteEquity, yahooFinanceQuoteMock } from '../../tests/mocks/yahoo-finance.ts';
+import type { QuoteResponseArray } from 'yahoo-finance2/modules/quote';
 import { createTestUserAndSession } from '../../tests/utils.ts';
 import { createSyntheticTickerId } from '../../utils/tickers.ts';
 
@@ -92,7 +93,7 @@ describe('Portfolio Overview Preflight Route', () => {
   integrationTest(
     'starts only one refresh for concurrent preflight requests for the same user and day',
     async ({ app, db, sessionToken, userId }) => {
-      let resolveQuotes: (value: { symbol: string; regularMarketPrice: number; currency: string }[]) => void = () => {
+      let resolveQuotes: (value: QuoteResponseArray) => void = () => {
         throw new Error('Yahoo quote promise was not initialized');
       };
       yahooFinanceQuoteMock.mockImplementation(
@@ -118,7 +119,7 @@ describe('Portfolio Overview Preflight Route', () => {
 
       expect(bodies.map(body => body.refresh_state)).toEqual(['refreshing', 'refreshing']);
       await vi.waitFor(() => expect(yahooFinanceQuoteMock).toHaveBeenCalledOnce());
-      resolveQuotes([{ symbol: 'AAPL', regularMarketPrice: 190, currency: 'USD' }]);
+      resolveQuotes([buildQuoteEquity({ symbol: 'AAPL', regularMarketPrice: 190, currency: 'USD' })]);
       await vi.waitFor(async () => {
         const readyResponse = await sendOverviewPreflightRequest(app, { sessionToken });
         const readyBody = await expectSuccessfulOverviewPreflightResponse(readyResponse);

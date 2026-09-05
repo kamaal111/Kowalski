@@ -91,9 +91,6 @@ function filterRates({
 
   return Array.from(requestedSymbols).reduce<Record<string, number>>((filteredRates, symbol) => {
     const rate = rates[symbol];
-    if (typeof rate !== 'number') {
-      return filteredRates;
-    }
 
     return { ...filteredRates, [symbol]: rate };
   }, {});

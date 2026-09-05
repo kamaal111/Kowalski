@@ -34,6 +34,8 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@kamaal111/oxlint-plugin-anti-slop": "^0.0.3",
+    "@oxlint/plugins": "^1.81.0",
     "@standard-schema/spec": "^1.1.0",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.4.1",

@@ -24,7 +24,7 @@ import { getCurrentStockValues } from './current-stock-values.ts';
 import { findResolvedPortfolioEntriesByUserId } from './resolved-portfolio-entries.ts';
 import type { ResolvedPortfolioEntry } from './resolve-splits.ts';
 import { fetchYahooChartPrices } from './yahoo-chart.ts';
-import { DATE_SHAPE, MAX_PORTFOLIO_DASHBOARD_GROWTH_POINTS } from '../constants.ts';
+import { DATE_FORMAT, MAX_PORTFOLIO_DASHBOARD_GROWTH_POINTS } from '../constants.ts';
 
 const YAHOO_CHART_LOOKBACK_DAYS = 10;
 const YAHOO_CHART_LOOKAHEAD_DAYS = 5;
@@ -95,7 +95,7 @@ async function getPortfolioDashboards(
     };
   }
 
-  const currentDate = new Date().toISOString().slice(0, DATE_SHAPE.length);
+  const currentDate = new Date().toISOString().slice(0, DATE_FORMAT.length);
   const periodStartDate = getPeriodStartDate(options.period, currentDate);
   const snapshotDates = downsampleSnapshotDates(
     getSnapshotDatesForPeriod(entries, periodStartDate),
@@ -565,14 +565,14 @@ function shiftDateByDays(date: string, days: number) {
   const shiftedDate = new Date(`${date}T00:00:00.000Z`);
   shiftedDate.setUTCDate(shiftedDate.getUTCDate() + days);
 
-  return shiftedDate.toISOString().slice(0, DATE_SHAPE.length);
+  return shiftedDate.toISOString().slice(0, DATE_FORMAT.length);
 }
 
 function shiftDateByCalendarParts(date: string, shift: CalendarDateShift) {
   const shiftedDate = new Date(`${date}T00:00:00.000Z`);
 
   function formatShiftedDate() {
-    return shiftedDate.toISOString().slice(0, DATE_SHAPE.length);
+    return shiftedDate.toISOString().slice(0, DATE_FORMAT.length);
   }
 
   function shiftMonthAndYear(args: { months: number; years: number }) {

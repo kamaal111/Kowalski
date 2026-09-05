@@ -1,130 +1,194 @@
 import { vi, type Mock } from 'vitest';
+import type { ChartMeta, ChartMetaTradingPeriod, ChartResultArrayQuote } from 'yahoo-finance2/modules/chart';
+import type { QuoteEquity } from 'yahoo-finance2/modules/quote';
+import type { SearchQuoteYahooEquity, SearchResult } from 'yahoo-finance2/modules/search';
 
-const SEARCH_QUOTES = [
-  {
-    symbol: 'AAPL',
-    shortname: 'Apple Inc.',
-    longname: 'Apple Inc.',
-    exchange: 'NMS',
-    isin: 'US0378331005',
-    quoteType: 'EQUITY',
-    isYahooFinance: true,
-  },
-  {
-    symbol: 'MSFT',
-    shortname: 'Microsoft Corporation',
-    longname: 'Microsoft Corporation',
-    exchange: 'NMS',
-    quoteType: 'EQUITY',
-    isYahooFinance: true,
-  },
+import type { YahooFinanceClient } from '../../utils/yahoo-finance.ts';
+
+interface EquityQuoteFixture {
+  symbol: string;
+  shortname: string;
+  longname: string;
+  isin?: string;
+}
+
+const SEARCH_QUOTE_FIXTURES: EquityQuoteFixture[] = [
+  { symbol: 'AAPL', shortname: 'Apple Inc.', longname: 'Apple Inc.', isin: 'US0378331005' },
+  { symbol: 'MSFT', shortname: 'Microsoft Corporation', longname: 'Microsoft Corporation' },
 ];
 
-const DEFAULT_QUOTES_BY_SYMBOL: Record<string, { symbol: string; regularMarketPrice: number; currency: string }> = {
-  AAPL: {
-    symbol: 'AAPL',
-    regularMarketPrice: 150,
-    currency: 'USD',
-  },
-  MSFT: {
-    symbol: 'MSFT',
-    regularMarketPrice: 420.5,
-    currency: 'USD',
-  },
-};
+const DEFAULT_QUOTES_BY_SYMBOL = new Map<string, { symbol: string; regularMarketPrice: number; currency: string }>([
+  ['AAPL', { symbol: 'AAPL', regularMarketPrice: 150, currency: 'USD' }],
+  ['MSFT', { symbol: 'MSFT', regularMarketPrice: 420.5, currency: 'USD' }],
+]);
 
-const DEFAULT_CHART_QUOTES_BY_SYMBOL: Record<string, { date: Date; close: number }[]> = {
-  AAPL: [
-    { date: new Date('2025-12-18T00:00:00.000Z'), close: 140 },
-    { date: new Date('2025-12-19T00:00:00.000Z'), close: 150 },
-    { date: new Date('2025-12-22T00:00:00.000Z'), close: 160 },
+const DEFAULT_CHART_QUOTES_BY_SYMBOL = new Map<string, { date: Date; close: number }[]>([
+  [
+    'AAPL',
+    [
+      { date: new Date('2025-12-18T00:00:00.000Z'), close: 140 },
+      { date: new Date('2025-12-19T00:00:00.000Z'), close: 150 },
+      { date: new Date('2025-12-22T00:00:00.000Z'), close: 160 },
+    ],
   ],
-  MSFT: [
-    { date: new Date('2025-12-18T00:00:00.000Z'), close: 410 },
-    { date: new Date('2025-12-19T00:00:00.000Z'), close: 420 },
-    { date: new Date('2025-12-22T00:00:00.000Z'), close: 430 },
+  [
+    'MSFT',
+    [
+      { date: new Date('2025-12-18T00:00:00.000Z'), close: 410 },
+      { date: new Date('2025-12-19T00:00:00.000Z'), close: 420 },
+      { date: new Date('2025-12-22T00:00:00.000Z'), close: 430 },
+    ],
   ],
-};
+]);
 
-interface SearchResponse {
-  quotes: typeof SEARCH_QUOTES;
-}
-
-type QuoteResponse =
-  | {
-      symbol: string;
-      regularMarketPrice: number;
-      currency: string;
-    }
-  | {
-      symbol: string;
-      regularMarketPrice: number;
-      currency: string;
-    }[]
-  | null;
-
-interface ChartResponse {
-  meta: {
-    currency: string;
+function buildSearchQuote(fixture: EquityQuoteFixture): SearchQuoteYahooEquity {
+  return {
+    symbol: fixture.symbol,
+    isYahooFinance: true,
+    exchange: 'NMS',
+    index: 'quotes',
+    score: 1,
+    quoteType: 'EQUITY',
+    typeDisp: 'Equity',
+    shortname: fixture.shortname,
+    longname: fixture.longname,
+    isin: fixture.isin,
   };
-  quotes: {
-    date: Date;
-    close: number;
-    high: number | null;
-    low: number | null;
-    open: number | null;
-    volume: number | null;
-  }[];
 }
 
-const yahooFinanceSearchMock: Mock<(query: string) => Promise<SearchResponse>> = vi.fn();
+function buildSearchResult(quotes: SearchQuoteYahooEquity[]): SearchResult {
+  return {
+    explains: [],
+    count: quotes.length,
+    quotes,
+    news: [],
+    nav: [],
+    lists: [],
+    researchReports: [],
+    totalTime: 0,
+    timeTakenForQuotes: 0,
+    timeTakenForNews: 0,
+    timeTakenForAlgowatchlist: 0,
+    timeTakenForPredefinedScreener: 0,
+    timeTakenForCrunchbase: 0,
+    timeTakenForNav: 0,
+    timeTakenForResearchReports: 0,
+    timeTakenForScreenerField: 0,
+    timeTakenForCulturalAssets: 0,
+    timeTakenForSearchLists: 0,
+  };
+}
 
-export const yahooFinanceQuoteMock: Mock<(symbols: string | string[]) => Promise<QuoteResponse>> = vi.fn();
-export const yahooFinanceChartMock: Mock<
-  (
-    symbol: string,
-    options: { period1: string; period2: string; interval: string; return: string },
-  ) => Promise<ChartResponse>
-> = vi.fn();
+export function buildQuoteEquity(fixture: {
+  symbol: string;
+  regularMarketPrice: number;
+  currency: string;
+}): QuoteEquity {
+  return {
+    language: 'en-US',
+    region: 'US',
+    quoteType: 'EQUITY',
+    triggerable: true,
+    marketState: 'REGULAR',
+    tradeable: false,
+    exchange: 'NMS',
+    exchangeTimezoneName: 'America/New_York',
+    exchangeTimezoneShortName: 'EST',
+    gmtOffSetMilliseconds: -18000000,
+    market: 'us_market',
+    esgPopulated: false,
+    sourceInterval: 15,
+    exchangeDataDelayedBy: 0,
+    fullExchangeName: 'NasdaqGS',
+    symbol: fixture.symbol,
+    currency: fixture.currency,
+    regularMarketPrice: fixture.regularMarketPrice,
+  };
+}
+
+function buildTradingPeriod(): ChartMetaTradingPeriod {
+  const start = new Date('2025-12-18T14:30:00.000Z');
+  const end = new Date('2025-12-18T21:00:00.000Z');
+
+  return { timezone: 'EST', start, end, gmtoffset: -18000 };
+}
+
+export function buildChartMeta(fixture: { symbol: string; currency: string }): ChartMeta {
+  const tradingPeriod = buildTradingPeriod();
+
+  return {
+    currency: fixture.currency,
+    symbol: fixture.symbol,
+    exchangeName: 'NMS',
+    instrumentType: 'EQUITY',
+    firstTradeDate: new Date('2000-01-01T00:00:00.000Z'),
+    regularMarketTime: new Date('2025-12-22T21:00:00.000Z'),
+    gmtoffset: -18000,
+    timezone: 'EST',
+    exchangeTimezoneName: 'America/New_York',
+    regularMarketPrice: 0,
+    priceHint: 2,
+    currentTradingPeriod: { pre: tradingPeriod, regular: tradingPeriod, post: tradingPeriod },
+    dataGranularity: '1d',
+    range: '',
+    validRanges: ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max'],
+  };
+}
+
+function toDateOnlyString(value: Date | string | number): string {
+  return new Date(value).toISOString().slice(0, 10);
+}
+
+function buildChartQuote(quote: { date: Date; close: number }): ChartResultArrayQuote {
+  return {
+    date: quote.date,
+    high: null,
+    low: null,
+    open: null,
+    close: quote.close,
+    volume: null,
+  };
+}
+
+const yahooFinanceSearchMock: Mock<YahooFinanceClient['search']> = vi.fn();
+
+export const yahooFinanceQuoteMock: Mock<YahooFinanceClient['quote']> = vi.fn();
+export const yahooFinanceChartMock: Mock<YahooFinanceClient['chart']> = vi.fn();
 
 export function resetYahooFinanceMocks() {
   yahooFinanceSearchMock.mockReset();
-  yahooFinanceSearchMock.mockImplementation(async (query: string) => ({
-    quotes: SEARCH_QUOTES.filter(quote => quote.symbol.includes(query)),
-  }));
+  yahooFinanceSearchMock.mockImplementation(async query => {
+    const quotes = SEARCH_QUOTE_FIXTURES.filter(fixture => fixture.symbol.includes(query)).map(buildSearchQuote);
 
-  yahooFinanceQuoteMock.mockReset();
-  yahooFinanceQuoteMock.mockImplementation(async (symbols: string | string[]) => {
-    const symbolList = Array.isArray(symbols) ? symbols : [symbols];
-    const quotes = symbolList.flatMap(symbol => {
-      const quote = DEFAULT_QUOTES_BY_SYMBOL[symbol];
-
-      return quote == null ? [] : [quote];
-    });
-
-    return Array.isArray(symbols) ? quotes : (quotes[0] ?? null);
+    return buildSearchResult(quotes);
   });
 
+  yahooFinanceQuoteMock.mockReset();
+  yahooFinanceQuoteMock.mockImplementation(async symbols =>
+    symbols.flatMap(symbol => {
+      const fixture = DEFAULT_QUOTES_BY_SYMBOL.get(symbol);
+
+      return fixture == null ? [] : [buildQuoteEquity(fixture)];
+    }),
+  );
+
   yahooFinanceChartMock.mockReset();
-  yahooFinanceChartMock.mockImplementation(async (symbol: string, options) => ({
-    meta: {
-      currency: 'USD',
-    },
-    quotes: (DEFAULT_CHART_QUOTES_BY_SYMBOL[symbol] ?? [])
-      .filter(quote => quote.date.toISOString().slice(0, 10) >= options.period1)
-      .filter(quote => quote.date.toISOString().slice(0, 10) < options.period2)
-      .map(quote => ({
-        date: quote.date,
-        close: quote.close,
-        high: null,
-        low: null,
-        open: null,
-        volume: null,
-      })),
-  }));
+  yahooFinanceChartMock.mockImplementation(async (symbol, options) => {
+    const period1 = toDateOnlyString(options.period1);
+    const period2 = options.period2 == null ? null : toDateOnlyString(options.period2);
+    const quotes = (DEFAULT_CHART_QUOTES_BY_SYMBOL.get(symbol) ?? [])
+      .filter(quote => quote.date.toISOString().slice(0, 10) >= period1)
+      .filter(quote => period2 == null || quote.date.toISOString().slice(0, 10) < period2)
+      .map(buildChartQuote);
+
+    return {
+      meta: buildChartMeta({ symbol, currency: 'USD' }),
+      quotes,
+    };
+  });
 }
 
-export default class YahooFinanceMock {
+export default class YahooFinanceMock implements YahooFinanceClient {
   search: typeof yahooFinanceSearchMock = yahooFinanceSearchMock;
   quote: typeof yahooFinanceQuoteMock = yahooFinanceQuoteMock;
   chart: typeof yahooFinanceChartMock = yahooFinanceChartMock;
