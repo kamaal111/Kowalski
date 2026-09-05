@@ -6,6 +6,7 @@ import { exchangeRates } from '../../db/schema/forex.ts';
 import { FOREX_COLLECT_ROUTE_PATH } from '../handlers/collect.ts';
 import { BASE_CURRENCY } from '../constants.ts';
 import { getCurrentCollectionDay } from '../services/collect.ts';
+import { isNumber, isString } from '../../utils/type-guards.ts';
 
 const HOME_URL = 'https://www.ecb.europa.eu/home/html/rss.en.html';
 const SUCCESS_URL = 'https://www.ecb.europa.eu/stats/rss/fxref/eurofxref-usd.xml';
@@ -35,7 +36,7 @@ describe('Forex collect logging', () => {
     'logs fetch failures and persisted rows during collection',
     async ({ app, getLogsForRequestId, withRequestId }) => {
       const fetchMock = vi.fn((input: string | URL | Request) => {
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+        const url = isString(input) ? input : input instanceof URL ? input.toString() : input.url;
 
         if (url === HOME_URL) {
           return new Response(
@@ -100,7 +101,7 @@ describe('Forex collect logging', () => {
         ]),
       );
       expect(fetchFailedLog?.source_url).toBe(FAILURE_URL);
-      expect(typeof persistedLog?.stored_count).toBe('number');
+      expect(isNumber(persistedLog?.stored_count)).toBe(true);
       expect(getStoredCount(persistedLog)).toBeGreaterThan(0);
     },
   );
@@ -164,5 +165,5 @@ describe('Forex collect logging', () => {
 });
 
 function getStoredCount(log: { stored_count?: unknown } | undefined) {
-  return typeof log?.stored_count === 'number' ? log.stored_count : 0;
+  return isNumber(log?.stored_count) ? log.stored_count : 0;
 }

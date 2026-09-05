@@ -161,30 +161,31 @@ async function readEnvFile(filePath: string): Promise<EnvConfig> {
 }
 
 function parseEnv(contents: string): EnvConfig {
-  const env: EnvConfig = {};
-  for (const rawLine of contents.split('\n')) {
+  return contents.split('\n').reduce<EnvConfig>((env, rawLine) => {
     const line = rawLine.trim();
     if (line.length === 0 || line.startsWith('#')) {
-      continue;
+      return env;
     }
 
     const separatorIndex = line.indexOf('=');
     if (separatorIndex === -1) {
-      continue;
+      return env;
     }
 
     const key = line.slice(0, separatorIndex).trim();
-    const value = line.slice(separatorIndex + 1).trim();
-    if (key.length > 0) {
-      env[key] = value;
+    if (key.length === 0) {
+      return env;
     }
-  }
 
-  return env;
+    const value = line.slice(separatorIndex + 1).trim();
+    env[key] = value;
+
+    return env;
+  }, {});
 }
 
-function isMissingFileError(error: unknown): boolean {
-  return error instanceof Error && 'code' in error && error.code === 'ENOENT';
+function isMissingFileError(cause: unknown): boolean {
+  return cause instanceof Error && 'code' in cause && cause.code === 'ENOENT';
 }
 
 function deriveSuffix(repoRoot: string, hash: string): string {

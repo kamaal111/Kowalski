@@ -1,6 +1,6 @@
 import z from 'zod';
 
-function SingleArrayItemOptionalShape<ItemShape extends z.ZodType>(item: ItemShape) {
+function SingleArrayItemOptionalSchema<Item extends z.ZodType>(item: Item) {
   return z.array(item).min(1).nullish();
 }
 
@@ -9,17 +9,17 @@ export type ForexItemExchangeRateECBResponse = z.infer<typeof ForexItemExchangeR
 const XMLTextNodeSchema = z.union([z.string(), z.object({ _: z.string() })]);
 
 export const ForexItemExchangeRateECBResponseSchema = z.object({
-  'cb:value': SingleArrayItemOptionalShape(XMLTextNodeSchema),
-  'cb:baseCurrency': SingleArrayItemOptionalShape(XMLTextNodeSchema),
-  'cb:targetCurrency': SingleArrayItemOptionalShape(XMLTextNodeSchema),
+  'cb:value': SingleArrayItemOptionalSchema(XMLTextNodeSchema),
+  'cb:baseCurrency': SingleArrayItemOptionalSchema(XMLTextNodeSchema),
+  'cb:targetCurrency': SingleArrayItemOptionalSchema(XMLTextNodeSchema),
 });
 
 export type ForexItemECPResponse = z.infer<typeof ForexItemECPResponseSchema>;
 
 const ForexItemECPResponseSchema = z.object({
-  'dc:date': SingleArrayItemOptionalShape(z.string()),
-  'cb:statistics': SingleArrayItemOptionalShape(
-    z.object({ 'cb:exchangeRate': SingleArrayItemOptionalShape(ForexItemExchangeRateECBResponseSchema) }),
+  'dc:date': SingleArrayItemOptionalSchema(z.string()),
+  'cb:statistics': SingleArrayItemOptionalSchema(
+    z.object({ 'cb:exchangeRate': SingleArrayItemOptionalSchema(ForexItemExchangeRateECBResponseSchema) }),
   ),
 });
 

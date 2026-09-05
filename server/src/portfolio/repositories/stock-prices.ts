@@ -2,7 +2,7 @@ import { and, asc, desc, eq, gte, inArray, lte } from 'drizzle-orm';
 
 import type { HonoContext } from '../../api/contexts.ts';
 import { stockInfo } from '../../db/schema/index.ts';
-import { CurrencyShape, type Currency } from '../../forex/constants.ts';
+import { CurrencySchema, type Currency } from '../../forex/constants.ts';
 import { assertToFloat } from '../../utils/numbers.ts';
 
 export interface PersistedStockPrice {
@@ -178,7 +178,7 @@ function mapStockPriceRow(row: {
 }): PersistedStockPrice {
   return {
     tickerId: row.tickerId,
-    currency: CurrencyShape.parse(row.currency),
+    currency: CurrencySchema.parse(row.currency),
     date: row.date,
     close: assertToFloat(row.close),
   };

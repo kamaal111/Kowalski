@@ -1,12 +1,12 @@
 import * as z from 'zod';
 
-import { CurrencyShape } from '../../forex/constants.ts';
+import { CurrencySchema } from '../../forex/constants.ts';
 
 export type UpdatePreferencesPayload = z.infer<typeof UpdatePreferencesPayloadSchema>;
 
 export const UpdatePreferencesPayloadSchema = z
   .object({
-    preferred_currency: CurrencyShape,
+    preferred_currency: CurrencySchema,
   })
   .meta({
     $id: 'UpdatePreferencesPayload',

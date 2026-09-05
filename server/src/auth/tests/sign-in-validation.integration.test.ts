@@ -5,6 +5,7 @@ import { AUTH_ROUTE_NAME } from '../index.ts';
 import { APP_API_BASE_PATH } from '../../constants/common.ts';
 import { ValidationErrorResponseSchema } from '../../schemas/errors.ts';
 import { integrationTest } from '../../tests/fixtures.ts';
+import type { JsonValue } from '../../tests/json.ts';
 
 const SIGN_IN_PATH = `${APP_API_BASE_PATH}${AUTH_ROUTE_NAME}/sign-in/email`;
 
@@ -38,7 +39,7 @@ describe('Sign-in validation integration', () => {
   });
 });
 
-async function sendSignInRequest(app: AppRequestClient, payload: unknown) {
+async function sendSignInRequest(app: AppRequestClient, payload: JsonValue) {
   return app.request(SIGN_IN_PATH, {
     method: 'POST',
     headers: new Headers({

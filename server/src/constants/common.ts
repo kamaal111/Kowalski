@@ -9,27 +9,27 @@ export const REQUEST_ID_HEADER_NAME = 'kowalski-request-id';
 
 export type AssetType = (typeof ASSET_TYPE_ARRAY)[number];
 
-export const ASSET_TYPES: { [Key in Uppercase<AssetType>]: Lowercase<Key> } = {
+export const ASSET_TYPES = {
   EQUITY: 'equity',
-};
+} satisfies { [Key in Uppercase<AssetType>]: Lowercase<Key> };
 
 export const ASSET_TYPE_ARRAY = ['equity'] as const;
 
 export type ResolvedtransactionType = (typeof RESOLVED_TRANSACTION_TYPE_ARRAY)[number];
 
-export const RESOLVED_TRANSACTION_TYPES: { [Key in Uppercase<ResolvedtransactionType>]: Lowercase<Key> } = {
+export const RESOLVED_TRANSACTION_TYPES = {
   BUY: 'buy',
   SELL: 'sell',
-};
+} satisfies { [Key in Uppercase<ResolvedtransactionType>]: Lowercase<Key> };
 
 export const RESOLVED_TRANSACTION_TYPE_ARRAY = ['buy', 'sell'] as const;
 
 export type TransactionType = (typeof TRANSACTION_TYPE_ARRAY)[number];
 
-export const TRANSACTION_TYPES: { [Key in Uppercase<TransactionType>]: Lowercase<Key> } = {
+export const TRANSACTION_TYPES = {
   BUY: 'buy',
   SELL: 'sell',
   SPLIT: 'split',
-};
+} satisfies { [Key in Uppercase<TransactionType>]: Lowercase<Key> };
 
 export const TRANSACTION_TYPE_ARRAY = [...RESOLVED_TRANSACTION_TYPE_ARRAY, 'split'] as const;

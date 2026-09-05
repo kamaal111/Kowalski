@@ -15,7 +15,7 @@ const ERROR_CODES = {
   INVALID_TICKER_ID: 'INVALID_TICKER_ID',
 } as const;
 
-const CODE_TO_STATUS: Record<ErrorCode, StatusCode> = {
+const CODE_TO_STATUS = {
   DEFAULT_PORTFOLIO_CREATE_FAILED: STATUS_CODES.INTERNAL_SERVER_ERROR,
   STOCK_TICKER_CREATE_FAILED: STATUS_CODES.INTERNAL_SERVER_ERROR,
   PORTFOLIO_ENTRY_CREATE_FAILED: STATUS_CODES.INTERNAL_SERVER_ERROR,
@@ -24,9 +24,9 @@ const CODE_TO_STATUS: Record<ErrorCode, StatusCode> = {
   STOCK_PRICE_FETCH_FAILED: STATUS_CODES.INTERNAL_SERVER_ERROR,
   EXCHANGE_RATE_RESOLUTION_FAILED: STATUS_CODES.INTERNAL_SERVER_ERROR,
   INVALID_TICKER_ID: STATUS_CODES.INTERNAL_SERVER_ERROR,
-};
+} satisfies Record<ErrorCode, StatusCode>;
 
-const CODE_TO_MESSAGE: Record<ErrorCode, string> = {
+const CODE_TO_MESSAGE = {
   DEFAULT_PORTFOLIO_CREATE_FAILED: 'Failed to create default portfolio',
   STOCK_TICKER_CREATE_FAILED: 'Failed to create stock ticker',
   PORTFOLIO_ENTRY_CREATE_FAILED: 'Failed to create portfolio entry',
@@ -35,7 +35,7 @@ const CODE_TO_MESSAGE: Record<ErrorCode, string> = {
   STOCK_PRICE_FETCH_FAILED: 'Failed to resolve current stock prices',
   EXCHANGE_RATE_RESOLUTION_FAILED: 'Failed to resolve foreign exchange rates',
   INVALID_TICKER_ID: 'Encountered invalid persisted ticker data',
-};
+} satisfies Record<ErrorCode, string>;
 
 class PortfolioException extends APIException {
   constructor(c: HonoContext, { code, context }: { code: ErrorCode; context?: unknown }) {

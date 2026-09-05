@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 
 import type { Database } from '../../db/index.ts';
 import { userPreferences } from '../../db/schema/index.ts';
-import { CurrencyShape, type Currency } from '../../forex/constants.ts';
+import { CurrencySchema, type Currency } from '../../forex/constants.ts';
 
 type UserPreferencesInsert = typeof userPreferences.$inferInsert;
 
@@ -27,7 +27,7 @@ export async function findUserPreferredCurrencyByUserId(
   }
 
   const preferredCurrency =
-    preference.preferredCurrency == null ? null : CurrencyShape.parse(preference.preferredCurrency);
+    preference.preferredCurrency == null ? null : CurrencySchema.parse(preference.preferredCurrency);
 
   return { preferredCurrency };
 }

@@ -5,6 +5,7 @@ import type { DestinationStream, LevelWithSilent, Logger, LoggerOptions } from '
 
 import env from '../api/env.ts';
 import type { ServerMode } from '../api/env.ts';
+import { describeRuntimeType, isBoolean, isNumber, isPrimitiveLogValue, isString } from '../utils/type-guards.ts';
 
 const SERVICE_NAME = 'kowalski-server';
 const DEFAULT_COMPONENT = 'server';
@@ -100,36 +101,33 @@ export function logWarn(logger: ServerLogger, fields: LogFields, message?: strin
 export function logError(
   logger: ServerLogger,
   fields: LogFields,
-  error?: unknown,
+  cause?: unknown,
   message?: string,
   level: Extract<LogMethod, 'error' | 'fatal'> = 'error',
 ) {
-  const errorFields = error == null ? undefined : serializeError(error);
+  const errorFields = cause == null ? undefined : serializeError(cause);
   const mergedFields = errorFields == null ? fields : { ...fields, ...errorFields };
   logger[level](sanitizeLogRecord(mergedFields), message);
 }
 
-function serializeError(error: unknown): Record<string, unknown> | undefined {
-  if (error == null) {
+function serializeError(cause: unknown): LogBindings | undefined {
+  if (cause == null) {
     return undefined;
   }
 
-  if (error instanceof Error) {
+  if (cause instanceof Error) {
     return {
-      error_name: error.constructor.name || error.name,
-      error_message: error.message,
-      error_stack: error.stack,
-      error_cause_name: getErrorCauseName(error),
-      error_cause_message: getErrorCauseMessage(error),
+      error_name: cause.constructor.name || cause.name,
+      error_message: cause.message,
+      error_stack: cause.stack,
+      error_cause_name: getErrorCauseName(cause),
+      error_cause_message: getErrorCauseMessage(cause),
     };
   }
 
   return {
-    error_name: typeof error,
-    error_details:
-      typeof error === 'string' || typeof error === 'number' || typeof error === 'boolean'
-        ? `${error}`
-        : 'Non-Error value thrown',
+    error_name: describeRuntimeType(cause),
+    error_details: isPrimitiveLogValue(cause) ? `${cause}` : 'Non-Error value thrown',
   };
 }
 
@@ -196,34 +194,31 @@ function createDestination(pretty: boolean) {
 export function createMemoryLogDestination(logs: string[]) {
   return new Writable({
     write(chunk: string | Uint8Array, _encoding, callback) {
-      logs.push(typeof chunk === 'string' ? chunk : Buffer.from(chunk).toString('utf8'));
+      logs.push(isString(chunk) ? chunk : Buffer.from(chunk).toString('utf8'));
       callback();
     },
   });
 }
 
-function sanitizeLogRecord(record: Record<string, unknown>): LogBindings {
+function sanitizeLogRecord(record: LogBindings): LogBindings {
   return Object.fromEntries(Object.entries(record).map(([key, value]) => [key, sanitizeLogValue(value)]));
 }
 
-function sanitizeLogValue(value: unknown): LogValue | undefined {
-  if (value == null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+function sanitizeLogValue(value: LogValue | undefined): LogValue | undefined {
+  if (value == null || isString(value) || isNumber(value) || isBoolean(value)) {
     return value;
   }
 
-  if (Array.isArray(value)) {
-    const sanitizedItems = value.flatMap(item => {
-      const sanitizedItem = sanitizeArrayItem(item);
-      return sanitizedItem === undefined ? [] : [sanitizedItem];
-    });
-    return sanitizedItems.length > 0 ? sanitizedItems : undefined;
-  }
+  const sanitizedItems = value.flatMap(item => {
+    const sanitizedItem = sanitizeArrayItem(item);
+    return sanitizedItem === undefined ? [] : [sanitizedItem];
+  });
 
-  return undefined;
+  return sanitizedItems.length > 0 ? sanitizedItems : undefined;
 }
 
-function sanitizeArrayItem(value: unknown): LogScalar | undefined {
-  if (value == null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+function sanitizeArrayItem(value: LogScalar): LogScalar | undefined {
+  if (value == null || isString(value) || isNumber(value) || isBoolean(value)) {
     return value;
   }
 
@@ -240,7 +235,7 @@ function getErrorCauseName(error: Error): string | undefined {
     return cause.constructor.name || cause.name;
   }
 
-  return typeof cause;
+  return describeRuntimeType(cause);
 }
 
 function getErrorCauseMessage(error: Error): string | undefined {
@@ -253,7 +248,7 @@ function getErrorCauseMessage(error: Error): string | undefined {
     return cause.message;
   }
 
-  if (typeof cause === 'string' || typeof cause === 'number' || typeof cause === 'boolean') {
+  if (isPrimitiveLogValue(cause)) {
     return cause.toString();
   }
 

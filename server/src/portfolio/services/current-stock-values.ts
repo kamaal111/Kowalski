@@ -16,6 +16,7 @@ import {
 import { type CurrentValue } from '../schemas/responses.ts';
 import { ExchangeRateResolutionFailed, StockPriceFetchFailed } from '../exceptions.ts';
 import { fetchYahooQuotes } from './yahoo-quote.ts';
+import { isNumber } from '../../utils/type-guards.ts';
 
 interface EntryWithTickerIdAndStockSymbol {
   tickerId: string;
@@ -191,7 +192,7 @@ function convertStockPriceToPreferredCurrency({
   }
 
   const conversionRate = exchangeRateSnapshot.rates[price.currency];
-  if (typeof conversionRate !== 'number' || !Number.isFinite(conversionRate) || conversionRate <= 0) {
+  if (!isNumber(conversionRate) || !Number.isFinite(conversionRate) || conversionRate <= 0) {
     throw new ExchangeRateResolutionFailed(c);
   }
 

@@ -31,10 +31,10 @@ interface CacheConfig {
   ttl?: number;
 }
 
-export function withCache<THandler extends (c: HonoContext) => Promise<Response>>(
-  handler: THandler,
+export function withCache(
+  handler: (c: HonoContext) => Promise<Response>,
   config: CacheConfig,
-): THandler {
+): (c: HonoContext) => Promise<Response> {
   const dbPath = createCacheDbPath(config.keyPrefix, env.MODE, env.CACHE_DIR);
   const cache = new LRUCache<string, unknown>(
     config.maxSize ?? DEFAULT_MAX_SIZE,
@@ -44,7 +44,7 @@ export function withCache<THandler extends (c: HonoContext) => Promise<Response>
 
   cacheInstances.push(cache);
 
-  return (async c => {
+  return async c => {
     const cacheKey = createCacheKey(c, config.keyPrefix);
     const logger = withRequestLogger(c, { component: 'cache' });
     const cached = cache.get(cacheKey);
@@ -75,7 +75,7 @@ export function withCache<THandler extends (c: HonoContext) => Promise<Response>
     logInfo(logger, { event: 'cache.set', cache_status: 'set', cache_key: cacheKey, ttl_ms: ttl, outcome: 'success' });
 
     return response;
-  }) as THandler;
+  };
 }
 
 export function createCacheDbPath(keyPrefix: string, mode: ServerMode, cacheDir: string): string {

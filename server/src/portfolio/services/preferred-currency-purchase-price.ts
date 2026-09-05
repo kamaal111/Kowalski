@@ -8,6 +8,7 @@ import {
 } from '../repositories/list-entries.ts';
 import { ExchangeRateResolutionFailed } from '../exceptions.ts';
 import { assertToFloat } from '../../utils/numbers.ts';
+import { isNumber } from '../../utils/type-guards.ts';
 
 interface EntryWithPurchasePrice {
   purchasePrice: string | number;
@@ -62,7 +63,7 @@ function convertPurchasePriceToPreferredCurrency<TEntry extends EntryWithPurchas
   }
 
   const conversionRate = exchangeRateSnapshot.rates[entry.purchasePriceCurrency];
-  if (typeof conversionRate !== 'number' || !Number.isFinite(conversionRate) || conversionRate <= 0) {
+  if (!isNumber(conversionRate) || !Number.isFinite(conversionRate) || conversionRate <= 0) {
     throw new ExchangeRateResolutionFailed(c);
   }
 

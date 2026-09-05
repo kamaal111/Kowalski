@@ -98,13 +98,15 @@ function getCreateStockTickerInput(payload: CreateEntryPayload) {
   };
 }
 
+interface ResolveDesiredStockTickersResult {
+  desiredTickerInputsById: Map<string, CreateStockTickerInput>;
+  resolvedTickers: ResolvedStockTicker[];
+}
+
 function resolveDesiredStockTickers(
   payloads: CreateEntryPayload[],
   existingTickersById: Map<string, ResolvedStockTicker>,
-): {
-  desiredTickerInputsById: Map<string, CreateStockTickerInput>;
-  resolvedTickers: ResolvedStockTicker[];
-} {
+): ResolveDesiredStockTickersResult {
   const desiredTickerInputsById = new Map<string, CreateStockTickerInput>();
   const resolvedTickers: ResolvedStockTicker[] = [];
 

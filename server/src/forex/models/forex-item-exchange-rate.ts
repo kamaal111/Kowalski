@@ -1,6 +1,7 @@
 import type { Currency } from '../constants.ts';
 import type { ForexItemExchangeRateECBResponse } from '../schemas/collect.ts';
 import isCurrency from '../utils/is-currency.ts';
+import { isString } from '../../utils/type-guards.ts';
 
 interface XMLTextNode {
   _: string;
@@ -45,7 +46,7 @@ class ForexItemExchangeRate {
 }
 
 function getXmlTextValue(value: ECBResponseValue) {
-  if (typeof value === 'string') {
+  if (isString(value)) {
     return value;
   }
 

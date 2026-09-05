@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { afterEach, describe, expect, test } from 'vitest';
+import { z } from 'zod';
 
 import {
   createMemoryLogDestination,
@@ -13,10 +14,17 @@ import {
   resetRootLogger,
   setRootLoggerDestination,
 } from '../logging/index.ts';
+import { isPrimitiveLogValue } from '../utils/type-guards.ts';
+import { parseJsonRecord } from './json.ts';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '../../..');
 const OXLINT_CONFIG = path.join(REPO_ROOT, '.oxlintrc.json');
 const OXLINT_BIN_DIRECTORY = path.join(REPO_ROOT, 'node_modules/.bin');
+const REPO_NODE_MODULES = path.join(REPO_ROOT, 'node_modules');
+
+const OxlintFixtureConfigSchema = z.looseObject({
+  options: z.looseObject({}).optional(),
+});
 
 describe('Logging policy', () => {
   afterEach(() => {
@@ -35,6 +43,7 @@ describe('Logging policy', () => {
     await Promise.all([
       fs.mkdir(path.dirname(sourceFilePath), { recursive: true }),
       fs.mkdir(path.dirname(scriptFilePath), { recursive: true }),
+      fs.symlink(REPO_NODE_MODULES, path.join(fixtureRoot, 'node_modules'), 'dir'),
       writeOxlintConfig(oxlintConfigPath),
     ]);
     await Promise.all([
@@ -72,8 +81,8 @@ describe('Logging policy', () => {
     const structuredLogs = logs
       .flatMap(chunk => chunk.split('\n'))
       .filter(line => line.trim().length > 0)
-      .map(line => parseJsonLogLine(line))
-      .filter(isStructuredLogRecord);
+      .map(line => parseJsonRecord(line))
+      .filter(log => log != null);
 
     expect(structuredLogs).toHaveLength(2);
 
@@ -83,11 +92,8 @@ describe('Logging policy', () => {
       }
 
       for (const value of Object.values(log)) {
-        const isPrimitive =
-          value == null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean';
-        const isPrimitiveArray =
-          Array.isArray(value) &&
-          value.every(item => item == null || ['string', 'number', 'boolean'].includes(typeof item));
+        const isPrimitive = value == null || isPrimitiveLogValue(value);
+        const isPrimitiveArray = Array.isArray(value) && value.every(item => item == null || isPrimitiveLogValue(item));
 
         expect(isPrimitive || isPrimitiveArray).toBe(true);
       }
@@ -105,22 +111,13 @@ describe('Logging policy', () => {
   });
 });
 
-function isStructuredLogRecord(value: unknown): value is Record<string, unknown> {
-  return value != null && typeof value === 'object' && !Array.isArray(value);
-}
-
-function parseJsonLogLine(line: string): unknown {
-  return JSON.parse(line);
-}
-
 async function writeOxlintConfig(configFilePath: string) {
-  const parsedConfig: unknown = JSON.parse(await fs.readFile(OXLINT_CONFIG, 'utf8'));
-  const config = isStructuredLogRecord(parsedConfig) ? parsedConfig : {};
-  const options = isStructuredLogRecord(config.options) ? config.options : {};
+  const raw = await fs.readFile(OXLINT_CONFIG, 'utf8');
+  const config = OxlintFixtureConfigSchema.parse(JSON.parse(raw));
 
   await fs.writeFile(
     configFilePath,
-    `${JSON.stringify({ ...config, options: { ...options, typeAware: false } })}\n`,
+    `${JSON.stringify({ ...config, options: { ...config.options, typeAware: false } })}\n`,
     'utf8',
   );
 }

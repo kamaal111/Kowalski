@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 
 import type { HonoContext } from '../../api/contexts.ts';
 import { portfolio, portfolioTransaction } from '../../db/schema/index.ts';
-import { CurrencyShape, type Currency } from '../../forex/constants.ts';
+import { CurrencySchema, type Currency } from '../../forex/constants.ts';
 import { PortfolioEntryUpdateFailed } from '../exceptions.ts';
 import { getSessionWhereSessionIsRequired } from '../../auth/index.ts';
 
@@ -24,7 +24,7 @@ function mapOwnedPortfolioTransaction<TTransaction extends { purchasePriceCurren
 ): TTransaction & { purchasePriceCurrency: Currency } {
   return {
     ...transaction,
-    purchasePriceCurrency: CurrencyShape.parse(transaction.purchasePriceCurrency),
+    purchasePriceCurrency: CurrencySchema.parse(transaction.purchasePriceCurrency),
   };
 }
 

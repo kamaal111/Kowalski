@@ -56,6 +56,6 @@ export const DEFAULT_PREFERRED_CURRENCY: Currency = 'USD';
 
 export const CURRENCY_SET: ReadonlySet<string> = new Set(CURRENCIES);
 
-export const CurrencyShape = z
+export const CurrencySchema = z
   .enum(CURRENCIES)
   .meta({ $id: 'Currency', description: 'Supported ISO 4217 currency code', example: 'USD' });

@@ -21,11 +21,7 @@ export interface HonoEnvironment {
   Variables: HonoVariables;
 }
 
-export type HonoContext<P extends string = string, I extends Input = Record<string, unknown>> = Context<
-  HonoEnvironment,
-  P,
-  I
->;
+export type HonoContext<P extends string = string, I extends Input = object> = Context<HonoEnvironment, P, I>;
 
 export function injectRequestContext({ db, auth }: InjectedContext) {
   return async (c: HonoContext, next: Next) => {

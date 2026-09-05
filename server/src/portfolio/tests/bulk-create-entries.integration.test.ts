@@ -8,7 +8,7 @@ import { portfolio, portfolioTransaction, stockTicker, user } from '../../db/sch
 import { ErrorResponseSchema } from '../../schemas/errors.ts';
 import { integrationTest } from '../../tests/fixtures.ts';
 import { createTestUserAndSession } from '../../tests/utils.ts';
-import { BulkCreateEntriesPayloadSchema } from '../schemas/payloads.ts';
+import { BulkCreateEntriesPayloadSchema, type BulkCreateEntriesPayload } from '../schemas/payloads.ts';
 import { BulkCreateEntriesResponseSchema } from '../schemas/responses.ts';
 import { seedPortfolioEntry } from './helpers.ts';
 
@@ -442,7 +442,11 @@ function makeBulkCreateEntryPayloadWithoutId(input: Parameters<typeof makeBulkCr
   };
 }
 
-async function sendBulkCreateEntriesRequest(app: AppRequestClient, payload: unknown, headers?: Headers) {
+async function sendBulkCreateEntriesRequest(
+  app: AppRequestClient,
+  payload: BulkCreateEntriesPayload,
+  headers?: Headers,
+) {
   return app.request(BULK_CREATE_ENTRIES_PATH, {
     method: 'POST',
     headers: headers ?? createBulkCreateEntriesRequestHeaders(),

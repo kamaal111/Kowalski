@@ -6,7 +6,7 @@ import { seedExchangeRate, seedPortfolioEntry, seedStockInfo } from './helpers.t
 import { APP_API_BASE_PATH } from '../../constants/common.ts';
 import { ValidationErrorResponseSchema } from '../../schemas/errors.ts';
 import { integrationTest } from '../../tests/fixtures.ts';
-import { yahooFinanceChartMock, yahooFinanceQuoteMock } from '../../tests/mocks/yahoo-finance.ts';
+import { buildChartMeta, yahooFinanceChartMock, yahooFinanceQuoteMock } from '../../tests/mocks/yahoo-finance.ts';
 import { createTestUserAndSession } from '../../tests/utils.ts';
 import { createSyntheticTickerId } from '../../utils/tickers.ts';
 
@@ -448,7 +448,7 @@ describe('Portfolio Dashboards Route', () => {
         price: 80,
       });
       yahooFinanceChartMock.mockResolvedValueOnce({
-        meta: { currency: 'USD' },
+        meta: buildChartMeta({ symbol: 'XYZ', currency: 'USD' }),
         quotes: [
           {
             date: new Date('2024-01-16T00:00:00.000Z'),

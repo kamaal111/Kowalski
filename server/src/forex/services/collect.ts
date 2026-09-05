@@ -6,6 +6,7 @@ import type { Database } from '../../db/index.ts';
 import { exchangeRates } from '../../db/schema/forex.ts';
 import type { ServerLogger } from '../../logging/index.ts';
 import { logWarn } from '../../logging/index.ts';
+import { describeRuntimeType } from '../../utils/type-guards.ts';
 import { ExchangeRateRecord } from '../models/exchange-rate-record.ts';
 import ForexItem from '../models/forex-item.ts';
 import { ForexECPResponseSchema } from '../schemas/collect.ts';
@@ -139,7 +140,7 @@ async function fetchExchangeRates(
           error_name:
             exchangeRatesResult.reason instanceof Error
               ? exchangeRatesResult.reason.name
-              : typeof exchangeRatesResult.reason,
+              : describeRuntimeType(exchangeRatesResult.reason),
           outcome: 'failure',
         });
       }

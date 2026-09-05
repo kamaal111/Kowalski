@@ -29,14 +29,11 @@ interface SplitsResolverAcc {
   resolvedEntries: ResolvedPortfolioEntryWithSortMetadata[];
 }
 
-const SPLITS_RESOLVERS_MAP: Record<
-  TransactionType,
-  (entry: PersistedPortfolioEntry, acc: SplitsResolverAcc) => SplitsResolverAcc
-> = {
+const SPLITS_RESOLVERS_MAP = {
   [TRANSACTION_TYPES.BUY]: resolveBuyForSplits,
   [TRANSACTION_TYPES.SELL]: resolveSellForSplits,
   [TRANSACTION_TYPES.SPLIT]: resolveSplitForSplits,
-};
+} satisfies Record<TransactionType, (entry: PersistedPortfolioEntry, acc: SplitsResolverAcc) => SplitsResolverAcc>;
 
 export function resolveSplits(entries: PersistedPortfolioEntry[]): ResolvedPortfolioEntry[] {
   return entries
