@@ -1,0 +1,190 @@
+server/src/auth/tests/sign-in-validation.integration.test.ts
+  s_a91c170b1257f9::t_1f1d7238a9bbd2 8
+  s_a91c170b1257f9::t_4b8ff18ace7866 42
+server/src/utils/type-utils.ts
+  s_a91c170b1257f9::t_129cb1da3ceb87 1
+server/src/tests/logs.ts
+  s_a91c170b1257f9::t_9c13b67e652ea1 26,31,33-34
+  s_a91c170b1257f9::t_443372f9a7ac53 32
+  s_a91c170b1257f9::t_015e24fab14f0f 3
+server/src/auth/schemas/payloads.ts
+  s_a91c170b1257f9::t_466201a8953cc0 3,9
+server/src/forex/constants.ts
+  s_a91c170b1257f9::t_466201a8953cc0 59
+server/src/portfolio/services/dashboards.ts
+  s_a91c170b1257f9::t_466201a8953cc0 27,98,568,575
+.agents/skills/kowalski-git-worktree/scripts/setup-worktree-env.ts
+  s_a91c170b1257f9::t_2cbbf1e1f5117e 164,179,183,186-187
+server/src/middleware/logging.ts
+  s_a91c170b1257f9::t_b74cc85e0db37c 115,122-125
+  s_a91c170b1257f9::t_ebeaccacbd3584 126-127
+server/src/tests/logging-policy.test.ts
+  s_a91c170b1257f9::t_233b6921d80e6c 107-111
+  s_a91c170b1257f9::t_7c8e53cb6025aa 16
+  s_a91c170b1257f9::t_7fca7319f3c119 76
+  s_a91c170b1257f9::t_4034b32186d553 17
+  s_a91c170b1257f9::t_e342a737e23901 77,87-88
+server/src/forex/handlers/latest.ts
+  s_a91c170b1257f9::t_8e44b92b60a9f8 13
+  s_a91c170b1257f9::t_4c72050a2ddb08 95
+server/src/stocks/mappers/yahoo-finance.ts
+  s_a91c170b1257f9::t_466201a8953cc0 20,50
+  s_a91c170b1257f9::t_b860b40948251c 68
+  s_a91c170b1257f9::t_5c660b634878f8 7-8
+  s_a91c170b1257f9::t_92ba48841636e4 62
+server/src/utils/zod.ts
+  s_a91c170b1257f9::t_87e55912c9ce61 1-6
+server/src/utils/cache.ts
+  s_a91c170b1257f9::t_fbf1dcd8a0625e 68
+server/src/auth/module.ts
+  s_a91c170b1257f9::t_c6bd0c0c3f8123 41
+  s_a91c170b1257f9::t_ab7c19d532799d 23
+  s_a91c170b1257f9::t_466201a8953cc0 20,35
+server/src/portfolio/services/yahoo-quote.ts
+  s_a91c170b1257f9::t_b2bb0eb2757ecb 30
+  s_a91c170b1257f9::t_466201a8953cc0 5,13
+  s_a91c170b1257f9::t_857c328ab30221 8
+server/src/auth/repositories/preferences.ts
+  s_a91c170b1257f9::t_466201a8953cc0 5,30
+server/src/portfolio/tests/overview-preflight.integration.test.ts
+  s_a91c170b1257f9::t_6f8684b21f8c25 8-9
+  s_a91c170b1257f9::t_3c4884feab44db 96
+  s_a91c170b1257f9::t_f0def6adac98f5 122
+server/src/portfolio/services/yahoo-chart.ts
+  s_a91c170b1257f9::t_a9eff95ddb8059 8
+  s_a91c170b1257f9::t_8890a492ca1f93 49
+  s_a91c170b1257f9::t_466201a8953cc0 5,9,22,86
+server/src/logging/index.ts
+  s_a91c170b1257f9::t_ab2651085741d1 8
+  s_a91c170b1257f9::t_79eed7b292ce37 209-210,226-227
+  s_a91c170b1257f9::t_17216799a16da9 104,108,113-114,118,120-124,129-130
+  s_a91c170b1257f9::t_a6fa6876c97f42 197,203,207-208,224-225,243,256
+server/src/schemas/common.ts
+  s_a91c170b1257f9::t_466201a8953cc0 3
+server/src/api/contexts.ts
+  s_a91c170b1257f9::t_6214448d0afaf6 24
+server/src/tests/json.ts
+  s_a91c170b1257f9::t_09c079dda753f3 3
+  s_a91c170b1257f9::t_510e11ff6932d3 1-2,4-9,12-15
+  s_a91c170b1257f9::t_81bcddb917a1a0 10-11
+server/src/portfolio/repositories/update-entry.ts
+  s_a91c170b1257f9::t_466201a8953cc0 5,27
+server/src/utils/strings.ts
+  s_a91c170b1257f9::t_f1646d4c94faa6 2
+.oxlintrc.json
+  s_a91c170b1257f9::t_1574dbeae51fc4 4
+  s_a91c170b1257f9::t_04903267d3284e 62-77
+server/src/portfolio/repositories/list-entries.ts
+  s_a91c170b1257f9::t_466201a8953cc0 5,63,85,87
+server/src/utils/numbers.ts
+  s_a91c170b1257f9::t_e2135d42531da0 3-4
+  s_a91c170b1257f9::t_507c217803072f 6
+server/src/forex/schemas/collect.ts
+  s_a91c170b1257f9::t_466201a8953cc0 12-14,20-22
+  s_a91c170b1257f9::t_f94ef1fc9d089b 3
+server/src/portfolio/repositories/create-entry.ts
+  s_a91c170b1257f9::t_466201a8953cc0 8,58
+server/src/constants/common.ts
+  s_a91c170b1257f9::t_7423d409eefb63 12,14
+  s_a91c170b1257f9::t_29e488249e8349 29,33
+  s_a91c170b1257f9::t_57b71d4d98fb74 20,23
+server/src/portfolio/constants.ts
+  s_a91c170b1257f9::t_466201a8953cc0 4
+server/src/portfolio/services/resolve-splits.ts
+  s_a91c170b1257f9::t_bfa085abb0de62 32,36
+server/src/portfolio/services/resolve-stock-ticker.ts
+  s_a91c170b1257f9::t_f5e7f4387f0e16 101-105,109
+server/src/portfolio/services/preferred-currency-purchase-price.ts
+  s_a91c170b1257f9::t_0ad23e4d4eb527 66
+  s_a91c170b1257f9::t_e816cb061d2919 11
+server/src/portfolio/tests/dashboards.integration.test.ts
+  s_a91c170b1257f9::t_de17215510a730 451
+  s_a91c170b1257f9::t_b8e7059c623693 9
+server/src/auth/tests/sign-up-validation.integration.test.ts
+  s_a91c170b1257f9::t_f5823c5db55498 8
+  s_a91c170b1257f9::t_4a9b85c5f20c7f 84
+server/src/logging/http.ts
+  s_a91c170b1257f9::t_cc5254f37d4efe 37-38,43,49
+  s_a91c170b1257f9::t_b4b5470f95efd4 8
+server/src/utils/yahoo-finance.ts
+  s_a91c170b1257f9::t_8f28dfa4926f60 2-4,7-9
+  s_a91c170b1257f9::t_bbf366bce188bc 12-16
+  s_a91c170b1257f9::t_3d028873967355 6,10
+server/src/forex/models/forex-item-exchange-rate.ts
+  s_a91c170b1257f9::t_c062dee318b15f 4
+  s_a91c170b1257f9::t_f19fb0818c1d44 49
+server/src/middleware/cache.ts
+  s_a91c170b1257f9::t_7c88b35e8de1b3 47
+server/src/forex/services/collect.ts
+  s_a91c170b1257f9::t_9b574a455f40d6 9
+  s_a91c170b1257f9::t_ba5f6dbfc9d5f6 143
+server/src/forex/tests/collect.integration.test.ts
+  s_a91c170b1257f9::t_9a95e7a9e00c7d 39
+  s_a91c170b1257f9::t_f122cef66de5aa 9
+  s_a91c170b1257f9::t_3dd7a82fdbb132 104
+  s_a91c170b1257f9::t_52b3ce05c5fd93 168
+package.json
+  s_a91c170b1257f9::t_3589fab5193c45 37-38
+server/src/portfolio/repositories/stock-prices.ts
+  s_a91c170b1257f9::t_466201a8953cc0 5,181
+server/src/portfolio/exceptions.ts
+  s_a91c170b1257f9::t_17bef0d0d4e94f 27,29
+  s_a91c170b1257f9::t_1746bdaf4a78ac 18
+  s_a91c170b1257f9::t_dc3d07d90878b6 38
+server/src/portfolio/services/current-stock-values.ts
+  s_a91c170b1257f9::t_18d35780f14fd3 195
+  s_a91c170b1257f9::t_f92949ceffdbac 19
+server/src/tests/setup.ts
+  s_a91c170b1257f9::t_64a5c7799b347f 1,4,6,9
+server/src/portfolio/schemas/payloads.ts
+  s_a91c170b1257f9::t_0c35e597bba269 7
+  s_a91c170b1257f9::t_3292d116b16b86 56
+  s_a91c170b1257f9::t_466201a8953cc0 4,26
+server/src/portfolio/schemas/responses.ts
+  s_a91c170b1257f9::t_09a5ec87b401ac 8
+  s_a91c170b1257f9::t_fb8342fc8dbf03 187
+  s_a91c170b1257f9::t_5ca3ad41cf7083 32
+  s_a91c170b1257f9::t_1d98ff9795d85a 26-27
+  s_a91c170b1257f9::t_466201a8953cc0 4,7,11,15,367,424
+server/src/tests/mocks/yahoo-finance.ts
+  s_a91c170b1257f9::t_6214448d0afaf6 82-86
+  s_a91c170b1257f9::t_ee58b68c69e6bc 153,155-156,160,164,166-168,172-173,176,188,191
+  s_a91c170b1257f9::t_38a8d8c54f6e7b 20-32,34-40,42
+  s_a91c170b1257f9::t_2039d19f301190 177-178,180-181
+  s_a91c170b1257f9::t_a224a3a475628a 138-141
+  s_a91c170b1257f9::t_f9d3922c129f91 116
+  s_a91c170b1257f9::t_1453a2b339a4c0 2-3
+  s_a91c170b1257f9::t_51d18593e8fbda 4,6-17,44-56,59-78,87-107,109-115,117-137,142-151,154,161,163,169,171,179,182-187
+  s_a91c170b1257f9::t_dbb8bda890332b 152
+server/src/utils/type-guards.ts
+  s_a91c170b1257f9::t_3dedb64d0998b6 25
+  s_a91c170b1257f9::t_a113762d597262 1,5,9,13,17,21,30
+  s_a91c170b1257f9::t_9c250c3474952c 2-4,6-8,10-12,14-15
+  s_a91c170b1257f9::t_b484c18c487832 16,18-20,22-24,26-29,31-40
+server/src/portfolio/tests/bulk-create-entries.integration.test.ts
+  s_a91c170b1257f9::t_6bf3905308e58f 445-449
+  s_a91c170b1257f9::t_8cc4c094a2d3c1 11
+server/src/portfolio/schemas/common.ts
+  s_a91c170b1257f9::t_466201a8953cc0 3,7
+server/src/stocks/handlers/search.ts
+  s_a91c170b1257f9::t_a5772e95b55740 11
+  s_a91c170b1257f9::t_f8bbe09d19a097 17
+pnpm-lock.yaml
+  s_a91c170b1257f9::t_364c67bc5dcdc0 268-273,603-605,927-934,2599-2602,2788-2791
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "d8f1cdf697850b73d4754079292bb55167a276b4",
+  "prompts": {},
+  "sessions": {
+    "s_a91c170b1257f9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "38251671-9ca6-4556-9172-b2d8f72cd5d0",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>"
+    }
+  }
+}
