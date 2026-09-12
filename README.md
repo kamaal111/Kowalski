@@ -7,7 +7,7 @@ Kowalski is a monorepo project consisting of a TypeScript/Node.js backend server
 ### Backend (`server/`)
 
 - **Framework**: [Hono](https://hono.dev/)
-- **Runtime**: Node.js (v24)
+- **Runtime**: Node.js (v26)
 - **Database**: PostgreSQL (via [Drizzle ORM](https://orm.drizzle.team/))
 - **Auth**: [Better Auth](https://www.better-auth.com/)
 - **Validation**: Zod with OpenAPI support
@@ -30,10 +30,10 @@ Kowalski is a monorepo project consisting of a TypeScript/Node.js backend server
 
 ### Prerequisites
 
-- **Node.js**: v24 (managed via `nvm` recommended)
-- **pnpm**: v10+
+- **Node.js**: v26+ (managed via `nvm` recommended)
+- **pnpm**: v11+
 - **Docker**: For running the database
-- **Xcode**: 26.3+ (for Swift 6.2.4 iOS/macOS app development)
+- **Xcode**: 26.6+ (for Swift 6.2.4 iOS/macOS app development)
 - **Just**: Command runner (`brew install just`)
 
 ### Installation
@@ -111,16 +111,22 @@ We use `just` to manage project tasks.
 
 ```
 .
-├── app/                 # iOS/macOS SwiftUI Application
-│   ├── Kowalski/        # Main App Entry
-│   ├── KowalskiClient/  # Generated API Client
-│   └── KowalskiFeatures/# Feature Modules
-├── server/              # Node.js Hono Server
-│   ├── src/             # Source code
-│   ├── drizzle/         # DB Migrations
-│   └── scripts/         # Utility scripts
-├── justfile             # Task definitions
-└── docker-compose.yml   # Infrastructure definition
+├── app/                    # iOS/macOS SwiftUI Application
+│   ├── Kowalski/           # App target entry point (Assets, Info.plist, entitlements)
+│   ├── Kowalski.xcodeproj/ # Xcode project
+│   ├── KowalskiApp/        # App composition package (SPM)
+│   ├── KowalskiClient/     # Generated OpenAPI API Client (SPM)
+│   ├── KowalskiDesignSystem/ # Design-system components (SPM)
+│   ├── KowalskiFeatures/   # Feature modules (SPM)
+│   ├── KowalskiModels/     # Shared model types (SPM)
+│   ├── KowalskiUtils/      # Shared utilities (SPM)
+│   └── KowalskiUITests/    # App UI test target
+├── server/                 # Node.js Hono Server
+│   ├── src/                # Source code
+│   ├── drizzle/            # DB Migrations
+│   └── scripts/            # Utility scripts
+├── justfile                # Task definitions
+└── docker-compose.yml      # Infrastructure definition
 ```
 
 ## 📝 Development Workflow
