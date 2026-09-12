@@ -80,8 +80,8 @@ BETTER_AUTH_URL=http://localhost:8082
   - User: `kowalski_user`
   - Password: `kowalski_password`
 - Prerequisites:
-  - Node.js `24+`
-  - pnpm `10+`
+  - Node.js `26+`
+  - pnpm `11+`
   - Docker
   - Xcode `26.6+`
   - `just`
