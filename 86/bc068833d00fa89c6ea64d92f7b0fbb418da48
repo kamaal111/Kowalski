@@ -1,0 +1,333 @@
+server/src/forex/index.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 2,4
+server/src/middleware/logging.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 7,11,39,49
+server/src/forex/handlers/latest.ts
+  s_bb24bf1d439220::t_d1e0b31da9ce72 97,99
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 4,8
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 10,38,54,73,91,109
+server/src/stocks/routes/index.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 1
+server/src/tests/logging-policy.test.ts
+  s_bb24bf1d439220::t_cdd337d77b347b 33-37
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 3,53
+server/src/utils/type-guards.ts
+  s_bb24bf1d439220::t_a7ea78e840b280 31-57
+server/src/portfolio/mappers/entry-response.ts
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 3
+  s_bb24bf1d439220::t_375abfd384dbb0 6-7
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 2,5,30,135
+server/src/portfolio/routes/index.ts
+  s_bb24bf1d439220::t_375abfd384dbb0 2,9-10
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 8
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 7
+server/src/forex/models/forex-item-exchange-rate.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 1,25,31,37,43
+server/src/portfolio/routes/update-entry.ts
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 5
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 7-8
+  s_bb24bf1d439220::t_17cf33ad768b07 6
+server/src/portfolio/repositories/list-entries.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 4,36,79,81
+server/src/constants/common.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 2,6,8
+server/src/portfolio/services/aggregate-holdings.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 1,15,30
+server/src/portfolio/services/update-entry.ts
+  s_bb24bf1d439220::t_375abfd384dbb0 5
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 3,9,15
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 1
+oxlint.config.ts
+  s_bb24bf1d439220::t_c275111d912e61 1-168
+server/src/portfolio/services/resolve-splits.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 9-10,74,177,181
+server/src/forex/routes/app.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 1
+server/src/portfolio/tests/overview.integration.test.ts
+  s_bb24bf1d439220::t_375abfd384dbb0 8
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 14,38,51,127,143,271
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 7
+server/src/stocks/constants.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 2
+server/src/auth/tests/sign-up-session.integration.test.ts
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 10
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 4,11,14,70,185
+server/src/portfolio/handlers/create-entry.ts
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 1
+  s_bb24bf1d439220::t_375abfd384dbb0 3-4,6-7
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 8,18,31
+server/src/api/open-api.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 16,18,20,22,24,26
+server/src/portfolio/services/create-entry.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 3,22,45
+  s_bb24bf1d439220::t_375abfd384dbb0 5-7
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 13
+server/src/logging/index.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 11,13,17,19,21,219,236,250
+server/src/middleware/cache.ts
+  s_bb24bf1d439220::t_a7ea78e840b280 106-108
+  s_bb24bf1d439220::t_375abfd384dbb0 8
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 9,12,19,41,54,57,64,74,90,100,105
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 6
+server/src/portfolio/handlers/overview-preflight.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 2
+  s_bb24bf1d439220::t_bde6cf74e97f00 3
+server/scripts/download-openapi-spec.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 4,26
+server/src/portfolio/services/overview-preflight.ts
+  s_bb24bf1d439220::t_375abfd384dbb0 13-20
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 34,46,56
+server/src/portfolio/services/preferred-currency-purchase-price.ts
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 4-5
+  s_bb24bf1d439220::t_375abfd384dbb0 6
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 2,11,54,67,86
+server/src/portfolio/constants.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 2,6
+server/scripts/fetch-daily-currencies.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 11,23,26,33
+server/src/portfolio/tests/helpers.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 5,126,128,141,143,153,159,161,173,189,191
+server/src/portfolio/tests/create-entry.integration.test.ts
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 13
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 12,16,28,37,127,154,168,183,253,255,262,292,479,487
+server/src/portfolio/handlers/dashboards.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 5,15
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 4
+server/src/auth/tests/sign-up-validation.integration.test.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 8,26
+server/src/portfolio/services/yahoo-chart.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 7,48,73
+server/src/portfolio/tests/update-entry.integration.test.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 13,18,64,66,75,154,189,201,216,231,309,319,345,358,476,478,499,501
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 14
+  s_bb24bf1d439220::t_375abfd384dbb0 15
+server/src/stocks/routes/search.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 5
+server/src/stocks/tests/integration.test.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 24,28,114,118
+server/src/portfolio/routes/dashboards.ts
+  s_bb24bf1d439220::t_375abfd384dbb0 9
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 7
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 8
+server/src/db/schema/portfolio.ts
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 8
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 5
+  s_bb24bf1d439220::t_7c626b2ee6f9c0 7
+server/src/app.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 15,25
+server/src/forex/tests/latest.integration.test.ts
+  s_bb24bf1d439220::t_375abfd384dbb0 3
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 10,31,36,139,144
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 4
+server/src/middleware/cache.test.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 4
+server/src/auth/hooks.ts
+  s_bb24bf1d439220::t_375abfd384dbb0 29
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 21-22,24,37,39,41,43,47,49,51,67,69,75,86,101,111,117,123,151,174,180
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 25
+  s_bb24bf1d439220::t_a7ea78e840b280 87-89,152-154,193-195
+server/src/db/schema/index.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 8,10,12,14
+server/src/portfolio/repositories/stock-prices.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 65
+server/src/portfolio/schemas/queries.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 4,8
+server/src/portfolio/services/yahoo-quote.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 7,29,50,62
+server/src/portfolio/tests/bulk-create-entries.integration.test.ts
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 4
+  s_bb24bf1d439220::t_375abfd384dbb0 11
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 41,84,130,147,149,160,203,205,226,258,275,277,285,316,322,324,343,381,387,509,516
+server/src/portfolio/tests/overview-preflight.integration.test.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 99,119
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 11
+  s_bb24bf1d439220::t_375abfd384dbb0 2,10
+server/src/utils/cache.test.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 3,14,19,241
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 2,4
+server/src/forex/models/exchange-rate-record.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 3,56,74
+server/src/utils/tickers.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 2,22,28
+server/src/portfolio/repositories/update-entry.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 4,10,37,88,90
+server/src/portfolio/services/current-stock-values.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 5,8,41,47,55,60,66,73,79,116,122,143,146,206,228
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 10
+  s_bb24bf1d439220::t_375abfd384dbb0 3,9
+server/src/tests/setup.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 9,11
+server/src/portfolio/services/dashboards.ts
+  s_bb24bf1d439220::t_375abfd384dbb0 5-7,13,16,26-27
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 4
+  s_bb24bf1d439220::t_5cc09493e53e2d 15
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 3,30,83,87,103,108,110,114,119,130,177,182,200,204,215,220,238,267,274,284,303,326,381,392,396,417,423,435,439,445,489,518,526,623,626,629,644,659,666
+  s_bb24bf1d439220::t_b5201efe879524 132-134,147-149
+pnpm-workspace.yaml
+  s_bb24bf1d439220::t_8d06585b5ad140 4-5
+server/src/portfolio/routes/bulk-create-entries.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 7
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 6
+server/src/stocks/handlers/search.ts
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 3,5
+  s_bb24bf1d439220::t_375abfd384dbb0 6,8
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 9
+server/src/portfolio/services/holdings-refresh-coordinator.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 8,27,45,59
+.agents/skills/kowalski-git-worktree/scripts/setup-worktree-env.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 8,10,12,14,16,18,45,51,57,61,65,71,116,119,126,168,182,188,194,213,230,243,265
+oxfmt.config.ts
+  s_bb24bf1d439220::t_a7ea78e840b280 11-20
+  s_bb24bf1d439220::t_acfe84b7f6e1a9 1-10,21
+server/src/auth/constants.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 2
+server/src/portfolio/handlers/overview.ts
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 1
+  s_bb24bf1d439220::t_375abfd384dbb0 4
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 6,12,25
+server/src/portfolio/index.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 2
+server/src/forex/constants.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 4
+server/src/tests/mocks/yahoo-finance.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 156,182
+  s_bb24bf1d439220::t_e4f7dee53ff092 162-164
+server/src/forex/routes/latest.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 6
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 7
+server/src/auth/tests/sign-in-validation.integration.test.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 8
+server/src/forex/handlers/collect.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 3,20
+server/src/forex/models/forex-item.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 15,22,28,34
+server/src/portfolio/handlers/bulk-create-entries.ts
+  s_bb24bf1d439220::t_375abfd384dbb0 4,6,9-10
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 1
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 7,17,22,25
+server/src/auth/tests/preferences.integration.test.ts
+  s_bb24bf1d439220::t_375abfd384dbb0 7
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 14,99,126,156,164
+  s_bb24bf1d439220::t_838eb10a3fea13 10-11
+server/src/portfolio/schemas/payloads.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 3
+server/src/portfolio/services/bulk-create-entries.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 13,32,38,61,67,95,100,102,105
+  s_bb24bf1d439220::t_011a72f35cb72c 9-10
+server/src/stocks/mappers/yahoo-finance.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 5,21,61
+  s_bb24bf1d439220::t_a7ea78e840b280 34-36,38-40,43-46,70-72
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 37
+  s_bb24bf1d439220::t_6fda453ee66492 4
+server/src/tests/utils.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 10,57,65,74,76,82,92,94
+server/src/utils/cache.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 10,29,60,66,69,90
+  s_bb24bf1d439220::t_a7ea78e840b280 61-63
+server/src/portfolio/schemas/responses.ts
+  s_bb24bf1d439220::t_375abfd384dbb0 7
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 4
+  s_bb24bf1d439220::t_81711899b76d6e 5
+server/src/tests/logs.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 1,33
+server/src/tests/fixtures.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 5
+server/src/logging/http.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 4,21,27,45,52,65
+server/src/utils/request.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 18
+  s_bb24bf1d439220::t_a7ea78e840b280 12-14,19-21
+  s_bb24bf1d439220::t_32d22fd7d65f98 11
+server/src/portfolio/services/overview.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 29,43,45,48,71,88,124,131,150,156,167,177
+  s_bb24bf1d439220::t_375abfd384dbb0 4,10-15
+  s_bb24bf1d439220::t_7d10313a999069 16-17
+server/src/auth/better-auth.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 4,9-10,12,15,17,19,21,23,50
+server/src/daily-api/index.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 2,5
+server/src/portfolio/services/resolve-stock-ticker.ts
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 1,4
+  s_bb24bf1d439220::t_375abfd384dbb0 2-3
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 11,14,117,135,138
+server/src/portfolio/handlers/update-entry.ts
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 1
+  s_bb24bf1d439220::t_5cc09493e53e2d 8-9
+  s_bb24bf1d439220::t_375abfd384dbb0 4-5,7
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 11,20,33
+  s_bb24bf1d439220::t_4d6facb2670134 10
+server/src/portfolio/routes/create-entry.ts
+  s_bb24bf1d439220::t_375abfd384dbb0 5
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 7
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 6
+server/src/stocks/index.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 2,4
+package.json
+  s_bb24bf1d439220::t_8d06585b5ad140 37
+server/src/tests/json.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 11
+server/src/portfolio/services/resolved-portfolio-entries.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 1
+server/src/portfolio/routes/overview.ts
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 6
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 7
+  s_bb24bf1d439220::t_375abfd384dbb0 5
+server/src/portfolio/repositories/create-entry.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 7,13,15,17,19,21,25,27,29,31,36,38,50,76,109,115,117,146,177,218,257,259
+server/src/api/exceptions.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 3,26
+server/src/api/middleware.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 2
+server/src/api/contexts.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 6
+server/src/api/server.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 7,10
+  s_bb24bf1d439220::t_d0d8e6d4e7bde3 6
+server/src/auth/index.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 2,9,11,13
+server/src/app-api/index.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 1
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 2
+  s_bb24bf1d439220::t_375abfd384dbb0 7-8
+server/src/portfolio/tests/dashboards.integration.test.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 11,213,231
+server/src/stocks/schemas/search.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 26,34
+server/vitest.config.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 6,8,10
+server/src/forex/tests/collect.integration.test.ts
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 8
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 5,12,14,16,70,75,82,134,139,149
+  s_bb24bf1d439220::t_375abfd384dbb0 6
+server/src/auth/repositories/preferences.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 24,26
+server/src/auth/module.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 1,16,81
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 12
+  s_bb24bf1d439220::t_375abfd384dbb0 10,13-14,23-24
+server/src/forex/services/collect.ts
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 15,51,65,75,114,117,123,141,155,160,165,187,192,194,204,212,234
+  s_bb24bf1d439220::t_712e0ffcaea555 197
+server/src/portfolio/routes/overview-preflight.ts
+  s_bb24bf1d439220::t_a2b0f5cb3c3b63 6
+  s_bb24bf1d439220::t_0bbd5896f2b1ba 7
+  s_bb24bf1d439220::t_375abfd384dbb0 5
+pnpm-lock.yaml
+  s_bb24bf1d439220::t_7156ac727d5dda 263,268-270,566-603,627-646,661-666,1099-1101,1117-1122,1270-1279,1288-1290,1294-1297,1301-1324,1329-1332,1337-1343,1425-1427,1436-1439,1444-1447,1452-1455,1463-1469,1473-1475,1511-1522,1526-1533,1543-1553,1565-1568,1761-1768,1784-1795,1804-1880,1884-1887,1920-1925,1945-1948,1965-1979,1996-2006,2015-2018,2022-2033,2038-2052,2057-2060,2096-2107,2111-2114,2123-2186,2190-2228,2247-2250,2258-2263,2273-2282,2287-2290,2370-2376,2400-2402,2418-2420,2429-2432,2448-2471,2490-2497,2528-2539,2553-2556,2561-2563,2626-2629,2650-2653,2664-2667,2690-2697,2702-2705,2709-2714,2726-2737,2752-2755,2767-2778,2830-2833,2838-2857,2862-2869,2913-2919,2924-2939,2945-2948,2960-2962,3060-3075,3091-3094,3120-3123,3278-3323,3341-3356,3370-3381,3408,3418-3419,3623-3624,3640-3643,3734-3739,3744-3750,3758-3761,3764-3813,3816-3817,3820-3825,3868,3872,3884-3888,3896-3902,3908-3909,3912-3916,3940-3945,3948-3949,3981-3998,4001-4007,4010-4025,4033-4036,4096-4159,4170-4189,4221-4332,4337-4338,4349,4351-4352,4357,4360,4365,4370,4381-4383,4394-4397,4406,4408,4413-4416,4428,4430,4439-4454,4464-4479,4498-4503,4508-4518,4521-4532,4535-4538,4576-4584,4587-4592,4597-4667,4670-4710,4721-4724,4731-4734,4741-4750,4753-4757,4815-4820,4837-4840,4849-4850,4857-4863,4874-4911,4928-4943,5000-5011,5027-5028,5031-5032,5112-5113,5130-5131,5144-5145,5166-5185,5188-5189,5192-5200,5224,5226,5234-5252,5261-5263,5265,5279,5284,5290-5311,5364-5368,5371-5398,5401-5406,5440-5450,5457-5489,5513-5519,5526-5529,5572-5612,5626-5627,5639,5642-5643,5654-5655
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "86bc068833d00fa89c6ea64d92f7b0fbb418da48",
+  "prompts": {},
+  "sessions": {
+    "s_bb24bf1d439220": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e5992fbc-d8d0-4f2a-ab32-42c62ff62791",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>"
+    }
+  }
+}
