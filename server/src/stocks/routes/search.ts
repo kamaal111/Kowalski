@@ -1,8 +1,8 @@
 import { createRoute, type RouteConfigToTypedResponse } from '@kamaalio/hono-standard-openapi';
 
-import { OPENAPI_TAG } from '../constants.ts';
 import { ErrorResponseSchema } from '../../schemas/errors.ts';
 import { AuthenticationHeaders } from '../../schemas/headers.ts';
+import { OPENAPI_TAG } from '../constants.ts';
 import { StocksSearchQuerySchema, StocksSearchResponseSchema } from '../schemas/search.ts';
 
 const searchRoute = createRoute({

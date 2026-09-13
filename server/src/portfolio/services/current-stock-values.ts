@@ -1,10 +1,13 @@
 import { arrays } from '@kamaalio/kamaal';
 
-import { getSessionWhereSessionIsRequired } from '../../auth/index.ts';
+import { fetchYahooQuotes } from './yahoo-quote.ts';
 import type { HonoContext } from '../../api/contexts.ts';
+import { getSessionWhereSessionIsRequired } from '../../auth/index.ts';
 import type { Currency } from '../../forex/constants.ts';
-import { logInfo } from '../../logging/index.ts';
 import { withRequestLogger } from '../../logging/http.ts';
+import { logInfo } from '../../logging/index.ts';
+import { isNumber } from '../../utils/type-guards.ts';
+import { ExchangeRateResolutionFailed, StockPriceFetchFailed } from '../exceptions.ts';
 import type { PersistedExchangeRateSnapshot } from '../repositories/list-entries.ts';
 import { findLatestExchangeRateSnapshotByBase } from '../repositories/list-entries.ts';
 import {
@@ -14,9 +17,6 @@ import {
   type PersistedStockPrice,
 } from '../repositories/stock-prices.ts';
 import { type CurrentValue } from '../schemas/responses.ts';
-import { ExchangeRateResolutionFailed, StockPriceFetchFailed } from '../exceptions.ts';
-import { fetchYahooQuotes } from './yahoo-quote.ts';
-import { isNumber } from '../../utils/type-guards.ts';
 
 interface EntryWithTickerIdAndStockSymbol {
   tickerId: string;
@@ -38,11 +38,13 @@ export async function getCurrentStockValues(
 
   const uniqueEntries = getUniquePortfolioEntries(entries);
   const today = new Date().toISOString().slice(0, 10);
+
   const { resolvedTodayPrices: resolvedPrices, missingEntries } = await findResolvedAndMissingDailyPrices(
     c,
     uniqueEntries,
     today,
   );
+
   const freshPrices = await refreshMissingDailyPrices(c, missingEntries, today);
 
   for (const freshPrice of freshPrices) {
@@ -50,26 +52,31 @@ export async function getCurrentStockValues(
   }
 
   const entriesMissingResolvedPrice = uniqueEntries.filter(entry => !resolvedPrices.has(entry.tickerId));
+
   const latestStoredPrices = await findLatestStockPricesByTickerIds(
     c,
     entriesMissingResolvedPrice.map(entry => entry.tickerId),
   );
+
   for (const storedPrice of latestStoredPrices) {
     resolvedPrices.set(storedPrice.tickerId, storedPrice);
   }
 
   const unresolvedEntries = uniqueEntries.filter(entry => !resolvedPrices.has(entry.tickerId));
+
   if (unresolvedEntries.length > 0) {
     throw new StockPriceFetchFailed(c);
   }
 
   const session = getSessionWhereSessionIsRequired(c);
   const preferredCurrency = session.user.preferred_currency;
+
   const exchangeRateSnapshot = await resolveExchangeRateSnapshotForPreferredCurrency(
     c,
     preferredCurrency,
     resolvedPrices.values(),
   );
+
   const currentValues = Object.fromEntries(
     uniqueEntries.map(entry => {
       const resolvedPrice = resolvedPrices.get(entry.tickerId);
@@ -106,11 +113,13 @@ export async function findResolvedAndMissingDailyPrices(
   today: string,
 ): Promise<DailyPriceResolution> {
   const uniqueEntries = getUniquePortfolioEntries(entries);
+
   const todaysStockPrices = await findTodayStockPricesByTickerIds(
     c,
     uniqueEntries.map(entry => entry.tickerId),
     today,
   );
+
   const resolvedTodayPrices = todaysStockPrices.reduce(
     (acc, storedPrice) => acc.set(storedPrice.tickerId, storedPrice),
     new Map<string, PersistedStockPrice>(),
@@ -131,8 +140,10 @@ export async function refreshMissingDailyPrices(
     c,
     missingEntries.map(entry => entry.stockSymbol),
   );
+
   const freshPrices = arrays.compactMap(missingEntries, entry => {
     const yahooQuote = yahooQuotesBySymbol.get(entry.stockSymbol);
+
     if (yahooQuote == null) {
       return null;
     }
@@ -192,6 +203,7 @@ function convertStockPriceToPreferredCurrency({
   }
 
   const conversionRate = exchangeRateSnapshot.rates[price.currency];
+
   if (!isNumber(conversionRate) || !Number.isFinite(conversionRate) || conversionRate <= 0) {
     throw new ExchangeRateResolutionFailed(c);
   }
@@ -213,6 +225,7 @@ async function resolveExchangeRateSnapshotForPreferredCurrency(
     }
 
     const exchangeRateSnapshot = await findLatestExchangeRateSnapshotByBase(c, preferredCurrency);
+
     if (exchangeRateSnapshot == null) {
       throw new ExchangeRateResolutionFailed(c);
     }

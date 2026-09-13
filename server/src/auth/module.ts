@@ -1,28 +1,27 @@
+import { createRoute } from '@kamaalio/hono-standard-openapi';
 import {
   AuthenticationHeaders,
   createAuthModule,
   SessionResponseSchema as BaseSessionResponseSchema,
   UserSchema as BaseUserSchema,
 } from '@kamaalio/kamaal-auth-hono';
-import { createRoute } from '@kamaalio/hono-standard-openapi';
-import * as z from 'zod';
-
 import type { Context } from 'hono';
 import { every } from 'hono/combine';
+import * as z from 'zod';
 
-import env, { IS_TEST } from '../api/env.ts';
+import { JWKS_URL } from './better-auth.ts';
+import { OPENAPI_TAG, ROUTE_NAME } from './constants.ts';
+import { authHooks, type AuthLocals } from './hooks.ts';
 import type { HonoEnvironment } from '../api/contexts.ts';
+import env, { IS_TEST } from '../api/env.ts';
 import { openAPIRouterFactory } from '../api/open-api.ts';
 import { ONE_DAY_IN_SECONDS } from '../constants/common.ts';
 import { STATUS_CODES } from '../constants/http.ts';
 import { MIME_TYPES } from '../constants/request.ts';
-import { ErrorResponseSchema, ValidationErrorResponseSchema } from '../schemas/errors.ts';
 import { CurrencySchema, DEFAULT_PREFERRED_CURRENCY } from '../forex/constants.ts';
-import { logInfo } from '../logging/index.ts';
 import { withRequestLogger } from '../logging/http.ts';
-import { JWKS_URL } from './better-auth.ts';
-import { OPENAPI_TAG, ROUTE_NAME } from './constants.ts';
-import { authHooks, type AuthLocals } from './hooks.ts';
+import { logInfo } from '../logging/index.ts';
+import { ErrorResponseSchema, ValidationErrorResponseSchema } from '../schemas/errors.ts';
 import { findUserPreferredCurrencyByUserId, upsertUserPreferredCurrency } from './repositories/preferences.ts';
 import { UpdatePreferencesPayloadSchema } from './schemas/payloads.ts';
 
@@ -79,6 +78,7 @@ export const authModule = createAuthModule<
     schema: SessionExtrasSchema,
     resolve: async (c, { userId }) => {
       const preferences = await findUserPreferredCurrencyByUserId(c.locals.db, userId);
+
       if (preferences?.preferredCurrency == null) {
         return { preferred_currency: DEFAULT_PREFERRED_CURRENCY, has_preferred_currency_preference: false };
       }

@@ -1,17 +1,17 @@
-import { dateOnlyStringToISO8601String } from '../../utils/dates.ts';
 import type { HonoContext } from '../../api/contexts.ts';
+import { dateOnlyStringToISO8601String } from '../../utils/dates.ts';
+import { assertToFloat } from '../../utils/numbers.ts';
 import { toISO8601String } from '../../utils/strings.ts';
+import { parseSyntheticTickerId } from '../../utils/tickers.ts';
+import { InvalidTickerId } from '../exceptions.ts';
+import type { PersistedPortfolioEntry } from '../repositories/list-entries.ts';
 import {
   CreateEntryResponseSchema,
   ResolvedEntryResponseSchema,
   type CreateEntryResponse,
   type ResolvedEntryResponse,
 } from '../schemas/responses.ts';
-import { assertToFloat } from '../../utils/numbers.ts';
-import { parseSyntheticTickerId } from '../../utils/tickers.ts';
-import type { PersistedPortfolioEntry } from '../repositories/list-entries.ts';
 import type { ResolvedPortfolioEntry } from '../services/resolve-splits.ts';
-import { InvalidTickerId } from '../exceptions.ts';
 
 interface PortfolioEntryResponseInput<TTransactionType extends string> {
   id: string;
@@ -27,6 +27,7 @@ interface PortfolioEntryResponseInput<TTransactionType extends string> {
 }
 
 type CreateEntryResponseInput = PortfolioEntryResponseInput<CreateEntryResponse['transaction_type']>;
+
 type ResolvedEntryResponseInput = PortfolioEntryResponseInput<ResolvedEntryResponse['transaction_type']>;
 
 export function mapPortfolioEntryToResponse(input: CreateEntryResponseInput): CreateEntryResponse {
@@ -131,6 +132,7 @@ export function mapResolvedPortfolioEntryToResponse({
 
 function parseRequiredSyntheticTickerId(c: HonoContext, tickerId: string) {
   const parsedTickerId = parseSyntheticTickerId(tickerId);
+
   if (parsedTickerId == null) {
     throw new InvalidTickerId(c, tickerId);
   }

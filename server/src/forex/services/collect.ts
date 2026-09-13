@@ -12,6 +12,7 @@ import ForexItem from '../models/forex-item.ts';
 import { ForexECPResponseSchema } from '../schemas/collect.ts';
 
 const BASE_FOREX_URL = new URL('https://www.ecb.europa.eu');
+
 const HOME_URL = new URL('/home/html/rss.en.html', BASE_FOREX_URL);
 
 export type ForexCollectionResult =
@@ -47,6 +48,7 @@ export async function collectLatestExchangeRates({
   targetCollectionDay = getCurrentCollectionDay(),
 }: CollectLatestExchangeRatesOptions): Promise<ForexCollectionResult> {
   const resolvedLatestCollectedAt = latestCollectedAt ?? (await getLatestCollectedAt(db));
+
   const latestCollectedDay =
     resolvedLatestCollectedAt == null ? undefined : getCurrentCollectionDay(resolvedLatestCollectedAt);
 
@@ -60,6 +62,7 @@ export async function collectLatestExchangeRates({
 
   const urls = await fetchUrls();
   const fetchedExchangeRates = await fetchExchangeRates(urls, logger);
+
   if (fetchedExchangeRates == null || fetchedExchangeRates.ratesAreEmpty) {
     return {
       status: 'no-data',
@@ -69,6 +72,7 @@ export async function collectLatestExchangeRates({
   }
 
   const storedItems = await storeExchangeRates(fetchedExchangeRates, db);
+
   return {
     status: 'persisted',
     exchangeRate: fetchedExchangeRates,
@@ -107,13 +111,16 @@ async function fetchExchangeRates(
       const parsedContent: unknown = await parseStringPromise(content);
       const contentObject = ForexECPResponseSchema.parse(parsedContent);
       const exchangeRatesByDate: Record<string, ExchangeRateRecord> = {};
+
       for (const contentItem of contentObject['rdf:RDF']?.item ?? []) {
         const item = ForexItem.fromECBResponse(contentItem);
+
         if (item == null) {
           continue;
         }
 
         const dateKey = item.date.getTime().toString();
+
         if (exchangeRatesByDate[dateKey] === undefined) {
           exchangeRatesByDate[dateKey] = new ExchangeRateRecord({
             date: item.date,
@@ -131,6 +138,7 @@ async function fetchExchangeRates(
 
   let latestDate: Date | undefined;
   const combinedExchangeRates: Record<string, ExchangeRateRecord> = {};
+
   for (const [index, exchangeRatesResult] of spreadExchangeRatesResults.entries()) {
     if (exchangeRatesResult.status === 'rejected') {
       if (logger != null) {
@@ -144,14 +152,17 @@ async function fetchExchangeRates(
           outcome: 'failure',
         });
       }
+
       continue;
     }
 
     const exchangeRatesByDate = exchangeRatesResult.value;
+
     for (const [key, exchangeRate] of Object.entries(exchangeRatesByDate)) {
       if (exchangeRate.date.getTime() > (latestDate?.getTime() ?? 0)) {
         latestDate = exchangeRate.date;
       }
+
       if (combinedExchangeRates[key] === undefined) {
         combinedExchangeRates[key] = exchangeRate;
       } else {
@@ -173,20 +184,24 @@ async function fetchExchangeRates(
 async function storeExchangeRates(exchangeRate: ExchangeRateRecord, db: Database) {
   const allRates = exchangeRate.calculateRates().concat([exchangeRate]);
   const ratesToCheck = allRates.filter(rate => !rate.ratesAreEmpty);
+
   const existingRates = await db
     .select({ base: exchangeRates.base, date: exchangeRates.date })
     .from(exchangeRates)
     .where(eq(exchangeRates.date, exchangeRate.dateString));
+
   const existingKeys = new Set(existingRates.map(rate => `${rate.base}-${rate.date}`));
+
   const itemsToStoreRecord = ratesToCheck.reduce<Record<string, ExchangeRateRecord>>((acc, calculatedRate) => {
     if (!existingKeys.has(calculatedRate.documentKey)) {
-      return { ...acc, [calculatedRate.documentKey]: calculatedRate };
+      acc[calculatedRate.documentKey] = calculatedRate;
     }
 
     return acc;
   }, {});
 
   const itemsToStore = Object.values(itemsToStoreRecord);
+
   if (itemsToStore.length === 0) {
     return [];
   }
@@ -194,6 +209,7 @@ async function storeExchangeRates(exchangeRate: ExchangeRateRecord, db: Database
   await db.insert(exchangeRates).values(
     itemsToStore.map(item => {
       const doc = item.toDocumentObject();
+
       return {
         id: item.documentKey,
         date: doc.date,
@@ -215,6 +231,7 @@ async function fetchUrls(): Promise<URL[]> {
 
   anchorTags.each((_index, element) => {
     const link = element.attribs.href;
+
     if (!link || !link.includes('/rss/fxref')) {
       return;
     }

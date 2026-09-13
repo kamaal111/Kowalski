@@ -1,26 +1,28 @@
-import type { BulkCreateEntriesRouteResponse } from '../routes/bulk-create-entries.ts';
-
-import { STATUS_CODES } from '../../constants/http.ts';
-import { logError, logInfo } from '../../logging/index.ts';
-import { withRequestLogger } from '../../logging/http.ts';
 import type { HonoContext } from '../../api/contexts.ts';
-import { mapPortfolioEntryToResponse } from '../mappers/entry-response.ts';
-import { addPreferredCurrencyPurchasePrices } from '../services/preferred-currency-purchase-price.ts';
-import bulkCreatePortfolioEntries from '../services/bulk-create-entries.ts';
+import { STATUS_CODES } from '../../constants/http.ts';
+import { withRequestLogger } from '../../logging/http.ts';
+import { logError, logInfo } from '../../logging/index.ts';
 import { PreferredCurrencyPurchasePriceResolutionFailed } from '../exceptions.ts';
+import { mapPortfolioEntryToResponse } from '../mappers/entry-response.ts';
+import type { BulkCreateEntriesRouteResponse } from '../routes/bulk-create-entries.ts';
 import type { BulkCreateEntriesPayload } from '../schemas/payloads.ts';
+import bulkCreatePortfolioEntries from '../services/bulk-create-entries.ts';
+import { addPreferredCurrencyPurchasePrices } from '../services/preferred-currency-purchase-price.ts';
 
 async function bulkCreateEntries(
   c: HonoContext<string, { out: { json: BulkCreateEntriesPayload } }>,
 ): Promise<BulkCreateEntriesRouteResponse> {
   const payload = c.req.valid('json');
   const { createdEntries, skippedCount } = await bulkCreatePortfolioEntries(c, payload);
+
   const preferredCurrencyPurchasePrices = await addPreferredCurrencyPurchasePrices(
     c,
     createdEntries.map(entry => entry.transaction),
   );
+
   const response = createdEntries.map((createdEntry, index) => {
     const preferredCurrencyPurchasePrice = preferredCurrencyPurchasePrices[index]?.preferredCurrencyPurchasePrice;
+
     if (preferredCurrencyPurchasePrice == null) {
       const error = new PreferredCurrencyPurchasePriceResolutionFailed(c);
       logError(

@@ -1,16 +1,16 @@
 import { eq } from 'drizzle-orm';
 import { describe, expect } from 'vitest';
 
-import { PORTFOLIO_ROUTE_NAME } from '../index.ts';
+import { seedPortfolioEntry } from './helpers.ts';
 import { APP_API_BASE_PATH } from '../../constants/common.ts';
 import type { Database } from '../../db/index.ts';
 import { portfolio, portfolioTransaction, stockTicker, user } from '../../db/schema/index.ts';
 import { ErrorResponseSchema } from '../../schemas/errors.ts';
 import { integrationTest } from '../../tests/fixtures.ts';
 import { createTestUserAndSession } from '../../tests/utils.ts';
+import { PORTFOLIO_ROUTE_NAME } from '../index.ts';
 import { BulkCreateEntriesPayloadSchema, type BulkCreateEntriesPayload } from '../schemas/payloads.ts';
 import { BulkCreateEntriesResponseSchema } from '../schemas/responses.ts';
-import { seedPortfolioEntry } from './helpers.ts';
 
 const BULK_CREATE_ENTRIES_PATH = `${APP_API_BASE_PATH}${PORTFOLIO_ROUTE_NAME}/entries/bulk`;
 
@@ -38,6 +38,7 @@ describe('Bulk Create Portfolio Entries Route', () => {
           }),
         ],
       });
+
       const request = withRequestId(createBulkCreateEntriesRequestHeaders(sessionToken));
       const response = await sendBulkCreateEntriesRequest(app, payload, request.headers);
       const logs = getLogsForRequestId(request.requestId);
@@ -80,6 +81,7 @@ describe('Bulk Create Portfolio Entries Route', () => {
           }),
         ],
       });
+
       const request = withRequestId(createBulkCreateEntriesRequestHeaders(sessionToken));
       const response = await sendBulkCreateEntriesRequest(app, payload, request.headers);
       const logs = getLogsForRequestId(request.requestId);
@@ -125,6 +127,7 @@ describe('Bulk Create Portfolio Entries Route', () => {
         transactionType: 'buy',
         transactionDate: '2025-12-20T00:00:00.000Z',
       });
+
       const secondEntry = await seedPortfolioEntry(db, {
         userId,
         stock: {
@@ -141,7 +144,9 @@ describe('Bulk Create Portfolio Entries Route', () => {
         transactionType: 'buy',
         transactionDate: '2025-12-21T00:00:00.000Z',
       });
+
       const request = withRequestId(createBulkCreateEntriesRequestHeaders(sessionToken));
+
       const response = await sendBulkCreateEntriesRequest(
         app,
         BulkCreateEntriesPayloadSchema.parse({
@@ -152,6 +157,7 @@ describe('Bulk Create Portfolio Entries Route', () => {
         }),
         request.headers,
       );
+
       const logs = getLogsForRequestId(request.requestId);
       const body = await expectSuccessfulBulkCreateEntriesResponse(response);
       const persistedTransactions = await getPersistedTransactionsForCurrentUser(db);
@@ -194,7 +200,9 @@ describe('Bulk Create Portfolio Entries Route', () => {
         transactionType: 'buy',
         transactionDate: '2025-12-20T00:00:00.000Z',
       });
+
       const request = withRequestId(createBulkCreateEntriesRequestHeaders(sessionToken));
+
       const response = await sendBulkCreateEntriesRequest(
         app,
         BulkCreateEntriesPayloadSchema.parse({
@@ -215,6 +223,7 @@ describe('Bulk Create Portfolio Entries Route', () => {
         }),
         request.headers,
       );
+
       const logs = getLogsForRequestId(request.requestId);
       const body = await expectSuccessfulBulkCreateEntriesResponse(response);
       const persistedTransactions = await getPersistedTransactionsForCurrentUser(db);
@@ -246,6 +255,7 @@ describe('Bulk Create Portfolio Entries Route', () => {
     'does not silently skip ids that belong to another user portfolio',
     async ({ app, db, sessionToken, getLogsForRequestId, withRequestId }) => {
       const otherUser = await createTestUserAndSession(db);
+
       const otherUsersEntry = await seedPortfolioEntry(db, {
         userId: otherUser.userId,
         stock: {
@@ -262,7 +272,9 @@ describe('Bulk Create Portfolio Entries Route', () => {
         transactionType: 'buy',
         transactionDate: '2025-12-20T00:00:00.000Z',
       });
+
       const request = withRequestId(createBulkCreateEntriesRequestHeaders(sessionToken));
+
       const response = await sendBulkCreateEntriesRequest(
         app,
         BulkCreateEntriesPayloadSchema.parse({
@@ -270,6 +282,7 @@ describe('Bulk Create Portfolio Entries Route', () => {
         }),
         request.headers,
       );
+
       const logs = getLogsForRequestId(request.requestId);
       const body = await expectInternalServerErrorResponse(response);
       const persistedTransactions = await getPersistedTransactionsForCurrentUser(db);
@@ -300,12 +313,15 @@ describe('Bulk Create Portfolio Entries Route', () => {
         id: '550e8400-e29b-41d4-a716-446655440020',
         symbol: 'AAPL',
       });
+
       const secondEntry = makeBulkCreateEntryPayload({
         id: '550e8400-e29b-41d4-a716-446655440021',
         symbol: 'AAPL',
         name: 'Apple Incorporated',
       });
+
       const request = withRequestId(createBulkCreateEntriesRequestHeaders(sessionToken));
+
       const response = await sendBulkCreateEntriesRequest(
         app,
         BulkCreateEntriesPayloadSchema.parse({
@@ -324,6 +340,7 @@ describe('Bulk Create Portfolio Entries Route', () => {
         }),
         request.headers,
       );
+
       const logs = getLogsForRequestId(request.requestId);
       const body = await expectSuccessfulBulkCreateEntriesResponse(response);
       const persistedTransactions = await getPersistedTransactionsForCurrentUser(db);
@@ -361,11 +378,13 @@ describe('Bulk Create Portfolio Entries Route', () => {
     'accepts an empty entries array',
     async ({ app, sessionToken, userId, getLogsForRequestId, withRequestId }) => {
       const request = withRequestId(createBulkCreateEntriesRequestHeaders(sessionToken));
+
       const response = await sendBulkCreateEntriesRequest(
         app,
         BulkCreateEntriesPayloadSchema.parse({ entries: [] }),
         request.headers,
       );
+
       const logs = getLogsForRequestId(request.requestId);
       const body = await expectSuccessfulBulkCreateEntriesResponse(response);
 
@@ -487,12 +506,14 @@ async function expectInternalServerErrorResponse(response: Response) {
 async function getPersistedTransactionsForCurrentUser(db: Database) {
   const currentUser = await db.select({ id: user.id }).from(user).limit(1);
   const userId = currentUser.at(0)?.id;
+
   if (userId == null) {
     throw new Error('Expected a persisted user');
   }
 
   const portfolios = await db.select({ id: portfolio.id }).from(portfolio).where(eq(portfolio.userId, userId)).limit(1);
   const portfolioId = portfolios.at(0)?.id;
+
   if (portfolioId == null) {
     throw new Error('Expected a persisted portfolio');
   }

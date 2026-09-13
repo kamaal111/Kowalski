@@ -1,16 +1,17 @@
 import { randomUUID } from 'crypto';
 
-import { z } from 'zod';
 import { describe, expect } from 'vitest';
+import { z } from 'zod';
 
-import { AUTH_ROUTE_NAME } from '../index.ts';
 import env from '../../api/env.ts';
 import { APP_API_BASE_PATH, ONE_DAY_IN_SECONDS } from '../../constants/common.ts';
-import { SessionResponseSchema } from '../index.ts';
 import { integrationTest } from '../../tests/fixtures.ts';
 import { createTestUserAndSession } from '../../tests/utils.ts';
+import { SessionResponseSchema } from '../index.ts';
+import { AUTH_ROUTE_NAME } from '../index.ts';
 
 const SIGN_UP_PATH = `${APP_API_BASE_PATH}${AUTH_ROUTE_NAME}/sign-up/email`;
+
 const SESSION_PATH = `${APP_API_BASE_PATH}${AUTH_ROUTE_NAME}/session`;
 
 const AuthResponseBodySchema = z.object({
@@ -66,6 +67,7 @@ describe('Sign-up session integration', () => {
       const request = withRequestId({
         Cookie: `better-auth.session_token=${headers['set-session-token']}`,
       });
+
       const sessionResponse = await sendSessionRequest(app, {
         headers: request.headers,
       });
@@ -180,6 +182,7 @@ async function expectSuccessfulSignUpResponse(response: Response) {
   expect(response.status).toBe(201);
 
   const body = AuthResponseBodySchema.parse(await response.json());
+
   const headers = SignUpTokenHeadersSchema.parse({
     'set-auth-token': response.headers.get('set-auth-token'),
     'set-auth-token-expiry': response.headers.get('set-auth-token-expiry'),

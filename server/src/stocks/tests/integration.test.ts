@@ -21,9 +21,11 @@ describe('Stocks Integration Tests', () => {
     'should be able to search for stocks',
     async ({ app, sessionToken, expect, getLogsForRequestId, withRequestId }) => {
       const cacheTestKey = crypto.randomUUID();
+
       const request = withRequestId({
         Authorization: `Bearer ${sessionToken}`,
       });
+
       const res = await app.request(`/app-api/stocks/search?q=AAPL&cacheTest=${cacheTestKey}`, {
         headers: request.headers,
       });
@@ -109,9 +111,11 @@ describe('Stocks Integration Tests', () => {
       await app.request(`/app-api/stocks/search?q=AAPL&cacheTest=${cacheTestKey}`, { headers: firstRequest.headers });
 
       const secondRequest = withRequestId({ Authorization: `Bearer ${sessionToken}` });
+
       const response = await app.request(`/app-api/stocks/search?q=AAPL&cacheTest=${cacheTestKey}`, {
         headers: secondRequest.headers,
       });
+
       const logs = getLogsForRequestId(secondRequest.requestId);
 
       expect(response.status).toBe(200);

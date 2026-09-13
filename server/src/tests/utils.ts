@@ -6,8 +6,8 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { Pool, Client } from 'pg';
 import { z } from 'zod';
 
-import type { Database } from '../db/index.ts';
 import { createAuth } from '../auth/index.ts';
+import type { Database } from '../db/index.ts';
 import * as schema from '../db/schema/index.ts';
 import { appRelations } from '../db/schema/index.ts';
 
@@ -54,6 +54,7 @@ export const createTestDatabase = async (): Promise<{
 export const createTestUserAndSession = async (db: Database) => {
   const auth = createAuth(db);
   const email = `test_${randomUUID()}@example.com`;
+
   const res = await auth.api.signUpEmail({
     body: {
       email,
@@ -61,6 +62,7 @@ export const createTestUserAndSession = async (db: Database) => {
       name: 'Test User',
     },
   });
+
   if (!res) {
     throw new Error('Failed to create test user');
   }
@@ -69,12 +71,15 @@ export const createTestUserAndSession = async (db: Database) => {
     token: z.string().optional(),
     session: z.object({ token: z.string() }).optional(),
   });
+
   const parsed = responseSchema.safeParse(res);
+
   if (!parsed.success) {
     throw new Error(`Failed to parse sign up response: ${JSON.stringify(z.treeifyError(parsed.error))}`);
   }
 
   const token = parsed.data.token ?? parsed.data.session?.token;
+
   if (!token) {
     throw new Error('Failed to get token from sign up response');
   }
@@ -84,7 +89,9 @@ export const createTestUserAndSession = async (db: Database) => {
     .from(schema.user)
     .where(eq(schema.user.email, email))
     .limit(1);
+
   const createdUser = createdUsers.at(0);
+
   if (createdUser == null) {
     throw new Error('Failed to find created test user');
   }

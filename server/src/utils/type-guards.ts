@@ -28,13 +28,33 @@ export function isFunctionValue<T, R = unknown>(value: T): value is T & ((...arg
 
 /** Mirrors the native `typeof` operator's result without a bare `typeof` expression at the call site. */
 export function describeRuntimeType<T>(value: T): string {
-  if (value === undefined) return 'undefined';
-  if (isString(value)) return 'string';
-  if (isNumber(value)) return 'number';
-  if (isBoolean(value)) return 'boolean';
-  if (isBigIntValue(value)) return 'bigint';
-  if (isSymbolValue(value)) return 'symbol';
-  if (isFunctionValue(value)) return 'function';
+  if (value === undefined) {
+    return 'undefined';
+  }
+
+  if (isString(value)) {
+    return 'string';
+  }
+
+  if (isNumber(value)) {
+    return 'number';
+  }
+
+  if (isBoolean(value)) {
+    return 'boolean';
+  }
+
+  if (isBigIntValue(value)) {
+    return 'bigint';
+  }
+
+  if (isSymbolValue(value)) {
+    return 'symbol';
+  }
+
+  if (isFunctionValue(value)) {
+    return 'function';
+  }
 
   return 'object';
 }

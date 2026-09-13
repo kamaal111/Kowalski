@@ -1,16 +1,17 @@
-import type { CreateEntryPayload } from '../schemas/payloads.ts';
+import type { HonoContext } from '../../api/contexts.ts';
+import { withRequestLogger } from '../../logging/http.ts';
+import { logInfo } from '../../logging/index.ts';
+import { createSyntheticTickerId, createSyntheticTickerIsin } from '../../utils/tickers.ts';
 import {
   createStockTicker,
   findStockTickersByIds,
   upsertStockTickers,
   updateStockTicker,
 } from '../repositories/create-entry.ts';
-import { logInfo } from '../../logging/index.ts';
-import { withRequestLogger } from '../../logging/http.ts';
-import type { HonoContext } from '../../api/contexts.ts';
-import { createSyntheticTickerId, createSyntheticTickerIsin } from '../../utils/tickers.ts';
+import type { CreateEntryPayload } from '../schemas/payloads.ts';
 
 type ResolvedStockTicker = Awaited<ReturnType<typeof findStockTickersByIds>>[number];
+
 type CreateStockTickerInput = Parameters<typeof upsertStockTickers>[1][number];
 
 async function resolvePortfolioStockTicker(c: HonoContext, payload: CreateEntryPayload) {
@@ -113,6 +114,7 @@ function resolveDesiredStockTickers(
   for (const payload of payloads) {
     const tickerId = getPortfolioStockTickerId(payload);
     const currentDesiredTickerInput = desiredTickerInputsById.get(tickerId);
+
     const desiredTickerInput =
       currentDesiredTickerInput != null
         ? getDesiredStockTickerInputFromResolvedTickerInput(currentDesiredTickerInput, payload)
@@ -130,8 +132,10 @@ function getStockTickerInputsToPersist(
   existingTickersById: Map<string, ResolvedStockTicker>,
 ): CreateStockTickerInput[] {
   const stockTickerInputsToPersist: CreateStockTickerInput[] = [];
+
   for (const desiredTickerInput of desiredTickerInputsById.values()) {
     const existingTicker = existingTickersById.get(desiredTickerInput.id);
+
     if (existingTicker == null || !stockTickerMatches(desiredTickerInput, existingTicker)) {
       stockTickerInputsToPersist.push(desiredTickerInput);
     }

@@ -1,6 +1,7 @@
 import z from 'zod';
 
 export const ROUTE_NAME = '/forex';
+
 export const OPENAPI_TAG = 'Forex';
 
 export const BASE_CURRENCY = 'EUR';

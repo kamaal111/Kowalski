@@ -2,11 +2,12 @@ import { serve, type ServerType } from '@hono/node-server';
 import type { Env, Hono } from 'hono';
 import type { BlankEnv } from 'hono/types';
 
-import { closeAllCaches } from '../middleware/cache.ts';
-import { getComponentLogger, logInfo, logWarn } from '../logging/index.ts';
 import env from './env.ts';
+import { getComponentLogger, logInfo, logWarn } from '../logging/index.ts';
+import { closeAllCaches } from '../middleware/cache.ts';
 
 const { PORT } = env;
+
 const SIGNALS_TO_TERMINATE_ON: NodeJS.Signals[] = ['SIGINT', 'SIGTERM'];
 
 const logger = getComponentLogger('server');

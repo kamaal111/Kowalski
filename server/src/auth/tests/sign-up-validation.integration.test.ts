@@ -1,11 +1,11 @@
 import { describe, expect } from 'vitest';
 import type z from 'zod';
 
-import { AUTH_ROUTE_NAME } from '../index.ts';
 import { APP_API_BASE_PATH } from '../../constants/common.ts';
 import { ValidationErrorResponseSchema } from '../../schemas/errors.ts';
 import { integrationTest } from '../../tests/fixtures.ts';
 import type { JsonValue } from '../../tests/json.ts';
+import { AUTH_ROUTE_NAME } from '../index.ts';
 
 const SIGN_UP_PATH = `${APP_API_BASE_PATH}${AUTH_ROUTE_NAME}/sign-up/email`;
 
@@ -23,6 +23,7 @@ describe('Sign-up validation integration', () => {
         password: 'SuperSecret123',
         name: 'Private Person',
       };
+
       const { headers, requestId } = withRequestId({ 'Content-Type': 'application/json' });
       const response = await sendSignUpRequest(app, payload, headers);
 

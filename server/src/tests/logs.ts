@@ -1,6 +1,6 @@
+import { parseJsonRecord } from './json.ts';
 import { REQUEST_ID_HEADER_NAME } from '../constants/common.ts';
 import { createMemoryLogDestination, setRootLoggerDestination } from '../logging/index.ts';
-import { parseJsonRecord } from './json.ts';
 
 const rawLogs: string[] = [];
 
@@ -30,6 +30,7 @@ function getStructuredLogs() {
       .filter(line => line.trim().length > 0)
       .flatMap(line => {
         const record = parseJsonRecord(line);
+
         return record == null ? [] : [record];
       }),
   );

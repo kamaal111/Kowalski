@@ -3,8 +3,8 @@ import z from 'zod';
 
 import type { HonoContext } from '../../api/contexts.ts';
 import { CurrencySchema, type Currency } from '../../forex/constants.ts';
-import { logError, logWarn } from '../../logging/index.ts';
 import { withRequestLogger } from '../../logging/http.ts';
+import { logError, logWarn } from '../../logging/index.ts';
 import { yahooFinanceClient } from '../../utils/yahoo-finance.ts';
 import { DATE_FORMAT } from '../constants.ts';
 
@@ -45,6 +45,7 @@ export async function fetchYahooChartPrices(
   },
 ): Promise<YahooChartPrice[]> {
   let chartResult: ChartResultArray;
+
   try {
     chartResult = await yahooFinanceClient.chart(symbol, {
       period1,
@@ -69,6 +70,7 @@ export async function fetchYahooChartPrices(
   }
 
   const parsedChart = YahooChartSchema.safeParse(chartResult);
+
   if (!parsedChart.success) {
     logWarn(withRequestLogger(c, { component: 'portfolio' }), {
       event: 'portfolio.stock_prices.yahoo_chart.invalid',

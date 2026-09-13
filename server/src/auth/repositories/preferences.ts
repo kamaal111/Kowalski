@@ -21,7 +21,9 @@ export async function findUserPreferredCurrencyByUserId(
     .from(userPreferences)
     .where(eq(userPreferences.userId, userId))
     .limit(1);
+
   const preference = preferences.at(0);
+
   if (preference == null) {
     return undefined;
   }

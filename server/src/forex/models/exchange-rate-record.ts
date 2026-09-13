@@ -1,6 +1,6 @@
 import { asserts } from '@kamaalio/kamaal';
-import type { Currency } from '../constants.ts';
 
+import type { Currency } from '../constants.ts';
 import { BASE_CURRENCY, CURRENCIES } from '../constants.ts';
 
 export class ExchangeRateRecord {
@@ -53,6 +53,7 @@ export class ExchangeRateRecord {
   calculateRates(): ExchangeRateRecord[] {
     const ratesCurrencies = Object.keys(this.rates);
     const calculatedRates: ExchangeRateRecord[] = [];
+
     for (const newBaseCurrency of CURRENCIES) {
       if (newBaseCurrency === BASE_CURRENCY) {
         continue;
@@ -70,6 +71,7 @@ export class ExchangeRateRecord {
         base: newBaseCurrency,
         rates: { EUR: 1 / newBaseCurrencyRate },
       });
+
       for (const currency of CURRENCIES) {
         if (!ratesCurrencies.includes(currency) || currency === newBaseCurrency) {
           continue;

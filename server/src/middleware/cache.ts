@@ -1,20 +1,22 @@
 import { asserts } from '@kamaalio/kamaal';
 import type { Context } from 'hono';
 
-import { LRUCache } from '../utils/cache.ts';
-import { ONE_MINUTE_IN_MILLISECONDS } from '../constants/common.ts';
 import type { HonoContext } from '../api/contexts.ts';
 import env, { SERVER_MODES, type ServerMode } from '../api/env.ts';
-import { logInfo } from '../logging/index.ts';
+import { ONE_MINUTE_IN_MILLISECONDS } from '../constants/common.ts';
 import { withRequestLogger } from '../logging/http.ts';
+import { logInfo } from '../logging/index.ts';
+import { LRUCache } from '../utils/cache.ts';
 
 const DEFAULT_TTL = 5 * ONE_MINUTE_IN_MILLISECONDS;
+
 const DEFAULT_MAX_SIZE = 1000;
 
 const cacheInstances: LRUCache[] = [];
 
 export function closeAllCaches(): void {
   let cache = cacheInstances.pop();
+
   while (cache != null) {
     cache.close();
     cache = cacheInstances.pop();
@@ -36,6 +38,7 @@ export function withCache(
   config: CacheConfig,
 ): (c: HonoContext) => Promise<Response> {
   const dbPath = createCacheDbPath(config.keyPrefix, env.MODE, env.CACHE_DIR);
+
   const cache = new LRUCache<string, unknown>(
     config.maxSize ?? DEFAULT_MAX_SIZE,
     config.defaultTTL ?? DEFAULT_TTL,
@@ -48,14 +51,17 @@ export function withCache(
     const cacheKey = createCacheKey(c, config.keyPrefix);
     const logger = withRequestLogger(c, { component: 'cache' });
     const cached = cache.get(cacheKey);
+
     if (cached != null) {
       logInfo(logger, { event: 'cache.hit', cache_status: 'hit', cache_key: cacheKey, outcome: 'success' });
+
       return c.json(cached);
     }
 
     logInfo(logger, { event: 'cache.miss', cache_status: 'miss', cache_key: cacheKey, outcome: 'success' });
     const response = await handler(c);
     const isJson = isJsonResponse(response);
+
     if (!response.ok || !isJson) {
       logInfo(logger, {
         event: 'cache.skip',
@@ -65,6 +71,7 @@ export function withCache(
         is_json: isJson,
         outcome: 'failure',
       });
+
       return response;
     }
 
@@ -80,6 +87,7 @@ export function withCache(
 
 export function createCacheDbPath(keyPrefix: string, mode: ServerMode, cacheDir: string): string {
   const effectiveCacheDir = mode === SERVER_MODES.TEST ? './.test-cache' : cacheDir;
+
   return `${effectiveCacheDir}/cache-${keyPrefix.replace(/[/:]/g, '-')}.db`;
 }
 
@@ -89,11 +97,15 @@ function isJsonResponse(response: Response): boolean {
 
 function createCacheKey(c: Context, prefix: string): string {
   const url = new URL(c.req.url);
+
   const queryString = Array.from(url.searchParams.entries())
     .map(([key, value]) => `${key}=${value}`)
     .sort()
     .join('&');
-  if (!queryString) return prefix;
+
+  if (!queryString) {
+    return prefix;
+  }
 
   return `${prefix}:${queryString}`;
 }

@@ -1,7 +1,7 @@
+import { isString } from '../../utils/type-guards.ts';
 import type { Currency } from '../constants.ts';
 import type { ForexItemExchangeRateECBResponse } from '../schemas/collect.ts';
 import isCurrency from '../utils/is-currency.ts';
-import { isString } from '../../utils/type-guards.ts';
 
 interface XMLTextNode {
   _: string;
@@ -22,21 +22,25 @@ class ForexItemExchangeRate {
 
   static fromECBResponse(response: ForexItemExchangeRateECBResponse): ForexItemExchangeRate | null {
     const rawValue = getXmlTextValue(response['cb:value']?.at(0));
+
     if (!rawValue) {
       return null;
     }
 
     const value = Number(rawValue);
+
     if (Number.isNaN(value)) {
       return null;
     }
 
     const base = getXmlTextValue(response['cb:baseCurrency']?.at(0));
+
     if (!base || !isCurrency(base)) {
       return null;
     }
 
     const target = getXmlTextValue(response['cb:targetCurrency']?.at(0));
+
     if (!target || !isCurrency(target)) {
       return null;
     }

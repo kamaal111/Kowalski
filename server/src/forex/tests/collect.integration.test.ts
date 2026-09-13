@@ -1,16 +1,19 @@
 import { afterEach, describe, expect, vi } from 'vitest';
 import { z } from 'zod';
 
-import { integrationTest } from '../../tests/fixtures.ts';
 import { exchangeRates } from '../../db/schema/forex.ts';
-import { FOREX_COLLECT_ROUTE_PATH } from '../handlers/collect.ts';
-import { BASE_CURRENCY } from '../constants.ts';
-import { getCurrentCollectionDay } from '../services/collect.ts';
+import { integrationTest } from '../../tests/fixtures.ts';
 import { isNumber, isString } from '../../utils/type-guards.ts';
+import { BASE_CURRENCY } from '../constants.ts';
+import { FOREX_COLLECT_ROUTE_PATH } from '../handlers/collect.ts';
+import { getCurrentCollectionDay } from '../services/collect.ts';
 
 const HOME_URL = 'https://www.ecb.europa.eu/home/html/rss.en.html';
+
 const SUCCESS_URL = 'https://www.ecb.europa.eu/stats/rss/fxref/eurofxref-usd.xml';
+
 const FAILURE_URL = 'https://www.ecb.europa.eu/stats/rss/fxref/eurofxref-fail.xml';
+
 const SUCCESS_XML = [
   '<?xml version="1.0" encoding="UTF-8"?>',
   '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cb="http://www.cbwiki.net/wiki/index.php/Specification_1.2/">',
@@ -64,16 +67,19 @@ describe('Forex collect logging', () => {
       vi.stubGlobal('fetch', fetchMock);
 
       const request = withRequestId();
+
       const response = await app.request(FOREX_COLLECT_ROUTE_PATH, {
         method: 'POST',
         headers: request.headers,
       });
+
       const body = z
         .object({
           data: z.object({ stored: z.number() }),
           skipped: z.literal(false),
         })
         .parse(await response.json());
+
       const logs = getLogsForRequestId(request.requestId);
       const fetchFailedLog = logs.find(log => log.event === 'forex.collect.fetch_failed');
       const persistedLog = logs.find(log => log.event === 'forex.collect.persisted');
@@ -125,10 +131,12 @@ describe('Forex collect logging', () => {
       vi.stubGlobal('fetch', fetchMock);
 
       const request = withRequestId();
+
       const response = await app.request(FOREX_COLLECT_ROUTE_PATH, {
         method: 'POST',
         headers: request.headers,
       });
+
       const body = z
         .object({
           data: z.object({
@@ -138,6 +146,7 @@ describe('Forex collect logging', () => {
           skipped: z.literal(true),
         })
         .parse(await response.json());
+
       const logs = getLogsForRequestId(request.requestId);
 
       expect(response.status).toBe(200);

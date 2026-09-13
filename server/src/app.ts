@@ -11,8 +11,8 @@ import {
   openAPIRouterFactory,
   withOpenAPIDocumentation,
 } from './api/open-api.ts';
-import { auth, createAuth } from './auth/index.ts';
 import appApi from './app-api/index.ts';
+import { auth, createAuth } from './auth/index.ts';
 import { APP_API_BASE_PATH, DAILY_API_BASE_PATH, REQUEST_ID_HEADER_NAME } from './constants/common.ts';
 import dailyApi from './daily-api/index.ts';
 import db from './db/index.ts';
@@ -22,6 +22,7 @@ import loggingMiddleware, { handleServerError } from './middleware/logging.ts';
 export function createApp(dbOverride?: Database) {
   const database = dbOverride ?? db;
   const authentication = dbOverride ? createAuth(database) : auth;
+
   const app = $(
     openAPIRouterFactory()
       .onError(handleServerError)

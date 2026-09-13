@@ -1,4 +1,5 @@
 const SYNTHETIC_TICKER_PREFIX = 'portfolio-stock';
+
 const SYNTHETIC_TICKER_ID_PATTERN = new RegExp(`^${SYNTHETIC_TICKER_PREFIX}:([^:]+):([^:]+)$`);
 
 function normalizeTickerPart(value: string) {
@@ -18,10 +19,12 @@ export function createSyntheticTickerIsin(exchange: string, symbol: string) {
 
 export function parseSyntheticTickerId(tickerId: string) {
   const matchedParts = SYNTHETIC_TICKER_ID_PATTERN.exec(tickerId);
+
   if (matchedParts == null) {
     return null;
   }
 
   const [, exchange, symbol] = matchedParts;
+
   return { exchange, symbol };
 }

@@ -153,12 +153,15 @@ function buildChartQuote(quote: { date: Date; close: number }): ChartResultArray
 const yahooFinanceSearchMock: Mock<YahooFinanceClient['search']> = vi.fn();
 
 export const yahooFinanceQuoteMock: Mock<YahooFinanceClient['quote']> = vi.fn();
+
 export const yahooFinanceChartMock: Mock<YahooFinanceClient['chart']> = vi.fn();
 
 export function resetYahooFinanceMocks() {
   yahooFinanceSearchMock.mockReset();
   yahooFinanceSearchMock.mockImplementation(async query => {
-    const quotes = SEARCH_QUOTE_FIXTURES.filter(fixture => fixture.symbol.includes(query)).map(buildSearchQuote);
+    const quotes = SEARCH_QUOTE_FIXTURES.flatMap(fixture =>
+      fixture.symbol.includes(query) ? [buildSearchQuote(fixture)] : [],
+    );
 
     return buildSearchResult(quotes);
   });
@@ -176,6 +179,7 @@ export function resetYahooFinanceMocks() {
   yahooFinanceChartMock.mockImplementation(async (symbol, options) => {
     const period1 = toDateOnlyString(options.period1);
     const period2 = options.period2 == null ? null : toDateOnlyString(options.period2);
+
     const quotes = (DEFAULT_CHART_QUOTES_BY_SYMBOL.get(symbol) ?? [])
       .filter(quote => quote.date.toISOString().slice(0, 10) >= period1)
       .filter(quote => period2 == null || quote.date.toISOString().slice(0, 10) < period2)

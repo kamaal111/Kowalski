@@ -1,9 +1,9 @@
 import { desc, eq } from 'drizzle-orm';
 
 import type { HonoContext } from '../../api/contexts.ts';
+import { getSessionWhereSessionIsRequired } from '../../auth/index.ts';
 import { exchangeRates, portfolio, portfolioTransaction, stockTicker } from '../../db/schema/index.ts';
 import { CurrencySchema, type Currency } from '../../forex/constants.ts';
-import { getSessionWhereSessionIsRequired } from '../../auth/index.ts';
 
 type PortfolioTransactionSelect = typeof portfolioTransaction.$inferSelect;
 
@@ -33,6 +33,7 @@ export interface PersistedExchangeRateSnapshot {
 
 export async function findPortfolioEntriesByUserId(c: HonoContext): Promise<PersistedPortfolioEntry[]> {
   const session = getSessionWhereSessionIsRequired(c);
+
   const entries = await c
     .get('db')
     .select({
@@ -75,7 +76,9 @@ export async function findLatestExchangeRateSnapshotByBase(
     .where(eq(exchangeRates.base, base))
     .orderBy(desc(exchangeRates.date))
     .limit(1);
+
   const latestRate = latestRates.at(0);
+
   if (latestRate == null) {
     return undefined;
   }

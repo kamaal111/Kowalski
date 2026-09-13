@@ -1,5 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { existsSync, rmSync } from 'fs';
+
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+
 import { LRUCache } from './cache.ts';
 
 describe('LRUCache', () => {
@@ -9,10 +11,12 @@ describe('LRUCache', () => {
     if (existsSync(testDbPath)) {
       rmSync(testDbPath);
     }
+
     // Clean up WAL and SHM files
     if (existsSync(`${testDbPath}-wal`)) {
       rmSync(`${testDbPath}-wal`);
     }
+
     if (existsSync(`${testDbPath}-shm`)) {
       rmSync(`${testDbPath}-shm`);
     }
@@ -234,6 +238,7 @@ describe('LRUCache', () => {
       }
 
       const cache1 = new LRUCache<string, TestData>(10, 60000, testDbPath);
+
       const testData: TestData = {
         id: 1,
         name: 'Test',

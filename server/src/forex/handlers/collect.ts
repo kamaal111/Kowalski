@@ -1,6 +1,6 @@
 import type { HonoContext } from '../../api/contexts.ts';
-import { logInfo } from '../../logging/index.ts';
 import { withRequestLogger } from '../../logging/http.ts';
+import { logInfo } from '../../logging/index.ts';
 import { collectLatestExchangeRates } from '../services/collect.ts';
 
 export const FOREX_COLLECT_ROUTE_PATH = '/daily-api/forex/collect';
@@ -17,6 +17,7 @@ async function collect(c: HonoContext) {
     db: c.get('db'),
     logger,
   });
+
   if (result.status === 'skipped') {
     logInfo(logger, {
       event: 'forex.collect.skipped',

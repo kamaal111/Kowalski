@@ -1,14 +1,14 @@
 import { describe, expect, vi } from 'vitest';
+import type { QuoteResponseArray } from 'yahoo-finance2/modules/quote';
 
-import { PORTFOLIO_ROUTE_NAME } from '../index.ts';
-import { PortfolioOverviewPreflightResponseSchema } from '../schemas/responses.ts';
 import { seedPortfolioEntry, seedStockInfo } from './helpers.ts';
 import { APP_API_BASE_PATH } from '../../constants/common.ts';
 import { integrationTest } from '../../tests/fixtures.ts';
 import { buildQuoteEquity, yahooFinanceQuoteMock } from '../../tests/mocks/yahoo-finance.ts';
-import type { QuoteResponseArray } from 'yahoo-finance2/modules/quote';
 import { createTestUserAndSession } from '../../tests/utils.ts';
 import { createSyntheticTickerId } from '../../utils/tickers.ts';
+import { PORTFOLIO_ROUTE_NAME } from '../index.ts';
+import { PortfolioOverviewPreflightResponseSchema } from '../schemas/responses.ts';
 
 const OVERVIEW_PREFLIGHT_PATH = `${APP_API_BASE_PATH}${PORTFOLIO_ROUTE_NAME}/overview/preflight`;
 
@@ -96,6 +96,7 @@ describe('Portfolio Overview Preflight Route', () => {
       let resolveQuotes: (value: QuoteResponseArray) => void = () => {
         throw new Error('Yahoo quote promise was not initialized');
       };
+
       yahooFinanceQuoteMock.mockImplementation(
         () =>
           new Promise(resolve => {
@@ -115,6 +116,7 @@ describe('Portfolio Overview Preflight Route', () => {
         sendOverviewPreflightRequest(app, { sessionToken }),
         sendOverviewPreflightRequest(app, { sessionToken }),
       ]);
+
       const bodies = await Promise.all(responses.map(expectSuccessfulOverviewPreflightResponse));
 
       expect(bodies.map(body => body.refresh_state)).toEqual(['refreshing', 'refreshing']);

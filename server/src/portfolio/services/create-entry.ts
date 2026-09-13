@@ -1,16 +1,16 @@
 import crypto from 'node:crypto';
 
+import resolvePortfolioStockTicker from './resolve-stock-ticker.ts';
 import type { HonoContext } from '../../api/contexts.ts';
-import type { CreateEntryPayload } from '../schemas/payloads.ts';
+import { getSessionWhereSessionIsRequired } from '../../auth/index.ts';
+import { withRequestLogger } from '../../logging/http.ts';
+import { logInfo } from '../../logging/index.ts';
 import {
   createPortfolio,
   createPortfolioTransaction,
   findDefaultPortfolioByUserId,
 } from '../repositories/create-entry.ts';
-import { logInfo } from '../../logging/index.ts';
-import { withRequestLogger } from '../../logging/http.ts';
-import resolvePortfolioStockTicker from './resolve-stock-ticker.ts';
-import { getSessionWhereSessionIsRequired } from '../../auth/index.ts';
+import type { CreateEntryPayload } from '../schemas/payloads.ts';
 
 const DEFAULT_PORTFOLIO_NAME = 'Default Portfolio';
 
@@ -19,6 +19,7 @@ async function createEntry(c: HonoContext, payload: CreateEntryPayload, options:
     getOrCreateDefaultPortfolio(c),
     resolvePortfolioStockTicker(c, payload),
   ]);
+
   const transaction = await createPortfolioTransaction(c, {
     id: options.entryId ?? crypto.randomUUID(),
     transactionType: payload.transaction_type,
@@ -41,6 +42,7 @@ async function createEntry(c: HonoContext, payload: CreateEntryPayload, options:
 
 export async function getOrCreateDefaultPortfolio(c: HonoContext) {
   const existingPortfolio = await findDefaultPortfolioByUserId(c);
+
   if (existingPortfolio != null) {
     return existingPortfolio;
   }

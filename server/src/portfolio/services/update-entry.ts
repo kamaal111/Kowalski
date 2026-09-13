@@ -1,16 +1,18 @@
-import { NotFound } from '../../api/exceptions.ts';
-import type { HonoContext } from '../../api/contexts.ts';
-import type { CreateEntryPayload } from '../schemas/payloads.ts';
-import { findPortfolioTransactionByIdAndUserId, updatePortfolioTransaction } from '../repositories/update-entry.ts';
 import resolvePortfolioStockTicker from './resolve-stock-ticker.ts';
+import type { HonoContext } from '../../api/contexts.ts';
+import { NotFound } from '../../api/exceptions.ts';
+import { findPortfolioTransactionByIdAndUserId, updatePortfolioTransaction } from '../repositories/update-entry.ts';
+import type { CreateEntryPayload } from '../schemas/payloads.ts';
 
 async function updateEntry(c: HonoContext, entryId: string, payload: CreateEntryPayload) {
   const existingEntry = await findPortfolioTransactionByIdAndUserId(c, entryId);
+
   if (existingEntry == null) {
     throw new NotFound(c, { message: 'Portfolio entry not found' });
   }
 
   const stockTicker = await resolvePortfolioStockTicker(c, payload);
+
   const transaction = await updatePortfolioTransaction(c, {
     id: existingEntry.id,
     transactionType: payload.transaction_type,

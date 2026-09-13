@@ -1,13 +1,13 @@
-import type { LatestRouteResponse } from '../routes/latest.ts';
 import { desc, eq } from 'drizzle-orm';
 
-import { NotFound } from '../../api/exceptions.ts';
 import type { HonoContext } from '../../api/contexts.ts';
+import { NotFound } from '../../api/exceptions.ts';
 import { STATUS_CODES } from '../../constants/http.ts';
 import { exchangeRates } from '../../db/schema/forex.ts';
-import { logInfo } from '../../logging/index.ts';
 import { withRequestLogger } from '../../logging/http.ts';
+import { logInfo } from '../../logging/index.ts';
 import { BASE_CURRENCY, type Currency } from '../constants.ts';
+import type { LatestRouteResponse } from '../routes/latest.ts';
 import { ForexLatestResponseSchema, type ForexLatestQuery } from '../schemas/latest.ts';
 import isCurrency from '../utils/is-currency.ts';
 
@@ -35,6 +35,7 @@ async function latestHandler(
     .limit(1);
 
   const storedRate = latestRate.at(0);
+
   if (storedRate == null) {
     logInfo(logger, {
       event: 'forex.latest.not_found',
@@ -50,6 +51,7 @@ async function latestHandler(
     symbols: query.symbols,
     rates: storedRate.rates,
   });
+
   const response = ForexLatestResponseSchema.parse({
     base: storedRate.base,
     date: storedRate.date,
@@ -68,6 +70,7 @@ async function latestHandler(
 
 function normalizeRequestedBase(base: string | undefined) {
   const normalizedBase = base?.trim().toUpperCase();
+
   return normalizedBase != null && normalizedBase.length > 0 ? normalizedBase : undefined;
 }
 
@@ -85,14 +88,15 @@ function filterRates({
   rates: Record<string, number>;
 }) {
   const requestedSymbols = parseRequestedSymbols(symbols, base);
+
   if (requestedSymbols == null) {
     return rates;
   }
 
   return Array.from(requestedSymbols).reduce<Record<string, number>>((filteredRates, symbol) => {
-    const rate = rates[symbol];
+    filteredRates[symbol] = rates[symbol];
 
-    return { ...filteredRates, [symbol]: rate };
+    return filteredRates;
   }, {});
 }
 
@@ -102,6 +106,7 @@ function parseRequestedSymbols(symbols: string | undefined, base: string) {
   }
 
   const trimmedSymbols = symbols.trim();
+
   if (trimmedSymbols.length === 0 || trimmedSymbols === '*') {
     return;
   }

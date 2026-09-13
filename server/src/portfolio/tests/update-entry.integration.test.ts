@@ -3,9 +3,6 @@ import { describe, expect } from 'vitest';
 import type { z } from 'zod';
 
 import { PORTFOLIO_ROUTE_NAME } from '../index.ts';
-import { PortfolioEntryPathParamsSchema } from '../schemas/params.ts';
-import { CreateEntryPayloadSchema } from '../schemas/payloads.ts';
-import { CreateEntryResponseSchema } from '../schemas/responses.ts';
 import { seedExchangeRate, seedPortfolioEntry } from './helpers.ts';
 import { APP_API_BASE_PATH } from '../../constants/common.ts';
 import type { Database } from '../../db/index.ts';
@@ -13,8 +10,12 @@ import { portfolioTransaction, stockTicker, userPreferences } from '../../db/sch
 import { ErrorResponseSchema, ValidationErrorResponseSchema } from '../../schemas/errors.ts';
 import { integrationTest } from '../../tests/fixtures.ts';
 import { createTestUserAndSession } from '../../tests/utils.ts';
+import { PortfolioEntryPathParamsSchema } from '../schemas/params.ts';
+import { CreateEntryPayloadSchema } from '../schemas/payloads.ts';
+import { CreateEntryResponseSchema } from '../schemas/responses.ts';
 
 const UPDATE_ENTRY_PATH = `${APP_API_BASE_PATH}${PORTFOLIO_ROUTE_NAME}/entries`;
+
 const UPDATE_ENTRY_ROUTE = `${UPDATE_ENTRY_PATH}/:entryId`;
 
 interface AppRequestClient {
@@ -60,7 +61,9 @@ describe('Update Portfolio Entry Route', () => {
         transaction_type: 'sell',
         transaction_date: '2025-12-21T00:00:00.000Z',
       });
+
       const request = withRequestId(createUpdateEntryRequestHeaders(sessionToken));
+
       const response = await sendUpdateEntryRequest(
         app,
         existingEntry.id,
@@ -69,6 +72,7 @@ describe('Update Portfolio Entry Route', () => {
         },
         request.headers,
       );
+
       const logs = getLogsForRequestId(request.requestId);
 
       const body = await expectSuccessfulUpdateEntryResponse(response);
@@ -147,6 +151,7 @@ describe('Update Portfolio Entry Route', () => {
         date: '2026-03-29',
         rates: { USD: 1.1 },
       });
+
       const existingEntry = await seedPortfolioEntry(db, {
         userId,
         stock: {
@@ -181,6 +186,7 @@ describe('Update Portfolio Entry Route', () => {
         }),
         sessionToken,
       });
+
       const body = await expectSuccessfulUpdateEntryResponse(response);
 
       expect(body.preferred_currency_purchase_price.currency).toBe('EUR');
@@ -192,6 +198,7 @@ describe('Update Portfolio Entry Route', () => {
     'returns an internal server error when updating an entry needs FX data that is missing',
     async ({ app, db, sessionToken, userId, getLogsForRequestId, withRequestId }) => {
       await db.insert(userPreferences).values({ userId, preferredCurrency: 'EUR' });
+
       const existingEntry = await seedPortfolioEntry(db, {
         userId,
         stock: {
@@ -206,6 +213,7 @@ describe('Update Portfolio Entry Route', () => {
       });
 
       const request = withRequestId(createUpdateEntryRequestHeaders(sessionToken));
+
       const response = await sendUpdateEntryRequest(
         app,
         existingEntry.id,
@@ -220,6 +228,7 @@ describe('Update Portfolio Entry Route', () => {
         },
         request.headers,
       );
+
       const body = await expectInternalServerErrorResponse(response);
       const logs = getLogsForRequestId(request.requestId);
 
@@ -297,6 +306,7 @@ describe('Update Portfolio Entry Route', () => {
     const entryId = PortfolioEntryPathParamsSchema.parse({
       entryId: '550e8400-e29b-41d4-a716-446655440000',
     }).entryId;
+
     const response = await sendUpdateEntryRequest(app, entryId, {
       payload: createValidUpdateEntryPayload(),
     });
@@ -306,6 +316,7 @@ describe('Update Portfolio Entry Route', () => {
 
   integrationTest('rejects updating another user portfolio entry', async ({ app, db, sessionToken }) => {
     const otherUser = await createTestUserAndSession(db);
+
     const otherUsersEntry = await seedPortfolioEntry(db, {
       userId: otherUser.userId,
       stock: {
@@ -331,6 +342,7 @@ describe('Update Portfolio Entry Route', () => {
     const entryId = PortfolioEntryPathParamsSchema.parse({
       entryId: '550e8400-e29b-41d4-a716-446655440001',
     }).entryId;
+
     const response = await sendUpdateEntryRequest(app, entryId, {
       payload: createValidUpdateEntryPayload(),
       sessionToken,
@@ -343,6 +355,7 @@ describe('Update Portfolio Entry Route', () => {
     const entryId = PortfolioEntryPathParamsSchema.parse({
       entryId: '550e8400-e29b-41d4-a716-446655440000',
     }).entryId;
+
     const response = await sendUpdateEntryRequest(app, entryId, {
       payload: {
         ...createValidUpdateEntryPayload(),
@@ -460,7 +473,9 @@ async function getPersistedTransactionState(db: Database, entryId: string) {
     .from(portfolioTransaction)
     .where(eq(portfolioTransaction.id, entryId))
     .limit(1);
+
   const transaction = transactions.at(0);
+
   if (transaction == null) {
     throw new Error(`Missing persisted transaction for ${entryId}`);
   }
@@ -481,7 +496,9 @@ async function getPersistedTickerState(db: Database, tickerId: string) {
     .from(stockTicker)
     .where(eq(stockTicker.id, tickerId))
     .limit(1);
+
   const ticker = tickers.at(0);
+
   if (ticker == null) {
     throw new Error(`Missing persisted ticker for ${tickerId}`);
   }
