@@ -1,13 +1,13 @@
 import crypto from 'node:crypto';
 
-import { assertToFloat } from '../../utils/numbers.ts';
-import type { PersistedPortfolioEntry } from '../repositories/list-entries.ts';
 import {
   RESOLVED_TRANSACTION_TYPES,
   TRANSACTION_TYPES,
   type ResolvedtransactionType,
   type TransactionType,
 } from '../../constants/common.ts';
+import { assertToFloat } from '../../utils/numbers.ts';
+import type { PersistedPortfolioEntry } from '../repositories/list-entries.ts';
 
 export interface ResolvedPortfolioEntry extends Omit<
   PersistedPortfolioEntry,
@@ -71,6 +71,7 @@ function resolveSplitForSplits(entry: PersistedPortfolioEntry, acc: SplitsResolv
   const currentSharesHeld = acc.holdingsByTickerId.get(entry.tickerId) ?? 0;
   const postSplitSharesHeld = currentSharesHeld * splitRatio;
   const holdingsByTickerId = acc.holdingsByTickerId.set(entry.tickerId, postSplitSharesHeld);
+
   if (currentSharesHeld <= 0) {
     return { ...acc, holdingsByTickerId };
   }
@@ -173,9 +174,11 @@ function compareResolvedEntryOrder(
   right: ResolvedPortfolioEntryWithSortMetadata,
 ) {
   const dateComparison = compareEntryDates(left.entry, right.entry);
+
   if (dateComparison !== 0) {
     return dateComparison;
   }
+
   if (left.splitOrderGroup !== right.splitOrderGroup) {
     return 0;
   }

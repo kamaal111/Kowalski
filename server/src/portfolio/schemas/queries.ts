@@ -1,9 +1,11 @@
 import * as z from 'zod';
 
 const PORTFOLIO_DASHBOARD_PERIODS = ['1w', '1m', '3m', '6m', 'ytd', '1y', '2y', '5y', '10y', 'all'] as const;
+
 const DEFAULT_PORTFOLIO_DASHBOARD_PERIOD = '1y';
 
 export type PortfolioDashboardPeriod = (typeof PORTFOLIO_DASHBOARD_PERIODS)[number];
+
 export type PortfolioDashboardsQuery = z.infer<typeof PortfolioDashboardsQuerySchema>;
 
 const PortfolioDashboardPeriodSchema = z.enum(PORTFOLIO_DASHBOARD_PERIODS).meta({

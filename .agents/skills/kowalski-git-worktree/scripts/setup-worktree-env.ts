@@ -5,11 +5,17 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
 const REPO_ROOT = process.cwd();
+
 const ROOT_ENV_PATH = path.join(REPO_ROOT, '.env');
+
 const SERVER_ENV_PATH = path.join(REPO_ROOT, 'server', '.env');
+
 const JUSTFILE_PATH = path.join(REPO_ROOT, 'justfile');
+
 const DEFAULT_DB_USER = 'kowalski_user';
+
 const DEFAULT_DB_PASSWORD = 'kowalski_password';
+
 const DEFAULT_DB_HOST = 'localhost';
 
 interface ParsedArgs {
@@ -36,27 +42,33 @@ async function main() {
   const suffix = deriveSuffix(REPO_ROOT, hash);
 
   const dbPort = resolvePort(args.dbPort ?? rootEnv.KOWALSKI_DB_PORT, 15432 + hashOffset(hash, 500), 'database');
+
   const serverPort = resolvePort(
     args.serverPort ?? rootEnv.KOWALSKI_SERVER_PORT ?? serverEnv.PORT,
     8600 + hashOffset(hash.slice(4), 300),
     'server',
   );
+
   const dailyPort = resolvePort(
     args.dailyPort ?? rootEnv.KOWALSKI_DAILY_PORT,
     9000 + hashOffset(hash.slice(8), 300),
     'daily',
   );
+
   const composeProjectName = sanitizeComposeName(
     args.composeProject ?? rootEnv.COMPOSE_PROJECT_NAME ?? `kowalski-${suffix}`,
   );
+
   const dbName = sanitizeDatabaseName(args.dbName ?? rootEnv.KOWALSKI_DB_NAME ?? `kowalski_${suffix}`);
   const dbUser = args.dbUser ?? rootEnv.KOWALSKI_DB_USER ?? DEFAULT_DB_USER;
   const dbPassword = args.dbPassword ?? rootEnv.KOWALSKI_DB_PASSWORD ?? DEFAULT_DB_PASSWORD;
+
   const authSecret =
     args.authSecret ??
     rootEnv.BETTER_AUTH_SECRET ??
     serverEnv.BETTER_AUTH_SECRET ??
     randomBytes(32).toString('base64url');
+
   const databaseUrl = `postgresql://${dbUser}:${dbPassword}@${DEFAULT_DB_HOST}:${dbPort}/${dbName}`;
   const betterAuthUrl = `http://localhost:${serverPort}`;
 
@@ -101,14 +113,17 @@ main().catch(error => {
 
 function parseArgs(argv: string[]): ParsedArgs {
   const parsed: ParsedArgs = {};
+
   for (let index = 0; index < argv.length; index += 1) {
     const current = argv[index];
+
     if (!current.startsWith('--')) {
       throw new Error(`Unexpected argument: ${current}`);
     }
 
     const flag = current.slice(2);
     const next = argv[index + 1];
+
     if (next == null || next.startsWith('--')) {
       throw new Error(`Missing value for --${flag}`);
     }
@@ -150,6 +165,7 @@ async function ensureRepoRoot(): Promise<void> {
 async function readEnvFile(filePath: string): Promise<EnvConfig> {
   try {
     const contents = await fs.readFile(filePath, 'utf8');
+
     return parseEnv(contents);
   } catch (error) {
     if (isMissingFileError(error)) {
@@ -163,16 +179,19 @@ async function readEnvFile(filePath: string): Promise<EnvConfig> {
 function parseEnv(contents: string): EnvConfig {
   return contents.split('\n').reduce<EnvConfig>((env, rawLine) => {
     const line = rawLine.trim();
+
     if (line.length === 0 || line.startsWith('#')) {
       return env;
     }
 
     const separatorIndex = line.indexOf('=');
+
     if (separatorIndex === -1) {
       return env;
     }
 
     const key = line.slice(0, separatorIndex).trim();
+
     if (key.length === 0) {
       return env;
     }
@@ -191,6 +210,7 @@ function isMissingFileError(cause: unknown): boolean {
 function deriveSuffix(repoRoot: string, hash: string): string {
   const parentName = path.basename(path.dirname(repoRoot));
   const candidate = sanitizeSlug(parentName);
+
   if (candidate.length > 0 && candidate !== 'worktrees') {
     return candidate;
   }
@@ -207,6 +227,7 @@ function sanitizeSlug(value: string): string {
 
 function sanitizeComposeName(value: string): string {
   const sanitized = sanitizeSlug(value);
+
   if (sanitized.length === 0) {
     throw new Error('Compose project name must contain letters or digits');
   }
@@ -219,6 +240,7 @@ function sanitizeDatabaseName(value: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9_]+/g, '_')
     .replace(/^_+|_+$/g, '');
+
   if (sanitized.length === 0) {
     throw new Error('Database name must contain letters or digits');
   }
@@ -240,6 +262,7 @@ function resolvePort(configuredValue: string | undefined, suggestedPort: number,
 
 function parsePort(rawPort: string, label: string): number {
   const port = Number(rawPort);
+
   if (!Number.isInteger(port) || port < 1000 || port > 65535) {
     throw new Error(`Invalid ${label} port: ${rawPort}`);
   }

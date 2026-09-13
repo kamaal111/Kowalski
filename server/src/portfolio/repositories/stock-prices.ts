@@ -62,6 +62,7 @@ export async function findLatestStockPricesByTickerIds(
     .from(stockInfo)
     .where(inArray(stockInfo.tickerId, tickerIds))
     .orderBy(asc(stockInfo.tickerId), desc(stockInfo.date));
+
   const latestRows = rows.reduce((acc, row) => {
     if (acc.has(row.tickerId)) {
       return acc;

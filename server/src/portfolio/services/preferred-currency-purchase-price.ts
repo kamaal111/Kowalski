@@ -1,14 +1,14 @@
-import { getSessionWhereSessionIsRequired } from '../../auth/index.ts';
 import type { HonoContext } from '../../api/contexts.ts';
+import { getSessionWhereSessionIsRequired } from '../../auth/index.ts';
 import type { Currency } from '../../forex/constants.ts';
-import type { CreateEntryResponse } from '../schemas/responses.ts';
+import { assertToFloat } from '../../utils/numbers.ts';
+import { isNumber } from '../../utils/type-guards.ts';
+import { ExchangeRateResolutionFailed } from '../exceptions.ts';
 import {
   findLatestExchangeRateSnapshotByBase,
   type PersistedExchangeRateSnapshot,
 } from '../repositories/list-entries.ts';
-import { ExchangeRateResolutionFailed } from '../exceptions.ts';
-import { assertToFloat } from '../../utils/numbers.ts';
-import { isNumber } from '../../utils/type-guards.ts';
+import type { CreateEntryResponse } from '../schemas/responses.ts';
 
 interface EntryWithPurchasePrice {
   purchasePrice: string | number;
@@ -51,6 +51,7 @@ function convertPurchasePriceToPreferredCurrency<TEntry extends EntryWithPurchas
   exchangeRateSnapshot: PersistedExchangeRateSnapshot | undefined;
 }): CreateEntryResponse['preferred_currency_purchase_price'] {
   const purchasePrice = assertToFloat(entry.purchasePrice);
+
   if (entry.purchasePriceCurrency === preferredCurrency) {
     return {
       currency: preferredCurrency,
@@ -63,6 +64,7 @@ function convertPurchasePriceToPreferredCurrency<TEntry extends EntryWithPurchas
   }
 
   const conversionRate = exchangeRateSnapshot.rates[entry.purchasePriceCurrency];
+
   if (!isNumber(conversionRate) || !Number.isFinite(conversionRate) || conversionRate <= 0) {
     throw new ExchangeRateResolutionFailed(c);
   }
@@ -81,6 +83,7 @@ async function resolveExchangeRateSnapshotForPreferredCurrency<TEntry extends En
     }
 
     const exchangeRateSnapshot = await findLatestExchangeRateSnapshotByBase(c, preferredCurrency);
+
     if (exchangeRateSnapshot == null) {
       throw new ExchangeRateResolutionFailed(c);
     }

@@ -1,7 +1,6 @@
 import { describe, expect } from 'vitest';
 
 import { PORTFOLIO_ROUTE_NAME } from '../index.ts';
-import { PortfolioDashboardsResponseSchema } from '../schemas/responses.ts';
 import { seedExchangeRate, seedPortfolioEntry, seedStockInfo } from './helpers.ts';
 import { APP_API_BASE_PATH } from '../../constants/common.ts';
 import { ValidationErrorResponseSchema } from '../../schemas/errors.ts';
@@ -9,6 +8,7 @@ import { integrationTest } from '../../tests/fixtures.ts';
 import { buildChartMeta, yahooFinanceChartMock, yahooFinanceQuoteMock } from '../../tests/mocks/yahoo-finance.ts';
 import { createTestUserAndSession } from '../../tests/utils.ts';
 import { createSyntheticTickerId } from '../../utils/tickers.ts';
+import { PortfolioDashboardsResponseSchema } from '../schemas/responses.ts';
 
 const DASHBOARDS_PATH = `${APP_API_BASE_PATH}${PORTFOLIO_ROUTE_NAME}/dashboards`;
 
@@ -210,6 +210,7 @@ describe('Portfolio Dashboards Route', () => {
     'caps dashboard growth points at fifty and keeps current',
     async ({ app, db, sessionToken, userId }) => {
       const today = new Date().toISOString().slice(0, 10);
+
       for (let index = 60; index >= 1; index -= 1) {
         const date = shiftDateByDays(today, -index);
         await seedPortfolioEntry(db, {
@@ -227,6 +228,7 @@ describe('Portfolio Dashboards Route', () => {
           price: 100,
         });
       }
+
       await seedStockInfo(db, {
         tickerId: createSyntheticTickerId('NMS', 'AAPL'),
         currency: 'USD',

@@ -3,14 +3,15 @@ import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
 import { describe, expect } from 'vitest';
 
-import { AUTH_ROUTE_NAME } from '../index.ts';
-import { SessionResponseSchema } from '../index.ts';
 import { APP_API_BASE_PATH } from '../../constants/common.ts';
+import * as schema from '../../db/schema/index.ts';
 import { integrationTest } from '../../tests/fixtures.ts';
 import { createTestUserAndSession } from '../../tests/utils.ts';
-import * as schema from '../../db/schema/index.ts';
+import { AUTH_ROUTE_NAME } from '../index.ts';
+import { SessionResponseSchema } from '../index.ts';
 
 const SESSION_PATH = `${APP_API_BASE_PATH}${AUTH_ROUTE_NAME}/session` as const;
+
 const PREFERENCES_PATH = `${APP_API_BASE_PATH}${AUTH_ROUTE_NAME}/preferences` as const;
 
 interface AppRequestClient {
@@ -95,6 +96,7 @@ describe('PATCH /auth/preferences integration', () => {
         .from(schema.userPreferences)
         .where(eq(schema.userPreferences.userId, userId))
         .limit(1);
+
       expect(rows.at(0)?.preferredCurrency).toBe('EUR');
 
       const logs = getLogsForRequestId(request.requestId);
@@ -121,6 +123,7 @@ describe('PATCH /auth/preferences integration', () => {
         headers: new Headers({ 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }),
         body: JSON.stringify({ preferred_currency: currency }),
       });
+
       expect(updateResponse.status).toBe(200);
 
       const sessionResponse = await sendSessionRequest(app, { authToken: token });
@@ -150,6 +153,7 @@ describe('PATCH /auth/preferences integration', () => {
       headers: new Headers({ 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }),
       body: JSON.stringify({ preferred_currency: 'US' }),
     });
+
     expect(tooShort.status).toBe(400);
 
     const tooLong = await app.request(PREFERENCES_PATH, {
@@ -157,6 +161,7 @@ describe('PATCH /auth/preferences integration', () => {
       headers: new Headers({ 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }),
       body: JSON.stringify({ preferred_currency: 'USDX' }),
     });
+
     expect(tooLong.status).toBe(400);
   });
 

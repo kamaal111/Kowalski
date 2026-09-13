@@ -4,12 +4,13 @@ import { arrays } from '@kamaalio/kamaal';
 
 import type { HonoContext } from '../../api/contexts.ts';
 import { PortfolioEntryCreateFailed } from '../exceptions.ts';
-import { createPortfolioTransactions, findPortfolioTransactionsByIds } from '../repositories/create-entry.ts';
-import type { BulkCreateEntriesPayload, BulkCreateEntryItemPayload } from '../schemas/payloads.ts';
 import { getOrCreateDefaultPortfolio, getTransactionDateForStorage } from './create-entry.ts';
 import { resolvePortfolioStockTickers } from './resolve-stock-ticker.ts';
+import { createPortfolioTransactions, findPortfolioTransactionsByIds } from '../repositories/create-entry.ts';
+import type { BulkCreateEntriesPayload, BulkCreateEntryItemPayload } from '../schemas/payloads.ts';
 
 type CreatedPortfolioTransaction = Awaited<ReturnType<typeof createPortfolioTransactions>>[number];
+
 type CreatePortfolioTransactionInput = Parameters<typeof createPortfolioTransactions>[1][number];
 
 interface CreatedBulkEntry {
@@ -28,11 +29,13 @@ async function bulkCreateEntries(c: HonoContext, payload: BulkCreateEntriesPaylo
   }
 
   const defaultPortfolio = await getOrCreateDefaultPortfolio(c);
+
   const existingTransactions = await findPortfolioTransactionsByIds(
     c,
     defaultPortfolio,
     arrays.compactMap(payload.entries, entry => entry.id),
   );
+
   const existingIds = new Set(existingTransactions.map(transaction => transaction.id));
   const requestedEntriesToCreate: BulkCreateEntryItemPayload[] = [];
   let skippedCount = 0;
@@ -55,11 +58,13 @@ async function bulkCreateEntries(c: HonoContext, payload: BulkCreateEntriesPaylo
   }
 
   const stockTickers = await resolvePortfolioStockTickers(c, requestedEntriesToCreate);
+
   const entriesToCreate = requestedEntriesToCreate
     .entries()
     .map(([index, entry]) => {
       const entryId = entry.id ?? crypto.randomUUID();
       const stockTicker = stockTickers[index];
+
       if (stockTicker == null) {
         throw new PortfolioEntryCreateFailed(c);
       }
@@ -87,13 +92,17 @@ async function bulkCreateEntries(c: HonoContext, payload: BulkCreateEntriesPaylo
       };
     })
     .toArray();
+
   const createdTransactions = await createPortfolioTransactions(
     c,
     entriesToCreate.map(entry => entry.transactionInput),
   );
+
   const createdTransactionsById = new Map(createdTransactions.map(transaction => [transaction.id, transaction]));
+
   const createdEntries = entriesToCreate.map(entry => {
     const transaction = createdTransactionsById.get(entry.id);
+
     if (transaction == null) {
       throw new PortfolioEntryCreateFailed(c);
     }

@@ -1,13 +1,13 @@
 import { describe, expect } from 'vitest';
 
-import { FOREX_ROUTE_NAME } from '../index.ts';
+import { APP_API_BASE_PATH } from '../../constants/common.ts';
+import { STATUS_CODES } from '../../constants/http.ts';
 import type { Database } from '../../db/index.ts';
 import { exchangeRates } from '../../db/schema/forex.ts';
-import { STATUS_CODES } from '../../constants/http.ts';
-import { APP_API_BASE_PATH } from '../../constants/common.ts';
 import { ErrorResponseSchema } from '../../schemas/errors.ts';
 import { integrationTest } from '../../tests/fixtures.ts';
 import { BASE_CURRENCY } from '../constants.ts';
+import { FOREX_ROUTE_NAME } from '../index.ts';
 import { ForexLatestResponseSchema } from '../schemas/latest.ts';
 
 const LATEST_FOREX_PATH = `${APP_API_BASE_PATH}${FOREX_ROUTE_NAME}/latest`;
@@ -28,10 +28,12 @@ describe('Forex latest route', () => {
       });
 
       const request = withRequestId();
+
       const response = await app.request(LATEST_FOREX_PATH, {
         method: 'GET',
         headers: request.headers,
       });
+
       const body = await expectSuccessfulLatestResponse(response);
       const logs = getLogsForRequestId(request.requestId);
 
@@ -134,10 +136,12 @@ describe('Forex latest route', () => {
       });
 
       const request = withRequestId();
+
       const response = await app.request(`${LATEST_FOREX_PATH}?base=GBP`, {
         method: 'GET',
         headers: request.headers,
       });
+
       const body = await expectNotFoundResponse(response);
       const logs = getLogsForRequestId(request.requestId);
 

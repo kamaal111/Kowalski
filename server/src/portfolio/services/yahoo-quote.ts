@@ -3,8 +3,8 @@ import z from 'zod';
 
 import type { HonoContext } from '../../api/contexts.ts';
 import { CurrencySchema, type Currency } from '../../forex/constants.ts';
-import { logError, logWarn } from '../../logging/index.ts';
 import { withRequestLogger } from '../../logging/http.ts';
+import { logError, logWarn } from '../../logging/index.ts';
 import { yahooFinanceClient } from '../../utils/yahoo-finance.ts';
 
 const YahooQuoteSchema = z
@@ -26,6 +26,7 @@ export async function fetchYahooQuotes(c: HonoContext, symbols: string[]): Promi
   }
 
   let quotes: QuoteResponseArray;
+
   try {
     quotes = await yahooFinanceClient.quote(symbols, {
       fields: ['symbol', 'regularMarketPrice', 'currency'],
@@ -46,6 +47,7 @@ export async function fetchYahooQuotes(c: HonoContext, symbols: string[]): Promi
 
   const resolvedQuotes = quotes.reduce((acc, quote) => {
     const parsedQuote = YahooQuoteSchema.safeParse(quote);
+
     if (!parsedQuote.success) {
       return acc;
     }
@@ -57,6 +59,7 @@ export async function fetchYahooQuotes(c: HonoContext, symbols: string[]): Promi
   }, new Map<string, YahooQuote>());
 
   const unresolvedSymbols = symbols.filter(symbol => !resolvedQuotes.has(symbol));
+
   if (unresolvedSymbols.length > 0) {
     logWarn(withRequestLogger(c, { component: 'portfolio' }), {
       event: 'portfolio.stock_prices.yahoo.partial',

@@ -23,6 +23,7 @@ const NullableString = z
   .trim()
   .transform(val => (val === '' ? null : val))
   .nullable();
+
 const NormalizedTickerPartString = z
   .string()
   .trim()
@@ -30,6 +31,7 @@ const NormalizedTickerPartString = z
   .refine(value => /[A-Za-z0-9]/.test(value), {
     message: 'Must contain at least one letter or number',
   });
+
 const OptionalNullableString = z
   .string()
   .trim()

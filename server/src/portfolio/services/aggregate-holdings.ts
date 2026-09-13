@@ -1,6 +1,6 @@
+import type { ResolvedPortfolioEntry } from './resolve-splits.ts';
 import { RESOLVED_TRANSACTION_TYPES } from '../../constants/common.ts';
 import { assertToFloat } from '../../utils/numbers.ts';
-import type { ResolvedPortfolioEntry } from './resolve-splits.ts';
 
 export interface AggregatedHolding {
   entry: ResolvedPortfolioEntry;
@@ -12,6 +12,7 @@ export function aggregateHoldings(entries: ResolvedPortfolioEntry[]): Aggregated
     .reduce((holdingsByTickerId, entry) => {
       const existingHolding = holdingsByTickerId.get(entry.tickerId);
       const amountDelta = getHoldingAmountDelta(entry);
+
       if (existingHolding == null) {
         return holdingsByTickerId.set(entry.tickerId, { entry, amount: amountDelta });
       }
@@ -26,6 +27,7 @@ export function aggregateHoldings(entries: ResolvedPortfolioEntry[]): Aggregated
 
 function getHoldingAmountDelta(entry: ResolvedPortfolioEntry) {
   const amount = assertToFloat(entry.amount);
+
   switch (entry.transactionType) {
     case RESOLVED_TRANSACTION_TYPES.BUY:
       return amount;

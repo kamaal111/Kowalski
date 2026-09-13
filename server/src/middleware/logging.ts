@@ -3,12 +3,12 @@ import type { StandardSchemaV1 } from '@standard-schema/spec';
 import type { ErrorHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 
-import env from '../api/env.ts';
 import type { HonoContext, HonoEnvironment } from '../api/contexts.ts';
+import env from '../api/env.ts';
 import { APIException, InvalidValidation } from '../api/exceptions.ts';
 import { STATUS_CODES } from '../constants/http.ts';
-import { createRequestLogger, logError, logInfo, logWarn, type ServerLogger } from '../logging/index.ts';
 import { getRequestLogger, getRouteForLog } from '../logging/http.ts';
+import { createRequestLogger, logError, logInfo, logWarn, type ServerLogger } from '../logging/index.ts';
 
 function loggingMiddleware() {
   return structuredLogger<HonoEnvironment, ServerLogger>({
@@ -36,6 +36,7 @@ function loggingMiddleware() {
     onError: (_logger, error, c, elapsedMs) => {
       const { level, fields, message } = describeError(error);
       const logger = getRequestLogger(c);
+
       const shared = {
         route: getRouteForLog(c),
         status_code: c.res.status,
@@ -45,6 +46,7 @@ function loggingMiddleware() {
 
       if (level === 'error') {
         logError(logger, { ...fields, ...shared }, error, message);
+
         return;
       }
 

@@ -1,5 +1,6 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 import { HTTPException } from 'hono/http-exception';
+
 import type { HonoContext } from './contexts.ts';
 import { STATUS_CODES, type StatusCode } from '../constants/http.ts';
 
@@ -22,6 +23,7 @@ export class APIException extends HTTPException {
       JSON.stringify({ message: options.message, code: options.code, context: options.context }),
       { status: statusCode, headers },
     );
+
     super(statusCode, { res: response, message: options.message });
     this.code = options.code;
     this.context = options.context;

@@ -1,10 +1,10 @@
 import { AUTH_SESSION_CONTEXT_KEY } from '@kamaalio/kamaal-auth-hono';
 import { routePath } from 'hono/route';
 
+import { childLogger, createRequestLogger, type LogBindings, type ServerLogger } from './index.ts';
 import type { HonoContext } from '../api/contexts.ts';
 import type { ServerMode } from '../api/env.ts';
 import env from '../api/env.ts';
-import { childLogger, createRequestLogger, type LogBindings, type ServerLogger } from './index.ts';
 import { isString } from '../utils/type-guards.ts';
 
 export function initializeRequestLogger(c: HonoContext, mode: ServerMode) {
@@ -18,11 +18,13 @@ export function initializeRequestLogger(c: HonoContext, mode: ServerMode) {
   });
 
   c.set('logger', logger);
+
   return logger;
 }
 
 export function getRequestLogger(c: HonoContext) {
   const existingLogger = c.get('logger') ?? initializeRequestLogger(c, env.MODE);
+
   return bindAuthenticatedUserIdFromContext(c, existingLogger);
 }
 
@@ -40,12 +42,14 @@ function getLoggerBindings(logger: ServerLogger): LogBindings {
 
 function bindAuthenticatedUserIdFromContext(c: HonoContext, logger: ServerLogger) {
   const existingUserId = getLoggerBindings(logger).user_id;
+
   if (isString(existingUserId) && existingUserId.length > 0) {
     return logger;
   }
 
   const session = c.get(AUTH_SESSION_CONTEXT_KEY);
   const userId = session?.user.id;
+
   if (userId == null || userId.length === 0) {
     return logger;
   }
@@ -58,5 +62,6 @@ function bindAuthenticatedUserIdFromContext(c: HonoContext, logger: ServerLogger
 
 function getMatchedRoutePath(c: HonoContext) {
   const matchedRoutePath = routePath(c);
+
   return matchedRoutePath.length > 0 && !matchedRoutePath.includes('*') ? matchedRoutePath : c.req.path;
 }

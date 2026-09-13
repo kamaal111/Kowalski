@@ -1,15 +1,19 @@
 import { arrays } from '@kamaalio/kamaal';
 
+import { aggregateHoldings } from './aggregate-holdings.ts';
+import { getCurrentStockValues } from './current-stock-values.ts';
+import type { ResolvedPortfolioEntry } from './resolve-splits.ts';
+import { findResolvedPortfolioEntriesByUserId } from './resolved-portfolio-entries.ts';
+import { fetchYahooChartPrices } from './yahoo-chart.ts';
 import type { HonoContext } from '../../api/contexts.ts';
 import { getSessionWhereSessionIsRequired } from '../../auth/index.ts';
 import { RESOLVED_TRANSACTION_TYPES } from '../../constants/common.ts';
 import type { Currency } from '../../forex/constants.ts';
-import { logWarn } from '../../logging/index.ts';
 import { withRequestLogger } from '../../logging/http.ts';
-import { ExchangeRateResolutionFailed, StockPriceFetchFailed } from '../exceptions.ts';
+import { logWarn } from '../../logging/index.ts';
 import { assertToFloat } from '../../utils/numbers.ts';
-import type { PortfolioDashboardPeriod } from '../schemas/queries.ts';
-import type { PortfolioHoldingDistributionItem } from '../schemas/responses.ts';
+import { DATE_FORMAT, MAX_PORTFOLIO_DASHBOARD_GROWTH_POINTS } from '../constants.ts';
+import { ExchangeRateResolutionFailed, StockPriceFetchFailed } from '../exceptions.ts';
 import {
   findLatestExchangeRateSnapshotByBase,
   type PersistedExchangeRateSnapshot,
@@ -19,14 +23,11 @@ import {
   insertStockPrices,
   type PersistedStockPrice,
 } from '../repositories/stock-prices.ts';
-import { aggregateHoldings } from './aggregate-holdings.ts';
-import { getCurrentStockValues } from './current-stock-values.ts';
-import { findResolvedPortfolioEntriesByUserId } from './resolved-portfolio-entries.ts';
-import type { ResolvedPortfolioEntry } from './resolve-splits.ts';
-import { fetchYahooChartPrices } from './yahoo-chart.ts';
-import { DATE_FORMAT, MAX_PORTFOLIO_DASHBOARD_GROWTH_POINTS } from '../constants.ts';
+import type { PortfolioDashboardPeriod } from '../schemas/queries.ts';
+import type { PortfolioHoldingDistributionItem } from '../schemas/responses.ts';
 
 const YAHOO_CHART_LOOKBACK_DAYS = 10;
+
 const YAHOO_CHART_LOOKAHEAD_DAYS = 5;
 
 interface PortfolioGrowthPoint {
@@ -79,9 +80,11 @@ async function getPortfolioDashboards(
 ): Promise<PortfolioDashboardsResult> {
   const session = getSessionWhereSessionIsRequired(c);
   const preferredCurrency = session.user.preferred_currency;
+
   const entries = await findResolvedPortfolioEntriesByUserId(c).then(entries => {
     return entries.toSorted(compareEntriesAscending);
   });
+
   if (entries.length === 0) {
     return {
       portfolioGrowthOverTime: {
@@ -97,18 +100,23 @@ async function getPortfolioDashboards(
 
   const currentDate = new Date().toISOString().slice(0, DATE_FORMAT.length);
   const periodStartDate = getPeriodStartDate(options.period, currentDate);
+
   const snapshotDates = downsampleSnapshotDates(
     getSnapshotDatesForPeriod(entries, periodStartDate),
     MAX_PORTFOLIO_DASHBOARD_GROWTH_POINTS - 1,
   );
+
   const snapshotHoldingsByDate = getSnapshotHoldingsByDate(entries, snapshotDates);
+
   const historicalPriceRequests = snapshotDates.flatMap(date => {
     return snapshotHoldingsByDate.get(date)?.map(holding => ({ ...holding, date })) ?? [];
   });
+
   const [[historicalPrices, exchangeRateSnapshot], { currentPoint, distribution }] = await Promise.all([
     resolveHistoricalPricesAndExchangeRateSnapshots(c, { snapshotHoldingsByDate, historicalPriceRequests }),
     makeCurrentPointAndDistribution(c, entries, currentDate),
   ]);
+
   const { omittedSnapshotDates, points } = snapshotDates.reduce<{
     omittedSnapshotDates: string[];
     points: { date: string; value: number; is_current: boolean }[];
@@ -119,8 +127,11 @@ async function getPortfolioDashboards(
           holding,
           price: getClosestPriceForTicker(historicalPrices, holding.tickerId, date) ?? holding.fallbackPrice,
         })) ?? [];
+
       if (prices.some(({ price }) => price == null)) {
-        return { ...acc, omittedSnapshotDates: [...acc.omittedSnapshotDates, date] };
+        acc.omittedSnapshotDates.push(date);
+
+        return acc;
       }
 
       const value = prices.reduce((total, { holding, price }) => {
@@ -133,7 +144,9 @@ async function getPortfolioDashboards(
         );
       }, 0);
 
-      return { ...acc, points: [...acc.points, { date, value, is_current: false }] };
+      acc.points.push({ date, value, is_current: false });
+
+      return acc;
     },
     { omittedSnapshotDates: [], points: [] },
   );
@@ -161,10 +174,12 @@ async function resolveHistoricalPricesAndExchangeRateSnapshots(
 ) {
   const session = getSessionWhereSessionIsRequired(c);
   const preferredCurrency = session.user.preferred_currency;
+
   const fallbackPrices = options.snapshotHoldingsByDate
     .values()
     .toArray()
     .flatMap(holdings => arrays.compactMap(holdings, holding => holding.fallbackPrice));
+
   const historicalPrices = await resolveHistoricalPrices(c, options.historicalPriceRequests);
 
   const exchangeRateSnapshot = await resolveExchangeRateSnapshotForPrices(
@@ -182,9 +197,11 @@ async function resolveHistoricalPrices(
 ): Promise<PersistedStockPrice[]> {
   const timelines = buildHistoricalPriceTimelines(requests);
   const cachedPrices = await findCachedPrices(c, timelines);
+
   const missingTimelines = timelines.filter(timeline => {
     return timeline.dates.some(date => getClosestPriceForTicker(cachedPrices, timeline.tickerId, date) == null);
   });
+
   const fetchedPrices = await fetchAndStoreMissingPrices(c, missingTimelines);
   const resolvedPrices = cachedPrices.concat(fetchedPrices);
   logUnresolvedHistoricalPriceTimelines(c, getUnresolvedHistoricalPriceRequests(timelines, resolvedPrices));
@@ -195,10 +212,12 @@ async function resolveHistoricalPrices(
 function findCachedPrices(c: HonoContext, timelines: HistoricalPriceTimeline[]): Promise<PersistedStockPrice[]> {
   const uniqueTickerIds = timelines.map(timeline => timeline.tickerId);
   const earliestDate = timelines.map(timeline => timeline.earliestDate).toSorted()[0];
+
   const latestDate = timelines
     .map(timeline => timeline.latestDate)
     .toSorted()
     .at(-1);
+
   if (earliestDate == null || latestDate == null) {
     return Promise.resolve([]);
   }
@@ -216,6 +235,7 @@ async function fetchAndStoreMissingPrices(
   missingTimelines: HistoricalPriceTimeline[],
 ): Promise<PersistedStockPrice[]> {
   let fetchedPrices: PersistedStockPrice[] = [];
+
   for (const timeline of missingTimelines) {
     const chartPrices = await fetchYahooChartPrices(c, {
       symbol: timeline.stockSymbol,
@@ -244,12 +264,14 @@ async function makeCurrentPointAndDistribution(
   currentDate: string,
 ): Promise<{ currentPoint: PortfolioGrowthPoint; distribution: PortfolioHoldingDistributionItem[] }> {
   const currentValues = await getCurrentStockValues(c, entries);
+
   const distribution = arrays.compactMap(aggregateHoldings(entries), holding => {
     if (holding.amount === 0) {
       return null;
     }
 
     const currentValue = currentValues[holding.entry.stockSymbol];
+
     if (currentValue == null) {
       throw new StockPriceFetchFailed(c);
     }
@@ -259,6 +281,7 @@ async function makeCurrentPointAndDistribution(
       market_value: { currency: currentValue.currency, value: holding.amount * currentValue.value },
     };
   });
+
   const value = distribution.reduce((total, item) => total + item.market_value.value, 0);
 
   return {
@@ -277,6 +300,7 @@ async function resolveExchangeRateSnapshotForPrices(
   }
 
   const snapshot = await findLatestExchangeRateSnapshotByBase(c, preferredCurrency);
+
   if (snapshot == null) {
     throw new ExchangeRateResolutionFailed(c);
   }
@@ -299,6 +323,7 @@ function convertPriceToPreferredCurrency(
   }
 
   const conversionRate = exchangeRateSnapshot.rates[price.currency];
+
   if (conversionRate == null) {
     throw new ExchangeRateResolutionFailed(c);
   }
@@ -353,6 +378,7 @@ function getUpdatedFallbackPrice(
   nextAmount: number,
 ): PersistedStockPrice | null {
   const purchasePrice = assertToFloat(entry.purchasePrice);
+
   if (existingHolding == null) {
     return {
       tickerId: entry.tickerId,
@@ -363,9 +389,11 @@ function getUpdatedFallbackPrice(
   }
 
   const existingFallbackPrice = existingHolding.fallbackPrice;
+
   if (existingFallbackPrice == null) {
     return null;
   }
+
   if (existingFallbackPrice.currency !== entry.purchasePriceCurrency) {
     return null;
   }
@@ -386,11 +414,13 @@ function getSnapshotDatesForPeriod(entries: ResolvedPortfolioEntry[], periodStar
   const transactionDates = getUniqueTransactionDates(entries).filter(date => {
     return periodStartDate == null || date >= periodStartDate;
   });
+
   if (periodStartDate == null) {
     return transactionDates;
   }
 
   const baselineHoldings = getSnapshotHoldings(entries, periodStartDate);
+
   if (baselineHoldings.length === 0) {
     return transactionDates;
   }
@@ -402,14 +432,17 @@ function downsampleSnapshotDates(dates: string[], maxDateCount: number) {
   if (dates.length <= maxDateCount) {
     return dates;
   }
+
   if (maxDateCount <= 0) {
     return [];
   }
+
   if (maxDateCount === 1) {
     return [dates[0]];
   }
 
   const selectedIndexes = new Set<number>();
+
   for (let index = 0; index < maxDateCount; index += 1) {
     selectedIndexes.add(Math.round((index * (dates.length - 1)) / (maxDateCount - 1)));
   }
@@ -453,6 +486,7 @@ function getPeriodStartDate(period: PortfolioDashboardPeriod, currentDate: strin
 
 function mergeCurrentPoint(points: PortfolioGrowthPoint[], currentPoint: PortfolioGrowthPoint): PortfolioGrowthPoint[] {
   const existingPointIndex = points.findIndex(point => point.date === currentPoint.date);
+
   if (existingPointIndex < 0) {
     return [...points, currentPoint].toSorted(comparePointsAscending);
   }
@@ -481,6 +515,7 @@ function buildHistoricalPriceTimelines(requests: HistoricalPriceRequest[]): Hist
 
   return arrays.compactMap(grouped.values().toArray(), tickerRequests => {
     const firstRequest = tickerRequests[0];
+
     if (tickerRequests.length === 0) {
       return null;
     }
@@ -488,6 +523,7 @@ function buildHistoricalPriceTimelines(requests: HistoricalPriceRequest[]): Hist
     const dates = [...new Set(tickerRequests.map(request => request.date))].toSorted();
     const earliestDate = dates[0];
     const latestDate = dates.at(-1);
+
     if (earliestDate == null || latestDate == null) {
       return null;
     }
@@ -584,10 +620,13 @@ function shiftDateByCalendarParts(date: string, shift: CalendarDateShift) {
 
   if ('years' in shift) {
     shiftMonthAndYear({ years: shift.years, months: 0 });
+
     return formatShiftedDate();
   }
+
   if ('months' in shift) {
     shiftMonthAndYear({ months: shift.months, years: 0 });
+
     return formatShiftedDate();
   }
 
@@ -602,6 +641,7 @@ function daysInMonth(year: number, month: number) {
 
 function compareEntriesAscending(left: ResolvedPortfolioEntry, right: ResolvedPortfolioEntry) {
   const dateComparison = left.transactionDate.localeCompare(right.transactionDate);
+
   if (dateComparison !== 0) {
     return dateComparison;
   }
@@ -616,12 +656,14 @@ function comparePointsAscending(left: PortfolioGrowthPoint, right: PortfolioGrow
 function comparePriceDistance(left: PersistedStockPrice, right: PersistedStockPrice, targetDate: string) {
   const leftDistance = Math.abs(daysBetween(left.date, targetDate));
   const rightDistance = Math.abs(daysBetween(right.date, targetDate));
+
   if (leftDistance !== rightDistance) {
     return leftDistance - rightDistance;
   }
 
   const leftIsHistorical = left.date <= targetDate;
   const rightIsHistorical = right.date <= targetDate;
+
   if (leftIsHistorical !== rightIsHistorical) {
     return leftIsHistorical ? -1 : 1;
   }

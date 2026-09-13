@@ -13,11 +13,17 @@ import { MIME_TYPES } from '../constants/request.ts';
 export type OpenAPIRouter = StandardOpenAPIHono<HonoEnvironment>;
 
 const SPEC_NAME = '/spec';
+
 export const OPENAPI_JSON_SPEC_PATH = `${SPEC_NAME}.json`;
+
 export const OPENAPI_YAML_SPEC_PATH = `${SPEC_NAME}.yaml`;
+
 export const OPENAPI_DEFAULT_SERVER_URL = 'http://127.0.0.1:8082';
+
 const SPEC_SOURCE_OF_TRUTH_URL = OPENAPI_JSON_SPEC_PATH;
+
 export const YAML_OPTIONS = { indent: 2, noRefs: true };
+
 const OPENAPI_INFO = {
   openapi: '3.1.1',
   info: { version: '1.0.0', title: 'Kowalski API' },

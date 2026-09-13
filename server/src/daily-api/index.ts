@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
+
 import type { HonoEnvironment } from '../api/contexts.ts';
-import { allowedModes } from '../api/middleware.ts';
 import { SERVER_MODES } from '../api/env.ts';
+import { allowedModes } from '../api/middleware.ts';
 import { FOREX_ROUTE_NAME, forexApi } from '../forex/index.ts';
 import { handleServerError } from '../middleware/logging.ts';
 

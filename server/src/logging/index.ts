@@ -8,12 +8,17 @@ import type { ServerMode } from '../api/env.ts';
 import { describeRuntimeType, isBoolean, isNumber, isPrimitiveLogValue, isString } from '../utils/type-guards.ts';
 
 const SERVICE_NAME = 'kowalski-server';
+
 const DEFAULT_COMPONENT = 'server';
+
 const REQUEST_COMPONENT = 'http';
 
 type LogScalar = boolean | number | string | null | undefined;
+
 type LogArray = LogScalar[];
+
 type LogValue = LogScalar | LogArray;
+
 export type LogBindings = Record<string, LogValue | undefined>;
 
 interface BaseLogFields {
@@ -211,6 +216,7 @@ function sanitizeLogValue(value: LogValue | undefined): LogValue | undefined {
 
   const sanitizedItems = value.flatMap(item => {
     const sanitizedItem = sanitizeArrayItem(item);
+
     return sanitizedItem === undefined ? [] : [sanitizedItem];
   });
 
@@ -227,6 +233,7 @@ function sanitizeArrayItem(value: LogScalar): LogScalar | undefined {
 
 function getErrorCauseName(error: Error): string | undefined {
   const cause = error.cause;
+
   if (cause == null) {
     return undefined;
   }
@@ -240,6 +247,7 @@ function getErrorCauseName(error: Error): string | undefined {
 
 function getErrorCauseMessage(error: Error): string | undefined {
   const cause = error.cause;
+
   if (cause == null) {
     return undefined;
   }

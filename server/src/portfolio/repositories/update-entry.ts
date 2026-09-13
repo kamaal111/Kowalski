@@ -1,12 +1,13 @@
 import { and, eq } from 'drizzle-orm';
 
 import type { HonoContext } from '../../api/contexts.ts';
+import { getSessionWhereSessionIsRequired } from '../../auth/index.ts';
 import { portfolio, portfolioTransaction } from '../../db/schema/index.ts';
 import { CurrencySchema, type Currency } from '../../forex/constants.ts';
 import { PortfolioEntryUpdateFailed } from '../exceptions.ts';
-import { getSessionWhereSessionIsRequired } from '../../auth/index.ts';
 
 type PortfolioTransactionInsert = typeof portfolioTransaction.$inferInsert;
+
 type PortfolioTransactionSelect = typeof portfolioTransaction.$inferSelect;
 
 type OwnedPortfolioTransaction = Pick<
@@ -33,6 +34,7 @@ export async function findPortfolioTransactionByIdAndUserId(
   entryId: string,
 ): Promise<OwnedPortfolioTransaction | undefined> {
   const session = getSessionWhereSessionIsRequired(c);
+
   const transactions = await c
     .get('db')
     .select({
@@ -83,7 +85,9 @@ export async function updatePortfolioTransaction(
       createdAt: portfolioTransaction.createdAt,
       updatedAt: portfolioTransaction.updatedAt,
     });
+
   const updatedTransaction = updatedTransactions.at(0);
+
   if (updatedTransaction == null) {
     throw new PortfolioEntryUpdateFailed(c);
   }

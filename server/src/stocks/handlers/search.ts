@@ -1,12 +1,12 @@
 import type { HonoContext } from '../../api/contexts.ts';
-import type { StocksSearchQuery } from '../schemas/search.ts';
-import { STATUS_CODES } from '../../constants/http.ts';
-import { mapYahooFinanceSearchQuoteToEquitySearchResponse } from '../mappers/yahoo-finance.ts';
 import { ONE_MINUTE_IN_MILLISECONDS } from '../../constants/common.ts';
-import { withCache } from '../../middleware/cache.ts';
-import { logInfo } from '../../logging/index.ts';
+import { STATUS_CODES } from '../../constants/http.ts';
 import { withRequestLogger } from '../../logging/http.ts';
+import { logInfo } from '../../logging/index.ts';
+import { withCache } from '../../middleware/cache.ts';
 import { yahooFinanceClient } from '../../utils/yahoo-finance.ts';
+import { mapYahooFinanceSearchQuoteToEquitySearchResponse } from '../mappers/yahoo-finance.ts';
+import type { StocksSearchQuery } from '../schemas/search.ts';
 
 type SearchContext = HonoContext<string, { out: { query: StocksSearchQuery } }>;
 

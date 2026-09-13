@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 
-import * as z from 'zod';
 import { asserts } from '@kamaalio/kamaal';
+import * as z from 'zod';
 
 import { ensureSpecGenerationEnv } from '../src/api/spec-generation-env.ts';
 
@@ -23,6 +23,7 @@ async function downloadOpenAPISpec(outputFile: string) {
 }
 
 let outputFile: string;
+
 try {
   [outputFile] = ArgsSchema.parse(process.argv.slice(2));
 } catch (error) {

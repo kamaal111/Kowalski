@@ -2,12 +2,12 @@ import { randomUUID } from 'crypto';
 
 import { eq } from 'drizzle-orm';
 
+import type { TransactionType } from '../../constants/common.ts';
 import type { Database } from '../../db/index.ts';
 import { exchangeRates, portfolio, portfolioTransaction, stockInfo, stockTicker } from '../../db/schema/index.ts';
 import { dateOnlyStringToISO8601String } from '../../utils/dates.ts';
 import { createSyntheticTickerId, createSyntheticTickerIsin } from '../../utils/tickers.ts';
 import { CreateEntryResponseSchema } from '../schemas/responses.ts';
-import type { TransactionType } from '../../constants/common.ts';
 
 const DEFAULT_PORTFOLIO_NAME = 'Default Portfolio';
 
@@ -123,7 +123,9 @@ async function getOrCreateDefaultPortfolio(db: Database, userId: string) {
     .from(portfolio)
     .where(eq(portfolio.userId, userId))
     .limit(1);
+
   const existingPortfolio = existingPortfolios.at(0);
+
   if (existingPortfolio != null) {
     return existingPortfolio;
   }
@@ -136,7 +138,9 @@ async function getOrCreateDefaultPortfolio(db: Database, userId: string) {
       userId,
     })
     .returning({ id: portfolio.id });
+
   const createdPortfolio = createdPortfolios.at(0);
+
   if (createdPortfolio == null) {
     throw new Error('Failed to create seeded portfolio');
   }
@@ -146,12 +150,15 @@ async function getOrCreateDefaultPortfolio(db: Database, userId: string) {
 
 async function getOrCreateTicker(db: Database, stock: SeedPortfolioEntryInput['stock']) {
   const tickerId = createSyntheticTickerId(stock.exchange, stock.symbol);
+
   const existingTickers = await db
     .select({ id: stockTicker.id, isin: stockTicker.isin })
     .from(stockTicker)
     .where(eq(stockTicker.id, tickerId))
     .limit(1);
+
   const existingTicker = existingTickers.at(0);
+
   if (existingTicker != null) {
     await db
       .update(stockTicker)
@@ -163,6 +170,7 @@ async function getOrCreateTicker(db: Database, stock: SeedPortfolioEntryInput['s
         exchangeDispatch: stock.exchangeDispatch ?? null,
       })
       .where(eq(stockTicker.id, tickerId));
+
     return existingTicker;
   }
 
@@ -178,7 +186,9 @@ async function getOrCreateTicker(db: Database, stock: SeedPortfolioEntryInput['s
       exchangeDispatch: stock.exchangeDispatch ?? null,
     })
     .returning({ id: stockTicker.id });
+
   const createdTicker = createdTickers.at(0);
+
   if (createdTicker == null) {
     throw new Error('Failed to create seeded ticker');
   }

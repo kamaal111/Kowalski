@@ -8,6 +8,7 @@ import {
 async function main() {
   const targetCollectionDay = getCurrentCollectionDay();
   const latestCollectedAt = await getLatestCollectedAt(db);
+
   if (latestCollectedAt == null) {
     console.log('No forex snapshot has been stored yet.');
   } else {
@@ -19,14 +20,17 @@ async function main() {
     latestCollectedAt,
     targetCollectionDay,
   });
+
   if (result.status === 'skipped') {
     console.log(`Skipping daily currency fetch for ${result.targetCollectionDay}; data is already up to date.`);
+
     return;
   }
 
   if (result.status === 'no-data') {
     console.error(`No exchange rates were found for ${result.targetCollectionDay}.`);
     process.exitCode = 1;
+
     return;
   }
 

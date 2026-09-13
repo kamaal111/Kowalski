@@ -1,8 +1,8 @@
 import { test } from 'vitest';
 
 import { createApp } from '../app.ts';
-import { createTestDatabase, createTestUserAndSession } from './utils.ts';
 import { createTestRequestId, getLogsForRequestId, withRequestId } from './logs.ts';
+import { createTestDatabase, createTestUserAndSession } from './utils.ts';
 
 export const integrationTest = test
   .extend('_fixturesSetup', async ({}, { onCleanup }) => {

@@ -2,16 +2,16 @@ import { eq } from 'drizzle-orm';
 import { describe, expect } from 'vitest';
 
 import { PORTFOLIO_ROUTE_NAME } from '../index.ts';
-import { PortfolioOverviewResponseSchema, ResolvedEntryResponseSchema } from '../schemas/responses.ts';
 import { seedExchangeRate, seedPortfolioEntry, seedStockInfo, type SeedPortfolioEntryResult } from './helpers.ts';
 import { APP_API_BASE_PATH, type ResolvedtransactionType } from '../../constants/common.ts';
+import * as schema from '../../db/schema/index.ts';
+import type { Currency } from '../../forex/constants.ts';
 import { ErrorResponseSchema } from '../../schemas/errors.ts';
 import { integrationTest } from '../../tests/fixtures.ts';
 import { yahooFinanceQuoteMock } from '../../tests/mocks/yahoo-finance.ts';
 import { createTestUserAndSession } from '../../tests/utils.ts';
-import * as schema from '../../db/schema/index.ts';
 import { createSyntheticTickerId } from '../../utils/tickers.ts';
-import type { Currency } from '../../forex/constants.ts';
+import { PortfolioOverviewResponseSchema, ResolvedEntryResponseSchema } from '../schemas/responses.ts';
 
 const OVERVIEW_PATH = `${APP_API_BASE_PATH}${PORTFOLIO_ROUTE_NAME}/overview`;
 
@@ -35,6 +35,7 @@ describe('Portfolio Overview Route', () => {
         transactionType: 'buy',
         transactionDate: '2025-12-19T10:30:00.000Z',
       });
+
       const splitEntry = await seedPortfolioEntry(db, {
         userId,
         stock: {
@@ -47,6 +48,7 @@ describe('Portfolio Overview Route', () => {
         transactionType: 'split',
         transactionDate: '2025-12-20T10:30:00.000Z',
       });
+
       await seedStockInfo(db, {
         tickerId: createSyntheticTickerId('NMS', 'AAPL'),
         currency: 'USD',
@@ -122,6 +124,7 @@ describe('Portfolio Overview Route', () => {
         transactionType: 'buy',
         transactionDate: '2025-12-20T10:30:00.000Z',
       });
+
       const msftEntry = await seedPortfolioEntry(db, {
         userId,
         stock: {
@@ -137,6 +140,7 @@ describe('Portfolio Overview Route', () => {
         transactionType: 'buy',
         transactionDate: '2025-12-19T10:30:00.000Z',
       });
+
       const today = new Date().toISOString().slice(0, 10);
 
       await seedStockInfo(db, {
@@ -264,6 +268,7 @@ describe('Portfolio Overview Route', () => {
 
       const response = await sendOverviewRequest(app, { sessionToken });
       const body = await expectSuccessfulOverviewResponse(response);
+
       const storedPrice = await db
         .select({
           tickerId: schema.stockInfo.tickerId,

@@ -6,7 +6,9 @@ import { resetHoldingsRefreshCoordinatorForTests } from '../portfolio/services/h
 import { setYahooFinanceClientForTests } from '../utils/yahoo-finance.ts';
 
 initializeTestLogs();
+
 setYahooFinanceClientForTests(new YahooFinanceMock());
+
 beforeEach(() => {
   resetYahooFinanceMocks();
   resetHoldingsRefreshCoordinatorForTests();

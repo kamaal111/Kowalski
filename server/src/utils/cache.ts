@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { ONE_MINUTE_IN_MILLISECONDS } from '../constants/common.ts';
 
 const DEFAULT_MAX_SIZE = 1000;
+
 const DEFAULT_TTL = 5 * ONE_MINUTE_IN_MILLISECONDS;
 
 const CacheRowSchema = z.object({
@@ -25,6 +26,7 @@ export class LRUCache<K = unknown, V = unknown> {
 
   constructor(maxSize = DEFAULT_MAX_SIZE, defaultTTL = DEFAULT_TTL, dbPath = './cache.db') {
     const dir = path.dirname(dbPath);
+
     if (dir !== '.') {
       fs.mkdirSync(dir, { recursive: true });
     }
@@ -55,11 +57,16 @@ export class LRUCache<K = unknown, V = unknown> {
     const now = Date.now();
 
     const rawRow = this.db.prepare('SELECT value, expiresAt FROM cache WHERE key = ?').get(keyStr);
-    if (!rawRow) return null;
+
+    if (!rawRow) {
+      return null;
+    }
 
     const row = CacheRowSchema.parse(rawRow);
+
     if (now > row.expiresAt) {
       this.db.prepare('DELETE FROM cache WHERE key = ?').run(keyStr);
+
       return null;
     }
 
@@ -80,6 +87,7 @@ export class LRUCache<K = unknown, V = unknown> {
     if (!existing) {
       const rawCount = this.db.prepare('SELECT COUNT(*) as count FROM cache').get();
       const count = CacheCountSchema.parse(rawCount);
+
       if (count.count >= this.maxSize) {
         this.db
           .prepare('DELETE FROM cache WHERE key = (SELECT key FROM cache ORDER BY lastAccessed ASC LIMIT 1)')

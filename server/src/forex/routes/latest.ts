@@ -1,10 +1,10 @@
 import { createRoute, type RouteConfigToTypedResponse } from '@kamaalio/hono-standard-openapi';
 
-import { OPENAPI_TAG } from '../constants.ts';
-import { ForexLatestQuerySchema, ForexLatestResponseSchema } from '../schemas/latest.ts';
 import { STATUS_CODES } from '../../constants/http.ts';
 import { MIME_TYPES } from '../../constants/request.ts';
 import { ErrorResponseSchema } from '../../schemas/errors.ts';
+import { OPENAPI_TAG } from '../constants.ts';
+import { ForexLatestQuerySchema, ForexLatestResponseSchema } from '../schemas/latest.ts';
 
 const latestRoute = createRoute({
   method: 'get',

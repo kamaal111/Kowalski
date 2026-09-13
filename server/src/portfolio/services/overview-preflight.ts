@@ -1,12 +1,5 @@
 import { arrays } from '@kamaalio/kamaal';
 
-import env from '../../api/env.ts';
-import type { HonoContext } from '../../api/contexts.ts';
-import { getSessionWhereSessionIsRequired } from '../../auth/index.ts';
-import { logError, logInfo } from '../../logging/index.ts';
-import { withRequestLogger } from '../../logging/http.ts';
-import { findLatestCachedPriceDateByTickerIds } from '../repositories/stock-prices.ts';
-import type { PortfolioOverviewPreflightResponse } from '../schemas/responses.ts';
 import { aggregateHoldings } from './aggregate-holdings.ts';
 import { findResolvedAndMissingDailyPrices, refreshPortfolioDailyPrices } from './current-stock-values.ts';
 import {
@@ -16,8 +9,15 @@ import {
   runHoldingsRefreshOnce,
   RUN_ONCE_RESULTS,
 } from './holdings-refresh-coordinator.ts';
-import { findResolvedPortfolioEntriesByUserId } from './resolved-portfolio-entries.ts';
 import type { ResolvedPortfolioEntry } from './resolve-splits.ts';
+import { findResolvedPortfolioEntriesByUserId } from './resolved-portfolio-entries.ts';
+import type { HonoContext } from '../../api/contexts.ts';
+import env from '../../api/env.ts';
+import { getSessionWhereSessionIsRequired } from '../../auth/index.ts';
+import { withRequestLogger } from '../../logging/http.ts';
+import { logError, logInfo } from '../../logging/index.ts';
+import { findLatestCachedPriceDateByTickerIds } from '../repositories/stock-prices.ts';
+import type { PortfolioOverviewPreflightResponse } from '../schemas/responses.ts';
 
 interface ActiveTickerEntry {
   tickerId: string;
@@ -31,6 +31,7 @@ export async function getPortfolioOverviewPreflight(c: HonoContext): Promise<Por
 
   const entries = await findResolvedPortfolioEntriesByUserId(c);
   const activeEntries = getActiveTickerEntries(entries);
+
   if (activeEntries.length === 0) {
     return logAndReturnPreflight(c, {
       refresh_state: 'ready',
@@ -42,6 +43,7 @@ export async function getPortfolioOverviewPreflight(c: HonoContext): Promise<Por
   const tickerIds = activeEntries.map(entry => entry.tickerId);
   const latestCachedPriceDate = await findLatestCachedPriceDateByTickerIds(c, tickerIds);
   const { missingEntries } = await findResolvedAndMissingDailyPrices(c, activeEntries, today);
+
   if (missingEntries.length === 0) {
     return logAndReturnPreflight(c, {
       refresh_state: 'ready',
@@ -51,6 +53,7 @@ export async function getPortfolioOverviewPreflight(c: HonoContext): Promise<Por
   }
 
   const refreshKey = `${session.user.id}:${today}`;
+
   if (getHoldingsRefreshStatus(refreshKey) === HOLDINGS_REFRESH_STATUSES.COMPLETED) {
     return logAndReturnPreflight(c, {
       refresh_state: 'ready',

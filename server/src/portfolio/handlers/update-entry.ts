@@ -1,15 +1,14 @@
-import type { UpdateEntryRouteResponse } from '../routes/update-entry.ts';
-
-import { STATUS_CODES } from '../../constants/http.ts';
-import { createSyntheticTickerId } from '../../utils/tickers.ts';
-import updatePortfolioEntry from '../services/update-entry.ts';
-import { addPreferredCurrencyPurchasePrices } from '../services/preferred-currency-purchase-price.ts';
-import { logInfo } from '../../logging/index.ts';
-import { withRequestLogger } from '../../logging/http.ts';
 import type { HonoContext } from '../../api/contexts.ts';
-import type { CreateEntryPayload } from '../schemas/payloads.ts';
-import type { PortfolioEntryPathParams } from '../schemas/params.ts';
+import { STATUS_CODES } from '../../constants/http.ts';
+import { withRequestLogger } from '../../logging/http.ts';
+import { logInfo } from '../../logging/index.ts';
+import { createSyntheticTickerId } from '../../utils/tickers.ts';
 import { mapPortfolioEntryToResponse } from '../mappers/entry-response.ts';
+import type { UpdateEntryRouteResponse } from '../routes/update-entry.ts';
+import type { PortfolioEntryPathParams } from '../schemas/params.ts';
+import type { CreateEntryPayload } from '../schemas/payloads.ts';
+import { addPreferredCurrencyPurchasePrices } from '../services/preferred-currency-purchase-price.ts';
+import updatePortfolioEntry from '../services/update-entry.ts';
 
 async function updateEntry(
   c: HonoContext<string, { out: { json: CreateEntryPayload; param: PortfolioEntryPathParams } }>,
@@ -18,6 +17,7 @@ async function updateEntry(
   const payload = c.req.valid('json');
   const updatedEntry = await updatePortfolioEntry(c, params.entryId, payload);
   const [{ preferredCurrencyPurchasePrice }] = await addPreferredCurrencyPurchasePrices(c, [updatedEntry.transaction]);
+
   const response = mapPortfolioEntryToResponse({
     id: updatedEntry.transaction.id,
     stock: updatedEntry.stock,
@@ -30,6 +30,7 @@ async function updateEntry(
     createdAt: updatedEntry.transaction.createdAt,
     updatedAt: updatedEntry.transaction.updatedAt,
   });
+
   logInfo(withRequestLogger(c, { component: 'portfolio' }), {
     event: 'portfolio.entry.updated',
     entry_id: params.entryId,

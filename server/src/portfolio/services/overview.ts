@@ -1,20 +1,20 @@
 import { arrays } from '@kamaalio/kamaal';
 
-import type { HonoContext } from '../../api/contexts.ts';
-import { getSessionWhereSessionIsRequired } from '../../auth/index.ts';
-import { ASSET_TYPES, RESOLVED_TRANSACTION_TYPES } from '../../constants/common.ts';
-import { parseSyntheticTickerId } from '../../utils/tickers.ts';
-import { assertToFloat } from '../../utils/numbers.ts';
-import { InvalidTickerId, StockPriceFetchFailed } from '../exceptions.ts';
-import type { PortfolioHolding } from '../schemas/responses.ts';
 import { aggregateHoldings, type AggregatedHolding } from './aggregate-holdings.ts';
+import { getCurrentStockValues } from './current-stock-values.ts';
 import {
   addPreferredCurrencyPurchasePrices,
   type EntryWithPreferredCurrencyPurchasePrice,
 } from './preferred-currency-purchase-price.ts';
-import { getCurrentStockValues } from './current-stock-values.ts';
-import { findResolvedPortfolioEntriesByUserId } from './resolved-portfolio-entries.ts';
 import type { ResolvedPortfolioEntry } from './resolve-splits.ts';
+import { findResolvedPortfolioEntriesByUserId } from './resolved-portfolio-entries.ts';
+import type { HonoContext } from '../../api/contexts.ts';
+import { getSessionWhereSessionIsRequired } from '../../auth/index.ts';
+import { ASSET_TYPES, RESOLVED_TRANSACTION_TYPES } from '../../constants/common.ts';
+import { assertToFloat } from '../../utils/numbers.ts';
+import { parseSyntheticTickerId } from '../../utils/tickers.ts';
+import { InvalidTickerId, StockPriceFetchFailed } from '../exceptions.ts';
+import type { PortfolioHolding } from '../schemas/responses.ts';
 
 interface PortfolioOverviewResult {
   transactions: EntryWithPreferredCurrencyPurchasePrice<ResolvedPortfolioEntry>[];
@@ -26,6 +26,7 @@ interface PortfolioOverviewResult {
 async function getPortfolioOverview(c: HonoContext): Promise<PortfolioOverviewResult> {
   const entries = await findResolvedPortfolioEntriesByUserId(c);
   const preferredCurrency = getSessionWhereSessionIsRequired(c).user.preferred_currency;
+
   if (entries.length === 0) {
     return {
       transactions: [],
@@ -39,9 +40,12 @@ async function getPortfolioOverview(c: HonoContext): Promise<PortfolioOverviewRe
     addPreferredCurrencyPurchasePrices(c, entries),
     getCurrentStockValues(c, entries),
   ]);
+
   const holdings = mapHoldings(c, entries, transactions, currentValues);
+
   const netWorthCurrency =
     holdings[0]?.total_value.currency ?? Object.values(currentValues)[0]?.currency ?? preferredCurrency;
+
   const netWorthValue = holdings.reduce((total, holding) => total + holding.total_value.value, 0);
 
   return {
@@ -64,6 +68,7 @@ function mapHoldings(
   return arrays
     .compactMap(aggregateHoldings(entries), holding => {
       const mappedHolding = mapHoldingToResponse(c, holding, transactions, currentValues);
+
       if (mappedHolding.amount === 0) {
         return null;
       }
@@ -80,6 +85,7 @@ function mapHoldingToResponse(
   currentValues: Awaited<ReturnType<typeof getCurrentStockValues>>,
 ): PortfolioHolding {
   const unitValue = currentValues[holding.entry.stockSymbol];
+
   if (unitValue == null) {
     throw new StockPriceFetchFailed(c);
   }
@@ -115,12 +121,14 @@ function mapHoldingProfitLoss(
   totalValue: PortfolioHolding['total_value'],
 ): PortfolioHolding['profit_loss'] {
   let costBasis = 0;
+
   for (const transaction of transactions) {
     if (transaction.entry.tickerId !== holding.entry.tickerId) {
       continue;
     }
 
     const costBasisDelta = getCostBasisDelta(transaction, totalValue.currency);
+
     if (costBasisDelta == null) {
       return null;
     }
@@ -139,11 +147,13 @@ function getCostBasisDelta(
   targetCurrency: string,
 ) {
   const costBasisMoney = transaction.preferredCurrencyPurchasePrice;
+
   if (costBasisMoney.currency !== targetCurrency) {
     return null;
   }
 
   const value = assertToFloat(transaction.entry.amount) * costBasisMoney.value;
+
   switch (transaction.entry.transactionType) {
     case RESOLVED_TRANSACTION_TYPES.BUY:
       return value;
@@ -154,6 +164,7 @@ function getCostBasisDelta(
 
 function compareHoldings(left: PortfolioHolding, right: PortfolioHolding) {
   const valueComparison = right.total_value.value - left.total_value.value;
+
   if (valueComparison !== 0) {
     return valueComparison;
   }
@@ -163,6 +174,7 @@ function compareHoldings(left: PortfolioHolding, right: PortfolioHolding) {
 
 function parseRequiredSyntheticTickerId(c: HonoContext, tickerId: string) {
   const parsedTickerId = parseSyntheticTickerId(tickerId);
+
   if (parsedTickerId == null) {
     throw new InvalidTickerId(c, tickerId);
   }

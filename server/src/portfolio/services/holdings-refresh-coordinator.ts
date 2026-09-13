@@ -5,6 +5,7 @@ interface RefreshState {
 }
 
 export type RefreshStatus = (typeof HOLDINGS_REFRESH_STATUSES)[keyof typeof HOLDINGS_REFRESH_STATUSES];
+
 export type RunOnceResult = (typeof RUN_ONCE_RESULTS)[keyof typeof RUN_ONCE_RESULTS];
 
 export const HOLDINGS_REFRESH_STATUSES = {
@@ -23,6 +24,7 @@ const states = new Map<string, RefreshState>();
 
 export function getHoldingsRefreshStatus(key: string): RefreshStatus {
   const state = states.get(key);
+
   if (state == null) {
     return HOLDINGS_REFRESH_STATUSES.IDLE;
   }
@@ -40,6 +42,7 @@ export function getHoldingsRefreshStatus(key: string): RefreshStatus {
 
 export function runHoldingsRefreshOnce(key: string, task: () => Promise<void>): RunOnceResult {
   const existingState = states.get(key);
+
   if (existingState?.promise != null) {
     return RUN_ONCE_RESULTS.REUSED;
   }
@@ -53,6 +56,7 @@ export function runHoldingsRefreshOnce(key: string, task: () => Promise<void>): 
     completedAt: null,
     startedAt: new Date(),
   };
+
   state.promise = task().finally(() => {
     state.promise = null;
     state.completedAt = new Date();

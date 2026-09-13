@@ -1,15 +1,15 @@
-import type { OverviewRouteResponse } from '../routes/overview.ts';
-
-import { STATUS_CODES } from '../../constants/http.ts';
-import { logInfo } from '../../logging/index.ts';
-import { withRequestLogger } from '../../logging/http.ts';
 import type { HonoContext } from '../../api/contexts.ts';
+import { STATUS_CODES } from '../../constants/http.ts';
+import { withRequestLogger } from '../../logging/http.ts';
+import { logInfo } from '../../logging/index.ts';
 import { mapResolvedPortfolioEntryToResponse } from '../mappers/entry-response.ts';
+import type { OverviewRouteResponse } from '../routes/overview.ts';
 import { PortfolioOverviewResponseSchema } from '../schemas/responses.ts';
 import getPortfolioOverview from '../services/overview.ts';
 
 async function overview(c: HonoContext): Promise<OverviewRouteResponse> {
   const result = await getPortfolioOverview(c);
+
   const response = PortfolioOverviewResponseSchema.parse({
     transactions: result.transactions.map(entry => {
       return mapResolvedPortfolioEntryToResponse({
@@ -22,6 +22,7 @@ async function overview(c: HonoContext): Promise<OverviewRouteResponse> {
     holdings: result.holdings,
     net_worth: result.netWorth,
   });
+
   logInfo(withRequestLogger(c, { component: 'portfolio' }), {
     event: 'portfolio.overview.retrieved',
     transaction_count: response.transactions.length,

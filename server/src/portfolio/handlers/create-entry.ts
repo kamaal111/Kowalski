@@ -1,14 +1,13 @@
-import type { CreateEntryRouteResponse } from '../routes/create-entry.ts';
-
+import type { HonoContext } from '../../api/contexts.ts';
 import { STATUS_CODES } from '../../constants/http.ts';
+import { withRequestLogger } from '../../logging/http.ts';
+import { logInfo } from '../../logging/index.ts';
 import { createSyntheticTickerId } from '../../utils/tickers.ts';
+import { mapPortfolioEntryToResponse } from '../mappers/entry-response.ts';
+import type { CreateEntryRouteResponse } from '../routes/create-entry.ts';
+import type { CreateEntryPayload } from '../schemas/payloads.ts';
 import createPortfolioEntry from '../services/create-entry.ts';
 import { addPreferredCurrencyPurchasePrices } from '../services/preferred-currency-purchase-price.ts';
-import { logInfo } from '../../logging/index.ts';
-import { withRequestLogger } from '../../logging/http.ts';
-import type { HonoContext } from '../../api/contexts.ts';
-import type { CreateEntryPayload } from '../schemas/payloads.ts';
-import { mapPortfolioEntryToResponse } from '../mappers/entry-response.ts';
 
 async function createEntry(
   c: HonoContext<string, { out: { json: CreateEntryPayload } }>,
@@ -16,6 +15,7 @@ async function createEntry(
   const payload = c.req.valid('json');
   const createdEntry = await createPortfolioEntry(c, payload);
   const [{ preferredCurrencyPurchasePrice }] = await addPreferredCurrencyPurchasePrices(c, [createdEntry.transaction]);
+
   const response = mapPortfolioEntryToResponse({
     id: createdEntry.transaction.id,
     stock: createdEntry.stock,
@@ -28,6 +28,7 @@ async function createEntry(
     createdAt: createdEntry.transaction.createdAt,
     updatedAt: createdEntry.transaction.updatedAt,
   });
+
   logInfo(withRequestLogger(c, { component: 'portfolio' }), {
     event: 'portfolio.entry.created',
     ticker_id: createSyntheticTickerId(payload.stock.exchange, payload.stock.symbol),
