@@ -6,7 +6,7 @@ import { logInfo } from '../../logging/index.ts';
 import { withCache } from '../../middleware/cache.ts';
 import { yahooFinanceClient } from '../../utils/yahoo-finance.ts';
 import { mapYahooFinanceSearchQuoteToEquitySearchResponse } from '../mappers/yahoo-finance.ts';
-import type { StocksSearchQuery } from '../schemas/search.ts';
+import { StocksSearchResponseSchema, type StocksSearchQuery } from '../schemas/search.ts';
 
 type SearchContext = HonoContext<string, { out: { query: StocksSearchQuery } }>;
 
@@ -24,10 +24,15 @@ async function searchHandlerImpl(c: SearchContext) {
   return c.json(response, STATUS_CODES.OK);
 }
 
-const searchHandler = withCache(searchHandlerImpl, {
-  keyPrefix: 'stocks:search',
-  maxSize: 1000,
-  defaultTTL: 30 * ONE_MINUTE_IN_MILLISECONDS,
-});
+const searchHandler = withCache(
+  searchHandlerImpl,
+  {
+    keyPrefix: 'stocks:search',
+    maxSize: 1000,
+    defaultTTL: 30 * ONE_MINUTE_IN_MILLISECONDS,
+  },
+  async response => StocksSearchResponseSchema.parse(await response.clone().json()),
+  (c, cached) => c.json(cached, STATUS_CODES.OK),
+);
 
 export default searchHandler;
