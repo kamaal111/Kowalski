@@ -33,13 +33,15 @@ interface CacheConfig {
   ttl?: number;
 }
 
-export function withCache(
-  handler: (c: HonoContext) => Promise<Response>,
+export function withCache<ContextType extends HonoContext, ResponseType extends Response, CachedType>(
+  handler: (c: ContextType) => Promise<ResponseType>,
   config: CacheConfig,
-): (c: HonoContext) => Promise<Response> {
+  cacheResponse: (response: Response) => Promise<CachedType>,
+  cachedResponse: (c: ContextType, cached: CachedType) => ResponseType,
+): (c: ContextType) => Promise<ResponseType> {
   const dbPath = createCacheDbPath(config.keyPrefix, env.MODE, env.CACHE_DIR);
 
-  const cache = new LRUCache<string, unknown>(
+  const cache = new LRUCache<string, CachedType>(
     config.maxSize ?? DEFAULT_MAX_SIZE,
     config.defaultTTL ?? DEFAULT_TTL,
     dbPath,
@@ -55,7 +57,7 @@ export function withCache(
     if (cached != null) {
       logInfo(logger, { event: 'cache.hit', cache_status: 'hit', cache_key: cacheKey, outcome: 'success' });
 
-      return c.json(cached);
+      return cachedResponse(c, cached);
     }
 
     logInfo(logger, { event: 'cache.miss', cache_status: 'miss', cache_key: cacheKey, outcome: 'success' });
@@ -75,8 +77,7 @@ export function withCache(
       return response;
     }
 
-    const clonedResponse = response.clone();
-    const data: unknown = await clonedResponse.json();
+    const data = await cacheResponse(response);
     cache.set(cacheKey, data, config.ttl);
     const ttl = config.ttl ?? config.defaultTTL ?? DEFAULT_TTL;
     logInfo(logger, { event: 'cache.set', cache_status: 'set', cache_key: cacheKey, ttl_ms: ttl, outcome: 'success' });
