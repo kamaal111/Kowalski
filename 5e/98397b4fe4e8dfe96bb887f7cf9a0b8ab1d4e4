@@ -1,0 +1,30 @@
+server/src/middleware/cache.ts
+  s_88534b33676447::t_b0e9bf4847b824 36,39-40,44,80
+  s_88534b33676447::t_e6e43095d1f177 60
+  s_88534b33676447::t_493232c3d585b0 37,41
+package.json
+  s_88534b33676447::t_4f911197c9de01 20
+pnpm-workspace.yaml
+  s_88534b33676447::t_4f911197c9de01 6
+server/src/stocks/handlers/search.ts
+  s_88534b33676447::t_c12f25845438ad 9
+  s_88534b33676447::t_b0e9bf4847b824 27-36
+pnpm-lock.yaml
+  s_88534b33676447::t_6c775d76b9dd16 223-224,230,668-669,3385,3398,3400
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "5e98397b4fe4e8dfe96bb887f7cf9a0b8ab1d4e4",
+  "prompts": {},
+  "sessions": {
+    "s_88534b33676447": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0a3d6-ea63-77f0-a6f4-8497fc18619c",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "Kamaal Farah <kamaal.f1@gmail.com>"
+    }
+  }
+}
