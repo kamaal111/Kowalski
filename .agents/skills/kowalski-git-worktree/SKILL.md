@@ -19,7 +19,8 @@ Load [git-worktree-best-practices](../git-worktree-best-practices/SKILL.md) firs
 
 ## Use Kowalski's Worktree Helper
 
-- Expect `just setup-worktree-env` to choose a non-`5432` PostgreSQL host port, worktree-specific server and Daily ports, and a unique `COMPOSE_PROJECT_NAME`.
+- Expect `just setup-worktree-env` to choose available, non-conflicting PostgreSQL, server, and Daily ports, and a unique `COMPOSE_PROJECT_NAME`.
+- Create new linked checkouts with `just herdr-worktree <branch>` from the host when a root `.env` exists. It starts from `origin/main` and prepares both env files with ports checked against other worktrees and host listeners.
 - Rerun the helper directly with overrides when the default ports are busy:
   - `node .agents/skills/kowalski-git-worktree/scripts/setup-worktree-env.ts --db-port <port> --server-port <port> --daily-port <port>`
 - Keep the main checkout on the shared local-development defaults.

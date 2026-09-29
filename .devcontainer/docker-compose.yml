@@ -1,30 +1,43 @@
 services:
   devcontainer:
     build:
-      context: .
+      context: ..
       dockerfile: .devcontainer/Dockerfile
     user: root
     command:
       - /bin/sh
       - -c
       - >-
-        chown -R node:node /workspaces/kowalski/node_modules
-        /workspaces/kowalski/server/node_modules && exec sleep infinity
+        chown -R node:node "$${LOCAL_WORKSPACE_FOLDER}/node_modules"
+        "$${LOCAL_WORKSPACE_FOLDER}/server/node_modules" && exec sleep infinity
     depends_on:
       db:
         condition: service_healthy
+    env_file:
+      - ${LOCAL_WORKSPACE_FOLDER}/.env
+    ports:
+      - '127.0.0.1:${KOWALSKI_DEVCONTAINER_SERVER_PORT}:${KOWALSKI_DEVCONTAINER_SERVER_PORT}'
+      - '127.0.0.1:${KOWALSKI_DEVCONTAINER_DAILY_PORT}:${KOWALSKI_DEVCONTAINER_DAILY_PORT}'
     environment:
       KOWALSKI_DEVCONTAINER: 'true'
+      LOCAL_WORKSPACE_FOLDER: ${LOCAL_WORKSPACE_FOLDER}
+      COMPOSE_PROJECT_NAME: ${KOWALSKI_DEVCONTAINER_PROJECT}
+      COMPOSE_FILE: ${LOCAL_WORKSPACE_FOLDER}/docker-compose.yml
+      COMPOSE_IGNORE_ORPHANS: 'true'
       DATABASE_URL: postgresql://${KOWALSKI_DB_USER:-kowalski_user}:${KOWALSKI_DB_PASSWORD:-kowalski_password}@db:5432/${KOWALSKI_DB_NAME:-kowalski}
       KOWALSKI_DB_HOST: db
-      KOWALSKI_DB_PORT: '5432'
       KOWALSKI_DB_NAME: ${KOWALSKI_DB_NAME:-kowalski}
       KOWALSKI_DB_USER: ${KOWALSKI_DB_USER:-kowalski_user}
       KOWALSKI_DB_PASSWORD: ${KOWALSKI_DB_PASSWORD:-kowalski_password}
+      KOWALSKI_SERVER_PORT: ${KOWALSKI_DEVCONTAINER_SERVER_PORT}
+      KOWALSKI_DAILY_PORT: ${KOWALSKI_DEVCONTAINER_DAILY_PORT}
+      PORT: ${KOWALSKI_DEVCONTAINER_SERVER_PORT}
+      BETTER_AUTH_URL: http://localhost:${KOWALSKI_DEVCONTAINER_SERVER_PORT}
     volumes:
-      - .:/workspaces/kowalski:cached
-      - kowalski_node_modules:/workspaces/kowalski/node_modules
-      - kowalski_server_node_modules:/workspaces/kowalski/server/node_modules
+      - ${LOCAL_WORKSPACE_FOLDER}:${LOCAL_WORKSPACE_FOLDER}:cached
+      - ${GIT_COMMON_DIR}:${GIT_COMMON_DIR}:cached
+      - kowalski_node_modules:${LOCAL_WORKSPACE_FOLDER}/node_modules
+      - kowalski_server_node_modules:${LOCAL_WORKSPACE_FOLDER}/server/node_modules
 
 volumes:
   kowalski_node_modules:

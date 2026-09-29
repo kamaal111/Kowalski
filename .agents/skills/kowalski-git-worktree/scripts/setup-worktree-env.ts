@@ -1,271 +1,95 @@
 #!/usr/bin/env node
 
-import { createHash, randomBytes } from 'node:crypto';
-import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
-const REPO_ROOT = process.cwd();
+import {
+  availablePorts,
+  envValues,
+  parsePort,
+  readOptional,
+  renderEnv,
+  reservedPorts,
+  worktreeEnv,
+  writeWorktreeEnv,
+} from '../../../../scripts/worktree-env.ts';
 
-const ROOT_ENV_PATH = path.join(REPO_ROOT, '.env');
+async function main(): Promise<void> {
+  const checkout = process.cwd();
+  const existing = await readOptional(path.join(checkout, '.env'));
+  const example = existing === undefined ? await readOptional(path.join(checkout, '.env.example')) : undefined;
 
-const SERVER_ENV_PATH = path.join(REPO_ROOT, 'server', '.env');
+  if (existing === undefined && example === undefined) {
+    throw new Error('Create .env from .env.example before setting up a worktree');
+  }
 
-const JUSTFILE_PATH = path.join(REPO_ROOT, 'justfile');
+  const databaseUrl = example === undefined ? undefined : envValues(example).get('DATABASE_URL');
 
-const DEFAULT_DB_USER = 'kowalski_user';
+  if (existing === undefined && databaseUrl === undefined) {
+    throw new Error('DATABASE_URL is required in .env.example');
+  }
 
-const DEFAULT_DB_PASSWORD = 'kowalski_password';
+  const source = existing ?? `DATABASE_URL=${databaseUrl}\n`;
 
-const DEFAULT_DB_HOST = 'localhost';
+  const args = process.argv.slice(2);
+  const overrides = new Map<string, string>();
 
-interface ParsedArgs {
-  authSecret?: string;
-  composeProject?: string;
-  dbName?: string;
-  dbPassword?: string;
-  dbPort?: string;
-  dbUser?: string;
-  dailyPort?: string;
-  serverPort?: string;
-}
+  const flags = new Map([
+    ['--auth-secret', 'BETTER_AUTH_SECRET'],
+    ['--compose-project', 'COMPOSE_PROJECT_NAME'],
+    ['--db-name', 'KOWALSKI_DB_NAME'],
+    ['--db-password', 'KOWALSKI_DB_PASSWORD'],
+    ['--db-port', 'KOWALSKI_DB_PORT'],
+    ['--db-user', 'KOWALSKI_DB_USER'],
+    ['--server-port', 'KOWALSKI_SERVER_PORT'],
+    ['--daily-port', 'KOWALSKI_DAILY_PORT'],
+  ]);
 
-type EnvConfig = Record<string, string>;
+  for (let index = 0; index < args.length; index += 2) {
+    const key = flags.get(args[index] ?? '');
+    const value = args[index + 1];
 
-const args = parseArgs(process.argv.slice(2));
+    if (key === undefined || value === undefined) {
+      throw new Error(`Invalid argument: ${args[index] ?? ''}`);
+    }
 
-async function main() {
-  await ensureRepoRoot();
+    overrides.set(key, value);
+  }
 
-  const rootEnv = await readEnvFile(ROOT_ENV_PATH);
-  const serverEnv = await readEnvFile(SERVER_ENV_PATH);
-  const hash = createHash('sha256').update(REPO_ROOT).digest('hex');
-  const suffix = deriveSuffix(REPO_ROOT, hash);
+  const configuredSource = renderEnv(source, overrides);
+  const values = envValues(configuredSource);
+  const suggested = await availablePorts(checkout);
 
-  const dbPort = resolvePort(args.dbPort ?? rootEnv.KOWALSKI_DB_PORT, 15432 + hashOffset(hash, 500), 'database');
+  const ports = {
+    db: parsePort(
+      overrides.get('KOWALSKI_DB_PORT') ?? values.get('KOWALSKI_DB_PORT') ?? String(suggested.db),
+      'database',
+    ),
+    server: parsePort(
+      overrides.get('KOWALSKI_SERVER_PORT') ?? values.get('KOWALSKI_SERVER_PORT') ?? String(suggested.server),
+      'server',
+    ),
+    daily: parsePort(
+      overrides.get('KOWALSKI_DAILY_PORT') ?? values.get('KOWALSKI_DAILY_PORT') ?? String(suggested.daily),
+      'daily',
+    ),
+  };
 
-  const serverPort = resolvePort(
-    args.serverPort ?? rootEnv.KOWALSKI_SERVER_PORT ?? serverEnv.PORT,
-    8600 + hashOffset(hash.slice(4), 300),
-    'server',
+  const otherPorts = await reservedPorts(checkout, checkout);
+
+  if (Object.values(ports).some(port => otherPorts.has(port)) || new Set(Object.values(ports)).size !== 3) {
+    throw new Error('Selected ports conflict with another worktree or each other');
+  }
+
+  const contents = worktreeEnv(configuredSource, ports, checkout, true);
+
+  await writeWorktreeEnv(checkout, contents, false);
+
+  console.log(
+    `Configured ${checkout}: database ${ports.db}, server ${ports.server}, daily ${ports.daily}, Compose ${contents.project}`,
   );
-
-  const dailyPort = resolvePort(
-    args.dailyPort ?? rootEnv.KOWALSKI_DAILY_PORT,
-    9000 + hashOffset(hash.slice(8), 300),
-    'daily',
-  );
-
-  const composeProjectName = sanitizeComposeName(
-    args.composeProject ?? rootEnv.COMPOSE_PROJECT_NAME ?? `kowalski-${suffix}`,
-  );
-
-  const dbName = sanitizeDatabaseName(args.dbName ?? rootEnv.KOWALSKI_DB_NAME ?? `kowalski_${suffix}`);
-  const dbUser = args.dbUser ?? rootEnv.KOWALSKI_DB_USER ?? DEFAULT_DB_USER;
-  const dbPassword = args.dbPassword ?? rootEnv.KOWALSKI_DB_PASSWORD ?? DEFAULT_DB_PASSWORD;
-
-  const authSecret =
-    args.authSecret ??
-    rootEnv.BETTER_AUTH_SECRET ??
-    serverEnv.BETTER_AUTH_SECRET ??
-    randomBytes(32).toString('base64url');
-
-  const databaseUrl = `postgresql://${dbUser}:${dbPassword}@${DEFAULT_DB_HOST}:${dbPort}/${dbName}`;
-  const betterAuthUrl = `http://localhost:${serverPort}`;
-
-  const rootEnvContents = [
-    '# Generated by just setup-worktree-env for an isolated linked worktree.',
-    `COMPOSE_PROJECT_NAME=${composeProjectName}`,
-    `KOWALSKI_DB_HOST=${DEFAULT_DB_HOST}`,
-    `KOWALSKI_DB_PORT=${dbPort}`,
-    `KOWALSKI_DB_NAME=${dbName}`,
-    `KOWALSKI_DB_USER=${dbUser}`,
-    `KOWALSKI_DB_PASSWORD=${dbPassword}`,
-    `KOWALSKI_SERVER_PORT=${serverPort}`,
-    `KOWALSKI_DAILY_PORT=${dailyPort}`,
-    `DATABASE_URL=${databaseUrl}`,
-    `BETTER_AUTH_SECRET=${authSecret}`,
-    `BETTER_AUTH_URL=${betterAuthUrl}`,
-  ].join('\n');
-
-  const serverEnvContents = [
-    '# Generated by just setup-worktree-env for an isolated linked worktree.',
-    `DATABASE_URL=${databaseUrl}`,
-    `BETTER_AUTH_SECRET=${authSecret}`,
-    `BETTER_AUTH_URL=${betterAuthUrl}`,
-    `PORT=${serverPort}`,
-  ].join('\n');
-
-  await fs.writeFile(ROOT_ENV_PATH, `${rootEnvContents}\n`, 'utf8');
-  await fs.writeFile(SERVER_ENV_PATH, `${serverEnvContents}\n`, 'utf8');
-
-  console.log(`Wrote ${ROOT_ENV_PATH}`);
-  console.log(`Wrote ${SERVER_ENV_PATH}`);
-  console.log(`Database URL: ${databaseUrl}`);
-  console.log(`Server URL: ${betterAuthUrl}`);
-  console.log(`Daily mode URL: http://localhost:${dailyPort}`);
-  console.log(`Compose project: ${composeProjectName}`);
 }
 
 main().catch(error => {
-  console.error('Error:', error instanceof Error ? error.message : String(error));
-  process.exit(1);
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exitCode = 1;
 });
-
-function parseArgs(argv: string[]): ParsedArgs {
-  const parsed: ParsedArgs = {};
-
-  for (let index = 0; index < argv.length; index += 1) {
-    const current = argv[index];
-
-    if (!current.startsWith('--')) {
-      throw new Error(`Unexpected argument: ${current}`);
-    }
-
-    const flag = current.slice(2);
-    const next = argv[index + 1];
-
-    if (next == null || next.startsWith('--')) {
-      throw new Error(`Missing value for --${flag}`);
-    }
-
-    if (flag === 'auth-secret') {
-      parsed.authSecret = next;
-    } else if (flag === 'compose-project') {
-      parsed.composeProject = next;
-    } else if (flag === 'db-name') {
-      parsed.dbName = next;
-    } else if (flag === 'db-password') {
-      parsed.dbPassword = next;
-    } else if (flag === 'db-port') {
-      parsed.dbPort = next;
-    } else if (flag === 'db-user') {
-      parsed.dbUser = next;
-    } else if (flag === 'daily-port') {
-      parsed.dailyPort = next;
-    } else if (flag === 'server-port') {
-      parsed.serverPort = next;
-    } else {
-      throw new Error(`Unknown flag: --${flag}`);
-    }
-
-    index += 1;
-  }
-
-  return parsed;
-}
-
-async function ensureRepoRoot(): Promise<void> {
-  try {
-    await fs.access(JUSTFILE_PATH);
-  } catch {
-    throw new Error(`Run this script from the Kowalski repository root: ${REPO_ROOT}`);
-  }
-}
-
-async function readEnvFile(filePath: string): Promise<EnvConfig> {
-  try {
-    const contents = await fs.readFile(filePath, 'utf8');
-
-    return parseEnv(contents);
-  } catch (error) {
-    if (isMissingFileError(error)) {
-      return {};
-    }
-
-    throw error;
-  }
-}
-
-function parseEnv(contents: string): EnvConfig {
-  return contents.split('\n').reduce<EnvConfig>((env, rawLine) => {
-    const line = rawLine.trim();
-
-    if (line.length === 0 || line.startsWith('#')) {
-      return env;
-    }
-
-    const separatorIndex = line.indexOf('=');
-
-    if (separatorIndex === -1) {
-      return env;
-    }
-
-    const key = line.slice(0, separatorIndex).trim();
-
-    if (key.length === 0) {
-      return env;
-    }
-
-    const value = line.slice(separatorIndex + 1).trim();
-    env[key] = value;
-
-    return env;
-  }, {});
-}
-
-function isMissingFileError(cause: unknown): boolean {
-  return cause instanceof Error && 'code' in cause && cause.code === 'ENOENT';
-}
-
-function deriveSuffix(repoRoot: string, hash: string): string {
-  const parentName = path.basename(path.dirname(repoRoot));
-  const candidate = sanitizeSlug(parentName);
-
-  if (candidate.length > 0 && candidate !== 'worktrees') {
-    return candidate;
-  }
-
-  return hash.slice(0, 6);
-}
-
-function sanitizeSlug(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
-function sanitizeComposeName(value: string): string {
-  const sanitized = sanitizeSlug(value);
-
-  if (sanitized.length === 0) {
-    throw new Error('Compose project name must contain letters or digits');
-  }
-
-  return sanitized;
-}
-
-function sanitizeDatabaseName(value: string): string {
-  const sanitized = value
-    .toLowerCase()
-    .replace(/[^a-z0-9_]+/g, '_')
-    .replace(/^_+|_+$/g, '');
-
-  if (sanitized.length === 0) {
-    throw new Error('Database name must contain letters or digits');
-  }
-
-  return sanitized.slice(0, 63);
-}
-
-function hashOffset(fragment: string, modulo: number): number {
-  return Number.parseInt(fragment.slice(0, 8), 16) % modulo;
-}
-
-function resolvePort(configuredValue: string | undefined, suggestedPort: number, label: string): number {
-  if (configuredValue != null) {
-    return parsePort(configuredValue, label);
-  }
-
-  return suggestedPort;
-}
-
-function parsePort(rawPort: string, label: string): number {
-  const port = Number(rawPort);
-
-  if (!Number.isInteger(port) || port < 1000 || port > 65535) {
-    throw new Error(`Invalid ${label} port: ${rawPort}`);
-  }
-
-  return port;
-}

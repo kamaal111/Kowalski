@@ -68,6 +68,17 @@ Kowalski is a monorepo project consisting of a TypeScript/Node.js backend server
 
    That generates isolated root and `server/` env files plus a non-`5432` database port so agents do not collide with local development services.
 
+   To create a new Herdr worktree from `origin/main` with isolated database,
+   server, and daily API ports, run this from a checkout with a configured root
+   `.env`:
+
+   ```bash
+   just herdr-worktree feature/my-change
+   ```
+
+   The recipe preserves unrelated root env settings and reports the new checkout
+   path and ports. Its devcontainer publishes those same API ports to the host.
+
 3. **Start Services**
    Start the PostgreSQL database container. Local development and CI both use
    `docker-compose.yml` as the PostgreSQL runtime definition.
@@ -123,18 +134,19 @@ terminal. `just clean-db` deletes the database volume.
 
 We use `just` to manage project tasks.
 
-| Command                   | Description                                        |
-| ------------------------- | -------------------------------------------------- |
-| `just dev-server`         | Start DB and run server in dev mode                |
-| `just setup-worktree-env` | Generate isolated env files for a linked worktree  |
-| `just start-services`     | Start Docker containers (DB)                       |
-| `just stop-services`      | Stop Docker containers                             |
-| `just migrate`            | Run pending database migrations                    |
-| `just make-migrations`    | Generate new migrations from schema changes        |
-| `just download-spec`      | Generate OpenAPI spec and update Swift client      |
-| `just test`               | Run server and client tests                        |
-| `just quality`            | Run linting, formatting, and type checking         |
-| `just ready`              | Run all checks before committing (quality + tests) |
+| Command                        | Description                                        |
+| ------------------------------ | -------------------------------------------------- |
+| `just dev-server`              | Start DB and run server in dev mode                |
+| `just setup-worktree-env`      | Generate isolated env files for a linked worktree  |
+| `just herdr-worktree <branch>` | Create a Herdr worktree with isolated ports        |
+| `just start-services`          | Start Docker containers (DB)                       |
+| `just stop-services`           | Stop Docker containers                             |
+| `just migrate`                 | Run pending database migrations                    |
+| `just make-migrations`         | Generate new migrations from schema changes        |
+| `just download-spec`           | Generate OpenAPI spec and update Swift client      |
+| `just test`                    | Run server and client tests                        |
+| `just quality`                 | Run linting, formatting, and type checking         |
+| `just ready`                   | Run all checks before committing (quality + tests) |
 
 ## 📂 Project Structure
 
