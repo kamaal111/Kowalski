@@ -109,7 +109,15 @@ just start-services
 just migrate
 ```
 
-Both service starts should succeed without sudo. Then run `just dev-server`.
+Both service starts should print `Using PostgreSQL managed by the devcontainer`
+and succeed without invoking Docker. The devcontainer starts PostgreSQL and
+waits for it to become healthy; backend commands connect to `db:5432`. Rebuilding
+applies the `KOWALSKI_DEVCONTAINER=true` environment marker that enables this
+behavior. Then run `just dev-server` or `just dev-daily`.
+
+On the host, `just start-services` starts PostgreSQL through Compose as usual.
+Run `just stop-services`, `just clean-db`, and `just tail-db` from the host
+terminal. `just clean-db` deletes the database volume.
 
 ## 🛠 Common Commands
 

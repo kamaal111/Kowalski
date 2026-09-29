@@ -139,6 +139,13 @@ push-schema: prepare-server
 
 # Start services
 start-services:
+    #!/usr/bin/env bash
+
+    if [ "${KOWALSKI_DEVCONTAINER:-false}" = "true" ]; then
+        echo "Using PostgreSQL managed by the devcontainer"
+        exit 0
+    fi
+
     docker compose up -d --wait
 
 # Stop services
