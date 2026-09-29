@@ -24,7 +24,6 @@ services:
       - .:/workspaces/kowalski:cached
       - kowalski_node_modules:/workspaces/kowalski/node_modules
       - kowalski_server_node_modules:/workspaces/kowalski/server/node_modules
-      - /var/run/docker.sock:/var/run/docker.sock
 
 volumes:
   kowalski_node_modules:
