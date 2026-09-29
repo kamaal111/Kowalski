@@ -90,6 +90,27 @@ Kowalski is a monorepo project consisting of a TypeScript/Node.js backend server
 5. **Run the App**
    Open `app/Kowalski.xcodeproj` in Xcode and run the scheme `Kowalski`.
 
+### Devcontainer Docker Access
+
+The devcontainer runs development tasks as `node`. The Docker outside-of-Docker
+feature mounts the host socket at `/var/run/docker-host.sock` and manages access
+through `/var/run/docker.sock`. Let the feature manage these paths; an additional
+bind mount at `/var/run/docker.sock` interferes with non-root access.
+
+After updating the devcontainer configuration, use your editor's **Rebuild
+Container** command to recreate the container while preserving database volumes.
+In a fresh container terminal, verify Docker access:
+
+```bash
+whoami # should print node
+docker info
+just start-services
+just start-services
+just migrate
+```
+
+Both service starts should succeed without sudo. Then run `just dev-server`.
+
 ## 🛠 Common Commands
 
 We use `just` to manage project tasks.
