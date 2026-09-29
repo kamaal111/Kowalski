@@ -14,6 +14,7 @@ services:
       db:
         condition: service_healthy
     environment:
+      KOWALSKI_DEVCONTAINER: 'true'
       DATABASE_URL: postgresql://${KOWALSKI_DB_USER:-kowalski_user}:${KOWALSKI_DB_PASSWORD:-kowalski_password}@db:5432/${KOWALSKI_DB_NAME:-kowalski}
       KOWALSKI_DB_HOST: db
       KOWALSKI_DB_PORT: '5432'
