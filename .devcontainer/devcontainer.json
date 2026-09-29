@@ -1,24 +1,12 @@
 {
   "name": "Kowalski",
-  "dockerComposeFile": ["../docker-compose.yml", "docker-compose.yml"],
+  "dockerComposeFile": ["compose.services.yaml", "docker-compose.yml"],
   "service": "devcontainer",
-  "workspaceFolder": "/workspaces/kowalski",
+  "workspaceFolder": "${localWorkspaceFolder}",
   "remoteUser": "node",
+  "initializeCommand": "bash .devcontainer/initialize.sh",
   "remoteEnv": {
     "SHELL": "/bin/zsh"
-  },
-  "containerEnv": {
-    "BETTER_AUTH_SECRET": "devcontainer-local-secret",
-    "BETTER_AUTH_URL": "http://localhost:8082"
-  },
-  "forwardPorts": [8081, 8082],
-  "portsAttributes": {
-    "8081": {
-      "label": "Kowalski daily API"
-    },
-    "8082": {
-      "label": "Kowalski API"
-    }
   },
   "postCreateCommand": "just prepare",
   "customizations": {

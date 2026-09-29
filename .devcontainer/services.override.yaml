@@ -1,0 +1,4 @@
+services:
+  db:
+    ports: !override
+      - '127.0.0.1:${KOWALSKI_DB_PORT:-5432}:5432'

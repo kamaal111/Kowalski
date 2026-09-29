@@ -30,22 +30,28 @@ export const createTestDatabase = async (): Promise<{
 
   const testDbUrl = BASE_DATABASE_URL.replace(/\/[^/]+$/, `/${dbName}`);
   const pool = new Pool({ connectionString: testDbUrl });
+  const connectionClosures: Promise<void>[] = [];
+
+  pool.on('connect', connection => {
+    connectionClosures.push(new Promise<void>(resolve => connection.once('end', resolve)));
+  });
+
   const testDb = drizzle<typeof appRelations>({ client: pool, relations: appRelations });
 
   await migrate(testDb, { migrationsFolder: './drizzle' });
 
   const cleanup = async () => {
     await pool.end();
+    await Promise.all(connectionClosures);
+
     const dropClient = new Client({ connectionString: BASE_DATABASE_URL });
     await dropClient.connect();
-    await dropClient.query(`
-      SELECT pg_terminate_backend(pg_stat_activity.pid)
-      FROM pg_stat_activity
-      WHERE pg_stat_activity.datname = '${dbName}'
-      AND pid <> pg_backend_pid();
-    `);
-    await dropClient.query(`DROP DATABASE ${dbName}`);
-    await dropClient.end();
+
+    try {
+      await dropClient.query(`DROP DATABASE ${dbName}`);
+    } finally {
+      await dropClient.end();
+    }
   };
 
   return { db: testDb, connectionString: testDbUrl, cleanup };

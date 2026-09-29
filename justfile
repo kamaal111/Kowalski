@@ -102,6 +102,11 @@ heavy: heavy-tasks
 setup-worktree-env:
     node .agents/skills/kowalski-git-worktree/scripts/setup-worktree-env.ts
 
+# Create a Herdr worktree with isolated host and devcontainer ports
+[positional-arguments]
+herdr-worktree branch:
+    node scripts/create-herdr-worktree.ts "$1"
+
 # Type check the server without emitting
 [working-directory("server")]
 compile-server:
@@ -227,7 +232,11 @@ format-check-app:
     swiftformat --lint .
 
 # Type check
-typecheck: typecheck-server
+typecheck: typecheck-server typecheck-scripts
+
+# Type check worktree scripts
+typecheck-scripts:
+    {{ PNX }} tsc -p tsconfig.scripts.json
 
 # Type check server
 [working-directory("server")]
@@ -236,7 +245,11 @@ typecheck-server:
 
 # Run tests (excluding app UI tests)
 [parallel]
-test: test-server test-app
+test: test-server test-app test-herdr-worktree
+
+# Test worktree environment allocation
+test-herdr-worktree:
+    node --test scripts/worktree-env.test.ts
 
 # Run app tests (excluding UI tests)
 [working-directory("app")]
