@@ -22,6 +22,8 @@ public struct KowalskiAuthSettingsView: View {
     @State private var persistedCurrency: KowalskiCurrency = KowalskiFeatureDefaults.fallbackCurrency
     @State private var selectedCurrency: KowalskiCurrency = KowalskiFeatureDefaults.fallbackCurrency
     @State private var isSaving = false
+    @State private var isSigningOut = false
+    @State private var isConfirmingSignOut = false
     @State private var isShowingImportSheet = false
     @State private var isShowingFileImporter = false
     @State private var toast: Toast?
@@ -42,25 +44,30 @@ public struct KowalskiAuthSettingsView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            settingsTabs
-            Divider()
-            ZStack {
-                switch selectedPane {
-                case .general:
-                    generalSettingsPane
-                case .data:
-                    dataSettingsPane
-                }
-
-                if isSaving {
-                    ProgressView()
-                        .controlSize(.regular)
-                }
+            if auth.isLoggedIn {
+                authenticatedSettings
+            } else {
+                Text(NSLocalizedString("Sign in to manage your settings.", bundle: .module, comment: ""))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .disabled(isSaving)
+        #if os(macOS)
+        .background(KowalskiAuthSettingsWindow(isAuthorized: auth.isLoggedIn))
+        #endif
+        .disabled(isSaving || isSigningOut)
         .toastView(toast: $toast)
         .frame(width: 500, height: 400, alignment: .topLeading)
+        .confirmationDialog(
+            NSLocalizedString("Sign out of Kowalski?", bundle: .module, comment: ""),
+            isPresented: $isConfirmingSignOut,
+            titleVisibility: .visible,
+        ) {
+            Button(NSLocalizedString("Sign Out", bundle: .module, comment: ""), role: .destructive) {
+                signOut()
+            }
+            Button(NSLocalizedString("Cancel", bundle: .module, comment: ""), role: .cancel) {}
+        }
         .onAppear { syncPersistedCurrency(auth.effectiveCurrency) }
         .onChange(of: auth.effectiveCurrency) { _, currency in
             syncPersistedCurrency(currency)
@@ -74,6 +81,26 @@ public struct KowalskiAuthSettingsView: View {
         }
         .sheet(isPresented: $isShowingImportSheet) {
             importTransactionsSheet
+        }
+    }
+
+    private var authenticatedSettings: some View {
+        VStack(spacing: 0) {
+            settingsTabs
+            Divider()
+            ZStack {
+                switch selectedPane {
+                case .general:
+                    generalSettingsPane
+                case .data:
+                    dataSettingsPane
+                }
+
+                if isSaving || isSigningOut {
+                    ProgressView()
+                        .controlSize(.regular)
+                }
+            }
         }
     }
 
@@ -141,6 +168,20 @@ public struct KowalskiAuthSettingsView: View {
                 }
             }
             .padding(.horizontal, .large)
+
+            Divider()
+                .padding(.horizontal, .large)
+            Button(role: .destructive, action: { isConfirmingSignOut = true }) {
+                Text(NSLocalizedString("Sign Out", bundle: .module, comment: ""))
+                    .fontWeight(.bold)
+                    .foregroundStyle(.red)
+                    .frame(maxWidth: .infinity)
+            }
+            #if os(macOS)
+            .buttonStyle(.borderless)
+            #endif
+            .padding(.horizontal, .large)
+            .padding(.vertical, .medium)
 
             Spacer(minLength: 0)
         }
@@ -258,6 +299,18 @@ public struct KowalskiAuthSettingsView: View {
 
     private var hasDataCallbacks: Bool {
         onExportTransactions != nil && onImportTransactions != nil && onDownloadTransactionsTemplate != nil
+    }
+
+    private func signOut() {
+        guard !isSigningOut else { return }
+        guard !isSaving else { return }
+
+        isSigningOut = true
+        toast = nil
+        Task { @MainActor in
+            await auth.signOut()
+            isSigningOut = false
+        }
     }
 }
 

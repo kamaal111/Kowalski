@@ -22,6 +22,17 @@ public struct KowalskiScene: Scene {
                 .kowalskiAuth(auth)
                 .kowalskiPortfolio(portfolio)
         }
+        #if os(macOS)
+        .commands {
+            CommandGroup(replacing: .appSettings) {
+                SettingsLink {
+                    Text("Settings…")
+                }
+                .keyboardShortcut(",", modifiers: .command)
+                .disabled(!auth.isLoggedIn)
+            }
+        }
+        #endif
         Settings {
             KowalskiAuthSettingsView(
                 onExportTransactions: {

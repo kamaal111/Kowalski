@@ -31,11 +31,16 @@ public final class KowalskiAuth {
     private let mapper = KowalskiAuthMappers()
     private let logger = KamaalLogger(from: KowalskiAuth.self, failOnError: true)
     @ObservationIgnored private var sessionStateTask: Task<Void, Never>?
+    @ObservationIgnored private var sessionGeneration = UUID()
+    @ObservationIgnored private var isSigningOut = false
 
-    @UserDefaultsObject(key: "\(ModuleConfig.identifier).cachedSession")
-    private static var cachedSession: CachedUserSession?
+    @ObservationIgnored @UserDefaultsObject private var cachedSession: CachedUserSession?
 
-    private init(client: KowalskiClient, kamaalAuth: KamaalAuth, tracksSessionStates: Bool = true) {
+    private init(
+        client: KowalskiClient, kamaalAuth: KamaalAuth, tracksSessionStates: Bool = true,
+        storageNamespace: String = ModuleConfig.identifier,
+    ) {
+        _cachedSession = UserDefaultsObject(key: "\(storageNamespace).cachedSession")
         self.client = client
         self.kamaalAuth = kamaalAuth
         if tracksSessionStates {
@@ -47,7 +52,7 @@ public final class KowalskiAuth {
         kamaalAuth.initiallyValidatingToken
     }
 
-    package var isLoggedIn: Bool {
+    public var isLoggedIn: Bool {
         kamaalAuth.isLoggedIn
     }
 
@@ -60,12 +65,29 @@ public final class KowalskiAuth {
         return preferredCurrency
     }
 
+    /// Signs out through KamaalAuth and clears Kowalski's enriched session and cached preferences.
+    /// Local state is cleared even when the server request fails.
+    public func signOut() async {
+        guard !isSigningOut else { return }
+
+        isSigningOut = true
+        sessionGeneration = UUID()
+        await kamaalAuth.signOut()
+        clearSession()
+        isSigningOut = false
+    }
+
     // MARK: - Preferences
 
     public func updatePreferredCurrency(
         _ currency: KowalskiCurrency,
     ) async -> Result<Void, KowalskiAuthPreferenceErrors> {
+        guard !isSigningOut else { return .failure(.generalFailure(context: CancellationError())) }
+
+        let generation = sessionGeneration
         let result = await client.updatePreferences(preferredCurrency: currency)
+        guard generation == sessionGeneration else { return .failure(.generalFailure(context: CancellationError())) }
+
         switch result {
         case let .failure(failure):
             logger.error(label: "Failed to update preferences", error: failure)
@@ -120,13 +142,15 @@ public final class KowalskiAuth {
 
     static func testing(
         client: KowalskiClient, session: UserSession? = nil, tracksSessionStates: Bool = false,
+        storageNamespace: String = "KowalskiAuth.testing.\(UUID())",
     ) -> KowalskiAuth {
         let kamaalAuth = KamaalAuth(
             client: client.auth,
-            configuration: KamaalAuthConfiguration(appName: "Kowalski", storageNamespace: ModuleConfig.identifier),
+            configuration: KamaalAuthConfiguration(appName: "Kowalski", storageNamespace: storageNamespace),
         )
         let auth = KowalskiAuth(
             client: client, kamaalAuth: kamaalAuth, tracksSessionStates: tracksSessionStates,
+            storageNamespace: storageNamespace,
         )
         auth.session = session
 
@@ -137,14 +161,21 @@ public final class KowalskiAuth {
 
     @discardableResult
     package func loadSession() async -> Result<Void, KowalskiAuthFeatureSessionError> {
+        guard !isSigningOut else { return .failure(.unauthorized(context: nil)) }
+
+        let generation = sessionGeneration
         if let cachedSession = getCachedSessionIfLoadedToday() {
             setSession(cachedSession)
             await seedPreferredCurrencyIfNeeded(for: cachedSession)
+            guard generation == sessionGeneration else { return .failure(.unauthorized(context: nil)) }
+
             return .success(())
         }
 
-        let result = await client.session()
-            .map(mapper.mapSessionResponse)
+        let response = await client.session()
+        guard generation == sessionGeneration else { return .failure(.unauthorized(context: nil)) }
+
+        let result = response.map(mapper.mapSessionResponse)
             .mapError { error -> KowalskiAuthFeatureSessionError in
                 switch error {
                 case .unknown:
@@ -162,8 +193,15 @@ public final class KowalskiAuth {
         setSession(session)
         cacheSession(session)
         await seedPreferredCurrencyIfNeeded(for: session)
+        guard generation == sessionGeneration else { return .failure(.unauthorized(context: nil)) }
 
         return .success(())
+    }
+
+    private func clearSession() {
+        sessionGeneration = UUID()
+        session = nil
+        cachedSession = nil
     }
 
     private func setSession(_ session: UserSession) {
@@ -171,7 +209,7 @@ public final class KowalskiAuth {
     }
 
     private func getCachedSessionIfLoadedToday() -> UserSession? {
-        guard let cachedSession = Self.cachedSession else { return nil }
+        guard let cachedSession else { return nil }
 
         let calendar = Calendar.current
         let now = Date.now
@@ -183,7 +221,7 @@ public final class KowalskiAuth {
     }
 
     private func cacheSession(_ session: UserSession) {
-        Self.cachedSession = CachedUserSession(session: session, cachedAt: .now)
+        cachedSession = CachedUserSession(session: session, cachedAt: .now)
     }
 
     private func seedPreferredCurrencyIfNeeded(for session: UserSession) async {
@@ -191,7 +229,10 @@ public final class KowalskiAuth {
         guard let localeCurrency = Self.localeCurrency else { return }
         guard localeCurrency != session.preferredCurrency else { return }
 
+        let generation = sessionGeneration
         let result = await updatePreferredCurrency(localeCurrency)
+        guard generation == sessionGeneration else { return }
+
         switch result {
         case let .failure(failure):
             logger.error(label: "Failed to seed preferred currency; will retry next session load", error: failure)
@@ -226,9 +267,10 @@ public final class KowalskiAuth {
         case .validatingCredentials:
             break
         case .unauthenticated:
-            session = nil
-            Self.cachedSession = nil
+            clearSession()
         case .authenticated:
+            guard kamaalAuth.isLoggedIn else { return }
+
             await loadSession()
         }
     }

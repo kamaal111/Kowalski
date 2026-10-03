@@ -7,12 +7,52 @@
 
 import Foundation
 import HTTPTypes
+import KamaalAuth
+import KamaalAuthTestSupport
 @testable import KowalskiClient
 import OpenAPIRuntime
 import Testing
 
 @Suite("Auth Client Tests")
 struct KowalskiAuthClientTests {
+    @Test
+    func `Sign out posts to the auth route and deletes credentials`() async throws {
+        let transport = MockClientTransport(queuedResponses: [.init(status: .ok, body: Data("{}".utf8))])
+        let client = try Client(serverURL: #require(URL(string: "https://api.example.com")), transport: transport)
+        let store = InMemoryCredentialsStore()
+        let key = "sign-out-success"
+        try store.store(MockAuthRequestHooks.credentials().credentials(), forKey: key)
+        let auth = KamaalAuthClientImpl(
+            hooks: KowalskiAuthRequestHooks(client: client), credentialsKey: key, credentialsStore: store,
+        )
+
+        try await auth.signOut().get()
+
+        #expect(!auth.hasValidCredentials)
+        #expect(try store.get(forKey: key) == nil)
+        let request = try #require(transport.capturedRequests.first)
+        #expect(request.path == "/app-api/auth/sign-out")
+        #expect(request.method == .post)
+    }
+
+    @Test
+    func `Sign out deletes credentials when the server fails`() async throws {
+        let transport = MockClientTransport(queuedResponses: [.init(status: .serviceUnavailable)])
+        let client = try Client(serverURL: #require(URL(string: "https://api.example.com")), transport: transport)
+        let store = InMemoryCredentialsStore()
+        let key = "sign-out-failure"
+        try store.store(MockAuthRequestHooks.credentials().credentials(), forKey: key)
+        let auth = KamaalAuthClientImpl(
+            hooks: KowalskiAuthRequestHooks(client: client), credentialsKey: key, credentialsStore: store,
+        )
+
+        await #expect(throws: SignOutErrors.self) { try await auth.signOut().get() }
+
+        #expect(!auth.hasValidCredentials)
+        #expect(try store.get(forKey: key) == nil)
+        #expect(transport.capturedRequests.count == 1)
+    }
+
     @Test
     func `Update preferences should return mapped client session response`() async throws {
         let responseBody = Data(

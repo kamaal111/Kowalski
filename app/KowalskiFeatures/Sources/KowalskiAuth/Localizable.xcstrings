@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Cancel" : {
+
+    },
     "Choose File…" : {
 
     },
@@ -44,6 +47,15 @@
 
     },
     "Restore transactions from a CSV export or template file." : {
+
+    },
+    "Sign in to manage your settings." : {
+
+    },
+    "Sign Out" : {
+
+    },
+    "Sign out of Kowalski?" : {
 
     },
     "Transactions exported." : {
