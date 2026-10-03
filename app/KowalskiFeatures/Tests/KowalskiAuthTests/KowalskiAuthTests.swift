@@ -7,15 +7,97 @@
 
 import Foundation
 import HTTPTypes
+import KamaalAuth
+import KamaalAuthTestSupport
 @testable import KowalskiAuth
+import struct KowalskiAuth.UserSession
 @testable import KowalskiClient
 import KowalskiModels
 import OpenAPIRuntime
 import Testing
 
 @MainActor
-@Suite("Auth Feature Tests")
+@Suite("Auth Feature Tests", .serialized)
 struct KowalskiAuthTests {
+    @Test
+    func `Sign out clears the enriched session cache and credentials`() async throws {
+        let fixture = try AuthTestFixture.make(signOut: .success(()))
+        try await fixture.auth.kamaalAuth.signIn(email: "test@example.com", password: "password123").get()
+        try await fixture.auth.loadSession().get()
+        #expect(fixture.auth.effectiveCurrency == .EUR)
+        #expect(UserDefaults.standard.data(forKey: fixture.cacheKey) != nil)
+
+        await fixture.auth.signOut()
+
+        #expect(!fixture.auth.isLoggedIn)
+        #expect(fixture.auth.session == nil)
+        #expect(!fixture.client.auth.hasValidCredentials)
+        #expect(UserDefaults.standard.data(forKey: fixture.cacheKey) == nil)
+        #expect(fixture.hooks.callCount(.signOut) == 1)
+    }
+
+    @Test
+    func `Sign out clears local state even when the server is unavailable`() async throws {
+        let fixture = try AuthTestFixture.make(signOut: .failure(AuthRequestFailure(status: 503)))
+        try await fixture.auth.kamaalAuth.signIn(email: "test@example.com", password: "password123").get()
+        try await fixture.auth.loadSession().get()
+
+        await fixture.auth.signOut()
+
+        #expect(!fixture.auth.isLoggedIn)
+        #expect(fixture.auth.session == nil)
+        #expect(!fixture.client.auth.hasValidCredentials)
+        #expect(UserDefaults.standard.data(forKey: fixture.cacheKey) == nil)
+    }
+
+    @Test
+    func `A session response arriving after sign out cannot restore the session`() async throws {
+        let transport = SuspendedResponseTransport()
+        let client = try makeKowalskiClient(transport: transport)
+        let auth = KowalskiAuth.testing(client: client)
+        let request = Task { await auth.loadSession() }
+        await transport.waitUntilRequested()
+
+        await auth.signOut()
+        await transport.respond(with: sessionResponseBody(preferredCurrency: "EUR"))
+        await #expect(throws: KowalskiAuthFeatureSessionError.self) { try await request.value.get() }
+
+        #expect(auth.session == nil)
+        #expect(auth.effectiveCurrency == .USD)
+    }
+
+    @Test
+    func `A preference response arriving after sign out cannot restore the session`() async throws {
+        let transport = SuspendedResponseTransport()
+        let client = try makeKowalskiClient(transport: transport)
+        let auth = KowalskiAuth.testing(client: client, session: makeSession(preferredCurrency: .USD))
+        let request = Task { await auth.updatePreferredCurrency(.EUR) }
+        await transport.waitUntilRequested()
+
+        await auth.signOut()
+        await transport.respond(with: sessionResponseBody(preferredCurrency: "EUR"))
+        await #expect(throws: KowalskiAuthPreferenceErrors.self) { try await request.value.get() }
+
+        #expect(auth.session == nil)
+        #expect(auth.effectiveCurrency == .USD)
+    }
+
+    @Test
+    func `Signing in again loads the new session currency instead of the previous cache`() async throws {
+        let fixture = try AuthTestFixture.make(signOut: .success(()))
+        try await fixture.auth.kamaalAuth.signIn(email: "test@example.com", password: "password123").get()
+        try await fixture.auth.loadSession().get()
+        #expect(fixture.auth.effectiveCurrency == .EUR)
+
+        await fixture.auth.signOut()
+        try await fixture.auth.kamaalAuth.signIn(email: "other@example.com", password: "password123").get()
+        try await fixture.auth.loadSession().get()
+
+        #expect(fixture.auth.isLoggedIn)
+        #expect(fixture.auth.effectiveCurrency == .GBP)
+        #expect(fixture.transport.capturedRequests.count == 2)
+    }
+
     @Test
     func `Update preferred currency should refresh the effective currency after a successful save`() async throws {
         let transport = QueuedResponseTransport(
@@ -96,7 +178,7 @@ private func sessionResponseBody(preferredCurrency: String, hasPreferredCurrency
         """
         {
           "session": {
-            "expires_at": "2025-12-31T00:00:00Z",
+            "expires_at": "2030-12-31T00:00:00Z",
             "created_at": "2025-01-01T00:00:00Z",
             "updated_at": "2025-04-01T00:00:00Z"
           },
@@ -161,5 +243,71 @@ private func yield(until condition: @MainActor () -> Bool, iterations: Int = 100
     while !condition(), count < iterations {
         await Task.yield()
         count += 1
+    }
+}
+
+private enum AuthTestFixture {
+    struct Fixture {
+        let auth: KowalskiAuth
+        let client: KowalskiClient
+        let hooks: MockAuthRequestHooks
+        let transport: QueuedResponseTransport
+        let cacheKey: String
+    }
+
+    @MainActor
+    static func make(signOut: AuthRequestOutcome<Void>) throws -> Fixture {
+        let hooks = MockAuthRequestHooks()
+            .stub(.signIn, with: .success(MockAuthRequestHooks.credentials()))
+            .stubSession(.success(AuthSession(
+                id: "test-user", name: "Test User", email: "test@example.com", emailVerified: true,
+                createdAt: .distantPast, expiresAt: .distantFuture,
+            )))
+            .stubSignOut(signOut)
+        let authClient = KamaalAuthClientImpl(
+            hooks: hooks, credentialsKey: "sign-out-test", credentialsStore: InMemoryCredentialsStore(),
+        )
+        let transport = QueuedResponseTransport(responses: [
+            .json(status: .ok, body: sessionResponseBody(preferredCurrency: "EUR")),
+            .json(status: .ok, body: sessionResponseBody(preferredCurrency: "GBP")),
+        ])
+        let generatedClient = try Client(
+            serverURL: #require(URL(string: "https://api.example.com")), transport: transport,
+        )
+        let client = KowalskiClient.testing(auth: authClient, client: generatedClient)
+        let namespace = "KowalskiAuth.testing.\(UUID())"
+        return Fixture(
+            auth: KowalskiAuth.testing(client: client, storageNamespace: namespace),
+            client: client, hooks: hooks, transport: transport,
+            cacheKey: "io.kamaal.KamaalUtils.UserDefaults.\(namespace).cachedSession",
+        )
+    }
+}
+
+private actor SuspendedResponseTransport: ClientTransport {
+    private var response: CheckedContinuation<Data, Never>?
+    private var requestStarted: CheckedContinuation<Void, Never>?
+    private var hasRequested = false
+
+    func send(
+        _: HTTPRequest, body _: HTTPBody?, baseURL _: URL, operationID _: String,
+    ) async throws -> (HTTPResponse, HTTPBody?) {
+        let data = await withCheckedContinuation { continuation in
+            response = continuation
+            hasRequested = true
+            requestStarted?.resume()
+            requestStarted = nil
+        }
+        return (HTTPResponse(status: .ok, headerFields: [.contentType: "application/json"]), HTTPBody(data))
+    }
+
+    func waitUntilRequested() async {
+        guard !hasRequested else { return }
+        await withCheckedContinuation { requestStarted = $0 }
+    }
+
+    func respond(with data: Data) {
+        response?.resume(returning: data)
+        response = nil
     }
 }

@@ -102,4 +102,17 @@ jobs:
         run: just quality-app
 
       - name: Run app tests
+        env:
+          SNAPSHOT_ARTIFACTS: ${{ runner.temp }}/snapshot-failures
         run: just test-app-ci
+
+      - name: Upload snapshot diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: app-snapshots
+          path: |
+            app/KowalskiFeatures/Tests/**/__Snapshots__/**/*.png
+            ${{ runner.temp }}/snapshot-failures
+          if-no-files-found: ignore
+          retention-days: 7
