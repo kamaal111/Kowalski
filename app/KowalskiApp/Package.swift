@@ -5,6 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "KowalskiApp",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(name: "KowalskiApp", targets: ["KowalskiApp"]),
@@ -18,6 +19,9 @@ let package = Package(
             dependencies: [
                 .product(name: "KowalskiAuth", package: "KowalskiFeatures"),
                 .product(name: "KowalskiPortfolio", package: "KowalskiFeatures"),
+            ],
+            resources: [
+                .process("Localizable.xcstrings"),
             ],
             swiftSettings: [
                 .treatAllWarnings(as: .error),

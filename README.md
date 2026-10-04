@@ -185,3 +185,26 @@ We use `just` to manage project tasks.
 3. **Code Quality**:
    - Always run `just ready` before pushing changes.
    - The project enforces strict linting and type checking.
+
+## Localization validation
+
+`just ready-app`, `just ready-app-ci`, `just ready`, and app CI verify macOS
+localization coverage after app tests compile the current sources with
+`SWIFT_EMIT_LOC_STRINGS=YES`. For a standalone check, run `just test-app` first,
+then `just check-localizations macos`. `just quality` keeps its existing checks
+and does not compile the app or validate catalogs.
+
+The checker compares the compiler's `.stringsdata` output with each source
+module's committed `.xcstrings` catalog. Missing extraction, catalogs, or keys
+fail with the affected path. Every extracted translatable key must have a
+completed translation in each non-source language declared across app catalogs,
+including plural and substitution variants. Source-language fallback is valid,
+and entries marked `shouldTranslate: false` are exempt from translation checks.
+The checker cannot identify arbitrary runtime strings that should be localized
+or verify the lookup bundle.
+
+Manage catalogs through Xcode's String Catalog editor or `xcrun xcstringstool
+sync`, using the matching module's compiler-generated `.stringsdata` files.
+Do not manually edit `.xcstrings` files. Validation itself never changes catalogs.
+Run `just test-localization-check` for isolated checker regression tests; these
+use Node.js and run without Xcode. No iOS builds or checks are included.
