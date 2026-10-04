@@ -17,27 +17,90 @@ private let darkCategoricalColors = [
 ]
 struct KowalskiPortfolioHoldingsDistributionChartView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var selectedIndex: Int?
+    @State private var hoverLocation = CGPoint.zero
+    @State private var tooltipSize = CGSize.zero
 
     let distribution: PortfolioHoldingsDistribution
 
     var body: some View {
         VStack(alignment: .leading, spacing: KowalskiSizes.small.rawValue) {
-            Chart(sortedHoldings.indices, id: \.self) { index in
-                let holding = sortedHoldings[index]
+            GeometryReader { geometry in
+                let frame = CGRect(origin: .zero, size: geometry.size)
 
-                SectorMark(
-                    angle: .value("Market Value", holding.marketValue.value),
-                    innerRadius: .ratio(0.55),
-                    angularInset: 1.5,
-                )
-                .foregroundStyle(color(for: index))
-                .cornerRadius(4)
+                Chart(sortedHoldings.indices, id: \.self) { index in
+                    let holding = sortedHoldings[index]
+
+                    SectorMark(
+                        angle: .value("Market Value", holding.marketValue.value),
+                        innerRadius: .fixed(PortfolioHoldingsChartLayout.innerRadius(in: frame)),
+                        outerRadius: .fixed(
+                            PortfolioHoldingsChartLayout.outerRadius(in: frame)
+                                + (selectedIndex == index ? PortfolioHoldingsChartLayout.expansion : 0),
+                        ),
+                        angularInset: 1.5,
+                    )
+                    .foregroundStyle(color(for: index))
+                    .cornerRadius(4)
+                    .accessibilityLabel(holding.name)
+                    .accessibilityValue(PortfolioValueFormatting.percent(layout.percentage(for: index)))
+                }
+                .chartLegend(.hidden)
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.16), value: selectedIndex)
+                .chartOverlay { proxy in
+                    GeometryReader { overlayGeometry in
+                        Rectangle()
+                            .fill(.clear)
+                            .contentShape(Rectangle())
+                            .onContinuousHover { phase in
+                                switch phase {
+                                case let .active(location):
+                                    hoverLocation = location
+                                    selectedIndex = proxy.plotFrame.flatMap { anchor in
+                                        layout.holdingIndex(
+                                            at: location, in: overlayGeometry[anchor], selectedIndex: selectedIndex,
+                                        )
+                                    }
+                                case .ended:
+                                    selectedIndex = nil
+                                }
+                            }
+
+                        if let selectedIndex, sortedHoldings.indices.contains(selectedIndex) {
+                            tooltip(for: selectedIndex, bounds: overlayGeometry.size)
+                        }
+                    }
+                }
             }
-            .chartLegend(.hidden)
             .frame(height: 220)
 
             legend
         }
+        .onChange(of: distribution) { _, _ in selectedIndex = nil }
+    }
+
+    private func tooltip(for index: Int, bounds: CGSize) -> some View {
+        let origin = PortfolioHoldingsChartLayout.tooltipOrigin(
+            near: hoverLocation, size: tooltipSize, bounds: bounds,
+        )
+
+        return VStack(alignment: .leading, spacing: KowalskiSizes.extraSmall.rawValue) {
+            Text(sortedHoldings[index].name)
+                .font(.caption.weight(.semibold))
+            Text(PortfolioValueFormatting.percent(layout.percentage(for: index)))
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
+        }
+        .padding(KowalskiSizes.small.rawValue)
+        .frame(maxWidth: min(220, bounds.width), alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.separator.opacity(0.5)))
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { tooltipSize = $0 }
+        .offset(x: origin.x, y: origin.y)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     private var legend: some View {
@@ -64,7 +127,11 @@ struct KowalskiPortfolioHoldingsDistributionChartView: View {
     }
 
     private var sortedHoldings: [PortfolioHoldingDistributionItem] {
-        distribution.holdings.sorted { $0.marketValue.value > $1.marketValue.value }
+        layout.holdings
+    }
+
+    private var layout: PortfolioHoldingsChartLayout {
+        PortfolioHoldingsChartLayout(holdings: distribution.holdings)
     }
 
     private func color(for index: Int) -> Color {
