@@ -1,4 +1,4 @@
-import { describe, expect } from 'vitest';
+import { afterEach, beforeEach, describe, expect, vi } from 'vitest';
 
 import { PORTFOLIO_ROUTE_NAME } from '../index.ts';
 import { seedExchangeRate, seedPortfolioEntry, seedStockInfo } from './helpers.ts';
@@ -7,6 +7,7 @@ import { ValidationErrorResponseSchema } from '../../schemas/errors.ts';
 import { integrationTest } from '../../tests/fixtures.ts';
 import { buildChartMeta, yahooFinanceChartMock, yahooFinanceQuoteMock } from '../../tests/mocks/yahoo-finance.ts';
 import { createTestUserAndSession } from '../../tests/utils.ts';
+import { shiftDateByDays } from '../../utils/dates.ts';
 import { createSyntheticTickerId } from '../../utils/tickers.ts';
 import { PortfolioDashboardsResponseSchema } from '../schemas/responses.ts';
 
@@ -15,6 +16,17 @@ const DASHBOARDS_PATH = `${APP_API_BASE_PATH}${PORTFOLIO_ROUTE_NAME}/dashboards`
 interface AppRequestClient {
   request: (input: string, init?: RequestInit) => Response | Promise<Response>;
 }
+
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2025-12-23T12:00:00Z'));
+  yahooFinanceChartMock.mockImplementation(async symbol => ({
+    meta: buildChartMeta({ symbol, currency: 'USD' }),
+    quotes: [],
+  }));
+});
+
+afterEach(() => vi.useRealTimers());
 
 describe('Portfolio Dashboards Route', () => {
   integrationTest('defaults dashboard period to one year', async ({ app, db, sessionToken, userId }) => {
@@ -77,7 +89,7 @@ describe('Portfolio Dashboards Route', () => {
     );
   });
 
-  integrationTest('filters transaction snapshots to the selected period', async ({ app, db, sessionToken, userId }) => {
+  integrationTest('returns daily snapshots within the selected period', async ({ app, db, sessionToken, userId }) => {
     const today = new Date().toISOString().slice(0, 10);
     const oldDate = shiftDateByDays(today, -10);
     const recentDate = shiftDateByDays(today, -2);
@@ -132,8 +144,12 @@ describe('Portfolio Dashboards Route', () => {
     const response = await sendDashboardsRequest(app, sessionToken, {}, '1w');
     const body = await expectSuccessfulDashboardsResponse(response);
 
-    expect(body.portfolio_growth_over_time.points.map(point => point.date)).toEqual([baselineDate, recentDate, today]);
-    expect(body.portfolio_growth_over_time.points.map(point => point.value)).toEqual([150, 410, 430]);
+    expect(body.portfolio_growth_over_time.points.map(point => point.date)).toEqual(
+      Array.from({ length: 8 }, (_, index) => shiftDateByDays(baselineDate, index)),
+    );
+    expect(body.portfolio_growth_over_time.points.map(point => point.value)).toEqual([
+      150, 150, 150, 160, 160, 410, 410, 430,
+    ]);
   });
 
   integrationTest(
@@ -166,45 +182,44 @@ describe('Portfolio Dashboards Route', () => {
       const response = await sendDashboardsRequest(app, sessionToken, {}, '1y');
       const body = await expectSuccessfulDashboardsResponse(response);
 
-      expect(body.portfolio_growth_over_time.points).toEqual([
-        { date: baselineDate, value: 300, is_current: false },
-        { date: today, value: 320, is_current: true },
-      ]);
+      expect(body.portfolio_growth_over_time.points[0]).toEqual({ date: baselineDate, value: 300, is_current: false });
+      expect(body.portfolio_growth_over_time.points.at(-1)).toEqual({ date: today, value: 320, is_current: true });
     },
   );
 
-  integrationTest('returns all transaction snapshots for the all period', async ({ app, db, sessionToken, userId }) => {
-    const today = new Date().toISOString().slice(0, 10);
-    const oldDate = shiftDateByDays(today, -730);
-    await seedPortfolioEntry(db, {
-      userId,
-      stock: { symbol: 'AAPL', exchange: 'NMS', name: 'Apple Inc.' },
-      amount: 2,
-      purchasePrice: { currency: 'USD', value: 100 },
-      transactionType: 'buy',
-      transactionDate: dateTime(oldDate),
-    });
-    await seedStockInfo(db, {
-      tickerId: createSyntheticTickerId('NMS', 'AAPL'),
-      currency: 'USD',
-      date: oldDate,
-      price: 150,
-    });
-    await seedStockInfo(db, {
-      tickerId: createSyntheticTickerId('NMS', 'AAPL'),
-      currency: 'USD',
-      date: today,
-      price: 160,
-    });
+  integrationTest(
+    'samples daily history from the first transaction for the all period',
+    async ({ app, db, sessionToken, userId }) => {
+      const today = new Date().toISOString().slice(0, 10);
+      const oldDate = shiftDateByDays(today, -730);
+      await seedPortfolioEntry(db, {
+        userId,
+        stock: { symbol: 'AAPL', exchange: 'NMS', name: 'Apple Inc.' },
+        amount: 2,
+        purchasePrice: { currency: 'USD', value: 100 },
+        transactionType: 'buy',
+        transactionDate: dateTime(oldDate),
+      });
+      await seedStockInfo(db, {
+        tickerId: createSyntheticTickerId('NMS', 'AAPL'),
+        currency: 'USD',
+        date: oldDate,
+        price: 150,
+      });
+      await seedStockInfo(db, {
+        tickerId: createSyntheticTickerId('NMS', 'AAPL'),
+        currency: 'USD',
+        date: today,
+        price: 160,
+      });
 
-    const response = await sendDashboardsRequest(app, sessionToken, {}, 'all');
-    const body = await expectSuccessfulDashboardsResponse(response);
+      const response = await sendDashboardsRequest(app, sessionToken, {}, 'all');
+      const body = await expectSuccessfulDashboardsResponse(response);
 
-    expect(body.portfolio_growth_over_time.points).toEqual([
-      { date: oldDate, value: 300, is_current: false },
-      { date: today, value: 320, is_current: true },
-    ]);
-  });
+      expect(body.portfolio_growth_over_time.points[0]).toEqual({ date: oldDate, value: 300, is_current: false });
+      expect(body.portfolio_growth_over_time.points.at(-1)).toEqual({ date: today, value: 320, is_current: true });
+    },
+  );
 
   integrationTest(
     'caps dashboard growth points at fifty and keeps current',
@@ -254,72 +269,71 @@ describe('Portfolio Dashboards Route', () => {
     expect(body.context?.validations.some(validation => validation.path.includes('period'))).toBe(true);
   });
 
-  integrationTest(
-    'returns growth points for transaction dates plus current value',
-    async ({ app, db, sessionToken, userId }) => {
-      await seedPortfolioEntry(db, {
-        userId,
-        stock: { symbol: 'AAPL', exchange: 'NMS', name: 'Apple Inc.' },
-        amount: 10,
-        purchasePrice: { currency: 'USD', value: 100 },
-        transactionType: 'buy',
-        transactionDate: '2025-12-19T10:30:00.000Z',
-      });
-      await seedPortfolioEntry(db, {
-        userId,
-        stock: { symbol: 'MSFT', exchange: 'NMS', name: 'Microsoft Corporation' },
-        amount: 2,
-        purchasePrice: { currency: 'USD', value: 300 },
-        transactionType: 'buy',
-        transactionDate: '2025-12-20T10:30:00.000Z',
-      });
-      const today = new Date().toISOString().slice(0, 10);
-      await seedStockInfo(db, {
-        tickerId: createSyntheticTickerId('NMS', 'AAPL'),
-        currency: 'USD',
-        date: '2025-12-19',
-        price: 150,
-      });
-      await seedStockInfo(db, {
-        tickerId: createSyntheticTickerId('NMS', 'AAPL'),
-        currency: 'USD',
-        date: '2025-12-20',
-        price: 155,
-      });
-      await seedStockInfo(db, {
-        tickerId: createSyntheticTickerId('NMS', 'MSFT'),
-        currency: 'USD',
-        date: '2025-12-20',
-        price: 420,
-      });
-      await seedStockInfo(db, {
-        tickerId: createSyntheticTickerId('NMS', 'AAPL'),
-        currency: 'USD',
-        date: today,
-        price: 160,
-      });
-      await seedStockInfo(db, {
-        tickerId: createSyntheticTickerId('NMS', 'MSFT'),
-        currency: 'USD',
-        date: today,
-        price: 430,
-      });
+  integrationTest('returns daily growth points plus current value', async ({ app, db, sessionToken, userId }) => {
+    await seedPortfolioEntry(db, {
+      userId,
+      stock: { symbol: 'AAPL', exchange: 'NMS', name: 'Apple Inc.' },
+      amount: 10,
+      purchasePrice: { currency: 'USD', value: 100 },
+      transactionType: 'buy',
+      transactionDate: '2025-12-19T10:30:00.000Z',
+    });
+    await seedPortfolioEntry(db, {
+      userId,
+      stock: { symbol: 'MSFT', exchange: 'NMS', name: 'Microsoft Corporation' },
+      amount: 2,
+      purchasePrice: { currency: 'USD', value: 300 },
+      transactionType: 'buy',
+      transactionDate: '2025-12-20T10:30:00.000Z',
+    });
+    const today = new Date().toISOString().slice(0, 10);
+    await seedStockInfo(db, {
+      tickerId: createSyntheticTickerId('NMS', 'AAPL'),
+      currency: 'USD',
+      date: '2025-12-19',
+      price: 150,
+    });
+    await seedStockInfo(db, {
+      tickerId: createSyntheticTickerId('NMS', 'AAPL'),
+      currency: 'USD',
+      date: '2025-12-20',
+      price: 155,
+    });
+    await seedStockInfo(db, {
+      tickerId: createSyntheticTickerId('NMS', 'MSFT'),
+      currency: 'USD',
+      date: '2025-12-20',
+      price: 420,
+    });
+    await seedStockInfo(db, {
+      tickerId: createSyntheticTickerId('NMS', 'AAPL'),
+      currency: 'USD',
+      date: today,
+      price: 160,
+    });
+    await seedStockInfo(db, {
+      tickerId: createSyntheticTickerId('NMS', 'MSFT'),
+      currency: 'USD',
+      date: today,
+      price: 430,
+    });
 
-      const response = await sendDashboardsRequest(app, sessionToken, {}, 'all');
-      const body = await expectSuccessfulDashboardsResponse(response);
+    const response = await sendDashboardsRequest(app, sessionToken, {}, 'all');
+    const body = await expectSuccessfulDashboardsResponse(response);
 
-      expect(body.portfolio_growth_over_time).toEqual({
-        currency: 'USD',
-        points: [
-          { date: '2025-12-19', value: 1500, is_current: false },
-          { date: '2025-12-20', value: 2390, is_current: false },
-          { date: today, value: 2460, is_current: true },
-        ],
-      });
-      expect(yahooFinanceChartMock).not.toHaveBeenCalled();
-      expect(yahooFinanceQuoteMock).not.toHaveBeenCalled();
-    },
-  );
+    expect(body.portfolio_growth_over_time).toEqual({
+      currency: 'USD',
+      points: [
+        { date: '2025-12-19', value: 1500, is_current: false },
+        { date: '2025-12-20', value: 2390, is_current: false },
+        { date: '2025-12-21', value: 2390, is_current: false },
+        { date: '2025-12-22', value: 2460, is_current: false },
+        { date: today, value: 2460, is_current: true },
+      ],
+    });
+    expect(yahooFinanceChartMock).toHaveBeenCalled();
+    expect(yahooFinanceQuoteMock).not.toHaveBeenCalled();
+  });
 
   integrationTest(
     'calculates dashboard snapshots from chronological entries when the repository returns newest first',
@@ -359,18 +373,22 @@ describe('Portfolio Dashboards Route', () => {
       const response = await sendDashboardsRequest(app, sessionToken, {}, 'all');
       const body = await expectSuccessfulDashboardsResponse(response);
 
-      expect(body.portfolio_growth_over_time.points).toEqual([
-        { date: '2024-01-15', value: 1000, is_current: false },
-        { date: '2024-03-15', value: 500, is_current: false },
-        { date: '2024-06-15', value: 1500, is_current: false },
-        { date: today, value: 2500, is_current: true },
-      ]);
-      expect(yahooFinanceChartMock).toHaveBeenCalledWith('AAPL', {
-        period1: '2024-01-05',
-        period2: '2024-06-21',
-        interval: '1d',
-        return: 'array',
-      });
+      expect(body.portfolio_growth_over_time.points[0]).toEqual({ date: '2024-01-15', value: 1000, is_current: false });
+      expect(body.portfolio_growth_over_time.points.at(-1)).toEqual({ date: today, value: 2500, is_current: true });
+      expect(
+        body.portfolio_growth_over_time.points.find(point => point.date >= '2024-03-15' && point.date <= '2024-05-31')
+          ?.value,
+      ).toBe(500);
+      expect(yahooFinanceChartMock).toHaveBeenCalledWith(
+        'AAPL',
+        {
+          period1: '2024-01-05',
+          period2: today,
+          interval: '1d',
+          return: 'array',
+        },
+        expect.objectContaining({ fetchOptions: expect.objectContaining({ signal: expect.any(AbortSignal) }) }),
+      );
       expect(yahooFinanceQuoteMock).not.toHaveBeenCalled();
     },
   );
@@ -401,6 +419,13 @@ describe('Portfolio Dashboards Route', () => {
         price: 160,
       });
 
+      yahooFinanceChartMock.mockResolvedValueOnce({
+        meta: buildChartMeta({ symbol: 'AAPL', currency: 'USD' }),
+        quotes: [
+          { date: new Date('2025-12-19T00:00:00Z'), close: 150, high: null, low: null, open: null, volume: null },
+          { date: new Date('2025-12-22T00:00:00Z'), close: 160, high: null, low: null, open: null, volume: null },
+        ],
+      });
       const response = await sendDashboardsRequest(app, sessionToken, {}, 'all');
       const body = await expectSuccessfulDashboardsResponse(response);
 
@@ -410,6 +435,7 @@ describe('Portfolio Dashboards Route', () => {
           value: 450,
           is_current: false,
         },
+        { date: '2025-12-21', value: 480, is_current: false },
         {
           date: '2025-12-22',
           value: 640,
@@ -422,12 +448,16 @@ describe('Portfolio Dashboards Route', () => {
         },
       ]);
       expect(yahooFinanceChartMock).toHaveBeenCalledTimes(1);
-      expect(yahooFinanceChartMock).toHaveBeenCalledWith('AAPL', {
-        period1: '2025-12-10',
-        period2: '2025-12-28',
-        interval: '1d',
-        return: 'array',
-      });
+      expect(yahooFinanceChartMock).toHaveBeenCalledWith(
+        'AAPL',
+        {
+          period1: '2025-12-10',
+          period2: new Date().toISOString().slice(0, 10),
+          interval: '1d',
+          return: 'array',
+        },
+        expect.objectContaining({ fetchOptions: expect.objectContaining({ signal: expect.any(AbortSignal) }) }),
+      );
     },
   );
 
@@ -466,16 +496,18 @@ describe('Portfolio Dashboards Route', () => {
       const response = await sendDashboardsRequest(app, sessionToken, {}, 'all');
       const body = await expectSuccessfulDashboardsResponse(response);
 
-      expect(body.portfolio_growth_over_time.points).toEqual([
-        { date: '2024-01-15', value: 110, is_current: false },
-        { date: today, value: 160, is_current: true },
-      ]);
-      expect(yahooFinanceChartMock).toHaveBeenCalledWith('XYZ', {
-        period1: '2024-01-05',
-        period2: '2024-01-21',
-        interval: '1d',
-        return: 'array',
-      });
+      expect(body.portfolio_growth_over_time.points[0]).toEqual({ date: '2024-01-15', value: 110, is_current: false });
+      expect(body.portfolio_growth_over_time.points.at(-1)).toEqual({ date: today, value: 160, is_current: true });
+      expect(yahooFinanceChartMock).toHaveBeenCalledWith(
+        'XYZ',
+        {
+          period1: '2024-01-05',
+          period2: today,
+          interval: '1d',
+          return: 'array',
+        },
+        expect.objectContaining({ fetchOptions: expect.objectContaining({ signal: expect.any(AbortSignal) }) }),
+      );
       expect(yahooFinanceQuoteMock).not.toHaveBeenCalled();
     },
   );
@@ -516,17 +548,18 @@ describe('Portfolio Dashboards Route', () => {
       const response = await sendDashboardsRequest(app, sessionToken, {}, 'all');
       const body = await expectSuccessfulDashboardsResponse(response);
 
-      expect(body.portfolio_growth_over_time.points).toEqual([
-        { date: '2024-01-15', value: 100, is_current: false },
-        { date: '2024-06-15', value: 270, is_current: false },
-        { date: today, value: 300, is_current: true },
-      ]);
-      expect(yahooFinanceChartMock).toHaveBeenCalledWith('XYZ', {
-        period1: '2024-01-05',
-        period2: '2024-06-21',
-        interval: '1d',
-        return: 'array',
-      });
+      expect(body.portfolio_growth_over_time.points[0]).toEqual({ date: '2024-01-15', value: 100, is_current: false });
+      expect(body.portfolio_growth_over_time.points.at(-1)).toEqual({ date: today, value: 300, is_current: true });
+      expect(yahooFinanceChartMock).toHaveBeenCalledWith(
+        'XYZ',
+        {
+          period1: '2024-01-05',
+          period2: today,
+          interval: '1d',
+          return: 'array',
+        },
+        expect.objectContaining({ fetchOptions: expect.objectContaining({ signal: expect.any(AbortSignal) }) }),
+      );
       expect(yahooFinanceQuoteMock).not.toHaveBeenCalled();
     },
   );
@@ -554,16 +587,18 @@ describe('Portfolio Dashboards Route', () => {
       const response = await sendDashboardsRequest(app, sessionToken, headers, 'all');
       const body = await expectSuccessfulDashboardsResponse(response);
 
-      expect(body.portfolio_growth_over_time.points).toEqual([
-        { date: '2024-01-15', value: 100, is_current: false },
-        { date: today, value: 160, is_current: true },
-      ]);
-      expect(yahooFinanceChartMock).toHaveBeenCalledWith('XYZ', {
-        period1: '2024-01-05',
-        period2: '2024-01-21',
-        interval: '1d',
-        return: 'array',
-      });
+      expect(body.portfolio_growth_over_time.points[0]).toEqual({ date: '2024-01-15', value: 100, is_current: false });
+      expect(body.portfolio_growth_over_time.points.at(-1)).toEqual({ date: today, value: 160, is_current: true });
+      expect(yahooFinanceChartMock).toHaveBeenCalledWith(
+        'XYZ',
+        {
+          period1: '2024-01-05',
+          period2: today,
+          interval: '1d',
+          return: 'array',
+        },
+        expect.objectContaining({ fetchOptions: expect.objectContaining({ signal: expect.any(AbortSignal) }) }),
+      );
       expect(yahooFinanceQuoteMock).not.toHaveBeenCalled();
       expect(getLogsForRequestId(requestId)).toEqual(
         expect.arrayContaining([
@@ -618,12 +653,9 @@ describe('Portfolio Dashboards Route', () => {
       const response = await sendDashboardsRequest(app, sessionToken, {}, 'all');
       const body = await expectSuccessfulDashboardsResponse(response);
 
-      expect(body.portfolio_growth_over_time.points).toEqual([
-        { date: '2024-01-15', value: 110, is_current: false },
-        { date: '2024-06-15', value: 360, is_current: false },
-        { date: today, value: 390, is_current: true },
-      ]);
-      expect(yahooFinanceChartMock).not.toHaveBeenCalled();
+      expect(body.portfolio_growth_over_time.points[0]).toEqual({ date: '2024-01-15', value: 110, is_current: false });
+      expect(body.portfolio_growth_over_time.points.at(-1)).toEqual({ date: today, value: 390, is_current: true });
+      expect(yahooFinanceChartMock).toHaveBeenCalled();
       expect(yahooFinanceQuoteMock).not.toHaveBeenCalled();
     },
   );
@@ -655,10 +687,8 @@ describe('Portfolio Dashboards Route', () => {
       const response = await sendDashboardsRequest(app, sessionToken, {}, 'all');
       const body = await expectSuccessfulDashboardsResponse(response);
 
-      expect(body.portfolio_growth_over_time.points).toEqual([
-        { date: '2024-01-15', value: 100, is_current: false },
-        { date: today, value: 120, is_current: true },
-      ]);
+      expect(body.portfolio_growth_over_time.points[0]).toEqual({ date: '2024-01-15', value: 100, is_current: false });
+      expect(body.portfolio_growth_over_time.points.at(-1)).toEqual({ date: today, value: 120, is_current: true });
     },
   );
 
@@ -703,10 +733,9 @@ describe('Portfolio Dashboards Route', () => {
     const response = await sendDashboardsRequest(app, sessionToken);
     const body = await expectSuccessfulDashboardsResponse(response);
 
-    expect(body.portfolio_growth_over_time.points).toEqual([
-      { date: '2025-12-19', value: 150, is_current: false },
-      { date: today, value: 160, is_current: true },
-    ]);
+    expect(body.portfolio_growth_over_time.points[0]).toEqual({ date: '2025-12-19', value: 150, is_current: false });
+    expect(body.portfolio_growth_over_time.points.at(-1)).toEqual({ date: today, value: 160, is_current: true });
+    expect(yahooFinanceChartMock.mock.calls.map(call => call[0])).toEqual(['AAPL']);
   });
 
   integrationTest('returns empty growth data when the user has no entries', async ({ app, sessionToken }) => {
@@ -883,11 +912,4 @@ async function expectValidationResponse(response: Response) {
 
 function dateTime(date: string) {
   return `${date}T10:30:00.000Z`;
-}
-
-function shiftDateByDays(date: string, days: number) {
-  const shiftedDate = new Date(`${date}T00:00:00.000Z`);
-  shiftedDate.setUTCDate(shiftedDate.getUTCDate() + days);
-
-  return shiftedDate.toISOString().slice(0, 10);
 }

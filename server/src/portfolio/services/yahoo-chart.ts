@@ -6,12 +6,12 @@ import { CurrencySchema, type Currency } from '../../forex/constants.ts';
 import { withRequestLogger } from '../../logging/http.ts';
 import { logError, logWarn } from '../../logging/index.ts';
 import { yahooFinanceClient } from '../../utils/yahoo-finance.ts';
-import { DATE_FORMAT } from '../constants.ts';
+import { DATE_FORMAT, YAHOO_CHART_TIMEOUT_MS } from '../constants.ts';
 
 const YahooChartQuoteSchema = z
   .object({
     date: z.date(),
-    close: z.number().positive(),
+    close: z.number().positive().nullable(),
   })
   .loose();
 
@@ -20,6 +20,7 @@ const YahooChartSchema = z
     meta: z
       .object({
         currency: CurrencySchema,
+        symbol: z.string().min(1),
       })
       .loose(),
     quotes: z.array(YahooChartQuoteSchema),
@@ -32,6 +33,8 @@ interface YahooChartPrice {
   price: number;
 }
 
+type YahooChartResult = { success: false } | { success: true; prices: YahooChartPrice[]; missingDates: string[] };
+
 export async function fetchYahooChartPrices(
   c: HonoContext,
   {
@@ -43,16 +46,20 @@ export async function fetchYahooChartPrices(
     period1: string;
     period2: string;
   },
-): Promise<YahooChartPrice[]> {
+): Promise<YahooChartResult> {
   let chartResult: ChartResultArray;
 
   try {
-    chartResult = await yahooFinanceClient.chart(symbol, {
-      period1,
-      period2,
-      interval: '1d',
-      return: 'array',
-    });
+    chartResult = await yahooFinanceClient.chart(
+      symbol,
+      {
+        period1,
+        period2,
+        interval: '1d',
+        return: 'array',
+      },
+      { fetchOptions: { signal: AbortSignal.timeout(YAHOO_CHART_TIMEOUT_MS) } },
+    );
   } catch (error) {
     logError(
       withRequestLogger(c, { component: 'portfolio' }),
@@ -66,12 +73,12 @@ export async function fetchYahooChartPrices(
       error,
     );
 
-    return [];
+    return { success: false };
   }
 
   const parsedChart = YahooChartSchema.safeParse(chartResult);
 
-  if (!parsedChart.success) {
+  if (!parsedChart.success || parsedChart.data.meta.symbol !== symbol) {
     logWarn(withRequestLogger(c, { component: 'portfolio' }), {
       event: 'portfolio.stock_prices.yahoo_chart.invalid',
       quote_symbol: symbol,
@@ -80,12 +87,33 @@ export async function fetchYahooChartPrices(
       outcome: 'failure',
     });
 
-    return [];
+    return { success: false };
   }
 
-  return parsedChart.data.quotes.map(quote => ({
-    currency: parsedChart.data.meta.currency,
-    date: quote.date.toISOString().slice(0, DATE_FORMAT.length),
-    price: quote.close,
-  }));
+  const prices = new Map<string, YahooChartPrice>();
+  const missingDates = new Set<string>();
+
+  for (const quote of parsedChart.data.quotes) {
+    const date = quote.date.toISOString().slice(0, DATE_FORMAT.length);
+
+    if (date < period1 || date >= period2) {
+      continue;
+    }
+
+    if (quote.close == null) {
+      missingDates.add(date);
+    } else {
+      prices.set(date, { currency: parsedChart.data.meta.currency, date, price: quote.close });
+    }
+  }
+
+  return {
+    success: true,
+    prices: prices.values().toArray(),
+    missingDates: missingDates
+      .values()
+      .filter(date => !prices.has(date))
+      .toArray()
+      .toSorted(),
+  };
 }

@@ -359,21 +359,22 @@ const PortfolioGrowthPointSchema = z
   .meta({
     $id: 'PortfolioGrowthPoint',
     title: 'Portfolio Growth Point',
-    description: 'Sparse portfolio total value snapshot for charting growth over time.',
+    description: 'Daily portfolio total value snapshot for charting growth over time.',
   });
 
 const PortfolioGrowthOverTimeSchema = z
   .object({
     currency: CurrencySchema,
     points: z.array(PortfolioGrowthPointSchema).meta({
-      description: 'Sparse growth points at transaction dates plus the current value point when entries exist.',
+      description:
+        'Daily growth snapshots sampled to at most 49 historical points plus the current value point when entries exist.',
     }),
   })
   .meta({
     $id: 'PortfolioGrowthOverTime',
     title: 'Portfolio Growth Over Time',
     description:
-      'Portfolio total value over sparse transaction-date snapshots. All values use the currency resolved from the ' +
+      'Portfolio total value over sampled daily snapshots. All values use the currency resolved from the ' +
       "signed-in user's preference.",
   });
 
