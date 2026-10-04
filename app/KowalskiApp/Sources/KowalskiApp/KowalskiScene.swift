@@ -26,7 +26,7 @@ public struct KowalskiScene: Scene {
         .commands {
             CommandGroup(replacing: .appSettings) {
                 SettingsLink {
-                    Text("Settings…")
+                    Text(NSLocalizedString("Settings…", bundle: .module, comment: ""))
                 }
                 .keyboardShortcut(",", modifiers: .command)
                 .disabled(!auth.isLoggedIn)

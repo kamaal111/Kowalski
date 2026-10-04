@@ -82,6 +82,10 @@ docker-run-server tag=DOCKER_IMAGE host_port=SERVER_PORT: start-services
 # Run all verification checks
 ready: _ready-tasks
 
+# Run all verification checks for the app
+[parallel]
+ready-app: quality-app quality-tools test-app test-localization-check
+
 # Run all verification checks for the server
 [parallel]
 ready-server: quality-server test-server
@@ -245,21 +249,38 @@ typecheck-server:
 
 # Run tests (excluding app UI tests)
 [parallel]
-test: test-server test-app test-herdr-worktree
+test: test-server test-app test-herdr-worktree test-localization-check test-affected-areas
 
 # Test worktree environment allocation
 test-herdr-worktree:
     node --test scripts/worktree-env.test.ts
 
+# Check compiler-extracted macOS keys against catalogs; run app tests first
+check-localizations platform:
+    node scripts/check-localizations.ts {{ platform }}
+
+# Test localization validation using isolated compiler-output fixtures
+test-localization-check:
+    node --test scripts/check-localizations.test.ts
+
+# Test CI routing for localization tooling and app changes
+test-affected-areas:
+    bash .github/scripts/determine-affected-areas.test.sh
+
+# Check TypeScript verification tools without building the app
+[parallel]
+quality-tools: lint-server format-check-server typecheck-scripts
+
 # Run app tests (excluding UI tests)
 [working-directory("app")]
 test-app:
     xcodebuild test -scheme {{ SCHEME }} -destination {{ MACOS_DESTINATION }} \
-        -skip-testing:{{ UI_TEST_NAME }}
+        -skip-testing:{{ UI_TEST_NAME }} SWIFT_EMIT_LOC_STRINGS=YES
+    just --justfile ../justfile check-localizations macos
 
 # Run verification checks in CI for app
 [parallel]
-ready-app-ci: quality-app test-app-ci
+ready-app-ci: quality-app quality-tools test-app-ci test-localization-check
 
 # Run quality checks for app
 [parallel]
@@ -268,13 +289,18 @@ quality-app: lint-app format-check-app
 # Run app tests in CI
 [working-directory("app")]
 test-app-ci:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    result_directory=$(mktemp -d "${TMPDIR:-/tmp}/kowalski-tests.XXXXXX")
     xcodebuild test -scheme {{ SCHEME }} -destination {{ MACOS_DESTINATION }} \
         -skip-testing:{{ UI_TEST_NAME }} \
         -skipPackagePluginValidation \
-        -resultBundlePath TestResults \
+        -resultBundlePath "$result_directory/TestResults.xcresult" \
+        SWIFT_EMIT_LOC_STRINGS=YES \
         CODE_SIGNING_ALLOWED=NO \
         CODE_SIGNING_REQUIRED=NO \
         CODE_SIGN_IDENTITY=""
+    just --justfile ../justfile check-localizations macos
 
 # Run app UI tests (only when explicitly requested)
 [working-directory("app")]
@@ -285,7 +311,8 @@ test-ui:
 # Run app UI tests and unit tests
 [working-directory("app")]
 test-app-heavy:
-    xcodebuild test -scheme {{ SCHEME }} -destination {{ MACOS_DESTINATION }}
+    xcodebuild test -scheme {{ SCHEME }} -destination {{ MACOS_DESTINATION }} SWIFT_EMIT_LOC_STRINGS=YES
+    just --justfile ../justfile check-localizations macos
 
 # Run server tests
 [working-directory("server")]

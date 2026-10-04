@@ -6,6 +6,12 @@
     },
     "Searching..." : {
 
+    },
+    "Selected: %@" : {
+
+    },
+    "Show Toast" : {
+
     }
   },
   "version" : "1.1"

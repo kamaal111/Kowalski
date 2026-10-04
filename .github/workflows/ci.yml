@@ -31,6 +31,9 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
+      - name: Test affected-area detection
+        run: bash .github/scripts/determine-affected-areas.test.sh
+
       - name: Determine affected areas
         id: detect
         shell: bash
@@ -85,6 +88,21 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v7
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install localization tooling dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Select Xcode version
         run: |
           echo "listing available Xcode versions:"
@@ -101,7 +119,13 @@ jobs:
       - name: Run quality checks for app
         run: just quality-app
 
-      - name: Run app tests
+      - name: Run localization tooling quality checks
+        run: just quality-tools
+
+      - name: Test localization validation
+        run: just test-localization-check
+
+      - name: Run app tests and verify macOS localization coverage
         env:
           SNAPSHOT_ARTIFACTS: ${{ runner.temp }}/snapshot-failures
         run: just test-app-ci
