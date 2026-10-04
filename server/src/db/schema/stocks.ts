@@ -1,5 +1,5 @@
-import { defineRelationsPart } from 'drizzle-orm';
-import { date, numeric, pgTable, text, unique } from 'drizzle-orm/pg-core';
+import { defineRelationsPart, sql } from 'drizzle-orm';
+import { check, date, numeric, pgTable, primaryKey, text, unique } from 'drizzle-orm/pg-core';
 
 import currency from '../helpers/currency.ts';
 
@@ -53,4 +53,20 @@ export const stockInfo = pgTable(
   t => [unique().on(t.tickerId, t.date), unique('entry').on(t.tickerId, t.date)],
 );
 
-export const stocksRelations = defineRelationsPart({ stockTicker, stockInfo });
+/** Successfully queried historical ranges, including dates without market candles. */
+export const stockPriceHistoryCoverage = pgTable(
+  'stock_price_history_coverage',
+  {
+    tickerId: text('ticker_id')
+      .notNull()
+      .references(() => stockTicker.id, { onDelete: 'cascade' }),
+    startDate: date('start_date').notNull(),
+    endDate: date('end_date').notNull(),
+  },
+  t => [
+    primaryKey({ columns: [t.tickerId, t.startDate] }),
+    check('stock_price_history_coverage_order', sql`${t.startDate} <= ${t.endDate}`),
+  ],
+);
+
+export const stocksRelations = defineRelationsPart({ stockTicker, stockInfo, stockPriceHistoryCoverage });

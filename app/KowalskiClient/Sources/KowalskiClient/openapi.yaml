@@ -459,7 +459,9 @@ paths:
         - Stocks
   /app-api/portfolio/dashboards:
     get:
-      description: Return sparse dashboard data for the signed-in user default portfolio.
+      description: >-
+        Return daily dashboard history sampled to at most 50 points and current
+        holdings data for the signed-in user default portfolio.
       parameters:
         - schema:
             $ref: '#/components/schemas/PortfolioDashboardPeriod'
@@ -1266,7 +1268,7 @@ components:
         - value
         - is_current
       title: Portfolio Growth Point
-      description: Sparse portfolio total value snapshot for charting growth over time.
+      description: Daily portfolio total value snapshot for charting growth over time.
     PortfolioGrowthOverTime:
       type: object
       properties:
@@ -1277,15 +1279,15 @@ components:
           items:
             $ref: '#/components/schemas/PortfolioGrowthPoint'
           description: >-
-            Sparse growth points at transaction dates plus the current value
-            point when entries exist.
+            Daily growth snapshots sampled to at most 49 historical points plus
+            the current value point when entries exist.
       required:
         - currency
         - points
       title: Portfolio Growth Over Time
       description: >-
-        Portfolio total value over sparse transaction-date snapshots. All values
-        use the currency resolved from the signed-in user's preference.
+        Portfolio total value over sampled daily snapshots. All values use the
+        currency resolved from the signed-in user's preference.
     PortfolioHoldingDistributionAsset:
       type: object
       properties:

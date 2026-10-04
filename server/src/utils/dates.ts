@@ -20,3 +20,10 @@ export function parseDateOnlyStringAsUTC(dateOnlyString: string): Date {
 export function dateOnlyStringToISO8601String(dateOnlyString: string): string {
   return toISO8601String(parseDateOnlyStringAsUTC(dateOnlyString));
 }
+
+export function shiftDateByDays(date: string, days: number): string {
+  const shifted = parseDateOnlyStringAsUTC(date);
+  shifted.setUTCDate(shifted.getUTCDate() + days);
+
+  return shifted.toISOString().slice(0, 10);
+}

@@ -25,7 +25,7 @@ export function aggregateHoldings(entries: ResolvedPortfolioEntry[]): Aggregated
     .toArray();
 }
 
-function getHoldingAmountDelta(entry: ResolvedPortfolioEntry) {
+export function getHoldingAmountDelta(entry: ResolvedPortfolioEntry) {
   const amount = assertToFloat(entry.amount);
 
   switch (entry.transactionType) {

@@ -13,7 +13,8 @@ const dashboardsRoute = createRoute({
   path: '/dashboards',
   tags: [OPENAPI_TAG],
   summary: 'Get portfolio dashboards',
-  description: 'Return sparse dashboard data for the signed-in user default portfolio.',
+  description:
+    'Return daily dashboard history sampled to at most 50 points and current holdings data for the signed-in user default portfolio.',
   request: {
     headers: AuthenticationHeaders,
     query: PortfolioDashboardsQuerySchema,
