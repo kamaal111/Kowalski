@@ -35,6 +35,8 @@ struct KowalskiAuthRequestHooks: AuthRequestHooks {
             return .failure(AuthRequestFailure(status: 401, code: "MISSING_OR_NULL_ORIGIN"))
         case .conflict:
             return .failure(AuthRequestFailure(status: 409, code: "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL"))
+        case let .internalServerError(payload):
+            return .failure(AuthRequestFailure(status: 500, code: (try? payload.body.json)?.code))
         case let .undocumented(statusCode, _):
             return .failure(AuthRequestFailure(status: statusCode))
         }
@@ -58,6 +60,8 @@ struct KowalskiAuthRequestHooks: AuthRequestHooks {
             return .failure(AuthRequestFailure(status: 400, validations: parseValidationIssues(from: body)))
         case .unauthorized:
             return .failure(AuthRequestFailure(status: 401, code: "INVALID_EMAIL_OR_PASSWORD"))
+        case let .internalServerError(payload):
+            return .failure(AuthRequestFailure(status: 500, code: (try? payload.body.json)?.code))
         case let .undocumented(statusCode, _):
             return .failure(AuthRequestFailure(status: statusCode))
         }
@@ -127,6 +131,8 @@ struct KowalskiAuthRequestHooks: AuthRequestHooks {
             return AuthTokenHeadersMapper.credentials(from: ok.headers)
         case .unauthorized:
             return .failure(AuthRequestFailure(status: 401, code: "SESSION_NOT_FOUND"))
+        case let .internalServerError(payload):
+            return .failure(AuthRequestFailure(status: 500, code: (try? payload.body.json)?.code))
         case let .undocumented(statusCode, _):
             return .failure(AuthRequestFailure(status: statusCode))
         }

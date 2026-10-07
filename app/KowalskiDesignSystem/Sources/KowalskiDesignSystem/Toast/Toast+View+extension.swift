@@ -136,7 +136,7 @@ private struct ToastModifier: ViewModifier {
 
     VStack {
         Button(action: { toast = .init(style: .success, message: "Wooooow!") }) {
-            Text("Show Toast")
+            Text(verbatim: "Show Toast")
         }
     }
     .toastView(toast: $toast)

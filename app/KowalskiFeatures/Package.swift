@@ -14,7 +14,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/Kamaalio/KamaalSwift", .upToNextMajor(from: "3.5.0")),
         .package(url: "https://github.com/kamaal111/ForexKit", .upToNextMajor(from: "5.0.0")),
-        .package(url: "https://github.com/Kamaalio/kamaal-auth", .upToNextMinor(from: "0.0.13")),
+        .package(url: "https://github.com/Kamaalio/kamaal-auth", .upToNextMinor(from: "0.0.14")),
         .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", .upToNextMajor(from: "1.19.4")),
         .package(path: "../KowalskiClient"),
         .package(path: "../KowalskiDesignSystem"),

@@ -18,7 +18,7 @@ then
   exit 0
 fi
 
-git fetch --no-tags --prune --depth=1 origin main
+git fetch --no-tags --prune origin main
 base_commit="$(git merge-base HEAD origin/main)"
 changed_files=()
 while IFS= read -r file
