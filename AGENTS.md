@@ -58,7 +58,6 @@ When a task matches one of these areas, load the skill and follow it instead of 
 
 ## Additional Repository Requirements
 
-- Follow `.specify/memory/constitution.md`.
 - For OpenAPI work, update server schemas first and run `just download-spec` after API changes.
 - `just download-spec` generates the spec directly from the server app. Do not start the server just to fetch `/spec.yaml`.
 
