@@ -148,6 +148,20 @@ We use `just` to manage project tasks.
 | `just quality`                 | Run linting, formatting, and type checking         |
 | `just ready`                   | Run all checks before committing (quality + tests) |
 
+If login fails because Better Auth cannot decrypt its JWT signing key, run
+`just diagnose-auth-keys` on the affected machine using the same environment as
+the server. This reads key metadata and checks decryption without changing data
+or printing secrets or private keys. A decryption failure does not by itself
+prove that the configured secret changed.
+
+If the active key cannot be recovered, `just repair-auth-keys` explicitly retires
+unreadable signing keys. It preserves users, sessions, and key records, including
+their public keys. Retry login afterward so Better Auth creates a replacement.
+Old public keys remain published for Better Auth's default 30-day grace period,
+which exceeds this app's default 7-day JWT lifetime. Recovery aborts without
+changes if a public key is invalid or a key changes during the operation. Run
+inspection first to check that the command targets the intended database.
+
 ## 📂 Project Structure
 
 ```

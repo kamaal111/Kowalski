@@ -23,14 +23,20 @@ import z from 'zod';
 
 import type { Auth } from './better-auth.ts';
 import { ROUTE_NAME } from './constants.ts';
+import { TokenIssuanceFailed } from './exceptions.ts';
+import { captureSessionDiagnostics, logSessionDiagnostics } from './services/session-diagnostics.ts';
+import { logSigningKeyDiagnostics } from './services/signing-keys.ts';
 import env, { IS_TEST } from '../api/env.ts';
 import { APP_API_BASE_PATH, ONE_DAY_IN_SECONDS } from '../constants/common.ts';
 import type { Database } from '../db/index.ts';
 import { jwks } from '../db/schema/better-auth.ts';
+import type { ServerLogger } from '../logging/index.ts';
+import { logError } from '../logging/index.ts';
 
 export interface AuthLocals {
   db: Database;
   auth: Auth;
+  logger: ServerLogger;
 }
 
 const { BETTER_AUTH_URL, BETTER_AUTH_SESSION_UPDATE_AGE_DAYS } = env;
@@ -59,16 +65,26 @@ const AuthUserResponseSchema = z.object({
   }),
 });
 
-async function issueJwtForSession(auth: Auth, sessionToken: string): Promise<string> {
+async function issueJwtForSession(context: AuthLocals, sessionToken: string, requestId?: string): Promise<string> {
   const tokenRequest = new Request(TOKEN_URL, {
     method: 'GET',
     headers: { authorization: `Bearer ${sessionToken}` },
   });
 
-  const response = await auth.handler(tokenRequest);
+  const response = await context.auth.handler(tokenRequest);
 
   if (!response.ok) {
-    throw new Error('Failed to issue JWT after authentication');
+    if (response.status >= 500) {
+      await logSigningKeyDiagnostics(context);
+    }
+
+    logError(context.logger, {
+      event: 'auth.jwt.issuance',
+      outcome: 'failure',
+      error_code: 'TOKEN_ISSUANCE_FAILED',
+      provider_status: response.status,
+    });
+    throw new TokenIssuanceFailed(requestId);
   }
 
   const responseData = TokenResponseSchema.parse(await response.json());
@@ -119,7 +135,7 @@ async function emailPasswordAuth(
     return authHookFailure({ code: 'MISSING_SESSION_TOKEN', message: 'Failed to retrieve session token' });
   }
 
-  const authToken = await issueJwtForSession(c.locals.auth, sessionToken);
+  const authToken = await issueJwtForSession(c.locals, sessionToken, c.requestId);
 
   const credentials: AuthCredentials = {
     sessionToken,
@@ -147,7 +163,9 @@ export const authHooks = defineAuthHooks({
   },
 
   async getSession(c: AuthHookContext<AuthLocals>): Promise<AuthHookResult<SessionLookupResult<AuthUser> | null>> {
+    const diagnostics = await captureSessionDiagnostics(c.locals, c.headers);
     const sessionResponse = await c.locals.auth.api.getSession({ headers: c.headers });
+    logSessionDiagnostics(c.locals.logger, diagnostics, sessionResponse != null);
 
     if (sessionResponse == null) {
       return authHookSuccess(null);
@@ -170,17 +188,35 @@ export const authHooks = defineAuthHooks({
   },
 
   async issueToken(c: AuthHookContext<AuthLocals>): Promise<AuthHookResult<IssuedToken>> {
+    const diagnostics = await captureSessionDiagnostics(c.locals, c.headers);
     const response = await c.locals.auth.handler(c.request);
 
     if (!response.ok) {
+      if (response.status >= 500) {
+        await logSigningKeyDiagnostics(c.locals);
+        logError(c.locals.logger, {
+          event: 'auth.jwt.issuance',
+          outcome: 'failure',
+          error_code: 'TOKEN_ISSUANCE_FAILED',
+          provider_status: response.status,
+        });
+        throw new TokenIssuanceFailed(c.requestId);
+      }
+
+      logSessionDiagnostics(c.locals.logger, diagnostics, false);
+
       return authHookFailure({ code: 'SESSION_NOT_FOUND', message: 'Unauthorized' });
     }
 
     const responseData = TokenResponseSchema.parse(await response.json());
 
     if (!responseData.token) {
+      logSessionDiagnostics(c.locals.logger, { ...diagnostics, reason: 'token_missing_in_response' }, false);
+
       return authHookFailure({ code: 'SESSION_NOT_FOUND', message: 'Unauthorized' });
     }
+
+    logSessionDiagnostics(c.locals.logger, diagnostics, true);
 
     return authHookSuccess({ token: responseData.token });
   },

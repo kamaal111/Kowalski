@@ -16,6 +16,32 @@ import Testing
 @Suite("Auth Client Tests")
 struct KowalskiAuthClientTests {
     @Test
+    func `A signing failure during refresh preserves stored credentials`() async throws {
+        let body = Data(#"{"message":"Token issuance failed","code":"TOKEN_ISSUANCE_FAILED"}"#.utf8)
+        let transport = MockClientTransport(queuedResponses: [.init(status: .internalServerError, body: body)])
+        let client = try Client(serverURL: #require(URL(string: "https://api.example.com")), transport: transport)
+        let hooks = KowalskiAuthRequestHooks(client: client)
+        let store = InMemoryCredentialsStore()
+        let key = "signing-failure"
+        try store.store(MockAuthRequestHooks.credentials().credentials(), forKey: key)
+        let stored = try store.get(forKey: key)
+        let provider = AuthTokenProvider(
+            credentialsKey: key, credentialsStore: store, issueToken: { await hooks.issueToken() },
+        )
+
+        let result = await provider.refreshToken()
+
+        guard case let .failure(.unknown(status, payload, _)) = result else {
+            Issue.record("Expected a server failure without rejecting the session")
+            return
+        }
+        #expect(status == 500)
+        #expect(payload == "TOKEN_ISSUANCE_FAILED")
+        #expect(try store.get(forKey: key) == stored)
+        #expect(provider.hasValidCredentials)
+    }
+
+    @Test
     func `Sign out posts to the auth route and deletes credentials`() async throws {
         let transport = MockClientTransport(queuedResponses: [.init(status: .ok, body: Data("{}".utf8))])
         let client = try Client(serverURL: #require(URL(string: "https://api.example.com")), transport: transport)

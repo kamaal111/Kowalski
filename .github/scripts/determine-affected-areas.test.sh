@@ -57,6 +57,23 @@ run_pull_request_case oxfmt.config.ts true true
 run_pull_request_case justfile true true
 run_pull_request_case README.md false false
 
+git switch -q -C feature main
+mkdir -p server/src
+printf 'feature change\n' > server/src/ci-test.ts
+git add server/src/ci-test.ts
+git commit -qm 'Change server before main advances'
+
+git switch -q main
+printf 'main advanced\n' > baseline.txt
+git add baseline.txt
+git commit -qm 'Advance main after feature branch creation'
+git push -q origin main
+
+git switch -q feature
+: > "$fixture/output"
+EVENT_NAME=pull_request BASE_REF=main GITHUB_OUTPUT="$fixture/output" bash "$detector"
+assert_outputs true false
+
 git switch -q main
 : > "$fixture/output"
 EVENT_NAME=push REF_NAME=main GITHUB_OUTPUT="$fixture/output" bash "$detector"

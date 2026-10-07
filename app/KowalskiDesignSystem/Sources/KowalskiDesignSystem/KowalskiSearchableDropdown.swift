@@ -297,7 +297,7 @@ private struct PreviewItem: Identifiable, Hashable {
         .padding(.all, .medium)
 
         if let selectedItem {
-            Text("Selected: \(selectedItem.name)")
+            Text(verbatim: "Selected: \(selectedItem.name)")
                 .padding(.all, .medium)
         }
     }

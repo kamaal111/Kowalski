@@ -84,6 +84,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: >-
+            Authentication token issuance failed; the session is not rejected.
+            Retry later.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       summary: Sign up with email and password
       tags:
         - Authentication
@@ -158,6 +166,14 @@ paths:
                 $ref: '#/components/schemas/ValidationErrorResponse'
         '401':
           description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: >-
+            Authentication token issuance failed; the session is not rejected.
+            Retry later.
           content:
             application/json:
               schema:
@@ -276,6 +292,14 @@ paths:
                 $ref: '#/components/schemas/TokenResponse'
         '401':
           description: Not authenticated, session expired, or session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: >-
+            Authentication token issuance failed; the session is not rejected.
+            Retry later.
           content:
             application/json:
               schema:

@@ -82,6 +82,16 @@ docker-run-server tag=DOCKER_IMAGE host_port=SERVER_PORT: start-services
 # Run all verification checks
 ready: _ready-tasks
 
+# Inspect JWT signing keys without changing data or printing secrets
+[working-directory("server")]
+diagnose-auth-keys:
+    node src/auth/signing-keys-command.ts
+
+# Retire unreadable signing keys while retaining public keys, users, and sessions
+[working-directory("server")]
+repair-auth-keys:
+    node src/auth/signing-keys-command.ts --repair
+
 # Run all verification checks for the app
 [parallel]
 ready-app: quality-app quality-tools test-app test-localization-check

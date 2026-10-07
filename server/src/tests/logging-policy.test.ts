@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from 'vitest';
 
 import { parseJsonRecord } from './json.ts';
+import { createDatabaseQueryLogger } from '../db/logging.ts';
 import {
   createMemoryLogDestination,
   getComponentLogger,
@@ -14,6 +15,31 @@ import { isPrimitiveLogValue } from '../utils/type-guards.ts';
 describe('Logging policy', () => {
   afterEach(() => {
     resetRootLogger();
+  });
+
+  test('logs SQL templates without serializing parameter values', () => {
+    const logs: string[] = [];
+
+    setRootLoggerDestination(createMemoryLogDestination(logs));
+    const queryLogger = createDatabaseQueryLogger();
+    const query = 'select * from "session" where "token" = $1';
+    const secret = 'private-session-token';
+
+    const sensitiveParameter = {
+      toJSON: () => {
+        throw new Error('Must not serialize parameters');
+      },
+    };
+
+    queryLogger.logQuery(query, [secret, sensitiveParameter]);
+
+    expect(parseJsonRecord(logs.join(''))).toMatchObject({
+      component: 'database',
+      event: 'database.query',
+      query,
+    });
+    expect(logs.join('')).not.toContain(secret);
+    expect(logs.join('')).not.toContain('params');
   });
 
   test('emits flat structured logs only', () => {

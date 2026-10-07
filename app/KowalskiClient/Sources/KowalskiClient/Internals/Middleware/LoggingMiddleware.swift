@@ -11,8 +11,7 @@ import KamaalLogger
 import OpenAPIRuntime
 
 private let defaultPath = "<nil>"
-private let refreshTokenPath = "/app-api/auth/token"
-private let redactedTokenValue = "<redacted>"
+private let authPath = "/app-api/auth"
 
 private let logger = KamaalLogger(from: LoggingMiddleware.self, failOnError: true)
 
@@ -30,7 +29,8 @@ extension LoggingMiddleware: ClientMiddleware {
     ) async throws -> (HTTPResponse, HTTPBody?) {
         let clock = ContinuousClock()
         let start = clock.now
-        let (requestBodyToLog, requestBodyForNext) = await bodyLoggingPolicy.process(body)
+        let loggingPolicy = policy(for: request.path)
+        let (requestBodyToLog, requestBodyForNext) = await loggingPolicy.process(body)
         logBody(request: request, requestBody: requestBodyToLog)
 
         let (response, responseBody): (HTTPResponse, HTTPBody?)
@@ -42,14 +42,14 @@ extension LoggingMiddleware: ClientMiddleware {
             throw error
         }
 
-        let (responseBodyToLog, responseBodyForNext) = await bodyLoggingPolicy.process(responseBody)
+        let (responseBodyToLog, responseBodyForNext) = await loggingPolicy.process(responseBody)
         let elapsedTime = start.duration(to: clock.now)
         logResponse(request: request, response: response, responseBody: responseBodyToLog, elapsedTime: elapsedTime)
         return (response, responseBodyForNext)
     }
 
     private func logBody(request: HTTPRequest, requestBody: BodyLoggingPolicy.BodyLog) {
-        logger.debug("Request: \(request.method) \(request.path ?? defaultPath) body: \(requestBody)")
+        logger.debug("Request: \(request.method) \(Self.pathForLogging(request.path)) body: \(requestBody)")
     }
 
     private func logResponse(
@@ -60,16 +60,19 @@ extension LoggingMiddleware: ClientMiddleware {
     ) {
         let sanitizedBody = Self.sanitizeResponseBodyForLogging(responseBody, requestPath: request.path)
         logger.debug(
-            "Response: \(request.method) \(request.path ?? defaultPath) \(response.status)"
+            "Response: \(request.method) \(Self.pathForLogging(request.path)) \(response.status)"
                 + " in \(Self.formatElapsedTime(elapsedTime)) body: \(sanitizedBody)",
         )
     }
 
     private func logFailure(request: HTTPRequest, failedWith error: any Error, elapsedTime: Duration) {
+        let errorDescription = Self.isAuthPath(request.path)
+            ? String(reflecting: type(of: error))
+            : error.localizedDescription
         logger.warning(
-            "Request failed: \(request.method) \(request.path ?? defaultPath)"
+            "Request failed: \(request.method) \(Self.pathForLogging(request.path))"
                 + " in \(Self.formatElapsedTime(elapsedTime))."
-                + " Error: \(error.localizedDescription)",
+                + " Error: \(errorDescription)",
         )
     }
 
@@ -77,21 +80,24 @@ extension LoggingMiddleware: ClientMiddleware {
         _ responseBody: BodyLoggingPolicy.BodyLog,
         requestPath: String?,
     ) -> BodyLoggingPolicy.BodyLog {
-        guard requestPath == refreshTokenPath else { return responseBody }
-        guard case let .complete(data) = responseBody else { return responseBody }
-        guard let redactedData = redactToken(in: data) else { return responseBody }
-
-        return .complete(data: redactedData)
+        guard isAuthPath(requestPath) else { return responseBody }
+        return responseBody == .none ? .none : .redacted
     }
 
-    private static func redactToken(in data: Data) -> Data? {
-        guard let jsonObject = try? JSONSerialization.jsonObject(with: data) else { return nil }
-        guard var jsonDictionary = jsonObject as? [String: Any] else { return nil }
-        guard jsonDictionary["token"] != nil else { return nil }
+    func policy(for requestPath: String?) -> BodyLoggingPolicy {
+        Self.isAuthPath(requestPath) ? .never : bodyLoggingPolicy
+    }
 
-        jsonDictionary["token"] = redactedTokenValue
+    static func pathForLogging(_ requestPath: String?) -> String {
+        guard let requestPath else { return defaultPath }
+        guard isAuthPath(requestPath) else { return requestPath }
+        return String(requestPath.prefix { $0 != "?" && $0 != "#" })
+    }
 
-        return try? JSONSerialization.data(withJSONObject: jsonDictionary, options: [.sortedKeys])
+    private static func isAuthPath(_ requestPath: String?) -> Bool {
+        guard let requestPath else { return true }
+        let path = requestPath.prefix { $0 != "?" && $0 != "#" }
+        return path == authPath || path.hasPrefix("\(authPath)/")
     }
 
     static func formatElapsedTime(_ elapsedTime: Duration) -> String {
