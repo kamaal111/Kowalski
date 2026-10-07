@@ -226,8 +226,8 @@ importers:
         specifier: ~0.9.11
         version: 0.9.11
       '@kamaalio/kamaal-auth-hono':
-        specifier: ~0.0.14
-        version: 0.0.14(@kamaalio/hono-standard-openapi@0.0.19(@standard-schema/spec@1.1.0)(hono@4.13.5))(hono@4.13.5)(jose@6.2.10)
+        specifier: ~0.0.15
+        version: 0.0.15(@kamaalio/hono-standard-openapi@0.0.19(@standard-schema/spec@1.1.0)(hono@4.13.5))(hono@4.13.5)(jose@6.2.10)
       better-auth:
         specifier: 1.7.2
         version: 1.7.2(better-sqlite3@13.0.3)(drizzle-kit@1.0.0-rc.4)(drizzle-orm@1.0.0-rc.4(@types/better-sqlite3@9.6.0)(@types/pg@8.23.1)(better-sqlite3@13.0.3)(pg@8.23.0)(zod@4.5.4))(pg@8.23.0)(vitest@5.0.0(@types/node@26.4.1)(vite@8.2.2(@types/node@26.4.1)(jiti@2.7.0)(yaml@2.9.0)))
@@ -670,14 +670,14 @@ packages:
     peerDependencies:
       hono: '>=4.10.0'
 
-  '@kamaalio/kamaal-auth-core@0.0.14':
-    resolution: {integrity: sha512-mYQGuZFs/yBxQlYGGAYAsoxi0EhuWLmZN1HVxRoFdoPVJ/+MQvrNp8Fhr5wM3f2DInXxvUBMgg21wG1nf6hMZw==}
+  '@kamaalio/kamaal-auth-core@0.0.15':
+    resolution: {integrity: sha512-Nqris+u6xE2vQzil6tgM+H03wa9P2o1pMoR9Mv43uZ3pDtqYqhVDNjnAqdWjPqisYTxi0rk/XYEsO64+yeqoCQ==}
     engines: {node: '>=24'}
     peerDependencies:
       jose: ^6.2.4
 
-  '@kamaalio/kamaal-auth-hono@0.0.14':
-    resolution: {integrity: sha512-wyK+uFA8S3in2NYyYYK7kslIn6FarRCoIYJ1jTbEitnVhPasxlUSTcMst+yfnQ2tfJtTMA6qKQzcbh5vyq+P+w==}
+  '@kamaalio/kamaal-auth-hono@0.0.15':
+    resolution: {integrity: sha512-yusxb6GNPsSL9p/sI3e3EusC2YW9bJWH+Tv1QP7Tf0nOHMaTR0zAEQtAHg+X6eOq9Bc6xCSBMCG5WwLFC6cTQA==}
     engines: {node: '>=24'}
     peerDependencies:
       '@kamaalio/hono-standard-openapi': '>=0.0.12'
@@ -3390,15 +3390,15 @@ snapshots:
     transitivePeerDependencies:
       - '@standard-schema/spec'
 
-  '@kamaalio/kamaal-auth-core@0.0.14(jose@6.2.10)':
+  '@kamaalio/kamaal-auth-core@0.0.15(jose@6.2.10)':
     dependencies:
       jose: 6.2.10
       zod: 4.5.4
 
-  '@kamaalio/kamaal-auth-hono@0.0.14(@kamaalio/hono-standard-openapi@0.0.19(@standard-schema/spec@1.1.0)(hono@4.13.5))(hono@4.13.5)(jose@6.2.10)':
+  '@kamaalio/kamaal-auth-hono@0.0.15(@kamaalio/hono-standard-openapi@0.0.19(@standard-schema/spec@1.1.0)(hono@4.13.5))(hono@4.13.5)(jose@6.2.10)':
     dependencies:
       '@kamaalio/hono-standard-openapi': 0.0.19(@standard-schema/spec@1.1.0)(hono@4.13.5)
-      '@kamaalio/kamaal-auth-core': 0.0.14(jose@6.2.10)
+      '@kamaalio/kamaal-auth-core': 0.0.15(jose@6.2.10)
       hono: 4.13.5
     transitivePeerDependencies:
       - jose

@@ -42,6 +42,32 @@ struct KowalskiAuthClientTests {
     }
 
     @Test
+    func `Session lookup preserves a documented provider failure`() async throws {
+        let body = Data(#"{"message":"Provider unavailable","code":"PROVIDER_UNAVAILABLE"}"#.utf8)
+        let transport = MockClientTransport(queuedResponses: [.init(status: .internalServerError, body: body)])
+        let client = try Client(serverURL: #require(URL(string: "https://api.example.com")), transport: transport)
+        let hooks = KowalskiAuthRequestHooks(client: client)
+
+        let failure = try #require(await authRequestFailure(from: hooks.session()))
+
+        #expect(failure.status == 500)
+        #expect(failure.code == "PROVIDER_UNAVAILABLE")
+    }
+
+    @Test
+    func `Sign out preserves a documented provider failure`() async throws {
+        let body = Data(#"{"message":"Provider unavailable","code":"PROVIDER_UNAVAILABLE"}"#.utf8)
+        let transport = MockClientTransport(queuedResponses: [.init(status: .internalServerError, body: body)])
+        let client = try Client(serverURL: #require(URL(string: "https://api.example.com")), transport: transport)
+        let hooks = KowalskiAuthRequestHooks(client: client)
+
+        let failure = try #require(await authRequestFailure(from: hooks.signOut()))
+
+        #expect(failure.status == 500)
+        #expect(failure.code == "PROVIDER_UNAVAILABLE")
+    }
+
+    @Test
     func `Sign out posts to the auth route and deletes credentials`() async throws {
         let transport = MockClientTransport(queuedResponses: [.init(status: .ok, body: Data("{}".utf8))])
         let client = try Client(serverURL: #require(URL(string: "https://api.example.com")), transport: transport)
@@ -132,5 +158,12 @@ private struct UpdatePreferencesRequestBody: Decodable {
 
     enum CodingKeys: String, CodingKey {
         case preferredCurrency = "preferred_currency"
+    }
+}
+
+private func authRequestFailure(from outcome: AuthRequestOutcome<some Sendable>) -> AuthRequestFailure? {
+    switch outcome {
+    case let .failure(failure): failure
+    case .success: nil
     }
 }
