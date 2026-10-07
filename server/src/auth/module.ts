@@ -1,6 +1,5 @@
 import { createRoute } from '@kamaalio/hono-standard-openapi';
 import {
-  AUTH_ROUTE_PATHS,
   AuthenticationHeaders,
   createAuthModule,
   SessionResponseSchema as BaseSessionResponseSchema,
@@ -149,24 +148,6 @@ export const authModule = createAuthModule<
     });
   },
 });
-
-// Extend the shared route documentation with failures from this app's JWT provider hook.
-for (const definition of authModule.router.openAPIRegistry.definitions) {
-  if (definition.type !== 'route' || definition.route.responses == null) {
-    continue;
-  }
-
-  if (
-    [AUTH_ROUTE_PATHS.signUp, AUTH_ROUTE_PATHS.signIn, AUTH_ROUTE_PATHS.token].some(path =>
-      definition.route.path.endsWith(path),
-    )
-  ) {
-    definition.route.responses[STATUS_CODES.INTERNAL_SERVER_ERROR] = {
-      description: 'Authentication token issuance failed; the session is not rejected. Retry later.',
-      content: { [MIME_TYPES.APPLICATION_JSON]: { schema: ErrorResponseSchema } },
-    };
-  }
-}
 
 export const { requireSessionMiddleware } = authModule;
 

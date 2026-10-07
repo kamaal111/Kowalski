@@ -150,6 +150,8 @@ public struct KowalskiClient: Sendable {
         switch response {
         case .unauthorized:
             return .failure(.unauthorized)
+        case .internalServerError:
+            return .failure(.unknown(statusCode: 500, payload: nil, context: nil))
         case let .undocumented(statusCode, payload):
             return .failure(.unknown(statusCode: statusCode, payload: payload, context: nil))
         case let .ok(ok):

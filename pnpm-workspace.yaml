@@ -4,5 +4,5 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - '@kamaal111/kamaal-quality-config@0.0.3'
   - '@kamaalio/hono-standard-openapi@0.0.19'
-  - '@kamaalio/kamaal-auth-core@0.0.14'
-  - '@kamaalio/kamaal-auth-hono@0.0.14'
+  - '@kamaalio/kamaal-auth-core@0.0.15'
+  - '@kamaalio/kamaal-auth-hono@0.0.15'

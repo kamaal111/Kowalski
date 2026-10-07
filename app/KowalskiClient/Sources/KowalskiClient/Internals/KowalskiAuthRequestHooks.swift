@@ -80,6 +80,8 @@ struct KowalskiAuthRequestHooks: AuthRequestHooks {
             return .success(())
         case .unauthorized:
             return .failure(AuthRequestFailure(status: 401, code: "SESSION_NOT_FOUND"))
+        case let .internalServerError(payload):
+            return .failure(AuthRequestFailure(status: 500, code: (try? payload.body.json)?.code))
         case let .undocumented(statusCode, _):
             return .failure(AuthRequestFailure(status: statusCode))
         }
@@ -113,6 +115,8 @@ struct KowalskiAuthRequestHooks: AuthRequestHooks {
             )
         case .unauthorized:
             return .failure(AuthRequestFailure(status: 401, code: "SESSION_NOT_FOUND"))
+        case let .internalServerError(payload):
+            return .failure(AuthRequestFailure(status: 500, code: (try? payload.body.json)?.code))
         case let .undocumented(statusCode, _):
             return .failure(AuthRequestFailure(status: statusCode))
         }

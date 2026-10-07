@@ -85,9 +85,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '500':
-          description: >-
-            Authentication token issuance failed; the session is not rejected.
-            Retry later.
+          description: Authentication provider or token issuance failed
           content:
             application/json:
               schema:
@@ -171,9 +169,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '500':
-          description: >-
-            Authentication token issuance failed; the session is not rejected.
-            Retry later.
+          description: Authentication provider or token issuance failed
           content:
             application/json:
               schema:
@@ -193,6 +189,12 @@ paths:
                 $ref: '#/components/schemas/SignOutResponse'
         '401':
           description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Authentication provider or token issuance failed
           content:
             application/json:
               schema:
@@ -238,6 +240,12 @@ paths:
                     type: object
         '401':
           description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Authentication provider or token issuance failed
           content:
             application/json:
               schema:
@@ -297,9 +305,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '500':
-          description: >-
-            Authentication token issuance failed; the session is not rejected.
-            Retry later.
+          description: Authentication provider or token issuance failed
           content:
             application/json:
               schema:
