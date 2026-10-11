@@ -24,4 +24,4 @@ RUN git clone https://github.com/zsh-users/zsh-syntax-highlighting.git /home/nod
 RUN git clone https://github.com/zsh-users/zsh-completions /home/node/.oh-my-zsh/custom/plugins/zsh-completions
 
 RUN curl -fsSL https://get.pnpm.io/install.sh | \
-    env PNPM_VERSION=11.11.0 ENV=/home/node/.zshrc SHELL=/bin/zsh bash -
+    env PNPM_VERSION=12.11.1 ENV=/home/node/.zshrc SHELL=/bin/zsh bash -

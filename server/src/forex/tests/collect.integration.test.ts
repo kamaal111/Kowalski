@@ -39,7 +39,7 @@ describe('Forex collect logging', () => {
     'logs fetch failures and persisted rows during collection',
     async ({ app, getLogsForRequestId, withRequestId }) => {
       const fetchMock = vi.fn((input: string | URL | Request) => {
-        const url = isString(input) ? input : input instanceof URL ? input.toString() : input.url;
+        const url = fetchInputUrl(input);
 
         if (url === HOME_URL) {
           return new Response(
@@ -175,4 +175,16 @@ describe('Forex collect logging', () => {
 
 function getStoredCount(log: { stored_count?: unknown } | undefined) {
   return isNumber(log?.stored_count) ? log.stored_count : 0;
+}
+
+function fetchInputUrl(input: string | URL | Request): string {
+  if (isString(input)) {
+    return input;
+  }
+
+  if (input instanceof URL) {
+    return input.toString();
+  }
+
+  return input.url;
 }

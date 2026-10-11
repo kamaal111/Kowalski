@@ -50,7 +50,7 @@ export async function collectLatestExchangeRates({
   const resolvedLatestCollectedAt = latestCollectedAt ?? (await getLatestCollectedAt(db));
 
   const latestCollectedDay =
-    resolvedLatestCollectedAt == null ? undefined : getCurrentCollectionDay(resolvedLatestCollectedAt);
+    resolvedLatestCollectedAt != null ? getCurrentCollectionDay(resolvedLatestCollectedAt) : undefined;
 
   if (latestCollectedDay != null && latestCollectedDay >= targetCollectionDay) {
     return {

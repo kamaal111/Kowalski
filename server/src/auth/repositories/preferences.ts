@@ -29,7 +29,7 @@ export async function findUserPreferredCurrencyByUserId(
   }
 
   const preferredCurrency =
-    preference.preferredCurrency == null ? null : CurrencySchema.parse(preference.preferredCurrency);
+    preference.preferredCurrency != null ? CurrencySchema.parse(preference.preferredCurrency) : null;
 
   return { preferredCurrency };
 }

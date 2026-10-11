@@ -51,6 +51,7 @@ run_pull_request_case .github/workflows/ci.yml true true
 run_pull_request_case .github/config/affected-areas.conf true true
 run_pull_request_case package.json true true
 run_pull_request_case pnpm-lock.yaml true true
+run_pull_request_case pnpm-workspace.yaml true true
 run_pull_request_case .node-version true true
 run_pull_request_case oxlint.config.ts true true
 run_pull_request_case oxfmt.config.ts true true

@@ -285,7 +285,8 @@ quality-tools: lint-server format-check-server typecheck-scripts
 [working-directory("app")]
 test-app:
     xcodebuild test -scheme {{ SCHEME }} -destination {{ MACOS_DESTINATION }} \
-        -skip-testing:{{ UI_TEST_NAME }} SWIFT_EMIT_LOC_STRINGS=YES
+        -skip-testing:{{ UI_TEST_NAME }} SWIFT_EMIT_LOC_STRINGS=YES \
+        CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
     just --justfile ../justfile check-localizations macos
 
 # Run verification checks in CI for app
@@ -388,7 +389,6 @@ install-modules:
 [private]
 install-modules-ci:
     pnpm install --frozen-lockfile
-    pnpm --dir server install --frozen-lockfile
 
 [private]
 [working-directory("server")]
