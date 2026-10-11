@@ -110,7 +110,7 @@ export function logError(
   message?: string,
   level: Extract<LogMethod, 'error' | 'fatal'> = 'error',
 ) {
-  const errorFields = cause == null ? undefined : serializeError(cause);
+  const errorFields = cause != null ? serializeError(cause) : undefined;
   const mergedFields = errorFields == null ? fields : { ...fields, ...errorFields };
   logger[level](sanitizeLogRecord(mergedFields), message);
 }

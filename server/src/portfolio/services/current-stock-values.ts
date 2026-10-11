@@ -16,7 +16,7 @@ import {
   insertStockPrices,
   type PersistedStockPrice,
 } from '../repositories/stock-prices.ts';
-import { type CurrentValue } from '../schemas/responses.ts';
+import type { CurrentValue } from '../schemas/responses.ts';
 
 interface EntryWithTickerIdAndStockSymbol {
   tickerId: string;

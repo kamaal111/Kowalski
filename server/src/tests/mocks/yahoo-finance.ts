@@ -178,7 +178,7 @@ export function resetYahooFinanceMocks() {
   yahooFinanceChartMock.mockReset();
   yahooFinanceChartMock.mockImplementation(async (symbol, options) => {
     const period1 = toDateOnlyString(options.period1);
-    const period2 = options.period2 == null ? null : toDateOnlyString(options.period2);
+    const period2 = options.period2 != null ? toDateOnlyString(options.period2) : null;
 
     const quotes = (DEFAULT_CHART_QUOTES_BY_SYMBOL.get(symbol) ?? [])
       .filter(quote => quote.date.toISOString().slice(0, 10) >= period1)

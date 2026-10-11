@@ -1,17 +1,10 @@
-import kamaalQualityConfig from '@kamaal111/kamaal-quality-config';
+import kamaalQualityConfig from '@kamaal111/kamaal-quality-config/oxlint';
 import { defineConfig } from 'oxlint';
 
 export default defineConfig({
   extends: [kamaalQualityConfig],
-  plugins: ['typescript', 'unicorn'],
-  options: {
-    typeAware: true,
-  },
   categories: {
     correctness: 'off',
-  },
-  env: {
-    builtin: true,
   },
   ignorePatterns: ['**/dist/**', '**/node_modules/**', '**/*.swift'],
   rules: {
@@ -81,13 +74,6 @@ export default defineConfig({
         'require-yield': 'error',
         'use-isnan': 'error',
         'valid-typeof': 'error',
-        'typescript/consistent-type-imports': [
-          'error',
-          {
-            prefer: 'type-imports',
-            fixStyle: 'separate-type-imports',
-          },
-        ],
       },
       env: {
         node: true,

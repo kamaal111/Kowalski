@@ -22,7 +22,7 @@ async function main(): Promise<void> {
     throw new Error('Create .env from .env.example before setting up a worktree');
   }
 
-  const databaseUrl = example === undefined ? undefined : envValues(example).get('DATABASE_URL');
+  const databaseUrl = example !== undefined ? envValues(example).get('DATABASE_URL') : undefined;
 
   if (existing === undefined && databaseUrl === undefined) {
     throw new Error('DATABASE_URL is required in .env.example');

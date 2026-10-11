@@ -1,8 +1,44 @@
+packages:
+  - '.'
+  - server
+
 allowBuilds:
   esbuild: true
   better-sqlite3: true
-minimumReleaseAgeExclude:
-  - '@kamaal111/kamaal-quality-config@0.0.3'
-  - '@kamaalio/hono-standard-openapi@0.0.19'
-  - '@kamaalio/kamaal-auth-core@0.0.15'
-  - '@kamaalio/kamaal-auth-hono@0.0.15'
+
+catalog:
+  '@better-auth/drizzle-adapter': '1.7.7'
+  '@hono/node-server': '^2.1.4'
+  '@hono/structured-logger': '^1.0.0'
+  '@hono/swagger-ui': '~0.6.1'
+  '@kamaal111/kamaal-quality-config': '^0.3.0'
+  '@kamaalio/hono-standard-openapi': '^0.0.23'
+  '@kamaalio/kamaal': '~0.13.0'
+  '@kamaalio/kamaal-auth-hono': '~0.0.15'
+  '@oxlint/plugins': '^1.87.0'
+  '@standard-schema/spec': '^1.1.0'
+  '@types/better-sqlite3': '^9.6.0'
+  '@types/node': '^26.6.4'
+  '@types/pg': '^8.23.1'
+  '@types/xml2js': '^0.4.14'
+  'better-auth': '1.7.7'
+  'better-sqlite3': '^13.0.3'
+  'cheerio': '^1.2.0'
+  'drizzle-kit': '1.0.0-rc.4'
+  'drizzle-orm': '1.0.0-rc.4'
+  'hono': '^4.13.13'
+  'husky': '^9.1.7'
+  'jose': '^6.2.12'
+  'js-yaml': '^5.4.3'
+  'lint-staged': '^17.6.0'
+  'oxfmt': '^0.72.0'
+  'oxlint': '^1.87.0'
+  'oxlint-tsgolint': '^7.0.2003'
+  'pg': '^8.23.1'
+  'pino': '^10.4.0'
+  'pino-pretty': '^13.2.0'
+  'typescript': '^7.0.2'
+  'vitest': '^5.0.3'
+  'xml2js': '^0.6.2'
+  'yahoo-finance2': '^4.0.3'
+  'zod': '^4.6.5'

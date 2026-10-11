@@ -55,7 +55,7 @@ export async function findPortfolioTransactionByIdAndUserId(
 
   const transaction = transactions.at(0);
 
-  return transaction == null ? undefined : mapOwnedPortfolioTransaction(transaction);
+  return transaction != null ? mapOwnedPortfolioTransaction(transaction) : undefined;
 }
 
 export async function updatePortfolioTransaction(

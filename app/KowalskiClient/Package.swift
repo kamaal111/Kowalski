@@ -1,4 +1,4 @@
-// swift-tools-version: 6.2.4
+// swift-tools-version: 6.4
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -11,10 +11,10 @@ let package = Package(
         .library(name: "KowalskiClient", targets: ["KowalskiClient"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-openapi-generator", .upToNextMajor(from: "1.13.1")),
-        .package(url: "https://github.com/apple/swift-http-types", .upToNextMajor(from: "1.7.0")),
-        .package(url: "https://github.com/apple/swift-openapi-runtime", .upToNextMajor(from: "1.12.1")),
-        .package(url: "https://github.com/apple/swift-openapi-urlsession", .upToNextMajor(from: "1.3.1")),
+        .package(url: "https://github.com/apple/swift-openapi-generator", .upToNextMajor(from: "1.14.0")),
+        .package(url: "https://github.com/apple/swift-http-types", .upToNextMajor(from: "1.8.0")),
+        .package(url: "https://github.com/apple/swift-openapi-runtime", .upToNextMajor(from: "1.13.0")),
+        .package(url: "https://github.com/apple/swift-openapi-urlsession", .upToNextMajor(from: "1.3.2")),
         .package(url: "https://github.com/Kamaalio/KamaalSwift", .upToNextMajor(from: "3.5.0")),
         .package(url: "https://github.com/kamaal111/ForexKit", .upToNextMajor(from: "5.0.0")),
         .package(url: "https://github.com/Kamaalio/kamaal-auth", .upToNextMinor(from: "0.0.15")),

@@ -433,10 +433,9 @@ function makeBulkCreateEntryPayload({
       symbol,
       exchange: 'NMS',
       name,
-      isin: symbol === 'AAPL' ? 'US0378331005' : symbol === 'TSLA' ? 'US88160R1014' : 'US67066G1040',
+      isin: stockIsin(symbol),
       sector: symbol === 'TSLA' ? 'Consumer Cyclical' : 'Technology',
-      industry:
-        symbol === 'TSLA' ? 'Auto Manufacturers' : symbol === 'NVDA' ? 'Semiconductors' : 'Consumer Electronics',
+      industry: stockIndustry(symbol),
       exchange_dispatch: 'NASDAQ',
     },
     amount,
@@ -523,4 +522,28 @@ async function getPersistedTransactionsForCurrentUser(db: Database) {
 
 async function getPersistedTickersBySymbol(db: Database, symbol: string) {
   return db.select().from(stockTicker).where(eq(stockTicker.symbol, symbol));
+}
+
+function stockIsin(symbol: string): string {
+  if (symbol === 'AAPL') {
+    return 'US0378331005';
+  }
+
+  if (symbol === 'TSLA') {
+    return 'US88160R1014';
+  }
+
+  return 'US67066G1040';
+}
+
+function stockIndustry(symbol: string): string {
+  if (symbol === 'TSLA') {
+    return 'Auto Manufacturers';
+  }
+
+  if (symbol === 'NVDA') {
+    return 'Semiconductors';
+  }
+
+  return 'Consumer Electronics';
 }

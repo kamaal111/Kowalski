@@ -1,12 +1,14 @@
 # Built from the repository root so the pnpm workspace (which owns every dependency version)
 # is part of the build context:
 #   docker build -f server/Dockerfile .
+FROM ghcr.io/pnpm/pnpm:12.11.1 AS pnpm-toolchain
+
 FROM node:26-bookworm-slim AS base
 
-ENV PNPM_HOME="/pnpm"
+ENV PNPM_HOME="/opt/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
-RUN corepack enable
+COPY --from=pnpm-toolchain /opt/pnpm /opt/pnpm
 
 WORKDIR /app
 
